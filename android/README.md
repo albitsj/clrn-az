@@ -14,6 +14,22 @@ Web 另外有 5 个下载帮助场景。当前 Staging APK 的发布渠道为 `d
 
 固定环境为 Android API 35、720×1280、320 dpi、字体比例 1、英文系统。GitHub Actions 使用 Ubuntu 和 x86_64 Google APIs 模拟器。正式基准应在相同 CI 环境生成并人工检查；本机 ARM 模拟器适合验证操作流程，渲染差异不能直接当作应用回归。
 
+## 测试开始前的金币准备
+
+持续集成在账号独占锁内调用 `scripts/configure-ci-account.mjs`，本机通过
+`node scripts/with-test-account.mjs -- node android/run-visual.mjs` 启动。
+两者共用 `scripts/prepare-test-account.mjs`：先通过普通登录核实本任务账号，
+调用 staging 的 `POST /public/v1/wallet/{用户ID}/set_balance/testing` 将金币设为 **10000**，
+再用真实钱包接口回读确认，之后才启动原生测试。
+每次设置固定余额，不累加，不修改其他任务或 Web 分区账号；牌桌测试现有的补钻逻辑保持原样。
+
+`TESTING_API_TOKEN` 仅在 Node 中发送给余额设置接口，不进入设备或测试代理。
+持续集成缺少 Secret、身份不符、设置或回读失败时立即停止；本机失败仍释放账号锁。
+本机可以配置同名环境变量，也可以复用相邻 `goplay_staging_auto_stack` 中的既有 staging Secret。
+应用仍执行完整初始化和真实界面登录，既有展示余额夹具及截图基准保持原值。
+低余额专项案例需在通用准备之后显式设置所需余额，并在结束后恢复 10000。
+直接调用 `android/run-visual.mjs` 不经过账号准备，真实登录测试应使用账号分配器入口。
+
 ## 下载与本机执行
 
 需要 Node.js 24 或更高版本、已认证的 `gh`、Android SDK 的 `adb` 和一个专用模拟器。把 SDK 的 `platform-tools` 加入 `PATH`。脚本要求显式指定模拟器编号，拒绝操作实体手机；每次运行会卸载并重新安装专用模拟器中的 `com.ac.laiwanDev` 测试应用。
@@ -24,7 +40,7 @@ python3 -m venv e2e/.venv
 e2e/.venv/bin/python -m pip install -r e2e/mitmproxy/requirements.txt
 npx playwright install android
 node android/download-release.mjs
-ANDROID_SERIAL=emulator-5554 ANDROID_GROUP=guest ANDROID_LOCALE=en node android/run-visual.mjs
+ANDROID_SERIAL=emulator-5554 ANDROID_GROUP=guest ANDROID_LOCALE=en node scripts/with-test-account.mjs -- node android/run-visual.mjs
 ```
 
 默认扫描 `android-staging-<构建编号>-<提交前12位>` 格式的已发布 Android Staging Releases（包括 prerelease），下载 `android-staging.apk` 并选最新版本。指定版本重现问题（替换为实际标签）：
@@ -68,7 +84,7 @@ gh workflow run android-visual.yml --repo albitsj/clrn-az \
 本机调试可显式生成参考图，保存在被 Git 忽略的 `android/snapshots/local/`，不覆盖 CI 正式基准：
 
 ```sh
-ANDROID_SERIAL=emulator-5554 ANDROID_VISUAL_MODE=reference node android/run-visual.mjs
+ANDROID_SERIAL=emulator-5554 ANDROID_VISUAL_MODE=reference node scripts/with-test-account.mjs -- node android/run-visual.mjs
 ```
 
 牌桌组在 JDK 17 环境构建固定 Playwright 1.61.1 官方提交的原生驱动，修正持续动画时的空闲等待、无障碍树空节点遍历，并增加直接读取目标节点的命令，避免短时提示消失前反复序列化整棵牌桌树。CI 自动读取并校验源码；本机先将官方提交 `39e3553a4f283a41134d75d7e404484bd9e6865a` 检出到 `.ttyctl/playwright-driver-source`，设置 `ANDROID_HOME` 后运行 `node android/build-driver.mjs`。补丁和 APK 均位于忽略目录，不修改被测应用或游戏时钟。
