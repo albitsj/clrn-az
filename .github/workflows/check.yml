@@ -1,0 +1,31 @@
+name: Repository checks
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - uses: astral-sh/setup-uv@v6
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: npm ci
+      - run: npm run check
+      - name: Python proxy unit tests
+        run: |
+          python -m unittest discover -s android -p 'test_*.py'
+          python -m pip install -r e2e/mitmproxy/requirements.txt
+          for directory in e2e/mitmproxy visual/cases/game-record/mitmproxy visual/cases/texas-holdem/mitmproxy visual/cases/zhajinhua/mitmproxy; do
+            python -m unittest discover -s "$directory" -p 'test_*.py'
+          done

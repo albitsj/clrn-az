@@ -1,0 +1,25 @@
+e2e/node_modules/
+e2e/.venv/
+__pycache__/
+e2e/test-results/
+e2e/playwright-report/
+e2e/blob-report/
+e2e/playwright/.auth/
+app/
+visual/node_modules/
+visual/auth-state.json
+visual/test-results/
+visual/playwright-report/
+visual/.visual-reference.lock/
+.pnpm-store/
+
+# ttyctl local runtime data (agent-writable)
+.ttyctl/
+
+# 仓库检查依赖和缓存
+node_modules/
+.ruff_cache/
+android/artifacts/
+android/test-results/
+android/playwright-report/
+android/snapshots/local/
