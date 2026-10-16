@@ -34,7 +34,7 @@ test('all three native slot reels and reward types animate from real spin respon
         String(Math.round(banner.bounds.x + banner.bounds.width / 2)),
         String(Math.round(banner.bounds.y + banner.bounds.height / 2)));
       await captureNativeTransition(device, 'slot-popup-enter', testInfo,
-        { x: 0, y: 500, width: 720, height: 680 }, pressBanner);
+        { x: 0, y: 500, width: 720, height: 680 }, pressBanner, [], [], 0, 'launchFrames');
       await device.wait({ res: 'slot-machine-view' });
       const reels = [
         { x: 143, y: 420, width: 137, height: 362 },
@@ -65,7 +65,7 @@ test('all three native slot reels and reward types animate from real spin respon
         String(Math.round(close.bounds.x + close.bounds.width / 2)),
         String(Math.round(close.bounds.y + close.bounds.height / 2)));
       await captureNativeTransition(device, 'slot-popup-exit', testInfo,
-        { x: 0, y: 500, width: 720, height: 680 }, pressClose);
+        { x: 0, y: 500, width: 720, height: 680 }, pressClose, [], [], 0, 'launchFrames');
       await waitAbsent(device, { res: 'slot-machine-view' });
       const bannerAgain = await device.info({ res: 'slot-banner' });
       await adb('shell', 'input', 'tap',
