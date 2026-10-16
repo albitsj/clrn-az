@@ -129,12 +129,18 @@ export async function zhajinhuaGameplay(device: AndroidDevice, proxy: Mitmproxy,
   await expect.poll(async () => (await gameNodes(device)).filter(node => node.res === 'player_cards_container').length,
     { timeout: 30_000 }).toBe(2);
   await capture('showdown');
+  // 摊牌牌面高光仍会闪几帧；结算只采集余额和本人获胜光效。
+  if (animationInfo) await new Promise(resolve => setTimeout(resolve, 1200));
   const settlement = events([{ event: 'settlement', players: [
     { player_id: self, net: 120, prize: 120, stack: 1120 },
     { player_id: PLAYER_IDS[0], net: -40, prize: 0, stack: 920 },
   ] }]);
   if (animationInfo) await captureNativeTransition(device, 'zhajinhua-settlement', animationInfo,
-    { x: 0, y: 680, width: 510, height: 530 }, () => send(settlement), [],
+    { x: 0, y: 680, width: 510, height: 530 }, () => send(settlement),
+    [{ x: 338, y: 726, width: 110, height: 42,
+      reason: '房间倒计时与结算独立运行，保留旁边的牌型和获胜光效' },
+    { x: 78, y: 730, width: 42, height: 34,
+      reason: '对手摊牌的独立牌面高光持续闪烁；结算比较本人牌面和获胜光效' }],
     [{ x: 210, y: 970, width: 190, height: 215 }]);
   else await send(settlement);
   // 与德州一样，摊牌后的牌型会覆盖余额；从当前可见玩家读取明确的余额语义标记。
