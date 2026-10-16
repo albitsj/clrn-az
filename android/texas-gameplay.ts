@@ -11,6 +11,7 @@ import { captureNativeTransition, captureTransientTransition } from './animation
 import { animateGamePanel } from './game-panel-animation';
 import { captureMovingKeyframes } from './loop-keyframes';
 import { captureAssetSequence } from './asset-sequence';
+import { adb } from './device';
 
 /**
  * 复用网页的德州消息夹具，覆盖各街、操作、摊牌、结算和玩家资料。
@@ -66,6 +67,13 @@ export async function texasGameplay(device: AndroidDevice, proxy: Mitmproxy, roo
     { x: 320, y: 245, width: 190, height: 430 }, animationInfo);
   await gameReady(device, 'raise-bet-popup');
   await capture('raise');
+  if (animationInfo) {
+    await gameReady(device, 'raise-bet-slider');
+    await captureNativeTransition(device, 'texas-raise-slider', animationInfo,
+      { x: 285, y: 245, width: 295, height: 630 },
+      () => adb('shell', 'input', 'swipe', '333', '814', '333', '530', '450'),
+      [], [], 0, 'videoFrames');
+  }
   // 原生录屏确认取消按钮直接移除面板，没有可供回归的退场过渡帧。
   await gameTap(device, 'raise-bet-cancel-button');
   await gameGone(device, 'raise-bet-popup');
