@@ -10,6 +10,7 @@ import { gameTapText, type TexasContext } from './texas-support';
 import { captureNativeTransition } from './animation-transition';
 import { animateGamePanel } from './game-panel-animation';
 import { captureMovingKeyframes } from './loop-keyframes';
+import { captureAssetSequence } from './asset-sequence';
 
 /**
  * 复用网页的德州消息夹具，覆盖各街、操作、摊牌、结算和玩家资料。
@@ -104,6 +105,24 @@ export async function texasGameplay(device: AndroidDevice, proxy: Mitmproxy, roo
     .find(node => node.res === `texas-holdem-player-container-${self}`), 'text-holdem-own-balance-text'),
   { timeout: 30_000 }).toBe('1180');
   await capture('settlement');
+  if (animationInfo) {
+    // 牌桌的 WebP 清单已经逐字节校验；这里还验证每种效果确实由房间消息在原生画面播放。
+    await new Promise(resolve => setTimeout(resolve, 3000));
+    for (const name of ['angry', 'cry', 'drink', 'puchi', 'titter', 'smirk', 'handclap']) {
+      await captureAssetSequence(device, `texas-sticker-${name}`, animationInfo,
+        { x: 220, y: 990, width: 180, height: 190 },
+        () => send({ stream: 'room_message', payload: { action: 'sticker', content: {
+          from_user_id: self, to_user_id: REPLAY_PLAYER_IDS[1], file: name,
+        } } }));
+    }
+    for (const name of ['tomato', 'tea', 'water', 'flower', 'heart', 'good', 'beer']) {
+      await captureAssetSequence(device, `texas-prop-${name}`, animationInfo,
+        { x: 0, y: 420, width: 390, height: 740 },
+        () => send({ stream: 'room_message', payload: { action: 'props', content: {
+          from_user_id: self, to_user_id: REPLAY_PLAYER_IDS[1], file: name,
+        } } }));
+    }
+  }
   let opponentProfileCount = 0;
   /**
    * 打开玩家资料，等待统计数据实际完成加载。
