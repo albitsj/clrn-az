@@ -2,7 +2,7 @@ import { expect, type TestInfo } from '@playwright/test';
 import type { AndroidDevice } from 'playwright';
 import type { Mitmproxy } from '../e2e/helpers/mitmproxy-client';
 import { events, REPLAY_PLAYER_IDS, restoreTable, type Street } from '../visual/cases/texas-holdem/replayData';
-import { gameReady, gameGone, gameTap, gameNodes, gameSemanticText } from './game-controls';
+import { flattenNodes, gameReady, gameGone, gameTap, gameNodes, gameSemanticText } from './game-controls';
 import { replay, gameCardNames } from './game-replay';
 import { closeGameMask } from './game-pregame';
 import { dismissKeyboard } from './keyboard';
@@ -82,7 +82,7 @@ export async function texasGameplay(device: AndroidDevice, proxy: Mitmproxy, roo
   const allIn = events([{ event: 'all_in', player_id: REPLAY_PLAYER_IDS[0], amount: 960, stack: 0 },
     { event: 'all_in_show_hole_card', players: [{ player_id: REPLAY_PLAYER_IDS[0], hole_card: ['kh', 'ks'] }] }]);
   if (animationInfo) await captureNativeTransition(device, 'texas-all-in-fire', animationInfo,
-    { x: 0, y: 650, width: 250, height: 225 }, () => send(allIn));
+    { x: 0, y: 650, width: 250, height: 225 }, () => send(allIn), [], [], 1600);
   else await send(allIn);
   await gameReady(device, 'texas-holdem-player-action-all_in');
   await capture('all_in');
@@ -167,5 +167,26 @@ export async function texasGameplay(device: AndroidDevice, proxy: Mitmproxy, roo
   await capture('block');
   await animateGamePanel(device, 'texas-holdem', 'opponent-profile-2', 'player-profile-popup-close',
     { x: 180, y: 90, width: 520, height: 500 }, animationInfo, 'exit');
+  if (animationInfo) {
+    await restore('river', true);
+    const actionPlayer = REPLAY_PLAYER_IDS[1];
+    for (const action of ['call', 'raise', 'check', 'fold'] as const) {
+      await send(events([{ event: 'switch_player', player_id: actionPlayer,
+        remain_operating_seconds: 12 }]));
+      /** 从本轮指定玩家读取实际可见动作，忽略其他座位仍保留的操作标记。 */
+      const playerAction = async () => {
+        const player = (await gameNodes(device)).find(node => node.res?.startsWith(`texas-holdem-player-container-${actionPlayer}`));
+        return player && flattenNodes(player).some(node => node.res === `texas-holdem-player-action-${action}`);
+      };
+      await expect.poll(playerAction, { timeout: 30_000 }).toBe(false);
+      const timer = (await gameNodes(device)).find(node => node.res === 'texas-holdem-active-countdown');
+      expect(timer, `${action} 前对手操作倒计时必须可见`).toBeDefined();
+      await captureNativeTransition(device, `texas-player-action-${action}`, animationInfo,
+        { x: 80, y: 465, width: 115, height: 155 },
+        () => send(events([{ event: action, player_id: actionPlayer, amount: 40, stack: 920 }])),
+        [{ ...timer!.bounds, reason: '玩家动作期间独立运行的操作倒计时' }]);
+      await expect.poll(playerAction, { timeout: 30_000 }).toBe(true);
+    }
+  }
   expect((await proxy.command<{ replayedMessages: number }>('status')).replayedMessages).toBeGreaterThan(0);
 }

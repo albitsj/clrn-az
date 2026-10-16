@@ -25,7 +25,7 @@ export async function texasHall(context: TexasContext): Promise<void> {
   await capture('hall_menu');
   await closeGameMask(device, 'drawer-menu-item-exit');
   await animateGamePanel(device, 'texas-holdem', 'auto-rebuy', 'auto-rebuy-button',
-    { x: 20, y: 405, width: 680, height: 470 }, animationInfo);
+    { x: 320, y: 430, width: 340, height: 400 }, animationInfo);
   await gameReady(device, 'auto-rebuy-popup');
   await capture('auto_rebuy');
   if (animationInfo) {
@@ -43,19 +43,19 @@ export async function texasHall(context: TexasContext): Promise<void> {
       { timeout: 30_000 }).toBe(true);
   }
   await animateGamePanel(device, 'texas-holdem', 'auto-rebuy', 'auto-rebuy-close-button',
-    { x: 20, y: 405, width: 680, height: 470 }, animationInfo, 'exit');
+    { x: 320, y: 430, width: 340, height: 400 }, animationInfo, 'exit');
   await gameGone(device, 'auto-rebuy-popup');
   await animateGamePanel(device, 'texas-holdem', 'pair-play-report', 'report-pair-play-button',
-    { x: 20, y: 250, width: 680, height: 790 }, animationInfo);
+    { x: 200, y: 260, width: 440, height: 700 }, animationInfo);
   await gameReady(device, 'report-pair-play-reason-input');
   expect((await gameNodes(device)).filter(node => node.res === 'select-player-button')).toHaveLength(4);
   await dismissKeyboard(device);
   await capture('pair_play_report');
   await animateGamePanel(device, 'texas-holdem', 'pair-play-report', 'report-pair-play-close-button',
-    { x: 20, y: 250, width: 680, height: 790 }, animationInfo, 'exit');
+    { x: 200, y: 260, width: 440, height: 700 }, animationInfo, 'exit');
   await gameGone(device, 'report-pair-play-reason-input');
   await animateGamePanel(device, 'texas-holdem', 'personal-leaderboard', 'texas-holdem-leaderboard-button',
-    { x: 0, y: 0, width: 620, height: 1240 }, animationInfo);
+    { x: 200, y: 200, width: 400, height: 900 }, animationInfo);
   await expect.poll(async () => (await gameReady(device, 'personal-leader-board-nickname')).text,
     { timeout: 30_000 }).toMatch(/\S/);
   await texasEvents(context, [{ event: 'player_statistics', player_id: self,
@@ -65,7 +65,7 @@ export async function texasHall(context: TexasContext): Promise<void> {
     { timeout: 30_000 }).toMatch(/(?:^|\s)10$/);
   await capture('personal_leaderboard');
   await animateGamePanel(device, 'texas-holdem', 'personal-leaderboard', 'personal-leader-board-close-button',
-    { x: 0, y: 0, width: 620, height: 1240 }, animationInfo, 'exit');
+    { x: 200, y: 200, width: 400, height: 900 }, animationInfo, 'exit');
   await gameGone(device, 'personal-leader-board-close-button');
   await texasEvents(context, [{ event: 'settlement', players: [{ player_id: REPLAY_PLAYER_IDS[0], net: 180, prize: 180, stack: 1140 }] }]);
   await gameReady(device, 'bet-next-hand-button');
