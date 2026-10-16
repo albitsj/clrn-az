@@ -4,6 +4,7 @@ import { gameGone, gameNodes, gameReady, gameTap } from './game-controls';
 import { closeGameMask } from './game-pregame';
 import { replay } from './game-replay';
 import { adb } from './device';
+import { captureNativeTransition } from './animation-transition';
 import { enableGameSetting, restoreTexas, texasEvents, type TexasContext } from './texas-support';
 
 /**
@@ -11,7 +12,16 @@ import { enableGameSetting, restoreTexas, texasEvents, type TexasContext } from 
  * @param context - 当前真实房间、连接与共用顺序截图入口。
  */
 export async function texasPanelVariants(context: TexasContext): Promise<void> {
-  const { device, proxy, room, self, capture } = context;
+  const { device, proxy, room, self, capture, animationInfo } = context;
+  const alertRegion = { x: 80, y: 525, width: 560, height: 265 };
+  /** 事先读取按钮边界，使点击落在原生采样窗口内。
+   * @param resource - 当前实际可见的原生按钮资源标识。
+   */
+  const press = async (resource: string) => {
+    const { bounds } = await gameReady(device, resource);
+    return () => adb('shell', 'input', 'tap', String(Math.round(bounds.x + bounds.width / 2)),
+      String(Math.round(bounds.y + bounds.height / 2)));
+  };
   await restoreTexas(context);
   for (const mode of ['pending', 'resolved', 'more'] as const) {
     await proxy.command('texas/ui', { applications: mode });
@@ -38,26 +48,39 @@ export async function texasPanelVariants(context: TexasContext): Promise<void> {
   adb('shell', 'input', 'tap', String(chat.x + 8), String(chat.y + 80));
   await gameGone(device, 'in-game-chat-container');
   await proxy.command('texas/ui', { rpcError: 'retry' });
-  await gameTap(device, 'texas-holdem-operation-button-call');
+  if (animationInfo) await captureNativeTransition(device, 'texas-alert-retry-enter', animationInfo,
+    alertRegion, await press('texas-holdem-operation-button-call'));
+  else await gameTap(device, 'texas-holdem-operation-button-call');
   expect((await gameReady(device, 'common-alert-message')).text).toContain('Please retry');
   // 操作错误弹窗没有 buttonId；与 Web 一样按真实按钮文字校验和操作。
   await expect.poll(async () => (await gameNodes(device)).some(node => /^(Retry|重试|重試)$/.test(node.text || '')),
     { timeout: 30_000 }).toBe(true);
   await capture('alert_retry');
-  await device.tap({ text: /^(取消|Cancel)$/ });
+  if (animationInfo) {
+    const cancel = await device.info({ text: /^(取消|Cancel)$/ });
+    await captureNativeTransition(device, 'texas-alert-retry-exit', animationInfo, alertRegion,
+      () => adb('shell', 'input', 'tap', String(Math.round(cancel.bounds.x + cancel.bounds.width / 2)),
+        String(Math.round(cancel.bounds.y + cancel.bounds.height / 2))));
+  } else await device.tap({ text: /^(取消|Cancel)$/ });
   await restoreTexas(context, {}, 'flop', true);
   await proxy.command('texas/ui', { rpcError: 'balance' });
   await texasEvents(context, [{ event: 'settlement', players: [{ player_id: self, net: 180, prize: 180, stack: 1180 }] }]);
-  await gameTap(device, 'texas-holdem-show-remain-community-card-button');
+  if (animationInfo) await captureNativeTransition(device, 'texas-alert-balance-enter', animationInfo,
+    alertRegion, await press('texas-holdem-show-remain-community-card-button'));
+  else await gameTap(device, 'texas-holdem-show-remain-community-card-button');
   await gameReady(device, 'common-alert-button-go_to_mall');
   await capture('alert_insufficient_balance');
-  await gameTap(device, 'common-alert-button-cancel');
+  if (animationInfo) await captureNativeTransition(device, 'texas-alert-balance-exit', animationInfo,
+    alertRegion, await press('common-alert-button-cancel'));
+  else await gameTap(device, 'common-alert-button-cancel');
   await proxy.command('texas/ui', { rpcError: 'auth' });
   await texasEvents(context, [{ event: 'new_game', game_id: 'visual-fixed-game', settings: { small_blind: 1, big_blind: 2, ante: 0 } }]);
   await restoreTexas(context);
   await gameGone(device, 'texas-holdem-show-hand-card-button');
   await gameGone(device, 'texas-holdem-show-remain-community-card-button');
-  await gameTap(device, 'texas-holdem-operation-button-call');
+  if (animationInfo) await captureNativeTransition(device, 'texas-alert-auth-enter', animationInfo,
+    alertRegion, await press('texas-holdem-operation-button-call'));
+  else await gameTap(device, 'texas-holdem-operation-button-call');
   await gameReady(device, 'common-alert-button-quit');
   expect((await gameReady(device, 'common-alert-title')).text).toMatch(/^(身份验证失败|身份驗證失敗|Authentication failed)$/);
   await capture('alert_authentication_failed');

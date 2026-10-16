@@ -164,7 +164,7 @@ class AndroidVisualProxy:
                 and re.fullmatch(r'/v10/texas_holdem/room/[^/]+/user_settings/enable_auto_rebuy', path):
             self.auto_rebuy_requested = True
             try:
-                await asyncio.wait_for(self.auto_rebuy_release.wait(), timeout=8)
+                await asyncio.wait_for(self.auto_rebuy_release.wait(), timeout=45)
             except asyncio.TimeoutError:
                 flow.response = http.Response.make(504, b'Visual auto-rebuy hold expired')
                 return

@@ -19,6 +19,7 @@
 | 德州倒计时、加注面板、全压火焰、摊牌、结算与胜利光效 | `games.spec.ts` 德州 `_game` | `texas-operation-countdown`、`texas-holdem-raise-bet`、`texas-all-in-fire`、`texas-showdown`、`texas-settlement` |
 | 德州玩家资料、举报、升级 | `games.spec.ts` 德州 `_game` 和 `_hall` | 对应面板入退场、`texas-holdem-level-up-enter/exit` |
 | 德州语音、系统提示、弹幕、聊天举报/屏蔽、带入审核 | `games.spec.ts` 德州 `_panels` | `texas-holdem-voice`、`texas-system-prompt`、`texas-barrage`、聊天及审核面板关键帧 |
+| 德州操作失败、余额不足、身份失效提示 | `games.spec.ts` 德州 `_panel_variants` | `texas-alert-retry/balance` 入退场、`texas-alert-auth` 入场；分别由真实错误响应触发 |
 | 德州自动补充带入、合谋举报、个人排行榜、加载转圈 | `games.spec.ts` 德州 `_hall` | 对应面板入退场、`texas-loading-spinner` 两个区域各自运动 |
 | 拼三张倒计时、发牌、翻牌、快捷加注、精确加注 | `games.spec.ts` 拼三张 `_game` | `zhajinhua-operation-countdown`、`zhajinhua-deal-cards`、`zhajinhua-flip-cards`、`zhajinhua-quick-raise`、精确加注入退场 |
 | 拼三张比牌目标、摊牌、结算、升级 | `games.spec.ts` 拼三张 `_game` | 四个目标各自闪烁；`zhajinhua-showdown-cards`、`zhajinhua-settlement`、升级入退场 |
