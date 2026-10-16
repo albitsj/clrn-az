@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import type { AndroidDevice } from 'playwright';
-import { adb, compareScreenshot, launchApplication, waitForHall } from '../device';
+import { adb, applicationId, compareScreenshot, launchApplication, waitForHall } from '../device';
 import { captureNativeTransition } from '../animation-transition';
 import { withAndroidProxy } from '../proxy';
 import { signIn, navigateScenario, tap, reveal } from '../navigation';
@@ -11,6 +11,31 @@ import { gameScreenshot } from '../game-controls';
 import { gameReady } from '../game-controls';
 import { waitAbsent } from '../native-state';
 import { captureMovingKeyframes } from '../loop-keyframes';
+
+test('native launch branding and staging notice animate on a real app start', async ({}, testInfo) => {
+  test.skip(!['all', 'guest'].includes(process.env.ANDROID_GROUP || 'all')
+    || (process.env.ANDROID_LOCALE || 'en') !== 'en', '启动动画只在英文游客任务采集一次');
+  test.setTimeout(420_000);
+  await withAndroidProxy(async () => {
+    let device: AndroidDevice | undefined;
+    try {
+      device = await launchApplication({ gameDriver: true, enableSystemAnimations: true });
+      await device.wait({ res: 'staging-confirmation-input' });
+      adb('shell', 'am', 'force-stop', applicationId);
+      adb('shell', 'input', 'keyevent', 'KEYCODE_HOME');
+      await new Promise(resolve => setTimeout(resolve, 1_200));
+      /** 预装的原生驱动持续取样，独立 ADB 连接冷启动正式 Release。 */
+      const start = () => adb('shell', 'am', 'start', '-n',
+        `${applicationId}/com.laiwan_react_native.MainActivity`);
+      await captureNativeTransition(device, 'native-launch-and-staging-notice', testInfo,
+        { x: 70, y: 155, width: 580, height: 900 }, start, [], [
+          { x: 110, y: 170, width: 500, height: 145 },
+          { x: 110, y: 360, width: 500, height: 550 },
+        ], 2_000);
+      await device.wait({ res: 'staging-confirmation-input' });
+    } finally { await device?.close(); }
+  });
+});
 
 test('native account stack slides in and out', async ({}, testInfo) => {
   test.skip(!['all', 'account'].includes(process.env.ANDROID_GROUP || 'all')

@@ -29,7 +29,7 @@ export async function gameMenu(device: AndroidDevice, item: string, ready: strin
  * @param device - 专用模拟器连接。
  * @param marker - 当前面板标记。
  */
-export async function closeGameMask(device: AndroidDevice, marker: string): Promise<void> {
+async function gameMaskClosePoint(device: AndroidDevice, marker: string): Promise<{ x: number; y: number }> {
   const { bounds } = await gameReady(device, 'screen-mask-touch-to-close');
   const panel = (await gameReady(device, marker)).bounds;
   const points = [
@@ -40,6 +40,15 @@ export async function closeGameMask(device: AndroidDevice, marker: string): Prom
   const point = points.find(item => item.x < panel.x || item.x > panel.x + panel.width
     || item.y < panel.y || item.y > panel.y + panel.height);
   expect(point, '遮罩上应有未被当前面板覆盖的区域').toBeDefined();
+  return point!;
+}
+
+/** 点击已定位的遮罩空白处，并等待当前面板关闭。
+ * @param device - 专用模拟器连接。
+ * @param marker - 当前面板标记。
+ */
+export async function closeGameMask(device: AndroidDevice, marker: string): Promise<void> {
+  const point = await gameMaskClosePoint(device, marker);
   adb('shell', 'input', 'tap', String(Math.round(point!.x)), String(Math.round(point!.y)));
   await gameGone(device, marker);
 }
@@ -56,8 +65,10 @@ export async function closeGameMask(device: AndroidDevice, marker: string): Prom
 async function closeAnimatedGameMask(device: AndroidDevice, game: 'texas-holdem' | 'zhajinhua',
   name: string, marker: string, region: ScreenshotBounds, testInfo?: TestInfo): Promise<void> {
   if (!testInfo) { await closeGameMask(device, marker); return; }
+  const point = await gameMaskClosePoint(device, marker);
   await captureNativeTransition(device, `${game}-${name}-exit`, testInfo, region,
-    () => closeGameMask(device, marker), [], [], 600);
+    () => adb('shell', 'input', 'tap', String(Math.round(point.x)), String(Math.round(point.y))), [], [], 600);
+  await gameGone(device, marker);
 }
 
 /**
