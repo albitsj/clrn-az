@@ -122,7 +122,9 @@ export async function zhajinhuaGameplay(device: AndroidDevice, proxy: Mitmproxy,
     { player_id: PLAYER_IDS[0], hole_card: ['kh', 'ks', 'qd'], hand_strength: 'pair', is_winner: false },
   ] }]);
   if (animationInfo) await captureNativeTransition(device, 'zhajinhua-showdown-cards', animationInfo,
-    { x: 8, y: 697, width: 170, height: 102 }, () => send(showdown), [], [], 800);
+    { x: 8, y: 697, width: 170, height: 102 }, () => send(showdown),
+    [{ x: 82, y: 697, width: 52, height: 75,
+      reason: '摊牌前独立运行的对手操作倒计时，遮住右上角数字和圆环' }], [], 800);
   else await send(showdown);
   await expect.poll(async () => (await gameNodes(device)).filter(node => node.res === 'player_cards_container').length,
     { timeout: 30_000 }).toBe(2);
