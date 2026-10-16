@@ -87,16 +87,22 @@ export async function captureLoopKeyframes(device: AndroidDevice, name: string, 
  * @param regions - 每个独立运动控件的完整可见范围。
  * @param distanceLimit - 随机图案循环的允许色差，固定外观动画使用默认值。
  * @param compareDistance - 旋转对称效果可比较颜色分布，其余效果逐像素比较。
+ * @param maxAttempts - 慢速自动轮播允许连续采样多个窗口，直到观察到真实变化。
  */
 export async function captureMovingKeyframes(device: AndroidDevice, name: string, testInfo: TestInfo,
   regions: ScreenshotBounds[], distanceLimit = 18,
-  compareDistance: (left: Buffer, right: Buffer) => number = frameColorDistance): Promise<void> {
+  compareDistance: (left: Buffer, right: Buffer) => number = frameColorDistance,
+  maxAttempts = 1): Promise<void> {
   expect(regions.length).toBeGreaterThan(0);
   const implementation = (device as unknown as { _connection: { toImpl(device: AndroidDevice): {
     _send(method: string): Promise<NativeFrame[]> } } })._connection.toImpl(device);
-  const timeline = await implementation._send('motionFrames');
-  expect(timeline.length).toBeGreaterThanOrEqual(10);
-  const pictures = timeline.map(frame => motionParts(Buffer.from(frame.png, 'base64'), regions).regions);
+  const pictures: Buffer[][] = [];
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    const timeline = await implementation._send('motionFrames');
+    expect(timeline.length).toBeGreaterThanOrEqual(10);
+    pictures.push(...timeline.map(frame => motionParts(Buffer.from(frame.png, 'base64'), regions).regions));
+    if (regions.every((_, index) => pictures.some(parts => frameColorDistance(parts[index], pictures[0][index]) > 1))) break;
+  }
   for (const index of regions.keys()) {
     const frames = pictures.map(parts => parts[index]);
     const first = frames[0];
