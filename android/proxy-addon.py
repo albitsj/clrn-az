@@ -140,7 +140,7 @@ class AndroidVisualProxy:
 
     async def request(self, flow):
         path = urlsplit(flow.request.path).path
-        if self.invitable and path == '/v2/building/rooms' and flow.request.method == 'GET':
+        if self.invitable and path == '/v2/building/rooms' and flow.request.method == 'PUT':
             room = {'room_id': '00000000-0000-4000-8000-000000000099', 'room_name': 'TestRoom',
                     'created_at': '2026-01-01T00:00:00Z', 'creator_id': 'visual-user-id',
                     'building_id': 'visual-house-id', 'building_type': 'house', 'game_type': 'texas_holdem',

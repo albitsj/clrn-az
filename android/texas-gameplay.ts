@@ -61,13 +61,13 @@ export async function texasGameplay(device: AndroidDevice, proxy: Mitmproxy, roo
     await capture(street);
   }
   await animateGamePanel(device, 'texas-holdem', 'raise-bet', 'texas-holdem-operation-button-raise',
-    { x: 110, y: 245, width: 500, height: 760 }, animationInfo);
+    { x: 320, y: 245, width: 190, height: 430 }, animationInfo);
   await gameReady(device, 'raise-bet-popup');
   await capture('raise');
   await gameTap(device, 'raise-bet-cancel-button');
   await gameGone(device, 'raise-bet-popup');
   await animateGamePanel(device, 'texas-holdem', 'accurate-bet', 'texas-holdem-operation-accurate-bet-button',
-    { x: 115, y: 350, width: 490, height: 570 }, animationInfo);
+    { x: 120, y: 360, width: 480, height: 330 }, animationInfo);
   await gameReady(device, 'accurate-bet-popup-container');
   await capture('accurate_raise');
   await closeGameMask(device, 'accurate-bet-popup-container');
@@ -75,21 +75,30 @@ export async function texasGameplay(device: AndroidDevice, proxy: Mitmproxy, roo
   await send(events([{ event: 'switch_player', player_id: REPLAY_PLAYER_IDS[0], valid_bets: { call: { amount: 20 } } }]));
   await gameGone(device, 'texas-holdem-operation-button-raise');
   await capture('opponent_turn');
-  await send(events([{ event: 'all_in', player_id: REPLAY_PLAYER_IDS[0], amount: 960, stack: 0 },
-    { event: 'all_in_show_hole_card', players: [{ player_id: REPLAY_PLAYER_IDS[0], hole_card: ['kh', 'ks'] }] }]));
+  const allIn = events([{ event: 'all_in', player_id: REPLAY_PLAYER_IDS[0], amount: 960, stack: 0 },
+    { event: 'all_in_show_hole_card', players: [{ player_id: REPLAY_PLAYER_IDS[0], hole_card: ['kh', 'ks'] }] }]);
+  if (animationInfo) await captureNativeTransition(device, 'texas-all-in-fire', animationInfo,
+    { x: 0, y: 650, width: 250, height: 225 }, () => send(allIn));
+  else await send(allIn);
   await gameReady(device, 'texas-holdem-player-action-all_in');
   await capture('all_in');
-  await send(events([{ event: 'showdown', players: [
+  const showdown = events([{ event: 'showdown', players: [
     { player_id: self, hole_card: ['as', 'ad'], best_cards: ['as', 'ad', 'ah', 'kd', 'qs'],
       hand_strength: 'three_of_a_kind', strength_cards: ['as', 'ad', 'ah'], is_max_strength: true },
     { player_id: REPLAY_PLAYER_IDS[0], hole_card: ['kh', 'ks'], best_cards: ['kh', 'ks', 'kd', 'ah', 'qs'],
       hand_strength: 'three_of_a_kind', strength_cards: ['kh', 'ks', 'kd'], is_max_strength: false },
-  ] }]));
+  ] }]);
+  if (animationInfo) await captureNativeTransition(device, 'texas-showdown', animationInfo,
+    { x: 0, y: 580, width: 600, height: 600 }, () => send(showdown));
+  else await send(showdown);
   await capture('showdown');
-  await send(events([{ event: 'settlement', players: [
+  const settlement = events([{ event: 'settlement', players: [
     { player_id: self, net: 180, prize: 180, stack: 1180 },
     { player_id: REPLAY_PLAYER_IDS[0], net: -960, prize: 0, stack: 0 },
-  ] }]));
+  ] }]);
+  if (animationInfo) await captureNativeTransition(device, 'texas-settlement', animationInfo,
+    { x: 150, y: 950, width: 390, height: 250 }, () => send(settlement));
+  else await send(settlement);
   // 摊牌时余额被牌型标签替代；余额语义标记仍附在当前可见玩家容器内。
   await expect.poll(async () => gameSemanticText((await gameNodes(device))
     .find(node => node.res === `texas-holdem-player-container-${self}`), 'text-holdem-own-balance-text'),
@@ -105,7 +114,7 @@ export async function texasGameplay(device: AndroidDevice, proxy: Mitmproxy, roo
     expect(node).toBeDefined();
     const name = player === self ? 'own-profile' : `opponent-profile-${++opponentProfileCount}`;
     await animateGamePanel(device, 'texas-holdem', name,
-      node!.res!, { x: 15, y: 85, width: 690, height: 1075 }, animationInfo);
+      node!.res!, { x: 180, y: 90, width: 520, height: 500 }, animationInfo);
     await gameReady(device, 'player-profile-popup-close');
     await gameReady(device, 'PlayerStatisticComponent_Item_Value_0');
   };
@@ -122,14 +131,13 @@ export async function texasGameplay(device: AndroidDevice, proxy: Mitmproxy, roo
   await capture('statistics_help', [], () => gameTap(device, 'PlayerStatisticComponent_Item_1', true));
   await gameGone(device, 'toastText1');
   await animateGamePanel(device, 'texas-holdem', 'report', 'player-profile-report-button',
-    { x: 20, y: 240, width: 680, height: 800 }, animationInfo);
+    { x: 50, y: 250, width: 620, height: 380 }, animationInfo);
   await gameReady(device, 'report-field-input');
   await dismissKeyboard(device);
   await capture('report');
   await closeGameMask(device, 'report-field-input');
   await profile(REPLAY_PLAYER_IDS[0]);
-  await animateGamePanel(device, 'texas-holdem', 'block', 'player-profile-block-button',
-    { x: 20, y: 240, width: 680, height: 800 }, animationInfo);
+  await gameTap(device, 'player-profile-block-button');
   await capture('block');
   await gameTap(device, 'player-profile-popup-close');
   expect((await proxy.command<{ replayedMessages: number }>('status')).replayedMessages).toBeGreaterThan(0);

@@ -66,9 +66,22 @@ export async function zhajinhuaGameplay(device: AndroidDevice, proxy: Mitmproxy,
   await gameCardNames(device, 'player_card', 'player_card_name_text', ['as', 'ad', 'ac'], { namedOnly: true });
   await gameGone(device, 'zhajinhua-see-hand-card-button');
   await capture('seen_cards');
-  await gameTap(device, 'zhajinhua-shortcut-raise-first');
-  await send(events([{ event: 'raise', player_id: self, amount: 40, stack: 960 },
-    { event: 'pot_update', pot_amount: 160 }]));
+  const raise = events([{ event: 'raise', player_id: self, amount: 40, stack: 960 },
+    { event: 'pot_update', pot_amount: 160 }]);
+  if (animationInfo) {
+    const button = await gameReady(device, 'zhajinhua-shortcut-raise-first');
+    /** 通过真实按钮和回放消息触发加注筹码动画。 */
+    const pressRaise = async () => {
+      adb('shell', 'input', 'tap', String(Math.round(button.bounds.x + button.bounds.width / 2)),
+        String(Math.round(button.bounds.y + button.bounds.height / 2)));
+      await send(raise);
+    };
+    await captureNativeTransition(device, 'zhajinhua-quick-raise', animationInfo,
+      { x: 200, y: 680, width: 410, height: 390 }, pressRaise);
+  } else {
+    await gameTap(device, 'zhajinhua-shortcut-raise-first');
+    await send(raise);
+  }
   await gameReady(device, `zhajinhua-player-container-${self}`);
   await expect.poll(async () => gameSemanticText((await gameNodes(device))
     .find(node => node.res === `zhajinhua-player-container-${self}`), 'player_stack_text'),
@@ -106,15 +119,34 @@ export async function zhajinhuaGameplay(device: AndroidDevice, proxy: Mitmproxy,
   await expect.poll(async () => (await gameNodes(device)).filter(node => node.res === 'player_cards_container').length,
     { timeout: 30_000 }).toBe(2);
   await capture('showdown');
-  await send(events([{ event: 'settlement', players: [
+  const settlement = events([{ event: 'settlement', players: [
     { player_id: self, net: 120, prize: 120, stack: 1120 },
     { player_id: PLAYER_IDS[0], net: -40, prize: 0, stack: 920 },
-  ] }]));
+  ] }]);
+  if (animationInfo) await captureNativeTransition(device, 'zhajinhua-settlement', animationInfo,
+    { x: 0, y: 680, width: 510, height: 530 }, () => send(settlement));
+  else await send(settlement);
   // 与德州一样，摊牌后的牌型会覆盖余额；从当前可见玩家读取明确的余额语义标记。
   await expect.poll(async () => gameSemanticText((await gameNodes(device))
     .find(node => node.res === `zhajinhua-player-container-${self}`), 'player_stack_text'),
   { timeout: 30_000 }).toBe(`${self} 1120`);
   await capture('settlement');
+  if (animationInfo) {
+    // 新牌局清除胜利皇冠，再通过当前房间的真实操作响应触发独立的拼三张升级动画。
+    await send(events([{ event: 'new_game', game_id: 'visual-feedback-zhajinhua-game',
+      settings: { boot: 1, raise_times: 10, max_round: 20, pot_limit: 2000 } }]));
+    await send(restoreTable(self));
+    await send(events([restoreTable(self).queue[0]]));
+    await gameReady(device, 'zhajinhua-operation-button-call');
+    await proxy.command('zhajinhua/operation-reward', { roomId, enabled: true });
+    try {
+      await animateGamePanel(device, 'zhajinhua', 'level-up', 'zhajinhua-operation-button-call',
+        { x: 0, y: 0, width: 720, height: 250 }, animationInfo);
+      await gameReady(device, 'zhajinhua-level-up-level-text');
+      await animateGamePanel(device, 'zhajinhua', 'level-up', 'zhajinhua-level-up-close-button',
+        { x: 0, y: 0, width: 720, height: 250 }, animationInfo, 'exit');
+    } finally { await proxy.command('zhajinhua/operation-reward', { roomId, enabled: false }); }
+  }
   const status = await proxy.command<{ replayedMessages: number; blockedRpcs: number }>('status');
   expect(status.replayedMessages).toBeGreaterThan(0);
   expect(status.blockedRpcs).toBeGreaterThan(0);
