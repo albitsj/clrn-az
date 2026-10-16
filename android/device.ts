@@ -24,9 +24,10 @@ export function adb(...argumentsList: string[]): string {
 
 /**
  * 安装已校验的 Release 并固定系统显示条件，正常冷启动应用。
- * @param options - 牌桌驱动与原生系统转场选项。
+ * @param options - 原生驱动、系统转场与延后启动选项。
  */
-export async function launchApplication(options: { gameDriver?: boolean; enableSystemAnimations?: boolean } = {}): Promise<AndroidDevice> {
+export async function launchApplication(options: { gameDriver?: boolean; enableSystemAnimations?: boolean;
+  deferStart?: boolean } = {}): Promise<AndroidDevice> {
   await readVerifiedBuild(artifacts);
   if (adb('shell', 'getprop', 'ro.kernel.qemu').trim() !== '1') throw new Error('只允许在专用模拟器执行。');
   if (adb('shell', 'getprop', 'ro.build.version.sdk').trim() !== '35') throw new Error('截图基准要求 Android API 35。');
@@ -57,11 +58,11 @@ export async function launchApplication(options: { gameDriver?: boolean; enableS
   const installed = adb('shell', 'dumpsys', 'package', applicationId);
   if (!installed.includes(`versionName=${information.versionName}`)) throw new Error('安装后的应用版本与 Release 不一致。');
   adb('logcat', '-c');
-  adb('shell', 'am', 'start', '-n', `${applicationId}/com.laiwan_react_native.MainActivity`);
+  if (!options.deferStart) adb('shell', 'am', 'start', '-n', `${applicationId}/com.laiwan_react_native.MainActivity`);
   if (options.gameDriver) {
     const driver = path.resolve('.ttyctl/android-driver');
     const source = JSON.parse(readFileSync(path.join(driver, 'source.json'), 'utf8'));
-    if (source.revision !== '39e3553a4f283a41134d75d7e404484bd9e6865a' || source.patch !== 5) throw new Error('原生动画驱动构建身份无效。');
+    if (source.revision !== '39e3553a4f283a41134d75d7e404484bd9e6865a' || source.patch !== 6) throw new Error('原生动画驱动构建身份无效。');
     for (const pkg of ['com.microsoft.playwright.androiddriver.test', 'com.microsoft.playwright.androiddriver']) {
       if (adb('shell', 'pm', 'list', 'packages', pkg).includes(`package:${pkg}`)) adb('uninstall', pkg);
     }

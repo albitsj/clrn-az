@@ -65,7 +65,7 @@ const patched = source
               // 先采集真实位图，再压缩传输，避免 PNG 编码耗尽短时提示的显示时间。
               java.util.ArrayList<android.graphics.Bitmap> bitmaps = new java.util.ArrayList<>();
               JSONArray frames = new JSONArray();
-              long deadline = android.os.SystemClock.uptimeMillis() + 3000;
+              long deadline = android.os.SystemClock.uptimeMillis() + params.optInt("waitMs", 3000);
               long firstFrame = 0;
               try {
                 while (android.os.SystemClock.uptimeMillis() < deadline && bitmaps.size() < 8) {
@@ -124,5 +124,5 @@ const output = path.resolve('.ttyctl/android-driver');
 mkdirSync(output, { recursive: true });
 copyFileSync(path.join(directory, 'app/build/outputs/apk/debug/app-debug.apk'), path.join(output, 'android-driver-target.apk'));
 copyFileSync(path.join(directory, 'app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk'), path.join(output, 'android-driver.apk'));
-writeFileSync(path.join(output, 'source.json'), JSON.stringify({ revision, patch: 5 }));
+writeFileSync(path.join(output, 'source.json'), JSON.stringify({ revision, patch: 6 }));
 console.log('原生控件驱动已构建，应用画面和动画保持原样。');
