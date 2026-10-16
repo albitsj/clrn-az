@@ -152,6 +152,8 @@ test('private room invite sheet slides into and out of the Android screen', asyn
       await tap(device, 'personal-house-create');
       await gameReady(device, 'copy-house-number-button');
       const button = await gameReady(device, 'invite-friends-button');
+      // 进入私人房时系统会显示房号剪贴板预览；等其退场，避免把系统浮层录入应用基准。
+      await new Promise(resolve => setTimeout(resolve, 3000));
       /** 从私人房详情的实际按钮打开分享应用抽屉。 */
       const pressInvite = () => adb('shell', 'input', 'tap',
         String(Math.round(button.bounds.x + button.bounds.width / 2)),
