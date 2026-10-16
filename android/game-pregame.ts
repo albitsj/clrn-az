@@ -1,4 +1,5 @@
 import type { AndroidDevice } from 'playwright';
+import { setTimeout } from 'node:timers/promises';
 import { expect, type TestInfo } from '@playwright/test';
 import { gameTap as tap, gameReady, gameGone, gameNodes } from './game-controls';
 import { adb } from './device';
@@ -111,7 +112,12 @@ export async function gamePreGame(device: AndroidDevice, game: 'texas-holdem' | 
       { x: 130, y: 330, width: 460, height: 610 }, animationInfo);
     await gameReady(device, 'game-rule-popup');
     await animateGamePanel(device, game, 'game-rule', 'game-rule-popup-close-button',
-      { x: 130, y: 330, width: 460, height: 610 }, animationInfo, 'exit');
+      { x: 130, y: 330, width: 460, height: 610 }, animationInfo, 'exit', 'motionFrames', [], async () => {
+        // 背景房间连接提示可能在面板退场后出现；终点须等它确实消失。
+        await setTimeout(1_000);
+        await expect.poll(async () => (await gameNodes(device)).some(node => /Connecting\.\.\./.test(node.text || '')),
+          { timeout: 30_000 }).toBe(false);
+      });
     await gameGone(device, 'game-rule-popup');
   }
   for (const [state, ready, close] of [
