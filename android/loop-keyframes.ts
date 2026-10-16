@@ -65,9 +65,10 @@ export async function captureLoopKeyframes(device: AndroidDevice, name: string, 
  * @param name - 具体动画名称。
  * @param testInfo - Playwright 快照与报告。
  * @param regions - 每个独立运动控件的完整可见范围。
+ * @param distanceLimit - 随机图案循环的允许色差，固定外观动画使用默认值。
  */
 export async function captureMovingKeyframes(device: AndroidDevice, name: string, testInfo: TestInfo,
-  regions: ScreenshotBounds[]): Promise<void> {
+  regions: ScreenshotBounds[], distanceLimit = 18): Promise<void> {
   expect(regions.length).toBeGreaterThan(0);
   const implementation = (device as unknown as { _connection: { toImpl(device: AndroidDevice): {
     _send(method: string): Promise<NativeFrame[]> } } })._connection.toImpl(device);
@@ -87,7 +88,7 @@ export async function captureMovingKeyframes(device: AndroidDevice, name: string
       else {
         const reference = readFileSync(testInfo.snapshotPath(file));
         expect(Math.min(...frames.map(frame => frameColorDistance(frame, reference))),
-          `${name} 第 ${index + 1} 个控件的${phase}相位须匹配基准`).toBeLessThanOrEqual(18);
+          `${name} 第 ${index + 1} 个控件的${phase}相位须匹配基准`).toBeLessThanOrEqual(distanceLimit);
       }
     }
   }

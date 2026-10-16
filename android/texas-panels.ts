@@ -25,11 +25,11 @@ export async function texasPanels(context: TexasContext): Promise<void> {
   // 仅向专用模拟器授权；界面测试不录制或发送真实音频。
   adb('shell', 'pm', 'grant', applicationId, 'android.permission.RECORD_AUDIO');
   await animateGamePanel(device, 'texas-holdem', 'voice', 'texas-holdem-voice-button',
-    { x: 0, y: 780, width: 720, height: 500 }, animationInfo);
+    { x: 220, y: 835, width: 280, height: 340 }, animationInfo);
   await gameReady(device, 'in-game-audio-root-container');
   await capture('voice');
   await animateGamePanel(device, 'texas-holdem', 'voice', 'in-game-audio-popup-close',
-    { x: 0, y: 780, width: 720, height: 500 }, animationInfo, 'exit');
+    { x: 220, y: 835, width: 280, height: 340 }, animationInfo, 'exit');
   await gameGone(device, 'in-game-audio-root-container');
   await gameTap(device, 'texas-holdem-leaderboard-button');
   await gameReady(device, 'public-leader-board-item-round-0', '10');
@@ -82,7 +82,7 @@ export async function texasPanels(context: TexasContext): Promise<void> {
     { timeout: 30_000 }).toContain('Player1: Good hand!');
   await capture('chat_history');
   await animateGamePanel(device, 'texas-holdem', 'chat-actions', 'in-game-chat-report-button-0',
-    { x: 0, y: 780, width: 720, height: 500 }, animationInfo);
+    { x: 60, y: 800, width: 600, height: 390 }, animationInfo);
   await gameReady(device, 'in_game_report_message_component');
   await capture('chat_actions');
   await animateGamePanel(device, 'texas-holdem', 'chat-report', 'report_item_report',
@@ -92,7 +92,7 @@ export async function texasPanels(context: TexasContext): Promise<void> {
   await capture('chat_report');
   await closeGameMask(device, 'report-popup-title');
   await animateGamePanel(device, 'texas-holdem', 'chat-actions-return', 'in-game-chat-report-button-0',
-    { x: 0, y: 780, width: 720, height: 500 }, animationInfo);
+    { x: 60, y: 800, width: 600, height: 390 }, animationInfo);
   await animateGamePanel(device, 'texas-holdem', 'chat-block', 'report_item_block',
     { x: 20, y: 410, width: 680, height: 470 }, animationInfo);
   await gameReady(device, 'BlockPlayerConfirmPopup:title');

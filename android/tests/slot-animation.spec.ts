@@ -26,7 +26,7 @@ test('all three native slot reels and reward types animate from real spin respon
       await verifyLoopAnimation(device, 'hall-slot-banner', testInfo,
         [{ x: 380, y: 360, width: 256, height: 67 }], [], { timeoutMs: 8_000 });
       await captureMovingKeyframes(device, 'hall-slot-banner', testInfo,
-        [{ x: 380, y: 360, width: 256, height: 67 }]);
+        [{ x: 380, y: 360, width: 256, height: 67 }], 32);
       /** 从登录大厅的真实横幅打开老虎机窗口。 */
       const pressBanner = () => adb('shell', 'input', 'tap',
         String(Math.round(banner.bounds.x + banner.bounds.width / 2)),
