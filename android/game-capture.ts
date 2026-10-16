@@ -9,6 +9,7 @@ import { foregroundPanels, visibleMasks, networkStatusMask, countdownMask } from
 import { captureToast } from './game-transient';
 import { captureChallengeAnimation } from './game-animation';
 import { verifyLoopAnimation } from './loop-animation';
+import { captureMovingKeyframes } from './loop-keyframes';
 
 /**
  * 使原生控件边界及绘制余量落到实际截图的整数像素。
@@ -109,9 +110,10 @@ export async function captureGame(device: AndroidDevice, name: string, testInfo:
     const marker = name.includes('-zhajinhua-') ? 'zhajinhua-active-countdown' : 'texas-holdem-active-countdown';
     const countdown = nodes.filter(node => node.res === marker);
     expect(countdown, '对手行动时必须出现原生倒计时').toHaveLength(1);
-    await verifyLoopAnimation(device, name, testInfo,
-      countdown.map(node => pixelBounds({ x: node.bounds.x - 2, y: node.bounds.y - 2,
-        width: node.bounds.width + 4, height: node.bounds.height + 4 })), masks);
+    const regions = countdown.map(node => pixelBounds({ x: node.bounds.x - 2, y: node.bounds.y - 2,
+      width: node.bounds.width + 4, height: node.bounds.height + 4 }));
+    await verifyLoopAnimation(device, name, testInfo, regions, masks);
+    if (name.startsWith('en-')) await captureMovingKeyframes(device, `${name}-countdown`, testInfo, regions);
   }
   if (triggerToast) {
     const expectedText = await triggerToast();

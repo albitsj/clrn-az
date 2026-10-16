@@ -57,7 +57,7 @@ async function closeAnimatedGameMask(device: AndroidDevice, game: 'texas-holdem'
   name: string, marker: string, region: ScreenshotBounds, testInfo?: TestInfo): Promise<void> {
   if (!testInfo) { await closeGameMask(device, marker); return; }
   await captureNativeTransition(device, `${game}-${name}-exit`, testInfo, region,
-    () => closeGameMask(device, marker));
+    () => closeGameMask(device, marker), [], [], 600);
 }
 
 /**

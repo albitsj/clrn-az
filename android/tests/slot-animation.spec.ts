@@ -6,6 +6,7 @@ import { signIn, navigateScenario } from '../navigation';
 import { androidScenarios } from '../scenarios';
 import { captureNativeTransition } from '../animation-transition';
 import { verifyLoopAnimation } from '../loop-animation';
+import { captureMovingKeyframes } from '../loop-keyframes';
 
 test('all three native slot reels and reward types animate from real spin responses', async ({}, testInfo) => {
   test.skip(!['all', 'social'].includes(process.env.ANDROID_GROUP || 'all')
@@ -24,6 +25,8 @@ test('all three native slot reels and reward types animate from real spin respon
       // 发布版会自动旋转横幅里的三个小滚轮；与主老虎机分别验证真实屏幕变化。
       await verifyLoopAnimation(device, 'hall-slot-banner', testInfo,
         [{ x: 380, y: 360, width: 256, height: 67 }], [], { timeoutMs: 8_000 });
+      await captureMovingKeyframes(device, 'hall-slot-banner', testInfo,
+        [{ x: 380, y: 360, width: 256, height: 67 }]);
       /** 从登录大厅的真实横幅打开老虎机窗口。 */
       const pressBanner = () => adb('shell', 'input', 'tap',
         String(Math.round(banner.bounds.x + banner.bounds.width / 2)),

@@ -10,7 +10,7 @@ import { translateCaret } from './caret-mask';
 import { gameTapText, restoreTexas, texasEvents, type TexasContext } from './texas-support';
 import { animateGamePanel } from './game-panel-animation';
 import { captureNativeTransition, captureTransientTransition } from './animation-transition';
-import { verifyLoopAnimation } from './loop-animation';
+import { captureMovingKeyframes } from './loop-keyframes';
 
 /**
  * 复用 Web 的二十一个面板、聊天、带入审核和手牌展示状态。
@@ -68,9 +68,8 @@ export async function texasPanels(context: TexasContext): Promise<void> {
   await gameReady(device, 'barrage_text', 'Player1: Good hand!');
   if (animationInfo) {
     const barrage = await gameReady(device, 'barrage_text', 'Player1: Good hand!');
-    await verifyLoopAnimation(device, 'texas-barrage', animationInfo,
-      [{ x: 0, y: barrage.bounds.y - 8, width: 720, height: barrage.bounds.height + 16 }], [],
-      { timeoutMs: 2_000 });
+    await captureMovingKeyframes(device, 'texas-barrage', animationInfo,
+      [{ x: 0, y: barrage.bounds.y - 8, width: 720, height: barrage.bounds.height + 16 }]);
   }
   await gameTap(device, 'texas-holdem-chat-button');
   await gameTap(device, '-in-game-chat-message-tab');

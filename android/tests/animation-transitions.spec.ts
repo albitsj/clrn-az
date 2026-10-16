@@ -10,6 +10,7 @@ import { verifyLoopAnimation } from '../loop-animation';
 import { gameScreenshot } from '../game-controls';
 import { gameReady } from '../game-controls';
 import { waitAbsent } from '../native-state';
+import { captureMovingKeyframes } from '../loop-keyframes';
 
 test('guest search confirmation animates into and out of the Android screen', async ({}, testInfo) => {
   test.skip(!['all', 'guest'].includes(process.env.ANDROID_GROUP || 'all')
@@ -64,6 +65,7 @@ test('hall matching spinner animates while the real waiting dialog is visible', 
       const capture = () => gameScreenshot(device!);
       await verifyLoopAnimation(device, 'en-hall-matching', testInfo, [spinner], masks,
         { takeScreenshot: capture, timeoutMs: 4_000 });
+      await captureMovingKeyframes(device, 'hall-matching-spinner', testInfo, [spinner]);
       await compareScreenshot(device, 'en-hall-matching', testInfo, masks, undefined, capture);
       await tap(device, 'quick-start-room-cancel');
       await waitAbsent(device, { res: 'game-matching-loading-view' });

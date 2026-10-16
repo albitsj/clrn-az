@@ -90,10 +90,12 @@ export async function zhajinhuaGameplay(device: AndroidDevice, proxy: Mitmproxy,
   await send(restoreTable(self, false, true));
   await gameReady(device, 'zhajinhua-operation-accurate-bet-button');
   await animateGamePanel(device, 'zhajinhua', 'accurate-bet', 'zhajinhua-operation-accurate-bet-button',
-    { x: 115, y: 350, width: 490, height: 570 }, animationInfo);
+    { x: 150, y: 400, width: 430, height: 480 }, animationInfo);
   await gameReady(device, 'accurate-bet-popup-container');
   await capture('accurate_raise');
-  await closeGameMask(device, 'accurate-bet-popup-container');
+  if (animationInfo) await captureNativeTransition(device, 'zhajinhua-accurate-bet-exit', animationInfo,
+    { x: 150, y: 400, width: 430, height: 480 }, () => closeGameMask(device, 'accurate-bet-popup-container'));
+  else await closeGameMask(device, 'accurate-bet-popup-container');
   await gameTap(device, 'zhajinhua-operation-button-battle');
   await expect.poll(async () => (await gameNodes(device)).filter(node => node.res === 'challenge_player_selector').length,
     { timeout: 30_000 }).toBe(4);
