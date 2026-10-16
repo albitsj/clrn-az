@@ -173,6 +173,11 @@ export async function texasGameplay(device: AndroidDevice, proxy: Mitmproxy, roo
     await restore('river', true);
     const actionPlayer = REPLAY_PLAYER_IDS[1];
     for (const action of ['call', 'raise', 'check', 'fold'] as const) {
+      if (action !== 'call') {
+        await send(events([{ event: 'new_game', game_id: 'visual-fixed-game',
+          settings: { small_blind: 1, big_blind: 2, ante: 0 } }]));
+        await restore('river', true);
+      }
       await send(events([{ event: 'switch_player', player_id: actionPlayer,
         remain_operating_seconds: 12 }]));
       /** 从本轮指定玩家读取实际可见动作，忽略其他座位仍保留的操作标记。 */
@@ -181,12 +186,11 @@ export async function texasGameplay(device: AndroidDevice, proxy: Mitmproxy, roo
         return player && flattenNodes(player).some(node => node.res === `texas-holdem-player-action-${action}`);
       };
       await expect.poll(playerAction, { timeout: 30_000 }).toBe(false);
-      const timer = (await gameNodes(device)).find(node => node.res === 'texas-holdem-active-countdown');
-      expect(timer, `${action} 前对手操作倒计时必须可见`).toBeDefined();
+      const timer = await gameReady(device, 'texas-holdem-active-countdown');
       await captureNativeTransition(device, `texas-player-action-${action}`, animationInfo,
         { x: 80, y: 465, width: 115, height: 155 },
         () => send(events([{ event: action, player_id: actionPlayer, amount: 40, stack: 920 }])),
-        [{ ...timer!.bounds, reason: '玩家动作期间独立运行的操作倒计时' }]);
+        [{ ...timer.bounds, reason: '玩家动作期间独立运行的操作倒计时' }]);
       await expect.poll(playerAction, { timeout: 30_000 }).toBe(true);
     }
   }
