@@ -183,8 +183,6 @@ export async function texasGameplay(device: AndroidDevice, proxy: Mitmproxy, roo
     const actionPlayer = REPLAY_PLAYER_IDS[1];
     for (const action of ['call', 'raise', 'check', 'fold'] as const) {
       if (action !== 'call') {
-        await send(events([{ event: 'new_game', game_id: 'visual-fixed-game',
-          settings: { small_blind: 1, big_blind: 2, ante: 0 } }]));
         await restore('river', true);
       }
       await send(events([{ event: 'switch_player', player_id: actionPlayer,
