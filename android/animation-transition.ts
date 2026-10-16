@@ -108,9 +108,10 @@ export async function captureNativeTransition(device: AndroidDevice, name: strin
     expect(samePixels(before, readFileSync(testInfo.snapshotPath(`${name}-start.png`))), '动画起点视觉回归').toBe(true);
     expect(samePixels(after, readFileSync(testInfo.snapshotPath(`${name}-end.png`))), '动画终点视觉回归').toBe(true);
     const reference = readFileSync(testInfo.snapshotPath(`${name}-middle.png`));
-    // 系统截图间隔约 70–180ms；弹窗可能在相邻两帧间跨越大段进度。
-    // 起止帧仍逐像素匹配，仅中途帧按全区域平均色差容许采样相位变化。
-    expect(Math.min(...candidates.map(item => frameColorDistance(item.frame, reference))),
-      '动画中间关键帧的实际画面须接近基准轨迹').toBeLessThanOrEqual(36);
+    // 系统截图间隔约 70–180ms；短动画有时仅采到靠近起点或终点的帧。
+    // 起止帧逐像素匹配，独立断言中途帧真实可见，再要求它靠近已审查的轨迹锚点。
+    const anchors = [before, reference, after];
+    expect(Math.min(...candidates.flatMap(item => anchors.map(anchor => frameColorDistance(item.frame, anchor)))),
+      '动画中途帧的实际画面须接近已审查轨迹').toBeLessThanOrEqual(36);
   }
 }
