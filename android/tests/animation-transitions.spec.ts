@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 import type { AndroidDevice } from 'playwright';
 import { adb, applicationId, compareScreenshot, launchApplication, waitForHall } from '../device';
 import { captureNativeTransition } from '../animation-transition';
+import { verifyLaunchArtwork } from '../launch-artwork';
 import { withAndroidProxy } from '../proxy';
 import { signIn, navigateScenario, tap, reveal } from '../navigation';
 import { androidScenarios } from '../scenarios';
@@ -12,7 +13,7 @@ import { gameReady } from '../game-controls';
 import { waitAbsent } from '../native-state';
 import { captureMovingKeyframes, framePaletteDistance } from '../loop-keyframes';
 
-test('native launch branding and staging notice animate on a real app start', async ({}, testInfo) => {
+test('native launch artwork and staging notice appear on a real app start', async ({}, testInfo) => {
   test.skip(!['all', 'guest'].includes(process.env.ANDROID_GROUP || 'all')
     || (process.env.ANDROID_LOCALE || 'en') !== 'en', '启动动画只在英文游客任务采集一次');
   test.setTimeout(420_000);
@@ -36,7 +37,7 @@ test('native launch branding and staging notice animate on a real app start', as
         [{ x: 70, y: 220, width: 60, height: 110, reason: 'Pixel Launcher 时钟图标持续走针' }], [
           { x: 110, y: 170, width: 500, height: 145 },
           { x: 110, y: 360, width: 500, height: 550 },
-        ], 1_500, 'launchFrames');
+        ], 1_500, 'launchFrames', verifyLaunchArtwork);
       await device.wait({ res: 'staging-confirmation-input' });
     } finally { await device?.close(); }
   });

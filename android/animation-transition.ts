@@ -35,11 +35,13 @@ export function frameColorDistance(left: Buffer, right: Buffer): number {
  * @param requiredRegions - 同一效果中必须分别运动的可见子区域。
  * @param settleMs - 触发后仍在滚动的长动画，采样结束后额外等待完成。
  * @param samplingMethod - 启动页或延迟出现的弹窗使用持续取样命令。
+ * @param inspectFrames - 对同一组原生帧中的独立子动画追加视觉断言。
  */
 export async function captureNativeTransition(device: AndroidDevice, name: string, testInfo: TestInfo,
   region: ScreenshotBounds, trigger: () => unknown, masks: ScreenshotMask[] = [],
   requiredRegions: ScreenshotBounds[] = [], settleMs = 0,
-  samplingMethod: 'motionFrames' | 'launchFrames' = 'motionFrames'): Promise<void> {
+  samplingMethod: 'motionFrames' | 'launchFrames' = 'motionFrames',
+  inspectFrames?: (frames: Buffer[], testInfo: TestInfo) => Promise<void>): Promise<void> {
   /**
    * 截出固定的动画绘制区域。
    * @param bytes - 原生完整屏幕 PNG。
@@ -62,6 +64,7 @@ export async function captureNativeTransition(device: AndroidDevice, name: strin
   } finally { timeout.abort(); }
   expect(frames.length, '原生驱动至少采集三帧').toBeGreaterThanOrEqual(3);
   const originals = frames.map(frame => Buffer.from(frame.png, 'base64'));
+  if (inspectFrames) await inspectFrames(originals, testInfo);
   const timeline = originals.map(crop);
   if (settleMs) await setTimeout(settleMs);
   const after = crop(await gameScreenshot(device));
