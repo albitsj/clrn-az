@@ -19,3 +19,6 @@ npx playwright test --config android/playwright.config.ts --list
 运行真实 APK、更新截图与 CI 配置见 [Android 测试说明](android/README.md)。本地执行需独立测试账号；已有本机池可通过 `CLRN_TEST_ACCOUNT_POOL` 指向同一文件并用 `node scripts/with-test-account.mjs -- node android/run-visual.mjs` 获取本机锁。禁止借用 CI 账号。
 
 Actions 只需 `CLRN_CI_TEST_ACCOUNTS_V2`（安卓新 70 个账号）和 `TESTING_API_TOKEN`。APK 仍存放在 CLRN，两个测试仓库都由 `deployments/staging.json` 的提交触发，不配置 `CLRN_AZ_DISPATCH_TOKEN`。
+
+账号分配器在独占锁内、启动模拟器测试前，将当前任务账号设置为 10000 金币，并通过真实钱包接口回读核对。
+持续集成和本机共用同一准备逻辑；失败时停止测试，本机释放账号锁。详见 [余额准备](android/README.md#测试开始前的金币准备)。

@@ -14,6 +14,25 @@ Web 另外有 5 个下载帮助场景。当前 Staging APK 的发布渠道为 `d
 
 固定环境为 Android API 35、720×1280、320 dpi、字体比例 1、英文系统。GitHub Actions 使用 Ubuntu 和 x86_64 Google APIs 模拟器。正式基准应在相同 CI 环境生成并人工检查；本机 ARM 模拟器适合验证操作流程，渲染差异不能直接当作应用回归。
 
+## 测试开始前的金币准备
+
+持续集成在账号独占锁内调用 `scripts/configure-ci-account.mjs`，本机通过
+`node scripts/with-test-account.mjs -- node android/run-visual.mjs` 启动。
+两者共用 `scripts/prepare-test-account.mjs`：先通过普通登录核实本任务账号，
+调用 staging 的 `POST /public/v1/wallet/{用户ID}/set_balance/testing` 将金币设为 **10000**，
+再用真实钱包接口回读确认，之后才启动原生测试。
+每次设置固定余额，不累加，不修改其他任务或 Web 分区账号；牌桌测试现有的补钻逻辑保持原样。
+
+`TESTING_API_TOKEN` 仅在 Node 中发送给余额设置接口，不进入设备或测试代理。
+持续集成缺少 Secret、身份不符、设置或回读失败时立即停止；本机失败仍释放账号锁。
+本机可以配置同名环境变量，也可以复用相邻 `goplay_staging_auto_stack` 中的既有 staging Secret。
+应用仍执行完整初始化和真实界面登录，既有展示余额夹具保持原值；本人牌桌资料展示真实的 10000 金币。
+同一账号锁内还会核对私人房屋为空。只恢复本人房屋中、本人创建、名称为 `TestRoom` 或
+`E2E私局` 加时间戳、无入座者且从未开始计时的非官方测试房间；删除前复查详情，删除后回读为空。
+未知房间或使用中的房间会使准备失败。正常用例仍在收尾删除本次创建的 UUID，清理请求使用固定 staging 入口。
+低余额专项案例需在通用准备之后显式设置所需余额，并在结束后恢复 10000。
+直接调用 `android/run-visual.mjs` 不经过账号准备，真实登录测试应使用账号分配器入口。
+
 ## 下载与本机执行
 
 需要 Node.js 24 或更高版本、已认证的 `gh`、Android SDK 的 `adb` 和一个专用模拟器。把 SDK 的 `platform-tools` 加入 `PATH`。脚本要求显式指定模拟器编号，拒绝操作实体手机；每次运行会卸载并重新安装专用模拟器中的 `com.ac.laiwanDev` 测试应用。
@@ -24,7 +43,7 @@ python3 -m venv e2e/.venv
 e2e/.venv/bin/python -m pip install -r e2e/mitmproxy/requirements.txt
 npx playwright install android
 node android/download-release.mjs
-ANDROID_SERIAL=emulator-5554 ANDROID_GROUP=guest ANDROID_LOCALE=en node android/run-visual.mjs
+ANDROID_SERIAL=emulator-5554 ANDROID_GROUP=guest ANDROID_LOCALE=en node scripts/with-test-account.mjs -- node android/run-visual.mjs
 ```
 
 默认扫描 `android-staging-<构建编号>-<提交前12位>` 格式的已发布 Android Staging Releases（包括 prerelease），下载 `android-staging.apk` 并选最新版本。指定版本重现问题（替换为实际标签）：
@@ -49,6 +68,10 @@ APK 与构建信息继续发布到 **kevinanew/clrn 的公开 Release**，下载
 
 ## 更新基准
 
+测试前统一准备 10000 金币后，三语德州本人资料图来自全部通过的
+[reference 38775872385](https://github.com/albitsj/clrn-az/actions/runs/38775872385)。
+逐图核对后只接收这三张图片，金币由 0 改为 10000，其余页面基准保持原样。
+
 正式基准必须来自固定的 x86_64 CI 环境，并逐图检查。reference 产物会同时携带仓库已有图片，因此只能接收该轮实际通过的场景，不能将整个目录直接覆盖到仓库。更新后必须另跑 compare；基准生成成功不代表回归比较通过。
 
 应用修复集中在 [laiwan_react_native #7019](https://github.com/kevinanew/laiwan_react_native/pull/7019)，基准扩充及验证记录见 [clrn #25](https://github.com/kevinanew/clrn/pull/25)，其中注明测试提交、APK Release 和 CI 运行。未执行或失败的用例不计入通过数量。
@@ -68,7 +91,7 @@ gh workflow run android-visual.yml --repo albitsj/clrn-az \
 本机调试可显式生成参考图，保存在被 Git 忽略的 `android/snapshots/local/`，不覆盖 CI 正式基准：
 
 ```sh
-ANDROID_SERIAL=emulator-5554 ANDROID_VISUAL_MODE=reference node android/run-visual.mjs
+ANDROID_SERIAL=emulator-5554 ANDROID_VISUAL_MODE=reference node scripts/with-test-account.mjs -- node android/run-visual.mjs
 ```
 
 牌桌组在 JDK 17 环境构建固定 Playwright 1.61.1 官方提交的原生驱动，修正持续动画时的空闲等待、无障碍树空节点遍历，并增加直接读取目标节点的命令，避免短时提示消失前反复序列化整棵牌桌树。CI 自动读取并校验源码；本机先将官方提交 `39e3553a4f283a41134d75d7e404484bd9e6865a` 检出到 `.ttyctl/playwright-driver-source`，设置 `ANDROID_HOME` 后运行 `node android/build-driver.mjs`。补丁和 APK 均位于忽略目录，不修改被测应用或游戏时钟。
