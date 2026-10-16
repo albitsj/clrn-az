@@ -5,6 +5,8 @@ import { adb } from './device';
 import { animateGamePanel } from './game-panel-animation';
 import presentation from '../visual/fixtures/account-presentation.json';
 import { captureMovingKeyframes } from './loop-keyframes';
+import { captureNativeTransition } from './animation-transition';
+import type { ScreenshotBounds } from './screenshot';
 
 
 type Capture = (state: string) => Promise<void>;
@@ -43,6 +45,22 @@ export async function closeGameMask(device: AndroidDevice, marker: string): Prom
 }
 
 /**
+ * 通过真实遮罩关闭牌桌面板，并采样其退场帧。
+ * @param device - 专用模拟器连接。
+ * @param game - 当前玩法。
+ * @param name - 面板名称。
+ * @param marker - 当前面板标记。
+ * @param region - 动画绘制范围。
+ * @param testInfo - 英文动画关键帧报告。
+ */
+async function closeAnimatedGameMask(device: AndroidDevice, game: 'texas-holdem' | 'zhajinhua',
+  name: string, marker: string, region: ScreenshotBounds, testInfo?: TestInfo): Promise<void> {
+  if (!testInfo) { await closeGameMask(device, marker); return; }
+  await captureNativeTransition(device, `${game}-${name}-exit`, testInfo, region,
+    () => closeGameMask(device, marker));
+}
+
+/**
  * 共用两种玩法的开局前操作，严格按 Web 状态清单采集。
  * @param device - 专用模拟器连接。
  * @param game - 本轮玩法。
@@ -68,8 +86,12 @@ export async function gamePreGame(device: AndroidDevice, game: 'texas-holdem' | 
     { x: 110, y: 400, width: 440, height: 600 }, animationInfo);
   await gameReady(device, 'card-rank-list');
   await capture('card_rank');
-  if ((await gameNodes(device)).some(node => node.res === 'card-rank-popup-close')) await tap(device, 'card-rank-popup-close');
-  else await closeGameMask(device, 'card-rank-list');
+  if ((await gameNodes(device)).some(node => node.res === 'card-rank-popup-close')) {
+    await animateGamePanel(device, game, 'card-rank', 'card-rank-popup-close',
+      { x: 110, y: 400, width: 440, height: 600 }, animationInfo, 'exit');
+  }
+  else await closeAnimatedGameMask(device, game, 'card-rank', 'card-rank-list',
+    { x: 110, y: 400, width: 440, height: 600 }, animationInfo);
   for (const [state, ready, close] of [
     ['theme', 'game-settings-card-theme-simple', 'game-settings-close-button'],
     ['settings', 'game-settings-popup-container', 'game-settings-close-button'],
@@ -90,7 +112,8 @@ export async function gamePreGame(device: AndroidDevice, game: 'texas-holdem' | 
         { timeout: 45_000 }).toBeGreaterThan(0);
     }
     await capture(state);
-    await tap(device, close);
+    await animateGamePanel(device, game, state, close,
+      { x: 110, y: 360, width: 480, height: 500 }, animationInfo, 'exit');
     await gameGone(device, ready);
   }
   await animateGamePanel(device, game, 'leaderboard',
@@ -99,27 +122,39 @@ export async function gamePreGame(device: AndroidDevice, game: 'texas-holdem' | 
   await gameReady(device, 'public-leader-board-empty');
   await gameGone(device, 'public-leader-board-loading');
   await capture('leaderboard');
-  await closeGameMask(device, 'public-leader-board-container');
+  await closeAnimatedGameMask(device, game, 'leaderboard', 'public-leader-board-container',
+    { x: 110, y: 400, width: 470, height: 450 }, animationInfo);
   await animateGamePanel(device, game, 'game-record', 'game-record-button',
     { x: 150, y: 400, width: 440, height: 450 }, animationInfo);
   await gameReady(device, 'review-board-description-text');
   await capture('game_record');
   // 战绩从右侧展开；说明文字只占面板中间，不能用其边界判断遮罩位置。
   const reviewMask = (await gameReady(device, 'screen-mask-touch-to-close')).bounds;
-  adb('shell', 'input', 'tap', String(Math.round(reviewMask.x + 8)), String(Math.round(reviewMask.y + 80)));
+  /** 点击侧栏外的遮罩，触发真实侧滑退出。 */
+  const closeRecord = () => adb('shell', 'input', 'tap', String(Math.round(reviewMask.x + 8)),
+    String(Math.round(reviewMask.y + 80)));
+  if (animationInfo) await captureNativeTransition(device, `${game}-game-record-exit`, animationInfo,
+    { x: 150, y: 400, width: 440, height: 450 }, closeRecord);
+  else closeRecord();
   await gameGone(device, 'review-board-description-text');
   await animateGamePanel(device, game, 'chat', `${game}-chat-button`,
     { x: 110, y: 860, width: 140, height: 310 }, animationInfo);
   await gameReady(device, 'in-game-chat-container');
   await capture('chat');
   const chat = (await gameReady(device, 'in-game-chat-mask')).bounds;
-  adb('shell', 'input', 'tap', String(Math.round(chat.x + 8)), String(Math.round(chat.y + 80)));
+  /** 点击聊天抽屉外的真实遮罩。 */
+  const closeChat = () => adb('shell', 'input', 'tap', String(Math.round(chat.x + 8)),
+    String(Math.round(chat.y + 80)));
+  if (animationInfo) await captureNativeTransition(device, `${game}-chat-exit`, animationInfo,
+    { x: 110, y: 860, width: 140, height: 310 }, closeChat);
+  else closeChat();
   await gameGone(device, 'in-game-chat-container');
   await animateGamePanel(device, game, 'buy-in-applications', 'buy-in-application-button',
     { x: 110, y: 400, width: 470, height: 450 }, animationInfo);
   await gameReady(device, 'buy-in-application-no-requests');
   await capture('buy_in_applications');
-  await closeGameMask(device, 'buy-in-application-list');
+  await closeAnimatedGameMask(device, game, 'buy-in-applications', 'buy-in-application-list',
+    { x: 110, y: 400, width: 470, height: 450 }, animationInfo);
   if (game === 'texas-holdem') return;
   await captureGameThemes(device, capture);
 }

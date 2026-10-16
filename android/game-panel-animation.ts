@@ -13,14 +13,15 @@ import type { ScreenshotBounds } from './screenshot';
  * @param button - 实际可见的入口控件。
  * @param region - 不包含牌桌循环箭头的面板可见区域。
  * @param testInfo - 仅英文牌桌动画场景采集关键帧。
+ * @param phase - 入场或退场。
  */
 export async function animateGamePanel(device: AndroidDevice, game: 'texas-holdem' | 'zhajinhua', name: string,
-  button: string, region: ScreenshotBounds, testInfo?: TestInfo): Promise<void> {
+  button: string, region: ScreenshotBounds, testInfo?: TestInfo, phase: 'enter' | 'exit' = 'enter'): Promise<void> {
   if (!testInfo) { await gameTap(device, button); return; }
   const { bounds } = await gameReady(device, button);
   /** 通过独立 ADB 连接点击真实牌桌控件，使驱动同时截取每一帧。 */
   const press = () => adb('shell', 'input', 'tap',
     String(Math.round(bounds.x + bounds.width / 2)),
     String(Math.round(bounds.y + bounds.height / 2)));
-  await captureNativeTransition(device, `${game}-${name}-enter`, testInfo, region, press);
+  await captureNativeTransition(device, `${game}-${name}-${phase}`, testInfo, region, press);
 }
