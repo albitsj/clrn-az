@@ -24,12 +24,17 @@ export async function texasPanels(context: TexasContext): Promise<void> {
   await gameGone(device, 'game-settings-popup-container');
   // 仅向专用模拟器授权；界面测试不录制或发送真实音频。
   adb('shell', 'pm', 'grant', applicationId, 'android.permission.RECORD_AUDIO');
+  // 首次打开需完成 Android 权限服务初始化；第二次仍由真实按钮触发相同入场动画。
+  await gameTap(device, 'texas-holdem-voice-button');
+  await gameReady(device, 'in-game-audio-root-container');
+  await gameTap(device, 'in-game-audio-popup-close');
+  await gameGone(device, 'in-game-audio-root-container');
   await animateGamePanel(device, 'texas-holdem', 'voice', 'texas-holdem-voice-button',
-    { x: 220, y: 835, width: 280, height: 340 }, animationInfo, 'enter', 'launchFrames');
+    { x: 220, y: 820, width: 280, height: 450 }, animationInfo);
   await gameReady(device, 'in-game-audio-root-container');
   await capture('voice');
   await animateGamePanel(device, 'texas-holdem', 'voice', 'in-game-audio-popup-close',
-    { x: 220, y: 835, width: 280, height: 340 }, animationInfo, 'exit');
+    { x: 220, y: 820, width: 280, height: 450 }, animationInfo, 'exit');
   await gameGone(device, 'in-game-audio-root-container');
   await gameTap(device, 'texas-holdem-leaderboard-button');
   await gameReady(device, 'public-leader-board-item-round-0', '10');
