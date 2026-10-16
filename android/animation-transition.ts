@@ -86,7 +86,8 @@ export async function captureNativeTransition(device: AndroidDevice, name: strin
   const candidates = timeline.map((frame, index) => ({ frame, index,
     progress: frameColorDistance(before, frame) / total,
     remaining: frameColorDistance(after, frame) / total }))
-    .filter(item => item.progress > 0.15 && item.remaining > 0.15);
+    .filter(item => item.progress > 0.08 && item.remaining > 0.08
+      && frameColorDistance(before, item.frame) > 1 && frameColorDistance(after, item.frame) > 1);
   await testInfo.attach(`${name}-progress`, {
     body: JSON.stringify({ total, frames: timeline.map(frame => frameColorDistance(before, frame) / total) }),
     contentType: 'application/json',

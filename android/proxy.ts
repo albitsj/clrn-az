@@ -50,10 +50,11 @@ function removeReverse(port: string): void {
  * @param matching - 隔离大厅匹配队列，只返回等待状态。
  * @param slot - 隔离本轮账号的老虎机旋转和奖励。
  * @param skeleton - 暂缓俱乐部详情响应，保留真实列表占位动画。
+ * @param invitable - 在私人房详情夹具中显示等待中的邀请入口。
  */
 export async function withAndroidProxy<T>(task: (proxy: Mitmproxy) => Promise<T>,
   records: boolean | 'texas-holdem' | 'zhajinhua' = false, matching = false, slot = false,
-  skeleton = false): Promise<T> {
+  skeleton = false, invitable = false): Promise<T> {
   const route = await visualNetworkRouter({ realPrivateRoom: typeof records === 'string', recordFixtures: records === true });
   const token = randomBytes(32).toString('hex');
   const server = createServer(async (request, response) => {
@@ -78,7 +79,7 @@ export async function withAndroidProxy<T>(task: (proxy: Mitmproxy) => Promise<T>
       addonPath: path.join(__dirname, 'proxy-addon.py'),
       environment: { ...process.env, ANDROID_RECORDS: String(records === true),
         ANDROID_GAME: typeof records === 'string' ? records : '', ANDROID_MATCHING: String(matching),
-        ANDROID_SLOT: String(slot), ANDROID_SKELETON: String(skeleton),
+        ANDROID_SLOT: String(slot), ANDROID_SKELETON: String(skeleton), ANDROID_INVITABLE: String(invitable),
         ANDROID_FIXTURE_TOKEN: token,
         ANDROID_FIXTURE_URL: `http://127.0.0.1:${address.port}/` },
       /**

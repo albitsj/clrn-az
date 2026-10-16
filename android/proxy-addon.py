@@ -36,6 +36,7 @@ class AndroidVisualProxy:
                                 'owner_id': 'visual-owner', 'member_count': 5,
                                 'created_at': '2026-01-01T00:00:00Z', 'admin_ids': [],
                                 'game_type': 'texas_holdem'} for index in (1, 2)]
+        self.invitable = os.environ.get('ANDROID_INVITABLE') == 'true'
         game_type = os.environ.get('ANDROID_GAME')
         if game_type in ('texas-holdem', 'zhajinhua'):
             directory = Path(__file__).resolve().parents[1] / 'visual/cases' / game_type / 'mitmproxy'
@@ -139,6 +140,20 @@ class AndroidVisualProxy:
 
     async def request(self, flow):
         path = urlsplit(flow.request.path).path
+        if self.invitable and path == '/v2/building/rooms' and flow.request.method == 'GET':
+            room = {'room_id': '00000000-0000-4000-8000-000000000099', 'room_name': 'TestRoom',
+                    'created_at': '2026-01-01T00:00:00Z', 'creator_id': 'visual-user-id',
+                    'building_id': 'visual-house-id', 'building_type': 'house', 'game_type': 'texas_holdem',
+                    'room_status': 'opening', 'timer_status': 'wait_for_timing',
+                    'remaining_seconds': 3600, 'booking_seconds': 3600, 'seat_occupied': 0,
+                    'options': {'game_version': {'type': 'texas_holdem', 'variant': 'normal',
+                                                 'buildNumber': 1, 'engineType': 'react_native'}},
+                    'game_config': {'currency': 'coin', 'small_blind': 1, 'big_blind': 2, 'ante': 0,
+                                    'minimum_buy_in': 100, 'seat_quantity': 9,
+                                    'variation': 'texas_holdem'}}
+            flow.response = http.Response.make(200, json.dumps({'ok': True, 'result': [room]}).encode(),
+                                               {'Content-Type': 'application/json'})
+            return
         if self.skeleton and flow.request.host == 'test-mitmproxy.invalid' and path == '/android/skeleton':
             if flow.request.headers.get('X-E2E-Control-Token') != os.environ['MITMPROXY_CONTROL_TOKEN']:
                 flow.response = http.Response.make(403, b'Forbidden')

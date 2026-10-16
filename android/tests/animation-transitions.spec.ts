@@ -8,6 +8,7 @@ import { androidScenarios } from '../scenarios';
 import { screenshotMasks } from '../screenshot';
 import { verifyLoopAnimation } from '../loop-animation';
 import { gameScreenshot } from '../game-controls';
+import { gameReady } from '../game-controls';
 import { waitAbsent } from '../native-state';
 
 test('guest search confirmation animates into and out of the Android screen', async ({}, testInfo) => {
@@ -147,14 +148,14 @@ test('private room invite sheet slides into and out of the Android screen', asyn
       const detail = androidScenarios('en', 'rooms').find(scenario => scenario.pageLabel === 'signed_in_private_room_detail');
       expect(detail).toBeDefined();
       await navigateScenario(device, detail!);
-      const button = await device.info({ res: 'invite-friends-button' });
+      const button = await gameReady(device, 'invite-friends-button');
       /** 从私人房详情的实际按钮打开分享应用抽屉。 */
       const pressInvite = () => adb('shell', 'input', 'tap',
         String(Math.round(button.bounds.x + button.bounds.width / 2)),
         String(Math.round(button.bounds.y + button.bounds.height / 2)));
       const region = { x: 0, y: 820, width: 720, height: 460 };
       await captureNativeTransition(device, 'invite-friends-enter', testInfo, region, pressInvite);
-      const cancel = await device.info({ res: 'invite-friend-popup-cancel-button' });
+      const cancel = await gameReady(device, 'invite-friend-popup-cancel-button');
       expect(cancel.bounds.width).toBeGreaterThan(0);
       /** 通过抽屉中的取消按钮触发同一组件的退场动画。 */
       const pressCancel = () => adb('shell', 'input', 'tap',
@@ -162,5 +163,5 @@ test('private room invite sheet slides into and out of the Android screen', asyn
         String(Math.round(cancel.bounds.y + cancel.bounds.height / 2)));
       await captureNativeTransition(device, 'invite-friends-exit', testInfo, region, pressCancel);
     } finally { await device?.close(); }
-  });
+  }, false, false, false, false, true);
 });
