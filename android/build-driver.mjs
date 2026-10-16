@@ -39,7 +39,29 @@ const patched = source
   }
 
   private static JSONObject tree(UiDevice device)`)
-  .replace('case "tree":', `case "transientFrames":
+  .replace('case "tree":', `case "motionFrames":
+              // 无须查询控件树，连续保存真实合成屏幕；JS 端在采样期间通过独立 ADB 点击。
+              java.util.ArrayList<android.graphics.Bitmap> motionBitmaps = new java.util.ArrayList<>();
+              JSONArray motionFrames = new JSONArray();
+              long motionDeadline = android.os.SystemClock.uptimeMillis() + 1800;
+              try {
+                while (android.os.SystemClock.uptimeMillis() < motionDeadline && motionBitmaps.size() < 16) {
+                  android.graphics.Bitmap motionFrame = InstrumentationRegistry.getInstrumentation().getUiAutomation().takeScreenshot();
+                  if (motionFrame == null) throw new IllegalStateException("Native motion screenshot returned no bitmap");
+                  motionBitmaps.add(motionFrame);
+                  motionFrames.put(new JSONObject().put("capturedAt", android.os.SystemClock.uptimeMillis()));
+                  android.os.SystemClock.sleep(45);
+                }
+                for (int index = 0; index < motionBitmaps.size(); index++) {
+                  java.io.ByteArrayOutputStream bytes = new java.io.ByteArrayOutputStream();
+                  if (!motionBitmaps.get(index).compress(android.graphics.Bitmap.CompressFormat.PNG, 100, bytes))
+                    throw new IllegalStateException("Native motion PNG encoding failed");
+                  motionFrames.getJSONObject(index).put("png", android.util.Base64.encodeToString(bytes.toByteArray(), android.util.Base64.NO_WRAP));
+                }
+                response.put("result", motionFrames);
+              } finally { for (android.graphics.Bitmap frame : motionBitmaps) frame.recycle(); }
+              break;
+            case "transientFrames":
               // 先采集真实位图，再压缩传输，避免 PNG 编码耗尽短时提示的显示时间。
               java.util.ArrayList<android.graphics.Bitmap> bitmaps = new java.util.ArrayList<>();
               JSONArray frames = new JSONArray();
@@ -91,7 +113,7 @@ const patched = source
               response.put("result", found == null ? JSONObject.NULL : found);
               break;
             case "tree":`);
-if (!['setWaitForIdleTimeout(100)', 'if (child != null)', 'case "marker":', 'case "screen":', 'case "transientFrames":']
+if (!['setWaitForIdleTimeout(100)', 'if (child != null)', 'case "marker":', 'case "screen":', 'case "transientFrames":', 'case "motionFrames":']
   .every(fragment => patched.includes(fragment))) throw new Error('原生驱动补丁没有完整应用。');
 writeFileSync(java, patched);
 const gradle = path.join(directory, 'build.gradle');
@@ -102,5 +124,5 @@ const output = path.resolve('.ttyctl/android-driver');
 mkdirSync(output, { recursive: true });
 copyFileSync(path.join(directory, 'app/build/outputs/apk/debug/app-debug.apk'), path.join(output, 'android-driver-target.apk'));
 copyFileSync(path.join(directory, 'app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk'), path.join(output, 'android-driver.apk'));
-writeFileSync(path.join(output, 'source.json'), JSON.stringify({ revision, patch: 3 }));
+writeFileSync(path.join(output, 'source.json'), JSON.stringify({ revision, patch: 4 }));
 console.log('原生控件驱动已构建，应用画面和动画保持原样。');

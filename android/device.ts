@@ -60,7 +60,7 @@ export async function launchApplication(options: { gameDriver?: boolean } = {}):
   if (options.gameDriver) {
     const driver = path.resolve('.ttyctl/android-driver');
     const source = JSON.parse(readFileSync(path.join(driver, 'source.json'), 'utf8'));
-    if (source.revision !== '39e3553a4f283a41134d75d7e404484bd9e6865a' || source.patch !== 3) throw new Error('牌桌驱动构建身份无效。');
+    if (source.revision !== '39e3553a4f283a41134d75d7e404484bd9e6865a' || source.patch !== 4) throw new Error('牌桌驱动构建身份无效。');
     for (const pkg of ['com.microsoft.playwright.androiddriver.test', 'com.microsoft.playwright.androiddriver']) {
       if (adb('shell', 'pm', 'list', 'packages', pkg).includes(`package:${pkg}`)) adb('uninstall', pkg);
     }
