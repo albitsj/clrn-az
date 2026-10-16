@@ -21,6 +21,26 @@ function brightness(bytes: Buffer): number {
   return sum / (png.width * png.height);
 }
 
+/** 比较颜色分布，允许纯旋转控件处在任意角度，同时保留亮点数量、大小和颜色。
+ * @param left - 第一帧局部 PNG。
+ * @param right - 第二帧局部 PNG。
+ */
+export function framePaletteDistance(left: Buffer, right: Buffer): number {
+  const a = PNG.sync.read(left), b = PNG.sync.read(right);
+  if (a.width !== b.width || a.height !== b.height) throw new Error('动画帧尺寸变化');
+  let difference = 0;
+  for (let channel = 0; channel < 3; channel++) {
+    const counts = new Int32Array(256);
+    for (let offset = channel; offset < a.data.length; offset += 4) {
+      counts[a.data[offset]]++;
+      counts[b.data[offset]]--;
+    }
+    let balance = 0;
+    for (const count of counts) { balance += count; difference += Math.abs(balance); }
+  }
+  return difference / (a.width * a.height * 3);
+}
+
 /**
  * 对循环脉动的每个独立控件保存明暗两端真实屏幕关键帧。
  * @param device - 已安装固定原生采样驱动的模拟器。
@@ -66,9 +86,11 @@ export async function captureLoopKeyframes(device: AndroidDevice, name: string, 
  * @param testInfo - Playwright 快照与报告。
  * @param regions - 每个独立运动控件的完整可见范围。
  * @param distanceLimit - 随机图案循环的允许色差，固定外观动画使用默认值。
+ * @param compareDistance - 旋转对称效果可比较颜色分布，其余效果逐像素比较。
  */
 export async function captureMovingKeyframes(device: AndroidDevice, name: string, testInfo: TestInfo,
-  regions: ScreenshotBounds[], distanceLimit = 18): Promise<void> {
+  regions: ScreenshotBounds[], distanceLimit = 18,
+  compareDistance: (left: Buffer, right: Buffer) => number = frameColorDistance): Promise<void> {
   expect(regions.length).toBeGreaterThan(0);
   const implementation = (device as unknown as { _connection: { toImpl(device: AndroidDevice): {
     _send(method: string): Promise<NativeFrame[]> } } })._connection.toImpl(device);
@@ -87,7 +109,7 @@ export async function captureMovingKeyframes(device: AndroidDevice, name: string
       if (testInfo.config.updateSnapshots === 'all') expect(selected).toMatchSnapshot(file);
       else {
         const reference = readFileSync(testInfo.snapshotPath(file));
-        expect(Math.min(...frames.map(frame => frameColorDistance(frame, reference))),
+        expect(Math.min(...frames.map(frame => compareDistance(frame, reference))),
           `${name} 第 ${index + 1} 个控件的${phase}相位须匹配基准`).toBeLessThanOrEqual(distanceLimit);
       }
     }

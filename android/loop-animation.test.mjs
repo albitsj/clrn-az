@@ -5,6 +5,7 @@ const require = createRequire(import.meta.url);
 const { PNG } = require('pngjs');
 const { motionParts } = require('./motion-regions.ts');
 const { changedMotionRegions } = require('./loop-animation.ts');
+const { framePaletteDistance } = require('./loop-keyframes.ts');
 
 /**
  * 构造两个动画区和一个非动画区的真实 PNG 像素分区。
@@ -30,4 +31,21 @@ test('背景变化不能冒充动画，且每个目标区分别验证', () => {
   assert.deepEqual(changedMotionRegions(first, parts(255, 0)), [true, false]);
   assert.deepEqual(changedMotionRegions(first, parts(0, 255)), [false, true]);
   assert.throws(() => changedMotionRegions(first, parts(0, 0).slice(0, 1)), /数量/);
+});
+
+test('旋转控件保留亮点分布，缺失亮点不能匹配基准', () => {
+  /** 生成同尺寸、不同亮点位置的局部屏幕。
+   * @param lit - 亮点像素坐标。
+   */
+  const frame = lit => {
+    const png = new PNG({ width: 10, height: 10 });
+    for (let pixel = 0; pixel < 100; pixel++) {
+      const bright = lit.includes(pixel);
+      png.data.fill(bright ? 240 : 12, pixel * 4, pixel * 4 + 3);
+      png.data[pixel * 4 + 3] = 255;
+    }
+    return PNG.sync.write(png);
+  };
+  assert.equal(framePaletteDistance(frame([11, 12, 13]), frame([51, 52, 53])), 0);
+  assert.ok(framePaletteDistance(frame([11, 12, 13]), frame([])) > 2);
 });

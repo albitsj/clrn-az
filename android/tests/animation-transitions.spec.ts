@@ -10,7 +10,7 @@ import { verifyLoopAnimation } from '../loop-animation';
 import { gameScreenshot } from '../game-controls';
 import { gameReady } from '../game-controls';
 import { waitAbsent } from '../native-state';
-import { captureMovingKeyframes } from '../loop-keyframes';
+import { captureMovingKeyframes, framePaletteDistance } from '../loop-keyframes';
 
 test('native launch branding and staging notice animate on a real app start', async ({}, testInfo) => {
   test.skip(!['all', 'guest'].includes(process.env.ANDROID_GROUP || 'all')
@@ -118,7 +118,8 @@ test('hall matching spinner animates while the real waiting dialog is visible', 
       const capture = () => gameScreenshot(device!);
       await verifyLoopAnimation(device, 'en-hall-matching', testInfo, [spinner], masks,
         { takeScreenshot: capture, timeoutMs: 4_000 });
-      await captureMovingKeyframes(device, 'hall-matching-spinner', testInfo, [spinner]);
+      await captureMovingKeyframes(device, 'hall-matching-spinner', testInfo,
+        [spinner], 2, framePaletteDistance);
       await compareScreenshot(device, 'en-hall-matching', testInfo, masks, undefined, capture);
       await tap(device, 'quick-start-room-cancel');
       await waitAbsent(device, { res: 'game-matching-loading-view' });
