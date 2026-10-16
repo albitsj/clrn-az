@@ -16,11 +16,12 @@ import type { ScreenshotBounds, ScreenshotMask } from './screenshot';
  * @param phase - 入场或退场。
  * @param samplingMethod - 首次语音权限检查会延迟弹窗，使用持续采样。
  * @param masks - 与面板无关的计时器等动态区域。
+ * @param afterReady - 面板加载业务数据后再固定终点画面。
  */
 export async function animateGamePanel(device: AndroidDevice, game: 'texas-holdem' | 'zhajinhua', name: string,
   button: string, region: ScreenshotBounds, testInfo?: TestInfo, phase: 'enter' | 'exit' = 'enter',
   samplingMethod: 'motionFrames' | 'launchFrames' = 'motionFrames',
-  masks: ScreenshotMask[] = []): Promise<void> {
+  masks: ScreenshotMask[] = [], afterReady?: () => Promise<void>): Promise<void> {
   if (!testInfo) { await gameTap(device, button); return; }
   const { bounds } = await gameReady(device, button);
   /** 通过独立 ADB 连接点击真实牌桌控件，使驱动同时截取每一帧。 */
@@ -28,5 +29,5 @@ export async function animateGamePanel(device: AndroidDevice, game: 'texas-holde
     String(Math.round(bounds.x + bounds.width / 2)),
     String(Math.round(bounds.y + bounds.height / 2)));
   await captureNativeTransition(device, `${game}-${name}-${phase}`, testInfo, region, press,
-    masks, [], 0, samplingMethod);
+    masks, [], 0, samplingMethod, undefined, afterReady);
 }

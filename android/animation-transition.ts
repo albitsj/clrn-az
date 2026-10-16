@@ -37,12 +37,14 @@ export function frameColorDistance(left: Buffer, right: Buffer): number {
  * @param settleMs - 触发后仍在滚动的长动画，采样结束后额外等待完成。
  * @param samplingMethod - 启动页、延迟弹窗或短于截屏间隔的转场使用对应采样命令。
  * @param inspectFrames - 对同一组原生帧中的独立子动画追加视觉断言。
+ * @param afterReady - 需要异步业务数据的面板在终点截图前等待语义就绪。
  */
 export async function captureNativeTransition(device: AndroidDevice, name: string, testInfo: TestInfo,
   region: ScreenshotBounds, trigger: () => unknown, masks: ScreenshotMask[] = [],
   requiredRegions: ScreenshotBounds[] = [], settleMs = 0,
   samplingMethod: 'motionFrames' | 'launchFrames' | 'videoFrames' = 'motionFrames',
-  inspectFrames?: (frames: Buffer[], testInfo: TestInfo) => Promise<void>): Promise<void> {
+  inspectFrames?: (frames: Buffer[], testInfo: TestInfo) => Promise<void>,
+  afterReady?: () => Promise<void>): Promise<void> {
   /**
    * 截出固定的动画绘制区域。
    * @param bytes - 原生完整屏幕 PNG。
@@ -74,6 +76,7 @@ export async function captureNativeTransition(device: AndroidDevice, name: strin
   if (inspectFrames) await inspectFrames(originals, testInfo);
   const timeline = samplingMethod === 'videoFrames' ? originals : originals.map(crop);
   if (settleMs) await setTimeout(settleMs);
+  if (afterReady) await afterReady();
   const after = crop(await gameScreenshot(device));
   await testInfo.attach(`${name}-timeline`, {
     body: JSON.stringify(frames.map(({ capturedAt }) => capturedAt)), contentType: 'application/json',
@@ -86,10 +89,10 @@ export async function captureNativeTransition(device: AndroidDevice, name: strin
   await testInfo.attach(`${name}-end`, { body: after, contentType: 'image/png' });
   if (samplingMethod === 'videoFrames') {
     expect(frameColorDistance(timeline[0], before), '录屏开始时动画尚未触发').toBeLessThan(7);
-    if (!settleMs) expect(frameColorDistance(timeline.at(-1)!, after), '录屏结束时动画必须完成').toBeLessThan(7);
+    if (!settleMs && !afterReady) expect(frameColorDistance(timeline.at(-1)!, after), '录屏结束时动画必须完成').toBeLessThan(7);
   } else {
     expect(samePixels(timeline[0], before), '开始采样时动画尚未触发').toBe(true);
-    if (!settleMs) expect(samePixels(timeline.at(-1)!, after), '采样结束时动画必须完成').toBe(true);
+    if (!settleMs && !afterReady) expect(samePixels(timeline.at(-1)!, after), '采样结束时动画必须完成').toBe(true);
   }
   if (requiredRegions.length) {
     const parts = originals.map(frame => motionParts(maskScreenshot(frame, masks), requiredRegions).regions);

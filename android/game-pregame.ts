@@ -122,8 +122,14 @@ export async function gamePreGame(device: AndroidDevice, game: 'texas-holdem' | 
   ]) {
     await tap(device, 'menu-button');
     await gameReady(device, `drawer-menu-item-${state}`);
+    const renewalReady = state === 'renew' && animationInfo ? async () => {
+      await expect.poll(async () => (await gameReady(device, 'renew-popup-remain-diamond')).text?.trim(),
+        { timeout: 45_000 }).toBe(presentation.balance);
+      await expect.poll(async () => Number((await gameReady(device, 'renew-popup-spend-diamond')).text?.trim()),
+        { timeout: 45_000 }).toBeGreaterThan(0);
+    } : undefined;
     await animateGamePanel(device, game, state, `drawer-menu-item-${state}`,
-      { x: 110, y: 360, width: 480, height: 500 }, animationInfo);
+      { x: 110, y: 360, width: 480, height: 500 }, animationInfo, 'enter', 'motionFrames', [], renewalReady);
     await gameGone(device, 'drawer-menu-item-exit');
     await gameReady(device, ready);
     if (state === 'renew') {
