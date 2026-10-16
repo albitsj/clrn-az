@@ -115,3 +115,54 @@ export async function captureNativeTransition(device: AndroidDevice, name: strin
       '动画中途帧的实际画面须接近已审查轨迹').toBeLessThanOrEqual(36);
   }
 }
+
+/**
+ * 对显示后又消失的提示保存起点、半透明帧和最清晰帧，校验真实入退场轨迹。
+ * @param device - 安装固定原生采样驱动的模拟器。
+ * @param name - 短时效果名称。
+ * @param testInfo - Playwright 快照与报告。
+ * @param region - 提示绘制范围，排除其他动态元素。
+ * @param trigger - 从独立代理或 ADB 触发提示。
+ * @param settleMs - 提示结束后等待画面恢复的时间。
+ */
+export async function captureTransientTransition(device: AndroidDevice, name: string, testInfo: TestInfo,
+  region: ScreenshotBounds, trigger: () => unknown, settleMs = 2500): Promise<void> {
+  /**
+   * 从完整原生截图裁切提示区域。
+   * @param bytes - 原生完整屏幕 PNG。
+   */
+  const crop = (bytes: Buffer) => motionParts(bytes, [region]).regions[0];
+  const before = crop(await gameScreenshot(device));
+  const implementation = (device as unknown as { _connection: { toImpl(device: AndroidDevice): {
+    _send(method: string): Promise<NativeFrame[]> } } })._connection.toImpl(device);
+  const pending = implementation._send('motionFrames');
+  await setTimeout(300);
+  await trigger();
+  const frames = (await pending).map(frame => crop(Buffer.from(frame.png, 'base64')));
+  expect(frames.length).toBeGreaterThanOrEqual(10);
+  await setTimeout(settleMs);
+  const after = crop(await gameScreenshot(device));
+  for (const [index, frame] of frames.entries()) {
+    await testInfo.attach(`${name}-frame-${index}`, { body: frame, contentType: 'image/png' });
+  }
+  expect(samePixels(frames[0], before), '短时提示须在采样开始后出现').toBe(true);
+  expect(samePixels(before, after), '短时提示应自动消失并恢复原画面').toBe(true);
+  const phases = frames.map(frame => ({ frame, distance: frameColorDistance(before, frame) }));
+  const peak = phases.reduce((best, item) => item.distance > best.distance ? item : best);
+  expect(peak.distance, '短时提示必须产生明显可见变化').toBeGreaterThan(3);
+  const middle = phases.filter(item => item.distance > 1 && item.distance < peak.distance - 1)
+    .reduce((best, item) => Math.abs(item.distance - peak.distance / 2)
+      < Math.abs(best.distance - peak.distance / 2) ? item : best, phases[0]);
+  expect(middle.distance, '短时提示须采到半透明动画帧').toBeGreaterThan(1);
+  for (const [phase, frame] of [['start', before], ['middle', middle.frame], ['peak', peak.frame]] as const) {
+    const file = `${name}-${phase}.png`;
+    await testInfo.attach(file, { body: frame, contentType: 'image/png' });
+    if (testInfo.config.updateSnapshots === 'all') expect(frame).toMatchSnapshot(file);
+    else {
+      const reference = readFileSync(testInfo.snapshotPath(file));
+      expect(Math.min(...(phase === 'start' ? [before] : frames)
+        .map(candidate => frameColorDistance(candidate, reference))),
+      `${name} ${phase} 视觉关键帧须匹配基准`).toBeLessThanOrEqual(12);
+    }
+  }
+}

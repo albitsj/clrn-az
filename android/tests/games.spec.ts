@@ -36,7 +36,7 @@ for (const [suite, game] of [['texas', 'texas-holdem'], ['zhajinhua', 'zhajinhua
         if (scenario.pageLabel === 'signed_in_texas_records_v2') await proxy.command('texas/records', { empty: true });
         const panelAnimation = locale === 'en' && scenario.pageLabel.endsWith('_pre_game');
         const gameAnimation = locale === 'en' && (scenario.pageLabel.endsWith('_game')
-          || scenario.pageLabel === 'signed_in_texas_hall');
+          || ['signed_in_texas_hall', 'signed_in_texas_panels'].includes(scenario.pageLabel));
         const device = await launchApplication({ gameDriver: true,
           enableSystemAnimations: panelAnimation || gameAnimation });
         let room: RoomSession | null = null;
