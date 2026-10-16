@@ -21,8 +21,9 @@ export async function recordNativeVideoFrames(name: string, region: ScreenshotBo
   mkdirSync(directory, { recursive: true });
   const remote = `/sdcard/clrn-visual-${process.pid}.mp4`;
   const video = path.join(directory, 'capture.mp4');
-  const recorder = spawn('adb', ['-s', serial, 'shell', 'screenrecord', '--size', '720x1280',
-    '--bit-rate', '8000000', '--time-limit', '5', remote], { stdio: ['ignore', 'ignore', 'pipe'] });
+  // 模拟器的全尺寸 H.264 编码有时只输出约 12 帧/秒，会完整错过 200ms 的退场。
+  const recorder = spawn('adb', ['-s', serial, 'shell', 'screenrecord', '--size', '360x640',
+    '--bit-rate', '4000000', '--time-limit', '5', remote], { stdio: ['ignore', 'ignore', 'pipe'] });
   let error = '';
   recorder.stderr.on('data', chunk => { error += String(chunk); });
   const finished = new Promise<void>((resolve, reject) => {
@@ -41,7 +42,8 @@ export async function recordNativeVideoFrames(name: string, region: ScreenshotBo
     mkdirSync(frames);
     const { x, y, width, height } = region;
     execFileSync('ffmpeg', ['-y', '-v', 'error', '-i', video, '-vf',
-      `fps=30,crop=${width}:${height}:${x}:${y}`, path.join(frames, 'frame-%04d.png')],
+      `fps=30,scale=720:1280:flags=lanczos,crop=${width}:${height}:${x}:${y}`,
+      path.join(frames, 'frame-%04d.png')],
     { timeout: 30_000 });
     const files = readdirSync(frames).filter(file => file.endsWith('.png')).sort();
     if (files.length < 20) throw new Error('原生录屏不足 20 帧，无法审查弹层转场。');
