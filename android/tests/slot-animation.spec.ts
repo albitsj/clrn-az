@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { readFileSync } from 'node:fs';
 import type { AndroidDevice } from 'playwright';
 import { adb, launchApplication, waitForHall } from '../device';
 import { withAndroidProxy } from '../proxy';
@@ -8,7 +9,8 @@ import { captureNativeTransition } from '../animation-transition';
 import { verifyLoopAnimation } from '../loop-animation';
 import { captureMovingKeyframes } from '../loop-keyframes';
 import { waitAbsent } from '../native-state';
-import { gameReady } from '../game-controls';
+import { gameReady, gameScreenshot } from '../game-controls';
+import { motionParts, samePixels } from '../motion-regions';
 
 test('all three native slot reels and reward types animate from real spin responses', async ({}, testInfo) => {
   test.skip(!['all', 'social'].includes(process.env.ANDROID_GROUP || 'all')
@@ -79,10 +81,17 @@ test('all three native slot reels and reward types animate from real spin respon
       const pressEmptySpin = () => adb('shell', 'input', 'tap',
         String(Math.round(spin.bounds.x + spin.bounds.width / 2)),
         String(Math.round(spin.bounds.y + spin.bounds.height / 2)));
-      const noEnergyRegion = { x: 80, y: 510, width: 560, height: 380 };
+      // 左侧边框不受每次打开时滚轮随机停靠图案影响；完整提示另做逐像素基准。
+      const noEnergyRegion = { x: 80, y: 510, width: 40, height: 380 };
       await captureNativeTransition(device, 'slot-no-energy-enter', testInfo, noEnergyRegion, pressEmptySpin);
       const prompt = await device.info({ res: 'slot-no-energy-popup-container' });
       expect(prompt.bounds.width).toBeGreaterThan(0);
+      const promptImage = motionParts(await gameScreenshot(device),
+        [{ x: 80, y: 510, width: 560, height: 380 }]).regions[0];
+      await testInfo.attach('slot-no-energy-visible', { body: promptImage, contentType: 'image/png' });
+      if (testInfo.config.updateSnapshots === 'all') expect(promptImage).toMatchSnapshot('slot-no-energy-visible.png');
+      else expect(samePixels(promptImage, readFileSync(testInfo.snapshotPath('slot-no-energy-visible.png'))),
+        '能量不足提示完整画面视觉回归').toBe(true);
       const confirm = await device.info({ res: 'confirm-button' });
       /** 通过真实确认按钮关闭能量不足提示。 */
       const pressConfirm = () => adb('shell', 'input', 'tap',
