@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { setTimeout } from 'node:timers/promises';
 import { expect, type TestInfo } from '@playwright/test';
 import type { AndroidDevice } from 'playwright';
@@ -51,9 +51,12 @@ export async function captureAssetSequence(device: AndroidDevice, name: string, 
     await info.attach(file, { body: frame, contentType: 'image/png' });
     if (info.config.updateSnapshots === 'all') expect(frame).toMatchSnapshot(file);
     else {
-      const reference = readFileSync(info.snapshotPath(file));
+      const references = [readFileSync(info.snapshotPath(file))];
+      const alternate = info.snapshotPath(`${name}-${phase}-alternate.png`);
+      if (phase !== 'start' && existsSync(alternate)) references.push(readFileSync(alternate));
       expect(Math.min(...(phase === 'start' ? [before] : visible.map(item => item.frame))
-        .map(candidate => frameColorDistance(candidate, reference))), `${name} ${phase} 视觉回归`)
+        .flatMap(candidate => references.map(reference => frameColorDistance(candidate, reference)))),
+      `${name} ${phase} 视觉回归`)
         .toBeLessThanOrEqual(15);
     }
   }

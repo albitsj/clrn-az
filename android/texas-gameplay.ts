@@ -7,7 +7,7 @@ import { replay, gameCardNames } from './game-replay';
 import { closeAnimatedGameMask, closeGameMask } from './game-pregame';
 import { dismissKeyboard } from './keyboard';
 import { gameTapText, type TexasContext } from './texas-support';
-import { captureNativeTransition } from './animation-transition';
+import { captureNativeTransition, captureTransientTransition } from './animation-transition';
 import { animateGamePanel } from './game-panel-animation';
 import { captureMovingKeyframes } from './loop-keyframes';
 import { captureAssetSequence } from './asset-sequence';
@@ -103,9 +103,8 @@ export async function texasGameplay(device: AndroidDevice, proxy: Mitmproxy, roo
     { player_id: self, net: 180, prize: 180, stack: 1180 },
     { player_id: REPLAY_PLAYER_IDS[0], net: -960, prize: 0, stack: 0 },
   ] }]);
-  if (animationInfo) await captureNativeTransition(device, 'texas-settlement', animationInfo,
-    { x: 150, y: 950, width: 390, height: 250 }, () => send(settlement), [],
-    [{ x: 210, y: 970, width: 190, height: 215 }]);
+  if (animationInfo) await captureTransientTransition(device, 'texas-settlement', animationInfo,
+    { x: 150, y: 950, width: 390, height: 250 }, () => send(settlement), 1600);
   else await send(settlement);
   // 摊牌时余额被牌型标签替代；余额语义标记仍附在当前可见玩家容器内。
   await expect.poll(async () => gameSemanticText((await gameNodes(device))
