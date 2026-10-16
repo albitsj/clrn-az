@@ -106,7 +106,9 @@ export async function zhajinhuaGameplay(device: AndroidDevice, proxy: Mitmproxy,
   if (animationInfo) {
     const selectors = (await gameNodes(device)).filter(node => node.res === 'challenge_player_selector');
     await captureLoopKeyframes(device, 'zhajinhua-challenge-targets', animationInfo,
-      selectors.map(node => node.bounds), 3);
+      // 控件树给出头像的点击框；闪烁绿色边框绘制在其上下各约 40 像素之外。
+      selectors.map(node => ({ x: node.bounds.x - 14, y: node.bounds.y - 42,
+        width: node.bounds.width + 28, height: node.bounds.height + 84 })), 3);
   }
   await capture('challenge_select');
   await gameTap(device, 'zhajinhua-cancel-challenge-choosing');
