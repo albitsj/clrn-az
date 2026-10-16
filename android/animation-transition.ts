@@ -6,6 +6,7 @@ import type { AndroidDevice } from 'playwright';
 import { gameScreenshot } from './game-controls';
 import { motionParts, samePixels } from './motion-regions';
 import { maskScreenshot, type ScreenshotBounds, type ScreenshotMask } from './screenshot';
+import { recordNativeVideoFrames } from './video-frames';
 
 type NativeFrame = { capturedAt: number; png: string };
 
@@ -34,13 +35,13 @@ export function frameColorDistance(left: Buffer, right: Buffer): number {
  * @param masks - 区域内与目标无关的独立循环效果；保留掩码说明。
  * @param requiredRegions - 同一效果中必须分别运动的可见子区域。
  * @param settleMs - 触发后仍在滚动的长动画，采样结束后额外等待完成。
- * @param samplingMethod - 启动页或延迟出现的弹窗使用持续取样命令。
+ * @param samplingMethod - 启动页、延迟弹窗或短于截屏间隔的转场使用对应采样命令。
  * @param inspectFrames - 对同一组原生帧中的独立子动画追加视觉断言。
  */
 export async function captureNativeTransition(device: AndroidDevice, name: string, testInfo: TestInfo,
   region: ScreenshotBounds, trigger: () => unknown, masks: ScreenshotMask[] = [],
   requiredRegions: ScreenshotBounds[] = [], settleMs = 0,
-  samplingMethod: 'motionFrames' | 'launchFrames' = 'motionFrames',
+  samplingMethod: 'motionFrames' | 'launchFrames' | 'videoFrames' = 'motionFrames',
   inspectFrames?: (frames: Buffer[], testInfo: TestInfo) => Promise<void>): Promise<void> {
   /**
    * 截出固定的动画绘制区域。
@@ -53,31 +54,43 @@ export async function captureNativeTransition(device: AndroidDevice, name: strin
     _send(method: string): Promise<NativeFrame[]> } } })._connection.toImpl(device);
   const timeout = new AbortController();
   let frames: NativeFrame[];
-  try {
-    const pending = Promise.race([
-      implementation._send(samplingMethod),
-      setTimeout(30_000, undefined, { signal: timeout.signal }).then(() => { throw new Error('原生动画采样超时。'); }),
-    ]);
-    await setTimeout(300);
-    await trigger();
-    frames = await pending;
-  } finally { timeout.abort(); }
+  if (samplingMethod === 'videoFrames') {
+    if (masks.length || requiredRegions.length) throw new Error('录屏转场需单独定义不含遮罩的绘制范围。');
+    frames = (await recordNativeVideoFrames(name, region, trigger, testInfo))
+      .map((png, index) => ({ capturedAt: index * 33, png: png.toString('base64') }));
+  } else {
+    try {
+      const pending = Promise.race([
+        implementation._send(samplingMethod),
+        setTimeout(30_000, undefined, { signal: timeout.signal }).then(() => { throw new Error('原生动画采样超时。'); }),
+      ]);
+      await setTimeout(300);
+      await trigger();
+      frames = await pending;
+    } finally { timeout.abort(); }
+  }
   expect(frames.length, '原生驱动至少采集三帧').toBeGreaterThanOrEqual(3);
   const originals = frames.map(frame => Buffer.from(frame.png, 'base64'));
   if (inspectFrames) await inspectFrames(originals, testInfo);
-  const timeline = originals.map(crop);
+  const timeline = samplingMethod === 'videoFrames' ? originals : originals.map(crop);
   if (settleMs) await setTimeout(settleMs);
   const after = crop(await gameScreenshot(device));
   await testInfo.attach(`${name}-timeline`, {
     body: JSON.stringify(frames.map(({ capturedAt }) => capturedAt)), contentType: 'application/json',
   });
   for (const [index, frame] of timeline.entries()) {
+    if (samplingMethod === 'videoFrames' && index % 5 !== 0 && index !== timeline.length - 1) continue;
     await testInfo.attach(`${name}-frame-${index}`, { body: frame, contentType: 'image/png' });
   }
   await testInfo.attach(`${name}-start`, { body: before, contentType: 'image/png' });
   await testInfo.attach(`${name}-end`, { body: after, contentType: 'image/png' });
-  expect(samePixels(timeline[0], before), '开始采样时动画尚未触发').toBe(true);
-  if (!settleMs) expect(samePixels(timeline.at(-1)!, after), '采样结束时动画必须完成').toBe(true);
+  if (samplingMethod === 'videoFrames') {
+    expect(frameColorDistance(timeline[0], before), '录屏开始时动画尚未触发').toBeLessThan(7);
+    if (!settleMs) expect(frameColorDistance(timeline.at(-1)!, after), '录屏结束时动画必须完成').toBeLessThan(7);
+  } else {
+    expect(samePixels(timeline[0], before), '开始采样时动画尚未触发').toBe(true);
+    if (!settleMs) expect(samePixels(timeline.at(-1)!, after), '采样结束时动画必须完成').toBe(true);
+  }
   if (requiredRegions.length) {
     const parts = originals.map(frame => motionParts(maskScreenshot(frame, masks), requiredRegions).regions);
     for (const index of requiredRegions.keys()) {
@@ -93,7 +106,8 @@ export async function captureNativeTransition(device: AndroidDevice, name: strin
     remaining: frameColorDistance(after, frame) / total }))
     // 200ms 的原生淡入有时只采到靠近终点的一帧，仍要求它与两个端点都有实际像素差。
     .filter(item => item.progress > 0.02 && item.remaining > 0.02
-      && frameColorDistance(before, item.frame) > 1 && frameColorDistance(after, item.frame) > 1);
+      && frameColorDistance(before, item.frame) > (samplingMethod === 'videoFrames' ? 7 : 1)
+      && frameColorDistance(after, item.frame) > (samplingMethod === 'videoFrames' ? 7 : 1));
   await testInfo.attach(`${name}-progress`, {
     body: JSON.stringify({ total, frames: timeline.map(frame => frameColorDistance(before, frame) / total) }),
     contentType: 'application/json',
@@ -116,9 +130,9 @@ export async function captureNativeTransition(device: AndroidDevice, name: strin
     const reference = readFileSync(testInfo.snapshotPath(`${name}-middle.png`));
     // 系统截图间隔约 70–180ms；短动画有时仅采到靠近起点或终点的帧。
     // 起止帧逐像素匹配，独立断言中途帧真实可见，再要求它靠近已审查的轨迹锚点。
-    const anchors = [before, reference, after];
+    const anchors = samplingMethod === 'videoFrames' ? [reference] : [before, reference, after];
     expect(Math.min(...candidates.flatMap(item => anchors.map(anchor => frameColorDistance(item.frame, anchor)))),
-      '动画中途帧的实际画面须接近已审查轨迹').toBeLessThanOrEqual(36);
+      '动画中途帧的实际画面须接近已审查轨迹').toBeLessThanOrEqual(samplingMethod === 'videoFrames' ? 30 : 36);
   }
 }
 
