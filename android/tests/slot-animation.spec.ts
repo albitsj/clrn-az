@@ -16,9 +16,17 @@ test('all three native slot reels and reward types animate from real spin respon
       device = await launchApplication({ gameDriver: true, enableSystemAnimations: true });
       await waitForHall(device);
       await signIn(device);
-      const scenario = androidScenarios('en', 'social').find(item => item.pageLabel === 'signed_in_slot');
+      const scenario = androidScenarios('en', 'social').find(item => item.pageLabel === 'signed_in_hall');
       expect(scenario).toBeDefined();
       await navigateScenario(device, scenario!);
+      const banner = await device.info({ res: 'slot-banner' });
+      /** 从登录大厅的真实横幅打开老虎机窗口。 */
+      const pressBanner = () => adb('shell', 'input', 'tap',
+        String(Math.round(banner.bounds.x + banner.bounds.width / 2)),
+        String(Math.round(banner.bounds.y + banner.bounds.height / 2)));
+      await captureNativeTransition(device, 'slot-popup-enter', testInfo,
+        { x: 0, y: 500, width: 720, height: 680 }, pressBanner);
+      await device.wait({ res: 'slot-machine-view' });
       const reels = [
         { x: 143, y: 420, width: 137, height: 362 },
         { x: 287, y: 420, width: 137, height: 362 },
@@ -42,6 +50,24 @@ test('all three native slot reels and reward types animate from real spin respon
       }
       const status = await proxy.command<{ spins: number }>('android/slot');
       expect(status.spins, '三种奖励必须分别由真实旋转 RPC 触发').toBe(3);
+      await proxy.command('android/slot', { currency: 'coin', noEnergy: true });
+      const spin = await device.info({ res: 'spin-button' });
+      /** 真实能量不足 RPC 触发老虎机窗口切换到专用提示。 */
+      const pressEmptySpin = () => adb('shell', 'input', 'tap',
+        String(Math.round(spin.bounds.x + spin.bounds.width / 2)),
+        String(Math.round(spin.bounds.y + spin.bounds.height / 2)));
+      const noEnergyRegion = { x: 80, y: 510, width: 560, height: 380 };
+      await captureNativeTransition(device, 'slot-no-energy-enter', testInfo, noEnergyRegion, pressEmptySpin);
+      const prompt = await device.info({ res: 'slot-no-energy-popup-container' });
+      expect(prompt.bounds.width).toBeGreaterThan(0);
+      const confirm = await device.info({ res: 'confirm-button' });
+      /** 通过真实确认按钮关闭能量不足提示。 */
+      const pressConfirm = () => adb('shell', 'input', 'tap',
+        String(Math.round(confirm.bounds.x + confirm.bounds.width / 2)),
+        String(Math.round(confirm.bounds.y + confirm.bounds.height / 2)));
+      await captureNativeTransition(device, 'slot-no-energy-exit', testInfo, noEnergyRegion, pressConfirm);
+      const final = await proxy.command<{ spins: number }>('android/slot');
+      expect(final.spins, '能量不足由第四次旋转请求触发').toBe(4);
     } finally { await device?.close(); }
   }, false, false, true);
 });

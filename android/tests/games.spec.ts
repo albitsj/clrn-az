@@ -34,7 +34,8 @@ for (const [suite, game] of [['texas', 'texas-holdem'], ['zhajinhua', 'zhajinhua
       test.setTimeout(1_200_000);
       await withAndroidProxy(async proxy => {
         if (scenario.pageLabel === 'signed_in_texas_records_v2') await proxy.command('texas/records', { empty: true });
-        const device = await launchApplication({ gameDriver: true });
+        const panelAnimation = locale === 'en' && scenario.pageLabel.endsWith('_pre_game');
+        const device = await launchApplication({ gameDriver: true, enableSystemAnimations: panelAnimation });
         let room: RoomSession | null = null;
         let index = 0;
         try {
@@ -70,9 +71,12 @@ for (const [suite, game] of [['texas', 'texas-holdem'], ['zhajinhua', 'zhajinhua
           };
           const { account } = await gameSession(proxy);
           expect(account).not.toBeNull();
-          if (suite === 'texas') await runTexasScenario(scenario.pageLabel,
+          if (suite === 'texas' && scenario.pageLabel === 'signed_in_texas_pre_game') {
+            await gamePreGame(device, game, capture, panelAnimation ? testInfo : undefined);
+          } else if (suite === 'texas') await runTexasScenario(scenario.pageLabel,
             { device, proxy, room: room!.roomId, self: account!.userId, capture });
-          else if (scenario.pageLabel.endsWith('_pre_game')) await gamePreGame(device, game, capture);
+          else if (scenario.pageLabel.endsWith('_pre_game')) await gamePreGame(device, game, capture,
+            panelAnimation ? testInfo : undefined);
           else await zhajinhuaGameplay(device, proxy, room!.roomId, account!.userId, capture);
           expect(index).toBe(scenario.snapshotStates!.length);
         } catch (error) {
