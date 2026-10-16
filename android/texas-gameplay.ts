@@ -147,7 +147,8 @@ export async function texasGameplay(device: AndroidDevice, proxy: Mitmproxy, roo
     expect(node).toBeDefined();
     const name = player === self ? 'own-profile' : `opponent-profile-${++opponentProfileCount}`;
     await animateGamePanel(device, 'texas-holdem', name,
-      node!.res!, { x: 180, y: 90, width: 520, height: 500 }, animationInfo);
+      node!.res!, { x: 180, y: 90, width: 520, height: 500 }, animationInfo,
+      'enter', 'motionFrames', [], async () => { await gameReady(device, 'PlayerStatisticComponent_Item_Value_0'); });
     await gameReady(device, 'player-profile-popup-close');
     await gameReady(device, 'PlayerStatisticComponent_Item_Value_0');
   };
