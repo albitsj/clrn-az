@@ -59,6 +59,19 @@ test('all three native slot reels and reward types animate from real spin respon
       }
       const status = await proxy.command<{ spins: number }>('android/slot');
       expect(status.spins, '三种奖励必须分别由真实旋转 RPC 触发').toBe(3);
+      const close = await gameReady(device, 'close-button');
+      /** 正常关闭老虎机，采集面板退场。能量不足会自动关闭面板，无法再点击该按钮。 */
+      const pressClose = () => adb('shell', 'input', 'tap',
+        String(Math.round(close.bounds.x + close.bounds.width / 2)),
+        String(Math.round(close.bounds.y + close.bounds.height / 2)));
+      await captureNativeTransition(device, 'slot-popup-exit', testInfo,
+        { x: 0, y: 500, width: 720, height: 680 }, pressClose);
+      await waitAbsent(device, { res: 'slot-machine-view' });
+      const bannerAgain = await device.info({ res: 'slot-banner' });
+      await adb('shell', 'input', 'tap',
+        String(Math.round(bannerAgain.bounds.x + bannerAgain.bounds.width / 2)),
+        String(Math.round(bannerAgain.bounds.y + bannerAgain.bounds.height / 2)));
+      await device.wait({ res: 'slot-machine-view' });
       await proxy.command('android/slot', { currency: 'coin', noEnergy: true });
       const spin = await device.info({ res: 'spin-button' });
       /** 真实能量不足 RPC 触发老虎机窗口切换到专用提示。 */
@@ -77,13 +90,6 @@ test('all three native slot reels and reward types animate from real spin respon
       await captureNativeTransition(device, 'slot-no-energy-exit', testInfo, noEnergyRegion, pressConfirm);
       const final = await proxy.command<{ spins: number }>('android/slot');
       expect(final.spins, '能量不足由第四次旋转请求触发').toBe(4);
-      const close = await gameReady(device, 'close-button');
-      /** 点击老虎机自己的关闭按钮，采集面板退场而非只检查最终静态大厅。 */
-      const pressClose = () => adb('shell', 'input', 'tap',
-        String(Math.round(close.bounds.x + close.bounds.width / 2)),
-        String(Math.round(close.bounds.y + close.bounds.height / 2)));
-      await captureNativeTransition(device, 'slot-popup-exit', testInfo,
-        { x: 0, y: 500, width: 720, height: 680 }, pressClose);
       await waitAbsent(device, { res: 'slot-machine-view' });
     } finally { await device?.close(); }
   }, false, false, true);
