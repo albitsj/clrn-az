@@ -1,6 +1,6 @@
 import { expect } from '@playwright/test';
 import { REPLAY_PLAYER_IDS } from '../visual/cases/texas-holdem/replayData';
-import { gameGone, gameNodes, gameReady, gameTap, gameTextWithin } from './game-controls';
+import { gameGone, gameNodes, gameReady, gameScreenshot, gameTap, gameTextWithin } from './game-controls';
 import { closeGameMask } from './game-pregame';
 import { adb } from './device';
 import { dismissKeyboard } from './keyboard';
@@ -35,6 +35,7 @@ export async function texasHall(context: TexasContext): Promise<void> {
       await gameTap(device, 'auto-rebuy-switch');
       await expect.poll(async () => (await proxy.command<{ requested: boolean }>('android/auto-rebuy-hold')).requested,
         { timeout: 5000 }).toBe(true);
+      await animationInfo.attach('texas-loading-full', { body: await gameScreenshot(device), contentType: 'image/png' });
       // 两层图标分别旋转，逐区保存真实画面明暗/位置相位。
       await captureMovingKeyframes(device, 'texas-loading-spinner', animationInfo,
         [{ x: 328, y: 610, width: 16, height: 60 }, { x: 345, y: 625, width: 30, height: 30 }]);
