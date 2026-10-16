@@ -241,9 +241,22 @@ export async function captureTimedPrompt(device: AndroidDevice, name: string, te
   expect(samePixels(before, frames[0]), `${name} 须在采样开始后出现`).toBe(true);
   const visible = frames.filter(frame => frameColorDistance(before, frame) > 3);
   expect(visible.length, `${name} 须实际显示`).toBeGreaterThanOrEqual(2);
-  const first = visible[0];
-  const changed = visible.find(frame => !samePixels(frame, first));
-  expect(changed, `${name} 倒计时必须显示不同相位`).toBeDefined();
+  /**
+   * 只截完整提示标题。
+   * @param frame - 顶部提示区域的截图。
+   */
+  const title = (frame: Buffer) => motionParts(frame, [{ x: 80, y: 45, width: 520, height: 110 }]).regions[0];
+  /**
+   * 只截底部秒数，避免把提示滑入误认为倒计时。
+   * @param frame - 顶部提示区域的截图。
+   */
+  const timer = (frame: Buffer) => motionParts(frame, [{ x: 0, y: 165, width: 70, height: 45 }]).regions[0];
+  const settled = visible.filter(frame => frameColorDistance(title(before), title(frame)) > 3);
+  expect(settled.length, `${name} 标题须完整出现`).toBeGreaterThanOrEqual(2);
+  const first = settled[0];
+  const changed = settled.find(frame => samePixels(title(first), title(frame))
+    && !samePixels(timer(first), timer(frame)));
+  expect(changed, `${name} 标题稳定后倒计时数字必须变化`).toBeDefined();
   await setTimeout(6000);
   const after = crop(await gameScreenshot(device));
   expect(samePixels(after, before), `${name} 倒计时结束后须恢复画面`).toBe(true);
