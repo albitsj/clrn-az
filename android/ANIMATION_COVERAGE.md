@@ -4,7 +4,7 @@
 
 | 动画 | 原生测试入口 | 关键帧或素材验证 |
 | --- | --- | --- |
-| 启动插画变化、测试版提示出现 | `animation-transitions.spec.ts` 启动场景 | `native-launch-artwork` 两个应用插画相位；`native-launch-and-staging-notice` 起点、中途、终点及区域变化 |
+| 启动插画、测试版提示出现 | `animation-transitions.spec.ts` 启动场景 | `native-launch-artwork-visible` 确认应用插画可见；`native-launch-and-staging-notice` 起点、中途、终点及区域变化 |
 | 通用水平导航入栈、出栈 | `animation-transitions.spec.ts` 账号安全 | `native-stack-enter/exit` |
 | 搜索确认弹窗入场、退场 | `animation-transitions.spec.ts` 游客搜索 | `search-confirmation-enter/exit` |
 | 大厅老虎机横幅轮转 | `slot-animation.spec.ts` 登录大厅 | `hall-slot-banner` 两个运动相位及循环运动断言 |
@@ -31,4 +31,4 @@
 
 网页专用的分享链接确认弹窗使用 `.web.js`，Android 版调用系统分享界面，因此不计入 Android 应用内动画。Android 系统分享界面的外观由系统版本控制。
 
-固定 Staging 包在 `LaunchBranding` 挂载时同步打开不透明提示框，文字的 500 毫秒淡入被提示框遮住，无法在这个包上取得可见像素轨迹。启动场景只声明实际可见的插画变化和提示出现；若应用将提示延后或提供可测试的无提示启动入口，应为品牌淡入另加逐帧基准。
+固定 Staging 包在 `LaunchBranding` 挂载时同步打开不透明提示框，文字的 500 毫秒淡入被提示框遮住，无法在这个包上取得可见像素轨迹。启动场景只声明实际可见的插画和提示出现；若应用将提示延后或提供可测试的无提示启动入口，应为品牌淡入另加逐帧基准。

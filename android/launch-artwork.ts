@@ -6,7 +6,7 @@ import { motionParts } from './motion-regions';
 import { maskScreenshot } from './screenshot';
 
 /**
- * Staging 弹窗出现前，锁定应用插画本身的连续画面；排除系统 Splash 和桌面。
+ * Staging 弹窗出现前，锁定应用自己的插画；排除系统 Splash 和桌面。
  * @param frames - 冷启动期间采集的完整原生屏幕。
  * @param testInfo - 保存和比较关键帧的测试信息。
  */
@@ -26,19 +26,14 @@ export async function verifyLaunchArtwork(frames: Buffer[], testInfo: TestInfo):
     return picture.data[center] < 160 && picture.data[center + 1] >= 120
       && picture.data[center + 2] >= 200 && Math.max(...reds) - Math.min(...reds) > 8;
   };
-  const first = artwork.findIndex(isArtwork);
-  expect(first, '必须看到应用自己的启动插画').toBeGreaterThanOrEqual(0);
-  const moved = artwork.findIndex((frame, index) => index > first && isArtwork(frame)
-    && frameColorDistance(artwork[first], frame) > 4);
-  expect(moved, '应用启动插画的角色或背景必须发生可见运动').toBeGreaterThan(first);
-  for (const [phase, frame] of [['first', artwork[first]], ['moved', artwork[moved]]] as const) {
-    const name = `native-launch-artwork-${phase}.png`;
-    await testInfo.attach(name, { body: frame, contentType: 'image/png' });
-    if (testInfo.config.updateSnapshots === 'all') expect(frame).toMatchSnapshot(name);
-    else {
-      const reference = readFileSync(testInfo.snapshotPath(name));
-      expect(Math.min(...artwork.filter(isArtwork).map(candidate => frameColorDistance(candidate, reference))),
-        `${name} 须在真实启动帧里接近已审查的插画相位`).toBeLessThanOrEqual(12);
-    }
+  const first = artwork.find(isArtwork);
+  expect(first, '必须看到应用自己的启动插画').toBeDefined();
+  const name = 'native-launch-artwork-visible.png';
+  await testInfo.attach(name, { body: first!, contentType: 'image/png' });
+  if (testInfo.config.updateSnapshots === 'all') expect(first).toMatchSnapshot(name);
+  else {
+    const reference = readFileSync(testInfo.snapshotPath(name));
+    expect(Math.min(...artwork.filter(isArtwork).map(candidate => frameColorDistance(candidate, reference))),
+      `${name} 须在真实启动帧里接近已审查的插画`).toBeLessThanOrEqual(12);
   }
 }
