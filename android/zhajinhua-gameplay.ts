@@ -7,6 +7,7 @@ import { replay, gameCardNames } from './game-replay';
 import { closeGameMask } from './game-pregame';
 import { captureNativeTransition } from './animation-transition';
 import { adb } from './device';
+import { animateGamePanel } from './game-panel-animation';
 
 /**
  * 直接使用 Web 八个牌局状态的网络事件，真实点击原生操作按钮。
@@ -69,7 +70,8 @@ export async function zhajinhuaGameplay(device: AndroidDevice, proxy: Mitmproxy,
   await capture('quick_raise');
   await send(restoreTable(self, false, true));
   await gameReady(device, 'zhajinhua-operation-accurate-bet-button');
-  await gameTap(device, 'zhajinhua-operation-accurate-bet-button');
+  await animateGamePanel(device, 'zhajinhua', 'accurate-bet', 'zhajinhua-operation-accurate-bet-button',
+    { x: 115, y: 350, width: 490, height: 570 }, animationInfo);
   await gameReady(device, 'accurate-bet-popup-container');
   await capture('accurate_raise');
   await closeGameMask(device, 'accurate-bet-popup-container');

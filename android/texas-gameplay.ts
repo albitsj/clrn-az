@@ -8,6 +8,7 @@ import { closeGameMask } from './game-pregame';
 import { dismissKeyboard } from './keyboard';
 import { gameTapText, type TexasContext } from './texas-support';
 import { captureNativeTransition } from './animation-transition';
+import { animateGamePanel } from './game-panel-animation';
 
 /**
  * 复用网页的德州消息夹具，覆盖各街、操作、摊牌、结算和玩家资料。
@@ -53,12 +54,14 @@ export async function texasGameplay(device: AndroidDevice, proxy: Mitmproxy, roo
     await restore(street);
     await capture(street);
   }
-  await gameTap(device, 'texas-holdem-operation-button-raise');
+  await animateGamePanel(device, 'texas-holdem', 'raise-bet', 'texas-holdem-operation-button-raise',
+    { x: 110, y: 245, width: 500, height: 760 }, animationInfo);
   await gameReady(device, 'raise-bet-popup');
   await capture('raise');
   await gameTap(device, 'raise-bet-cancel-button');
   await gameGone(device, 'raise-bet-popup');
-  await gameTap(device, 'texas-holdem-operation-accurate-bet-button');
+  await animateGamePanel(device, 'texas-holdem', 'accurate-bet', 'texas-holdem-operation-accurate-bet-button',
+    { x: 115, y: 350, width: 490, height: 570 }, animationInfo);
   await gameReady(device, 'accurate-bet-popup-container');
   await capture('accurate_raise');
   await closeGameMask(device, 'accurate-bet-popup-container');
@@ -86,6 +89,7 @@ export async function texasGameplay(device: AndroidDevice, proxy: Mitmproxy, roo
     .find(node => node.res === `texas-holdem-player-container-${self}`), 'text-holdem-own-balance-text'),
   { timeout: 30_000 }).toBe('1180');
   await capture('settlement');
+  let opponentProfileCount = 0;
   /**
    * 打开玩家资料，等待统计数据实际完成加载。
    * @param player - 共享夹具玩家或本人 ID。
@@ -93,7 +97,9 @@ export async function texasGameplay(device: AndroidDevice, proxy: Mitmproxy, roo
   const profile = async (player: string) => {
     const node = (await gameNodes(device)).find(item => item.res?.startsWith(`texas-holdem-player-container-${player}`));
     expect(node).toBeDefined();
-    await gameTap(device, node!.res!);
+    const name = player === self ? 'own-profile' : `opponent-profile-${++opponentProfileCount}`;
+    await animateGamePanel(device, 'texas-holdem', name,
+      node!.res!, { x: 15, y: 85, width: 690, height: 1075 }, animationInfo);
     await gameReady(device, 'player-profile-popup-close');
     await gameReady(device, 'PlayerStatisticComponent_Item_Value_0');
   };
@@ -109,13 +115,15 @@ export async function texasGameplay(device: AndroidDevice, proxy: Mitmproxy, roo
   await capture('player_statistics_1000');
   await capture('statistics_help', [], () => gameTap(device, 'PlayerStatisticComponent_Item_1', true));
   await gameGone(device, 'toastText1');
-  await gameTap(device, 'player-profile-report-button');
+  await animateGamePanel(device, 'texas-holdem', 'report', 'player-profile-report-button',
+    { x: 20, y: 240, width: 680, height: 800 }, animationInfo);
   await gameReady(device, 'report-field-input');
   await dismissKeyboard(device);
   await capture('report');
   await closeGameMask(device, 'report-field-input');
   await profile(REPLAY_PLAYER_IDS[0]);
-  await gameTap(device, 'player-profile-block-button');
+  await animateGamePanel(device, 'texas-holdem', 'block', 'player-profile-block-button',
+    { x: 20, y: 240, width: 680, height: 800 }, animationInfo);
   await capture('block');
   await gameTap(device, 'player-profile-popup-close');
   expect((await proxy.command<{ replayedMessages: number }>('status')).replayedMessages).toBeGreaterThan(0);

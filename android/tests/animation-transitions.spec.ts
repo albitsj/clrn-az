@@ -145,9 +145,9 @@ test('private room invite sheet slides into and out of the Android screen', asyn
       device = await launchApplication({ gameDriver: true, enableSystemAnimations: true });
       await waitForHall(device);
       await signIn(device);
-      const detail = androidScenarios('en', 'rooms').find(scenario => scenario.pageLabel === 'signed_in_private_room_detail');
-      expect(detail).toBeDefined();
-      await navigateScenario(device, detail!);
+      // 私人房标签本身就是个人房详情；大厅创建入口会打开玩法选择器。
+      await tap(device, 'private-room-tab');
+      await gameReady(device, 'copy-house-number-button');
       const button = await gameReady(device, 'invite-friends-button');
       /** 从私人房详情的实际按钮打开分享应用抽屉。 */
       const pressInvite = () => adb('shell', 'input', 'tap',
