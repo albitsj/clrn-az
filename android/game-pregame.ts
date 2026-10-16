@@ -6,7 +6,7 @@ import { animateGamePanel } from './game-panel-animation';
 import presentation from '../visual/fixtures/account-presentation.json';
 import { captureMovingKeyframes } from './loop-keyframes';
 import { captureNativeTransition } from './animation-transition';
-import type { ScreenshotBounds } from './screenshot';
+import type { ScreenshotBounds, ScreenshotMask } from './screenshot';
 
 
 type Capture = (state: string) => Promise<void>;
@@ -61,13 +61,15 @@ export async function closeGameMask(device: AndroidDevice, marker: string): Prom
  * @param marker - 当前面板标记。
  * @param region - 动画绘制范围。
  * @param testInfo - 英文动画关键帧报告。
+ * @param masks - 与面板无关的动态区域。
  */
 export async function closeAnimatedGameMask(device: AndroidDevice, game: 'texas-holdem' | 'zhajinhua',
-  name: string, marker: string, region: ScreenshotBounds, testInfo?: TestInfo): Promise<void> {
+  name: string, marker: string, region: ScreenshotBounds, testInfo?: TestInfo,
+  masks: ScreenshotMask[] = []): Promise<void> {
   if (!testInfo) { await closeGameMask(device, marker); return; }
   const point = await gameMaskClosePoint(device, marker);
   await captureNativeTransition(device, `${game}-${name}-exit`, testInfo, region,
-    () => adb('shell', 'input', 'tap', String(Math.round(point.x)), String(Math.round(point.y))), [], [], 600);
+    () => adb('shell', 'input', 'tap', String(Math.round(point.x)), String(Math.round(point.y))), masks, [], 600);
   await gameGone(device, marker);
 }
 

@@ -90,12 +90,15 @@ export async function zhajinhuaGameplay(device: AndroidDevice, proxy: Mitmproxy,
   await capture('quick_raise');
   await send(restoreTable(self, false, true));
   await gameReady(device, 'zhajinhua-operation-accurate-bet-button');
+  const accurateBetClock = [{ x: 350, y: 725, width: 90, height: 40,
+    reason: '独立运行的玩家操作倒计时，不属于精确加注弹窗' }];
   await animateGamePanel(device, 'zhajinhua', 'accurate-bet', 'zhajinhua-operation-accurate-bet-button',
-    { x: 150, y: 400, width: 430, height: 480 }, animationInfo);
+    { x: 150, y: 400, width: 430, height: 480 }, animationInfo, 'enter', 'motionFrames', accurateBetClock);
   await gameReady(device, 'accurate-bet-popup-container');
   await capture('accurate_raise');
   if (animationInfo) await closeAnimatedGameMask(device, 'zhajinhua', 'accurate-bet',
-    'accurate-bet-popup-container', { x: 150, y: 400, width: 430, height: 480 }, animationInfo);
+    'accurate-bet-popup-container', { x: 150, y: 400, width: 430, height: 480 }, animationInfo,
+    accurateBetClock);
   else await closeGameMask(device, 'accurate-bet-popup-container');
   await gameTap(device, 'zhajinhua-operation-button-battle');
   await expect.poll(async () => (await gameNodes(device)).filter(node => node.res === 'challenge_player_selector').length,
