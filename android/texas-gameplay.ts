@@ -4,7 +4,7 @@ import type { Mitmproxy } from '../e2e/helpers/mitmproxy-client';
 import { events, REPLAY_PLAYER_IDS, restoreTable, type Street } from '../visual/cases/texas-holdem/replayData';
 import { flattenNodes, gameReady, gameGone, gameTap, gameNodes, gameSemanticText } from './game-controls';
 import { replay, gameCardNames } from './game-replay';
-import { closeGameMask } from './game-pregame';
+import { closeAnimatedGameMask, closeGameMask } from './game-pregame';
 import { dismissKeyboard } from './keyboard';
 import { gameTapText, type TexasContext } from './texas-support';
 import { captureNativeTransition } from './animation-transition';
@@ -72,8 +72,8 @@ export async function texasGameplay(device: AndroidDevice, proxy: Mitmproxy, roo
     { x: 120, y: 360, width: 480, height: 330 }, animationInfo);
   await gameReady(device, 'accurate-bet-popup-container');
   await capture('accurate_raise');
-  if (animationInfo) await captureNativeTransition(device, 'texas-holdem-accurate-bet-exit', animationInfo,
-    { x: 120, y: 360, width: 480, height: 330 }, () => closeGameMask(device, 'accurate-bet-popup-container'));
+  if (animationInfo) await closeAnimatedGameMask(device, 'texas-holdem', 'accurate-bet',
+    'accurate-bet-popup-container', { x: 120, y: 360, width: 480, height: 330 }, animationInfo);
   else await closeGameMask(device, 'accurate-bet-popup-container');
   await restore('river', true);
   await send(events([{ event: 'switch_player', player_id: REPLAY_PLAYER_IDS[0], valid_bets: { call: { amount: 20 } } }]));
@@ -159,8 +159,8 @@ export async function texasGameplay(device: AndroidDevice, proxy: Mitmproxy, roo
   await gameReady(device, 'report-field-input');
   await dismissKeyboard(device);
   await capture('report');
-  if (animationInfo) await captureNativeTransition(device, 'texas-holdem-report-exit', animationInfo,
-    { x: 50, y: 250, width: 620, height: 380 }, () => closeGameMask(device, 'report-field-input'));
+  if (animationInfo) await closeAnimatedGameMask(device, 'texas-holdem', 'report',
+    'report-field-input', { x: 50, y: 250, width: 620, height: 380 }, animationInfo);
   else await closeGameMask(device, 'report-field-input');
   await profile(REPLAY_PLAYER_IDS[0]);
   await gameTap(device, 'player-profile-block-button');

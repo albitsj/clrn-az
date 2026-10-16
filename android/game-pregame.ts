@@ -62,7 +62,7 @@ export async function closeGameMask(device: AndroidDevice, marker: string): Prom
  * @param region - 动画绘制范围。
  * @param testInfo - 英文动画关键帧报告。
  */
-async function closeAnimatedGameMask(device: AndroidDevice, game: 'texas-holdem' | 'zhajinhua',
+export async function closeAnimatedGameMask(device: AndroidDevice, game: 'texas-holdem' | 'zhajinhua',
   name: string, marker: string, region: ScreenshotBounds, testInfo?: TestInfo): Promise<void> {
   if (!testInfo) { await closeGameMask(device, marker); return; }
   const point = await gameMaskClosePoint(device, marker);

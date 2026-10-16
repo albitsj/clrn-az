@@ -4,7 +4,7 @@ import type { Mitmproxy } from '../e2e/helpers/mitmproxy-client';
 import { events, PLAYER_IDS, restoreTable, validBets } from '../visual/cases/zhajinhua/replayData';
 import { gameReady, gameGone, gameTap, gameNodes, gameSemanticText } from './game-controls';
 import { replay, gameCardNames } from './game-replay';
-import { closeGameMask } from './game-pregame';
+import { closeAnimatedGameMask, closeGameMask } from './game-pregame';
 import { captureNativeTransition } from './animation-transition';
 import { adb } from './device';
 import { animateGamePanel } from './game-panel-animation';
@@ -78,7 +78,7 @@ export async function zhajinhuaGameplay(device: AndroidDevice, proxy: Mitmproxy,
       await send(raise);
     };
     await captureNativeTransition(device, 'zhajinhua-quick-raise', animationInfo,
-      { x: 200, y: 680, width: 410, height: 390 }, pressRaise, [], [], 1200);
+      { x: 340, y: 650, width: 170, height: 410 }, pressRaise, [], [], 1200);
   } else {
     await gameTap(device, 'zhajinhua-shortcut-raise-first');
     await send(raise);
@@ -94,8 +94,8 @@ export async function zhajinhuaGameplay(device: AndroidDevice, proxy: Mitmproxy,
     { x: 150, y: 400, width: 430, height: 480 }, animationInfo);
   await gameReady(device, 'accurate-bet-popup-container');
   await capture('accurate_raise');
-  if (animationInfo) await captureNativeTransition(device, 'zhajinhua-accurate-bet-exit', animationInfo,
-    { x: 150, y: 400, width: 430, height: 480 }, () => closeGameMask(device, 'accurate-bet-popup-container'));
+  if (animationInfo) await closeAnimatedGameMask(device, 'zhajinhua', 'accurate-bet',
+    'accurate-bet-popup-container', { x: 150, y: 400, width: 430, height: 480 }, animationInfo);
   else await closeGameMask(device, 'accurate-bet-popup-container');
   await gameTap(device, 'zhajinhua-operation-button-battle');
   await expect.poll(async () => (await gameNodes(device)).filter(node => node.res === 'challenge_player_selector').length,
