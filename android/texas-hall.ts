@@ -71,6 +71,13 @@ export async function texasHall(context: TexasContext): Promise<void> {
   await texasEvents(context, [{ event: 'settlement', players: [{ player_id: REPLAY_PLAYER_IDS[0], net: 180, prize: 180, stack: 1140 }] }]);
   await gameReady(device, 'bet-next-hand-button');
   await capture('prediction');
+  await gameTap(device, 'menu-button');
+  await animateGamePanel(device, 'texas-holdem', 'prediction-records', 'drawer-menu-item-prediction_record',
+    { x: 70, y: 250, width: 580, height: 780 }, animationInfo);
+  await gameReady(device, 'BetNextHandRecordsScreenContainer');
+  await animateGamePanel(device, 'texas-holdem', 'prediction-records', 'BetNextHandRecordsScreenCloseButton',
+    { x: 70, y: 250, width: 580, height: 780 }, animationInfo, 'exit');
+  await gameGone(device, 'BetNextHandRecordsScreenContainer');
   await texasEvents(context, [{ event: 'settlement_hand_prediction', result: { net: 10, currency_name: 'coin' } }]);
   await gameReady(device, 'bet-next-hand-result-amount', '+10');
   await capture('prediction_result');

@@ -103,6 +103,15 @@ export async function gamePreGame(device: AndroidDevice, game: 'texas-holdem' | 
   }
   else await closeAnimatedGameMask(device, game, 'card-rank', 'card-rank-list',
     { x: 110, y: 400, width: 440, height: 600 }, animationInfo);
+  if (game === 'zhajinhua') {
+    await tap(device, 'menu-button');
+    await animateGamePanel(device, game, 'game-rule', 'drawer-menu-item-game_rule',
+      { x: 130, y: 330, width: 460, height: 610 }, animationInfo);
+    await gameReady(device, 'game-rule-popup');
+    await animateGamePanel(device, game, 'game-rule', 'game-rule-popup-close-button',
+      { x: 130, y: 330, width: 460, height: 610 }, animationInfo, 'exit');
+    await gameGone(device, 'game-rule-popup');
+  }
   for (const [state, ready, close] of [
     ['theme', 'game-settings-card-theme-simple', 'game-settings-close-button'],
     ['settings', 'game-settings-popup-container', 'game-settings-close-button'],
@@ -157,7 +166,7 @@ export async function gamePreGame(device: AndroidDevice, game: 'texas-holdem' | 
   const closeChat = () => adb('shell', 'input', 'tap', String(Math.round(chat.x + 8)),
     String(Math.round(chat.y + 80)));
   if (animationInfo) await captureNativeTransition(device, `${game}-chat-exit`, animationInfo,
-    { x: 110, y: 860, width: 140, height: 310 }, closeChat);
+    { x: 110, y: 760, width: 140, height: 500 }, closeChat);
   else closeChat();
   await gameGone(device, 'in-game-chat-container');
   await animateGamePanel(device, game, 'buy-in-applications', 'buy-in-application-button',

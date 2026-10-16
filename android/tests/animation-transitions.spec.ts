@@ -32,10 +32,11 @@ test('native launch branding and staging notice animate on a real app start', as
       const start = () => adb('shell', 'am', 'start', '-n',
         `${applicationId}/com.laiwan_react_native.MainActivity`);
       await captureNativeTransition(device, 'native-launch-and-staging-notice', testInfo,
-        { x: 70, y: 155, width: 580, height: 900 }, start, [], [
+        { x: 70, y: 155, width: 580, height: 900 }, start,
+        [{ x: 70, y: 220, width: 60, height: 110, reason: 'Pixel Launcher 时钟图标持续走针' }], [
           { x: 110, y: 170, width: 500, height: 145 },
           { x: 110, y: 360, width: 500, height: 550 },
-        ], 2_000);
+        ], 1_500, 'launchFrames');
       await device.wait({ res: 'staging-confirmation-input' });
     } finally { await device?.close(); }
   });

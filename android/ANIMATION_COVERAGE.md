@@ -21,8 +21,10 @@
 | 德州语音、系统提示、弹幕、聊天举报/屏蔽、带入审核 | `games.spec.ts` 德州 `_panels` | `texas-holdem-voice`、`texas-system-prompt`、`texas-barrage`、聊天及审核面板关键帧 |
 | 德州操作失败、余额不足、身份失效提示 | `games.spec.ts` 德州 `_panel_variants` | `texas-alert-retry/balance` 入退场、`texas-alert-auth` 入场；分别由真实错误响应触发 |
 | 德州自动补充带入、合谋举报、个人排行榜、加载转圈 | `games.spec.ts` 德州 `_hall` | 对应面板入退场、`texas-loading-spinner` 两个区域各自运动 |
+| 德州下一手预测记录弹层 | `games.spec.ts` 德州 `_hall` 菜单入口 | `texas-holdem-prediction-records-enter/exit` |
 | 拼三张倒计时、发牌、翻牌、快捷加注、精确加注 | `games.spec.ts` 拼三张 `_game` | `zhajinhua-operation-countdown`、`zhajinhua-deal-cards`、`zhajinhua-flip-cards`、`zhajinhua-quick-raise`、精确加注入退场 |
 | 拼三张比牌目标、摊牌、结算、升级 | `games.spec.ts` 拼三张 `_game` | 四个目标各自闪烁；`zhajinhua-showdown-cards`、`zhajinhua-settlement`、升级入退场 |
+| 拼三张游戏规则弹层 | `games.spec.ts` 拼三张 `_pre_game` 菜单入口 | `zhajinhua-game-rule-enter/exit` |
 | 两种牌桌的七种表情和七种道具 | 两种 `_game` 场景 | 每种效果各自的播放首帧、变化帧；道具另检查飞行区；`animation-assets.json` 逐字节锁定全部 16 个 WebP 的帧数、顺序和时长 |
 
 所有转场基准保存真实屏幕的起点、中途和终点，并检查触发前后确有可见变化。循环动画要求原生连续帧内发生运动，同时保存两个实际相位。普通页面截图不替代这些检查。`reference` 仅产生待审查候选图；提交基准后必须在 `compare` 模式验证。

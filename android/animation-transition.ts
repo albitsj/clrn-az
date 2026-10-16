@@ -34,10 +34,12 @@ export function frameColorDistance(left: Buffer, right: Buffer): number {
  * @param masks - 区域内与目标无关的独立循环效果；保留掩码说明。
  * @param requiredRegions - 同一效果中必须分别运动的可见子区域。
  * @param settleMs - 触发后仍在滚动的长动画，采样结束后额外等待完成。
+ * @param samplingMethod - 启动页使用持续取样命令跨过系统 Splash。
  */
 export async function captureNativeTransition(device: AndroidDevice, name: string, testInfo: TestInfo,
   region: ScreenshotBounds, trigger: () => unknown, masks: ScreenshotMask[] = [],
-  requiredRegions: ScreenshotBounds[] = [], settleMs = 0): Promise<void> {
+  requiredRegions: ScreenshotBounds[] = [], settleMs = 0,
+  samplingMethod: 'motionFrames' | 'launchFrames' = 'motionFrames'): Promise<void> {
   /**
    * 截出固定的动画绘制区域。
    * @param bytes - 原生完整屏幕 PNG。
@@ -51,7 +53,7 @@ export async function captureNativeTransition(device: AndroidDevice, name: strin
   let frames: NativeFrame[];
   try {
     const pending = Promise.race([
-      implementation._send('motionFrames'),
+      implementation._send(samplingMethod),
       setTimeout(30_000, undefined, { signal: timeout.signal }).then(() => { throw new Error('原生动画采样超时。'); }),
     ]);
     await setTimeout(300);
