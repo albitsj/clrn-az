@@ -38,7 +38,7 @@ export async function texasHall(context: TexasContext): Promise<void> {
       await animationInfo.attach('texas-loading-full', { body: await gameScreenshot(device), contentType: 'image/png' });
       // 两层图标分别旋转，逐区保存真实画面明暗/位置相位。
       await captureMovingKeyframes(device, 'texas-loading-spinner', animationInfo,
-        [{ x: 328, y: 610, width: 16, height: 60 }, { x: 345, y: 625, width: 30, height: 30 }]);
+        [{ x: 300, y: 550, width: 26, height: 50 }, { x: 338, y: 580, width: 42, height: 52 }]);
     } finally { await proxy.command('android/auto-rebuy-hold', { hold: false }); }
     await expect.poll(async () => (await gameReady(device, 'auto-rebuy-switch')).checked,
       { timeout: 30_000 }).toBe(true);

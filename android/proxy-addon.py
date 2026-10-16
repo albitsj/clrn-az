@@ -169,7 +169,8 @@ class AndroidVisualProxy:
                 flow.response = http.Response.make(504, b'Visual auto-rebuy hold expired')
                 return
             # 释放后回放成功响应；隔离房间的真实后端可能拒绝修改设置。
-            flow.response = http.Response.make(200, b'{}', {'Content-Type': 'application/json'})
+            flow.response = http.Response.make(200, b'{"ok":true,"result":{"auto_rebuy":true}}',
+                                               {'Content-Type': 'application/json'})
             return
         if self.invitable and path == '/v2/building/rooms' and flow.request.method == 'PUT':
             room = {'room_id': '00000000-0000-4000-8000-000000000099', 'room_name': 'TestRoom',
