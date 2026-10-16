@@ -246,12 +246,18 @@ export async function captureTimedPrompt(device: AndroidDevice, name: string, te
    * @param frame - 顶部提示区域的截图。
    */
   const timer = (frame: Buffer) => motionParts(frame, [{ x: 0, y: 165, width: 70, height: 45 }]).regions[0];
-  const settled = visible.filter(frame => frameColorDistance(title(before), title(frame)) > 30);
+  const beforeTitle = title(before);
+  const settled = visible.map(frame => ({ frame, heading: title(frame), seconds: timer(frame) }))
+    .filter(item => frameColorDistance(beforeTitle, item.heading) > 30);
   expect(settled.length, `${name} 标题须完整出现`).toBeGreaterThanOrEqual(2);
-  const pair = settled.flatMap((first, index) => settled.slice(index + 1)
-    .filter(changed => frameColorDistance(title(first), title(changed)) < 3
-      && frameColorDistance(timer(first), timer(changed)) > 4)
-    .map(changed => ({ first, changed })))[0];
+  let pair: { first: Buffer; changed: Buffer } | undefined;
+  for (let index = 0; index < settled.length && !pair; index++) {
+    const first = settled[index];
+    const changed = settled.slice(index + 1).find(item =>
+      frameColorDistance(first.heading, item.heading) < 3
+      && frameColorDistance(first.seconds, item.seconds) > 4);
+    if (changed) pair = { first: first.frame, changed: changed.frame };
+  }
   expect(pair, `${name} 标题稳定后倒计时数字必须变化`).toBeDefined();
   await setTimeout(6000);
   const after = crop(await gameScreenshot(device));
