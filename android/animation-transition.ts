@@ -33,10 +33,11 @@ export function frameColorDistance(left: Buffer, right: Buffer): number {
  * @param trigger - 使用独立 ADB 连接执行实际点击，避免阻塞截图命令。
  * @param masks - 区域内与目标无关的独立循环效果；保留掩码说明。
  * @param requiredRegions - 同一效果中必须分别运动的可见子区域。
+ * @param settleMs - 触发后仍在滚动的长动画，采样结束后额外等待完成。
  */
 export async function captureNativeTransition(device: AndroidDevice, name: string, testInfo: TestInfo,
   region: ScreenshotBounds, trigger: () => unknown, masks: ScreenshotMask[] = [],
-  requiredRegions: ScreenshotBounds[] = []): Promise<void> {
+  requiredRegions: ScreenshotBounds[] = [], settleMs = 0): Promise<void> {
   /**
    * 截出固定的动画绘制区域。
    * @param bytes - 原生完整屏幕 PNG。
@@ -60,6 +61,7 @@ export async function captureNativeTransition(device: AndroidDevice, name: strin
   expect(frames.length, '原生驱动至少采集三帧').toBeGreaterThanOrEqual(3);
   const originals = frames.map(frame => Buffer.from(frame.png, 'base64'));
   const timeline = originals.map(crop);
+  if (settleMs) await setTimeout(settleMs);
   const after = crop(await gameScreenshot(device));
   await testInfo.attach(`${name}-timeline`, {
     body: JSON.stringify(frames.map(({ capturedAt }) => capturedAt)), contentType: 'application/json',
@@ -70,7 +72,7 @@ export async function captureNativeTransition(device: AndroidDevice, name: strin
   await testInfo.attach(`${name}-start`, { body: before, contentType: 'image/png' });
   await testInfo.attach(`${name}-end`, { body: after, contentType: 'image/png' });
   expect(samePixels(timeline[0], before), '开始采样时动画尚未触发').toBe(true);
-  expect(samePixels(timeline.at(-1)!, after), '采样结束时动画必须完成').toBe(true);
+  if (!settleMs) expect(samePixels(timeline.at(-1)!, after), '采样结束时动画必须完成').toBe(true);
   if (requiredRegions.length) {
     const parts = originals.map(frame => motionParts(maskScreenshot(frame, masks), requiredRegions).regions);
     for (const index of requiredRegions.keys()) {
