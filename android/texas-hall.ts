@@ -1,4 +1,5 @@
 import { expect } from '@playwright/test';
+import { setTimeout } from 'node:timers/promises';
 import { REPLAY_PLAYER_IDS } from '../visual/cases/texas-holdem/replayData';
 import { gameGone, gameNodes, gameReady, gameScreenshot, gameTap, gameTextWithin } from './game-controls';
 import { closeGameMask } from './game-pregame';
@@ -37,8 +38,12 @@ export async function texasHall(context: TexasContext): Promise<void> {
         { timeout: 5000 }).toBe(true);
       await animationInfo.attach('texas-loading-full', { body: await gameScreenshot(device), contentType: 'image/png' });
       // 两层图标分别旋转，逐区保存真实画面明暗/位置相位。
-      await captureMovingKeyframes(device, 'texas-loading-spinner', animationInfo,
-        [{ x: 300, y: 550, width: 26, height: 50 }, { x: 338, y: 580, width: 42, height: 52 }]);
+      const results = await Promise.allSettled([
+        captureMovingKeyframes(device, 'texas-loading-spinner', animationInfo,
+          [{ x: 300, y: 550, width: 26, height: 50 }, { x: 338, y: 580, width: 42, height: 52 }]),
+        setTimeout(1_500).then(() => proxy.command('android/auto-rebuy-hold', { hold: false })),
+      ]);
+      for (const result of results) if (result.status === 'rejected') throw result.reason;
     } finally { await proxy.command('android/auto-rebuy-hold', { hold: false }); }
     await expect.poll(async () => (await gameReady(device, 'auto-rebuy-switch')).checked,
       { timeout: 30_000 }).toBe(true);
