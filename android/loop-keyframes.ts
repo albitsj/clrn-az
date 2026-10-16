@@ -58,3 +58,37 @@ export async function captureLoopKeyframes(device: AndroidDevice, name: string, 
     }
   }
 }
+
+/**
+ * 对位置变化而亮度几乎不变的循环动画保存两种真实画面，并在回归时逐帧寻找对应相位。
+ * @param device - 已安装固定原生采样驱动的模拟器。
+ * @param name - 具体动画名称。
+ * @param testInfo - Playwright 快照与报告。
+ * @param regions - 每个独立运动控件的完整可见范围。
+ */
+export async function captureMovingKeyframes(device: AndroidDevice, name: string, testInfo: TestInfo,
+  regions: ScreenshotBounds[]): Promise<void> {
+  expect(regions.length).toBeGreaterThan(0);
+  const implementation = (device as unknown as { _connection: { toImpl(device: AndroidDevice): {
+    _send(method: string): Promise<NativeFrame[]> } } })._connection.toImpl(device);
+  const timeline = await implementation._send('motionFrames');
+  expect(timeline.length).toBeGreaterThanOrEqual(10);
+  const pictures = timeline.map(frame => motionParts(Buffer.from(frame.png, 'base64'), regions).regions);
+  for (const index of regions.keys()) {
+    const frames = pictures.map(parts => parts[index]);
+    const first = frames[0];
+    const distances = frames.map(frame => frameColorDistance(first, frame));
+    const farthestIndex = distances.indexOf(Math.max(...distances));
+    expect(distances[farthestIndex], `${name} 第 ${index + 1} 个控件必须运动`).toBeGreaterThan(1);
+    for (const [phase, selected] of [['first', first], ['moved', frames[farthestIndex]]] as const) {
+      const file = `${name}-${index + 1}-${phase}.png`;
+      await testInfo.attach(file, { body: selected, contentType: 'image/png' });
+      if (testInfo.config.updateSnapshots === 'all') expect(selected).toMatchSnapshot(file);
+      else {
+        const reference = readFileSync(testInfo.snapshotPath(file));
+        expect(Math.min(...frames.map(frame => frameColorDistance(frame, reference))),
+          `${name} 第 ${index + 1} 个控件的${phase}相位须匹配基准`).toBeLessThanOrEqual(18);
+      }
+    }
+  }
+}

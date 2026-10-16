@@ -8,6 +8,7 @@ import { closeGameMask } from './game-pregame';
 import { captureNativeTransition } from './animation-transition';
 import { adb } from './device';
 import { animateGamePanel } from './game-panel-animation';
+import { captureLoopKeyframes, captureMovingKeyframes } from './loop-keyframes';
 
 /**
  * 直接使用 Web 八个牌局状态的网络事件，真实点击原生操作按钮。
@@ -36,6 +37,11 @@ export async function zhajinhuaGameplay(device: AndroidDevice, proxy: Mitmproxy,
   await gameGone(device, 'player_tips_text');
   await gameReady(device, 'zhajinhua-operation-button-call');
   await gameReady(device, 'zhajinhua-see-hand-card-button');
+  if (animationInfo) {
+    const timer = (await gameNodes(device)).find(node => node.res === 'zhajinhua-active-countdown');
+    expect(timer, '拼三张本人操作倒计时必须可见').toBeDefined();
+    await captureMovingKeyframes(device, 'zhajinhua-operation-countdown', animationInfo, [timer!.bounds]);
+  }
   await capture('blind_cards');
   const seeCards = events([
     { event: 'see_hole_card', player_id: self },
@@ -78,6 +84,11 @@ export async function zhajinhuaGameplay(device: AndroidDevice, proxy: Mitmproxy,
   await gameTap(device, 'zhajinhua-operation-button-battle');
   await expect.poll(async () => (await gameNodes(device)).filter(node => node.res === 'challenge_player_selector').length,
     { timeout: 30_000 }).toBe(4);
+  if (animationInfo) {
+    const selectors = (await gameNodes(device)).filter(node => node.res === 'challenge_player_selector');
+    await captureLoopKeyframes(device, 'zhajinhua-challenge-targets', animationInfo,
+      selectors.map(node => node.bounds));
+  }
   await capture('challenge_select');
   await gameTap(device, 'zhajinhua-cancel-challenge-choosing');
   await gameTap(device, 'zhajinhua-shortcut-raise-first');

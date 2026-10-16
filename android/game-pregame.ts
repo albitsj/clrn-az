@@ -4,6 +4,7 @@ import { gameTap as tap, gameReady, gameGone, gameNodes } from './game-controls'
 import { adb } from './device';
 import { animateGamePanel } from './game-panel-animation';
 import presentation from '../visual/fixtures/account-presentation.json';
+import { captureMovingKeyframes } from './loop-keyframes';
 
 
 type Capture = (state: string) => Promise<void>;
@@ -52,6 +53,13 @@ export async function gamePreGame(device: AndroidDevice, game: 'texas-holdem' | 
   animationInfo?: TestInfo): Promise<void> {
   await gameReady(device, game === 'texas-holdem' ? 'texas-holdem-room-name-text' : 'zhajinhua-text-room-name', 'TestRoom');
   await capture('waiting_table');
+  if (game === 'zhajinhua' && animationInfo) {
+    const arrows = (await gameNodes(device)).filter(node => node.res?.startsWith('seat-guide-')
+      && node.bounds.width > 0 && node.bounds.height > 0);
+    expect(arrows, '九个空座箭头必须分别可见').toHaveLength(9);
+    await captureMovingKeyframes(device, 'zhajinhua-seat-guides', animationInfo,
+      arrows.map(node => node.bounds));
+  }
   await animateGamePanel(device, game, 'drawer-menu', 'menu-button',
     { x: 120, y: 300, width: 180, height: 500 }, animationInfo);
   await gameReady(device, 'drawer-menu-item-exit');

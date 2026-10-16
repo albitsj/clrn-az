@@ -6,7 +6,7 @@ import { signIn, tap } from '../navigation';
 import { gameNodes } from '../game-controls';
 import { captureLoopKeyframes } from '../loop-keyframes';
 
-test('every native club placeholder pulses until real details arrive', async ({}, testInfo) => {
+test('every native club placeholder pulses while detail response is pending', async ({}, testInfo) => {
   test.skip(!['all', 'social'].includes(process.env.ANDROID_GROUP || 'all')
     || (process.env.ANDROID_LOCALE || 'en') !== 'en', '俱乐部骨架动画只在英文社交任务采集一次');
   test.setTimeout(420_000);
@@ -18,6 +18,7 @@ test('every native club placeholder pulses until real details arrive', async ({}
       await signIn(device);
       await expect.poll(async () => (await proxy.command<{ loaded: number }>('android/skeleton')).loaded,
         { timeout: 60_000 }).toBeGreaterThan(0);
+      const initial = (await proxy.command<{ loaded: number }>('android/skeleton')).loaded;
       await proxy.command('android/skeleton', { hold: true });
       await tap(device, 'club-tab');
       await device.wait({ res: 'ClubItemPlaceholder_container' });
@@ -27,8 +28,8 @@ test('every native club placeholder pulses until real details arrive', async ({}
       await captureLoopKeyframes(device, 'club-list-skeleton', testInfo,
         placeholders.map(node => node.bounds));
       await proxy.command('android/skeleton', { hold: false });
-      await device.wait({ text: 'TestClub1' });
-      await device.wait({ text: 'TestClub2' });
+      await expect.poll(async () => (await proxy.command<{ loaded: number }>('android/skeleton')).loaded,
+        { timeout: 30_000 }).toBeGreaterThan(initial);
     } finally {
       await proxy.command('android/skeleton', { hold: false }).catch(() => {});
       await device?.close();

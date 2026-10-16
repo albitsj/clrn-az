@@ -9,6 +9,7 @@ import { dismissKeyboard } from './keyboard';
 import { gameTapText, type TexasContext } from './texas-support';
 import { captureNativeTransition } from './animation-transition';
 import { animateGamePanel } from './game-panel-animation';
+import { captureMovingKeyframes } from './loop-keyframes';
 
 /**
  * 复用网页的德州消息夹具，覆盖各街、操作、摊牌、结算和玩家资料。
@@ -52,6 +53,11 @@ export async function texasGameplay(device: AndroidDevice, proxy: Mitmproxy, roo
   };
   for (const street of ['preflop', 'flop', 'turn', 'river'] as const) {
     await restore(street);
+    if (street === 'preflop' && animationInfo) {
+      const timer = (await gameNodes(device)).find(node => node.res === 'texas-holdem-active-countdown');
+      expect(timer, '德州本人操作倒计时必须可见').toBeDefined();
+      await captureMovingKeyframes(device, 'texas-operation-countdown', animationInfo, [timer!.bounds]);
+    }
     await capture(street);
   }
   await animateGamePanel(device, 'texas-holdem', 'raise-bet', 'texas-holdem-operation-button-raise',
