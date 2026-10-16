@@ -3,7 +3,7 @@ import type { AndroidDevice } from 'playwright';
 import { adb, compareScreenshot, launchApplication, waitForHall } from '../device';
 import { captureNativeTransition } from '../animation-transition';
 import { withAndroidProxy } from '../proxy';
-import { signIn, navigateScenario, tap } from '../navigation';
+import { signIn, navigateScenario, tap, reveal } from '../navigation';
 import { androidScenarios } from '../scenarios';
 import { screenshotMasks } from '../screenshot';
 import { verifyLoopAnimation } from '../loop-animation';
@@ -11,6 +11,34 @@ import { gameScreenshot } from '../game-controls';
 import { gameReady } from '../game-controls';
 import { waitAbsent } from '../native-state';
 import { captureMovingKeyframes } from '../loop-keyframes';
+
+test('native account stack slides in and out', async ({}, testInfo) => {
+  test.skip(!['all', 'account'].includes(process.env.ANDROID_GROUP || 'all')
+    || (process.env.ANDROID_LOCALE || 'en') !== 'en', '原生导航转场只在英文账号任务采集一次');
+  test.setTimeout(420_000);
+  await withAndroidProxy(async () => {
+    let device: AndroidDevice | undefined;
+    try {
+      device = await launchApplication({ gameDriver: true, enableSystemAnimations: true });
+      await waitForHall(device);
+      await signIn(device);
+      await tap(device, 'settings-tab');
+      await reveal(device, { res: 'account-security' });
+      const entry = await device.info({ res: 'account-security' });
+      const region = { x: 180, y: 160, width: 520, height: 1000 };
+      /** 点击真实账号安全入口，采集 Android 自定义水平入栈轨迹。 */
+      const enter = () => adb('shell', 'input', 'tap',
+        String(Math.round(entry.bounds.x + entry.bounds.width / 2)),
+        String(Math.round(entry.bounds.y + entry.bounds.height / 2)));
+      await captureNativeTransition(device, 'native-stack-enter', testInfo, region, enter);
+      await gameReady(device, 'account-security-items-list');
+      /** 系统返回调用当前导航栈的水平出栈动画。 */
+      const exit = () => adb('shell', 'input', 'keyevent', 'KEYCODE_BACK');
+      await captureNativeTransition(device, 'native-stack-exit', testInfo, region, exit);
+      await gameReady(device, 'account-security');
+    } finally { await device?.close(); }
+  });
+});
 
 test('guest search confirmation animates into and out of the Android screen', async ({}, testInfo) => {
   test.skip(!['all', 'guest'].includes(process.env.ANDROID_GROUP || 'all')
