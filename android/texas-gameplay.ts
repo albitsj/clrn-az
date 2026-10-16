@@ -83,7 +83,8 @@ export async function texasGameplay(device: AndroidDevice, proxy: Mitmproxy, roo
   const allIn = events([{ event: 'all_in', player_id: REPLAY_PLAYER_IDS[0], amount: 960, stack: 0 },
     { event: 'all_in_show_hole_card', players: [{ player_id: REPLAY_PLAYER_IDS[0], hole_card: ['kh', 'ks'] }] }]);
   if (animationInfo) await captureNativeTransition(device, 'texas-all-in-fire', animationInfo,
-    { x: 0, y: 650, width: 250, height: 225 }, () => send(allIn), [], [], 1600);
+    { x: 0, y: 650, width: 250, height: 225 }, () => send(allIn),
+    [{ x: 80, y: 700, width: 55, height: 50, reason: '全压特效旁的对手操作秒数独立跳秒' }], [], 1600);
   else await send(allIn);
   await gameReady(device, 'texas-holdem-player-action-all_in');
   await capture('all_in');

@@ -91,7 +91,8 @@ export async function texasPanels(context: TexasContext): Promise<void> {
   await gameReady(device, 'in_game_report_message_component');
   await capture('chat_actions');
   await animateGamePanel(device, 'texas-holdem', 'chat-report', 'report_item_report',
-    { x: 20, y: 360, width: 680, height: 560 }, animationInfo);
+    { x: 20, y: 360, width: 680, height: 560 }, animationInfo, 'enter', 'motionFrames',
+    [{ x: 334, y: 720, width: 110, height: 47, reason: '举报弹窗后面的房间计时独立跳秒' }]);
   await gameReady(device, 'report-popup-title');
   await dismissKeyboard(device);
   await capture('chat_report');
