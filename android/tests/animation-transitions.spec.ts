@@ -133,3 +133,34 @@ test('private room game picker slides into and out of the Android screen', async
     } finally { await device?.close(); }
   });
 });
+
+test('private room invite sheet slides into and out of the Android screen', async ({}, testInfo) => {
+  test.skip(!['all', 'rooms'].includes(process.env.ANDROID_GROUP || 'all')
+    || (process.env.ANDROID_LOCALE || 'en') !== 'en', '邀请好友动画只在英文房间任务采集一次');
+  test.setTimeout(420_000);
+  await withAndroidProxy(async () => {
+    let device: AndroidDevice | undefined;
+    try {
+      device = await launchApplication({ gameDriver: true, enableSystemAnimations: true });
+      await waitForHall(device);
+      await signIn(device);
+      const detail = androidScenarios('en', 'rooms').find(scenario => scenario.pageLabel === 'signed_in_private_room_detail');
+      expect(detail).toBeDefined();
+      await navigateScenario(device, detail!);
+      const button = await device.info({ res: 'invite-friends-button' });
+      /** 从私人房详情的实际按钮打开分享应用抽屉。 */
+      const pressInvite = () => adb('shell', 'input', 'tap',
+        String(Math.round(button.bounds.x + button.bounds.width / 2)),
+        String(Math.round(button.bounds.y + button.bounds.height / 2)));
+      const region = { x: 0, y: 820, width: 720, height: 460 };
+      await captureNativeTransition(device, 'invite-friends-enter', testInfo, region, pressInvite);
+      const cancel = await device.info({ res: 'invite-friend-popup-cancel-button' });
+      expect(cancel.bounds.width).toBeGreaterThan(0);
+      /** 通过抽屉中的取消按钮触发同一组件的退场动画。 */
+      const pressCancel = () => adb('shell', 'input', 'tap',
+        String(Math.round(cancel.bounds.x + cancel.bounds.width / 2)),
+        String(Math.round(cancel.bounds.y + cancel.bounds.height / 2)));
+      await captureNativeTransition(device, 'invite-friends-exit', testInfo, region, pressCancel);
+    } finally { await device?.close(); }
+  });
+});
