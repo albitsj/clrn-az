@@ -86,8 +86,15 @@ export async function texasGameplay(device: AndroidDevice, proxy: Mitmproxy, roo
   else await closeGameMask(device, 'accurate-bet-popup-container');
   await restore('river', true);
   if (animationInfo) {
+    await send(events([{ event: 'switch_player', player_id: REPLAY_PLAYER_IDS[0],
+      valid_bets: { call: { amount: 20 } } }]));
+    await gameGone(device, 'texas-holdem-operation-button-raise');
+    await expect.poll(async () => (await gameNodes(device))
+      .some(node => node.res?.startsWith('texas-holdem-auto-button-')), { timeout: 30_000 }).toBe(true);
+    // 对手自动操作按钮先完成入场，再单独采样本人操作按钮。
+    await new Promise(resolve => setTimeout(resolve, 1000));
     await captureNativeTransition(device, 'texas-operation-buttons', animationInfo,
-      { x: 100, y: 865, width: 500, height: 200 }, () => send(events([{ event: 'switch_player',
+      { x: 100, y: 865, width: 500, height: 150 }, () => send(events([{ event: 'switch_player',
         player_id: self, valid_bets: { fold: {}, call: { amount: 20 },
           raise: { minimum: 40, maximum: 1000 }, all_in: { amount: 1000 } },
       }])), [], [], 400);
