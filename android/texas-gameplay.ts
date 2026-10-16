@@ -41,10 +41,10 @@ export async function texasGameplay(device: AndroidDevice, proxy: Mitmproxy, roo
       river: { x: 492, y: 603, width: 78, height: 117 },
     };
     if (animationInfo && !opponent) {
-      /** 起手牌出现较短，录屏捕获翻牌；公共牌使用原生连续截图。 */
+      /** 起手牌及单张转牌、河牌不足原生截图间隔，改用持续录屏。 */
       const publish = () => send(restoreTable(self, street, opponent));
       await captureNativeTransition(device, `texas-${street}-cards`, animationInfo, regions[street], publish,
-        [], [], 0, street === 'preflop' ? 'videoFrames' : 'motionFrames');
+        [], [], 0, street === 'flop' ? 'motionFrames' : 'videoFrames');
     } else await send(restoreTable(self, street, opponent));
     const count = { preflop: 0, flop: 3, turn: 4, river: 5 }[street];
     await gameCardNames(device, 'community_card', 'community_card_name_text', ['ah', 'kd', '7c', '2s', 'qs']

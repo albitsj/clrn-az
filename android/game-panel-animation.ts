@@ -2,7 +2,7 @@ import type { TestInfo } from '@playwright/test';
 import type { AndroidDevice } from 'playwright';
 import { adb } from './device';
 import { gameReady, gameTap } from './game-controls';
-import { captureNativeTransition } from './animation-transition';
+import { captureNativeTransition, captureTimedPrompt } from './animation-transition';
 import type { ScreenshotBounds, ScreenshotMask } from './screenshot';
 
 /**
@@ -30,4 +30,20 @@ export async function animateGamePanel(device: AndroidDevice, game: 'texas-holde
     String(Math.round(bounds.y + bounds.height / 2)));
   await captureNativeTransition(device, `${game}-${name}-${phase}`, testInfo, region, press,
     masks, [], 0, samplingMethod, undefined, afterReady);
+}
+
+/**
+ * 实际按钮触发的升级提示会自动消失；验证显示和倒计时两个真实相位。
+ * @param device - 专用 Android 模拟器。
+ * @param game - 当前玩法。
+ * @param button - 当前可见的操作按钮。
+ * @param testInfo - 英文动画基线报告。
+ */
+export async function captureTimedLevelUp(device: AndroidDevice, game: 'texas-holdem' | 'zhajinhua',
+  button: string, testInfo: TestInfo): Promise<void> {
+  const { bounds } = await gameReady(device, button);
+  await captureTimedPrompt(device, `${game}-level-up`, testInfo,
+    { x: 0, y: 20, width: 620, height: 230 },
+    () => adb('shell', 'input', 'tap', String(Math.round(bounds.x + bounds.width / 2)),
+      String(Math.round(bounds.y + bounds.height / 2))));
 }

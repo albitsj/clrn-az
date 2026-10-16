@@ -103,7 +103,8 @@ export async function texasPanels(context: TexasContext): Promise<void> {
   await gameReady(device, 'BlockPlayerConfirmPopup:title');
   await capture('chat_block_confirm');
   await animateGamePanel(device, 'texas-holdem', 'chat-block', 'BlockPlayerConfirmPopup:cancelButton',
-    { x: 20, y: 410, width: 680, height: 470 }, animationInfo, 'exit');
+    { x: 20, y: 410, width: 680, height: 470 }, animationInfo, 'exit', 'motionFrames',
+    [{ x: 334, y: 720, width: 110, height: 47, reason: '聊天屏障后面的房间计时独立跳秒' }]);
   await gameGone(device, 'BlockPlayerConfirmPopup:title');
   const chat = (await gameReady(device, 'in-game-chat-mask')).bounds;
   adb('shell', 'input', 'tap', String(chat.x + 8), String(chat.y + 80));

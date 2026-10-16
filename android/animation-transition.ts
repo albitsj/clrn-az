@@ -214,3 +214,49 @@ export async function captureTransientTransition(device: AndroidDevice, name: st
     }
   }
 }
+
+/**
+ * 带秒数的自动消失提示：保存出现前、两种倒计时画面与消失后，逐帧确认实际计时变化。
+ * @param device - 安装原生采样驱动的模拟器。
+ * @param name - 提示的视觉基线名称。
+ * @param testInfo - Playwright 报告与快照。
+ * @param region - 包含提示文字和倒计时、排除网络延迟的屏幕范围。
+ * @param trigger - 点击真实按钮以触发提示。
+ */
+export async function captureTimedPrompt(device: AndroidDevice, name: string, testInfo: TestInfo,
+  region: ScreenshotBounds, trigger: () => unknown): Promise<void> {
+  /**
+   * 裁切固定上方面板。
+   * @param bytes - 原生完整屏幕 PNG。
+   */
+  const crop = (bytes: Buffer) => motionParts(bytes, [region]).regions[0];
+  const before = crop(await gameScreenshot(device));
+  const implementation = (device as unknown as { _connection: { toImpl(device: AndroidDevice): {
+    _send(method: string): Promise<NativeFrame[]> } } })._connection.toImpl(device);
+  const pending = implementation._send('motionFrames');
+  await setTimeout(300);
+  await trigger();
+  const frames = (await pending).map(frame => crop(Buffer.from(frame.png, 'base64')));
+  expect(frames.length).toBeGreaterThanOrEqual(10);
+  expect(samePixels(before, frames[0]), `${name} 须在采样开始后出现`).toBe(true);
+  const visible = frames.filter(frame => frameColorDistance(before, frame) > 3);
+  expect(visible.length, `${name} 须实际显示`).toBeGreaterThanOrEqual(2);
+  const first = visible[0];
+  const changed = visible.find(frame => !samePixels(frame, first));
+  expect(changed, `${name} 倒计时必须显示不同相位`).toBeDefined();
+  await setTimeout(6000);
+  const after = crop(await gameScreenshot(device));
+  expect(samePixels(after, before), `${name} 倒计时结束后须恢复画面`).toBe(true);
+  for (const [phase, frame] of [['start', before], ['visible', first],
+    ['countdown', changed!], ['end', after]] as const) {
+    const file = `${name}-${phase}.png`;
+    await testInfo.attach(file, { body: frame, contentType: 'image/png' });
+    if (testInfo.config.updateSnapshots === 'all') expect(frame).toMatchSnapshot(file);
+    else if (phase === 'start' || phase === 'end') expect(samePixels(frame, readFileSync(testInfo.snapshotPath(file)))).toBe(true);
+    else {
+      const reference = readFileSync(testInfo.snapshotPath(file));
+      expect(Math.min(...visible.map(candidate => frameColorDistance(candidate, reference))),
+        `${name} ${phase} 视觉回归`).toBeLessThanOrEqual(12);
+    }
+  }
+}

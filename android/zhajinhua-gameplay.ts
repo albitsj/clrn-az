@@ -7,7 +7,7 @@ import { replay, gameCardNames } from './game-replay';
 import { closeAnimatedGameMask, closeGameMask } from './game-pregame';
 import { captureNativeTransition } from './animation-transition';
 import { adb } from './device';
-import { animateGamePanel } from './game-panel-animation';
+import { animateGamePanel, captureTimedLevelUp } from './game-panel-animation';
 import { captureConcurrentMotion, captureLoopKeyframes, captureMovingKeyframes } from './loop-keyframes';
 import { captureAssetSequence } from './asset-sequence';
 
@@ -166,12 +166,7 @@ export async function zhajinhuaGameplay(device: AndroidDevice, proxy: Mitmproxy,
     await gameReady(device, 'zhajinhua-operation-button-call');
     await proxy.command('zhajinhua/operation-reward', { roomId, enabled: true });
     try {
-      await animateGamePanel(device, 'zhajinhua', 'level-up', 'zhajinhua-operation-button-call',
-        { x: 0, y: 0, width: 720, height: 250 }, animationInfo, 'enter', 'motionFrames', [],
-        async () => { await gameReady(device, 'zhajinhua-level-up-level-text'); });
-      await gameReady(device, 'zhajinhua-level-up-level-text');
-      await animateGamePanel(device, 'zhajinhua', 'level-up', 'zhajinhua-level-up-close-button',
-        { x: 0, y: 0, width: 720, height: 250 }, animationInfo, 'exit');
+      await captureTimedLevelUp(device, 'zhajinhua', 'zhajinhua-operation-button-call', animationInfo);
     } finally { await proxy.command('zhajinhua/operation-reward', { roomId, enabled: false }); }
   }
   const status = await proxy.command<{ replayedMessages: number; blockedRpcs: number }>('status');

@@ -8,7 +8,7 @@ import { dismissKeyboard } from './keyboard';
 import { focusedCaretMask } from './screenshot';
 import { translateCaret } from './caret-mask';
 import { enableGameSetting, restoreTexas, texasEvents, type TexasContext } from './texas-support';
-import { animateGamePanel } from './game-panel-animation';
+import { animateGamePanel, captureTimedLevelUp } from './game-panel-animation';
 import { captureMovingKeyframes } from './loop-keyframes';
 
 /**
@@ -82,12 +82,13 @@ export async function texasHall(context: TexasContext): Promise<void> {
   await texasEvents(context, [{ event: 'new_game', game_id: 'visual-fixed-game', settings: { small_blind: 1, big_blind: 2, ante: 0 } }]);
   await gameGone(device, 'bet-next-hand-button');
   await restoreTexas(context);
-  await animateGamePanel(device, 'texas-holdem', 'level-up', 'texas-holdem-operation-button-call',
-    { x: 0, y: 0, width: 720, height: 250 }, animationInfo);
-  expect((await gameReady(device, 'level-up-title')).text).toContain('6');
-  await capture('level_up');
-  await animateGamePanel(device, 'texas-holdem', 'level-up', 'level-up-close-button',
-    { x: 0, y: 0, width: 720, height: 250 }, animationInfo, 'exit');
+  if (animationInfo) await captureTimedLevelUp(device, 'texas-holdem', 'texas-holdem-operation-button-call', animationInfo);
+  else {
+    await gameTap(device, 'texas-holdem-operation-button-call');
+    expect((await gameReady(device, 'level-up-title')).text).toContain('6');
+    await capture('level_up');
+    await gameTap(device, 'level-up-close-button');
+  }
 }
 
 /**
