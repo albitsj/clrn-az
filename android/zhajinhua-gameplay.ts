@@ -78,7 +78,7 @@ export async function zhajinhuaGameplay(device: AndroidDevice, proxy: Mitmproxy,
       await send(raise);
     };
     await captureNativeTransition(device, 'zhajinhua-quick-raise', animationInfo,
-      { x: 200, y: 680, width: 410, height: 390 }, pressRaise);
+      { x: 200, y: 680, width: 410, height: 390 }, pressRaise, [], [], 1200);
   } else {
     await gameTap(device, 'zhajinhua-shortcut-raise-first');
     await send(raise);
