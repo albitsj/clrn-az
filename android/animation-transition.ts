@@ -5,7 +5,7 @@ import { PNG } from 'pngjs';
 import type { AndroidDevice } from 'playwright';
 import { gameScreenshot } from './game-controls';
 import { motionParts, samePixels } from './motion-regions';
-import type { ScreenshotBounds } from './screenshot';
+import { maskScreenshot, type ScreenshotBounds, type ScreenshotMask } from './screenshot';
 
 type NativeFrame = { capturedAt: number; png: string };
 
@@ -31,14 +31,18 @@ export function frameColorDistance(left: Buffer, right: Buffer): number {
  * @param testInfo - Playwright 测试报告。
  * @param region - 排除无关页面变化的完整动画绘制范围。
  * @param trigger - 使用独立 ADB 连接执行实际点击，避免阻塞截图命令。
+ * @param masks - 区域内与目标无关的独立循环效果；保留掩码说明。
+ * @param requiredRegions - 同一效果中必须分别运动的可见子区域。
  */
 export async function captureNativeTransition(device: AndroidDevice, name: string, testInfo: TestInfo,
-  region: ScreenshotBounds, trigger: () => void): Promise<void> {
+  region: ScreenshotBounds, trigger: () => unknown, masks: ScreenshotMask[] = [],
+  requiredRegions: ScreenshotBounds[] = []): Promise<void> {
   /**
    * 截出固定的动画绘制区域。
    * @param bytes - 原生完整屏幕 PNG。
    */
-  const crop = (bytes: Buffer) => motionParts(bytes, [region]).regions[0];
+  const crop = (bytes: Buffer) => motionParts(maskScreenshot(bytes, masks), [region]).regions[0];
+  if (masks.length) await testInfo.attach(`${name}-masks`, { body: JSON.stringify(masks), contentType: 'application/json' });
   const before = crop(await gameScreenshot(device));
   const implementation = (device as unknown as { _connection: { toImpl(device: AndroidDevice): {
     _send(method: string): Promise<NativeFrame[]> } } })._connection.toImpl(device);
@@ -50,11 +54,12 @@ export async function captureNativeTransition(device: AndroidDevice, name: strin
       setTimeout(30_000, undefined, { signal: timeout.signal }).then(() => { throw new Error('原生动画采样超时。'); }),
     ]);
     await setTimeout(300);
-    trigger();
+    await trigger();
     frames = await pending;
   } finally { timeout.abort(); }
   expect(frames.length, '原生驱动至少采集三帧').toBeGreaterThanOrEqual(3);
-  const timeline = frames.map(frame => crop(Buffer.from(frame.png, 'base64')));
+  const originals = frames.map(frame => Buffer.from(frame.png, 'base64'));
+  const timeline = originals.map(crop);
   const after = crop(await gameScreenshot(device));
   await testInfo.attach(`${name}-timeline`, {
     body: JSON.stringify(frames.map(({ capturedAt }) => capturedAt)), contentType: 'application/json',
@@ -66,19 +71,31 @@ export async function captureNativeTransition(device: AndroidDevice, name: strin
   await testInfo.attach(`${name}-end`, { body: after, contentType: 'image/png' });
   expect(samePixels(timeline[0], before), '开始采样时动画尚未触发').toBe(true);
   expect(samePixels(timeline.at(-1)!, after), '采样结束时动画必须完成').toBe(true);
+  if (requiredRegions.length) {
+    const parts = originals.map(frame => motionParts(maskScreenshot(frame, masks), requiredRegions).regions);
+    for (const index of requiredRegions.keys()) {
+      expect(parts.some(sample => !samePixels(sample[index], parts[0][index])),
+        `${name} 第 ${index + 1} 个区域必须独立运动`).toBe(true);
+    }
+  }
   const total = frameColorDistance(before, after);
   expect(total, '入口点击必须产生足够大的可见变化').toBeGreaterThan(3);
-  const candidates = timeline.map((frame, index) => ({ frame, index, progress: frameColorDistance(before, frame) / total }))
-    .filter(item => item.progress > 0.15 && item.progress < 0.85);
+  // BottomSheet 的弹簧轨迹可能越过终点；用“同时区别于首尾”选关键帧。
+  const candidates = timeline.map((frame, index) => ({ frame, index,
+    progress: frameColorDistance(before, frame) / total,
+    remaining: frameColorDistance(after, frame) / total }))
+    .filter(item => item.progress > 0.15 && item.remaining > 0.15);
   await testInfo.attach(`${name}-progress`, {
     body: JSON.stringify({ total, frames: timeline.map(frame => frameColorDistance(before, frame) / total) }),
     contentType: 'application/json',
   });
   expect(candidates.length, '必须采到起点和终点之间的真实动画帧').toBeGreaterThan(0);
-  const middle = candidates.reduce((best, item) => Math.abs(item.progress - 0.5) < Math.abs(best.progress - 0.5) ? item : best);
+  const middle = candidates.reduce((best, item) => Math.min(item.progress, item.remaining)
+    > Math.min(best.progress, best.remaining) ? item : best);
   await testInfo.attach(`${name}-middle`, { body: middle.frame, contentType: 'image/png' });
   await testInfo.attach(`${name}-middle-progress`, {
-    body: JSON.stringify({ index: middle.index, progress: middle.progress }), contentType: 'application/json',
+    body: JSON.stringify({ index: middle.index, progress: middle.progress, remaining: middle.remaining }),
+    contentType: 'application/json',
   });
   if (testInfo.config.updateSnapshots === 'all') {
     expect(before).toMatchSnapshot(`${name}-start.png`);

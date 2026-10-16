@@ -48,9 +48,10 @@ function removeReverse(port: string): void {
  * @param task - 在已准备的模拟器网络环境内运行测试。
  * @param records - 战绩开关或要复用的 Web 玩法代理。
  * @param matching - 隔离大厅匹配队列，只返回等待状态。
+ * @param slot - 隔离本轮账号的老虎机旋转和奖励。
  */
 export async function withAndroidProxy<T>(task: (proxy: Mitmproxy) => Promise<T>,
-  records: boolean | 'texas-holdem' | 'zhajinhua' = false, matching = false): Promise<T> {
+  records: boolean | 'texas-holdem' | 'zhajinhua' = false, matching = false, slot = false): Promise<T> {
   const route = await visualNetworkRouter({ realPrivateRoom: typeof records === 'string', recordFixtures: records === true });
   const token = randomBytes(32).toString('hex');
   const server = createServer(async (request, response) => {
@@ -74,7 +75,7 @@ export async function withAndroidProxy<T>(task: (proxy: Mitmproxy) => Promise<T>
     return await withMitmproxy(task, {
       addonPath: path.join(__dirname, 'proxy-addon.py'),
       environment: { ...process.env, ANDROID_RECORDS: String(records === true),
-        ANDROID_GAME: typeof records === 'string' ? records : '', ANDROID_MATCHING: String(matching),
+        ANDROID_GAME: typeof records === 'string' ? records : '', ANDROID_MATCHING: String(matching), ANDROID_SLOT: String(slot),
         ANDROID_FIXTURE_TOKEN: token,
         ANDROID_FIXTURE_URL: `http://127.0.0.1:${address.port}/` },
       /**

@@ -14,25 +14,27 @@ test('guest search confirmation animates into and out of the Android screen', as
   test.skip(!['all', 'guest'].includes(process.env.ANDROID_GROUP || 'all')
     || (process.env.ANDROID_LOCALE || 'en') !== 'en', '短时动画只在英文游客任务采集一次');
   test.setTimeout(300_000);
-  let device: AndroidDevice | undefined;
-  try {
-    device = await launchApplication({ gameDriver: true, enableSystemAnimations: true });
-    await waitForHall(device);
-    const entrance = await device.info({ res: 'hall-search-button' });
-    /** 使用独立 ADB 连接触发按钮，使原生驱动同时采样屏幕。 */
-    const pressSearch = () => adb('shell', 'input', 'tap',
-      String(Math.round(entrance.bounds.x + entrance.bounds.width / 2)),
-      String(Math.round(entrance.bounds.y + entrance.bounds.height / 2)));
-    const region = { x: 58, y: 495, width: 604, height: 345 };
-    await captureNativeTransition(device, 'search-confirmation-enter', testInfo, region, pressSearch);
-    const cancel = await device.info({ res: 'cancel-button' });
-    expect(cancel.bounds.width).toBeGreaterThan(0);
-    /** 点击真实取消按钮，不直接卸载弹窗。 */
-    const pressCancel = () => adb('shell', 'input', 'tap',
-      String(Math.round(cancel.bounds.x + cancel.bounds.width / 2)),
-      String(Math.round(cancel.bounds.y + cancel.bounds.height / 2)));
-    await captureNativeTransition(device, 'search-confirmation-exit', testInfo, region, pressCancel);
-  } finally { await device?.close(); }
+  await withAndroidProxy(async () => {
+    let device: AndroidDevice | undefined;
+    try {
+      device = await launchApplication({ gameDriver: true, enableSystemAnimations: true });
+      await waitForHall(device);
+      const entrance = await device.info({ res: 'hall-search-button' });
+      /** 使用独立 ADB 连接触发按钮，使原生驱动同时采样屏幕。 */
+      const pressSearch = () => adb('shell', 'input', 'tap',
+        String(Math.round(entrance.bounds.x + entrance.bounds.width / 2)),
+        String(Math.round(entrance.bounds.y + entrance.bounds.height / 2)));
+      const region = { x: 58, y: 495, width: 604, height: 345 };
+      await captureNativeTransition(device, 'search-confirmation-enter', testInfo, region, pressSearch);
+      const cancel = await device.info({ res: 'cancel-button' });
+      expect(cancel.bounds.width).toBeGreaterThan(0);
+      /** 点击真实取消按钮，不直接卸载弹窗。 */
+      const pressCancel = () => adb('shell', 'input', 'tap',
+        String(Math.round(cancel.bounds.x + cancel.bounds.width / 2)),
+        String(Math.round(cancel.bounds.y + cancel.bounds.height / 2)));
+      await captureNativeTransition(device, 'search-confirmation-exit', testInfo, region, pressCancel);
+    } finally { await device?.close(); }
+  });
 });
 
 test('hall matching spinner animates while the real waiting dialog is visible', async ({}, testInfo) => {
@@ -54,7 +56,7 @@ test('hall matching spinner animates while the real waiting dialog is visible', 
       const countdown = await device.info({ res: 'game-matching-countdown-text' });
       const cancel = await device.info({ res: 'quick-start-room-cancel' });
       const spinner = { x: Math.round(cancel.bounds.x + cancel.bounds.width / 2 - 60),
-        y: Math.round(cancel.bounds.y - 178), width: 120, height: 120 };
+        y: Math.round(cancel.bounds.y - 178), width: 120, height: 140 };
       masks.push({ ...countdown.bounds, x: countdown.bounds.x - 4, width: countdown.bounds.width + 8,
         reason: '匹配计时数字' }, { ...spinner, reason: '匹配图标旋转范围' });
       /** 保留原生匹配窗口实际绘制的每一帧。 */
@@ -92,6 +94,14 @@ test('club more menu fades into and out of the Android screen', async ({}, testI
       /** 点击菜单外的真实遮罩关闭弹层。 */
       const pressBackdrop = () => adb('shell', 'input', 'tap', '300', '300');
       await captureNativeTransition(device, 'club-more-exit', testInfo, region, pressBackdrop);
+      const roomsTab = await device.info({ res: 'club_tab_room' });
+      /** 从我的俱乐部切换到牌局空态。 */
+      const pressRoomsTab = () => adb('shell', 'input', 'tap',
+        String(Math.round(roomsTab.bounds.x + roomsTab.bounds.width / 2)),
+        String(Math.round(roomsTab.bounds.y + roomsTab.bounds.height / 2)));
+      await captureNativeTransition(device, 'club-rooms-empty-enter', testInfo,
+        { x: 100, y: 420, width: 520, height: 200 }, pressRoomsTab);
+      await device.wait({ res: 'club-rooms-empty-view' });
     } finally { await device?.close(); }
   });
 });
