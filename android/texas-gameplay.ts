@@ -1,4 +1,4 @@
-import { expect } from '@playwright/test';
+import { expect, type TestInfo } from '@playwright/test';
 import type { AndroidDevice } from 'playwright';
 import type { Mitmproxy } from '../e2e/helpers/mitmproxy-client';
 import { events, REPLAY_PLAYER_IDS, restoreTable, type Street } from '../visual/cases/texas-holdem/replayData';
@@ -7,6 +7,7 @@ import { replay, gameCardNames } from './game-replay';
 import { closeGameMask } from './game-pregame';
 import { dismissKeyboard } from './keyboard';
 import { gameTapText, type TexasContext } from './texas-support';
+import { captureNativeTransition } from './animation-transition';
 
 /**
  * 复用网页的德州消息夹具，覆盖各街、操作、摊牌、结算和玩家资料。
@@ -15,9 +16,10 @@ import { gameTapText, type TexasContext } from './texas-support';
  * @param roomId - 本轮新建的房间。
  * @param self - 真实登录用户 ID。
  * @param capture - 按共享状态清单采集截图。
+ * @param animationInfo - 英文真实公共牌关键帧基准。
  */
 export async function texasGameplay(device: AndroidDevice, proxy: Mitmproxy, roomId: string,
-  self: string, capture: TexasContext['capture']): Promise<void> {
+  self: string, capture: TexasContext['capture'], animationInfo?: TestInfo): Promise<void> {
   /**
    * 发送共用网络事件。
    * @param data - Web 消息夹具。
@@ -29,7 +31,17 @@ export async function texasGameplay(device: AndroidDevice, proxy: Mitmproxy, roo
    * @param opponent - 是否轮到对手。
    */
   const restore = async (street: Street, opponent = false) => {
-    await send(restoreTable(self, street, opponent));
+    const regions = {
+      preflop: { x: 360, y: 1054, width: 137, height: 102 },
+      flop: { x: 151, y: 603, width: 249, height: 117 },
+      turn: { x: 408, y: 603, width: 76, height: 117 },
+      river: { x: 492, y: 603, width: 78, height: 117 },
+    };
+    if (animationInfo && !opponent) {
+      /** 发送本轮真实牌局消息，原生驱动同时采集牌面移动及翻转。 */
+      const publish = () => send(restoreTable(self, street, opponent));
+      await captureNativeTransition(device, `texas-${street}-cards`, animationInfo, regions[street], publish);
+    } else await send(restoreTable(self, street, opponent));
     const count = { preflop: 0, flop: 3, turn: 4, river: 5 }[street];
     await gameCardNames(device, 'community_card', 'community_card_name_text', ['ah', 'kd', '7c', '2s', 'qs']
       .map((card, index) => index < count ? card : 'back'));

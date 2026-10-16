@@ -1,10 +1,12 @@
-import { expect } from '@playwright/test';
+import { expect, type TestInfo } from '@playwright/test';
 import type { AndroidDevice } from 'playwright';
 import type { Mitmproxy } from '../e2e/helpers/mitmproxy-client';
 import { events, PLAYER_IDS, restoreTable, validBets } from '../visual/cases/zhajinhua/replayData';
 import { gameReady, gameGone, gameTap, gameNodes, gameSemanticText } from './game-controls';
 import { replay, gameCardNames } from './game-replay';
 import { closeGameMask } from './game-pregame';
+import { captureNativeTransition } from './animation-transition';
+import { adb } from './device';
 
 /**
  * 直接使用 Web 八个牌局状态的网络事件，真实点击原生操作按钮。
@@ -13,15 +15,18 @@ import { closeGameMask } from './game-pregame';
  * @param roomId - 本轮创建的房间。
  * @param self - 本轮真实登录用户。
  * @param capture - 使用共用状态名采集截图。
+ * @param animationInfo - 英文原生发牌、翻牌和摊牌关键帧基准。
  */
 export async function zhajinhuaGameplay(device: AndroidDevice, proxy: Mitmproxy, roomId: string,
-  self: string, capture: (state: string) => Promise<void>): Promise<void> {
+  self: string, capture: (state: string) => Promise<void>, animationInfo?: TestInfo): Promise<void> {
   /**
    * 发送共用回放事件。
    * @param data - Web 共用的网络事件。
    */
   const send = (data: unknown) => replay(proxy, 'zhajinhua', roomId, data);
-  await send(restoreTable(self));
+  if (animationInfo) await captureNativeTransition(device, 'zhajinhua-deal-cards', animationInfo,
+    { x: 360, y: 1054, width: 148, height: 102 }, () => send(restoreTable(self)));
+  else await send(restoreTable(self));
   await expect.poll(async () => (await gameNodes(device))
     .filter(node => node.res?.startsWith('zhajinhua-player-container-')).length, { timeout: 30_000 }).toBe(5);
   await expect.poll(async () => (await gameNodes(device)).filter(node => node.res === 'player_card').length,
@@ -31,12 +36,25 @@ export async function zhajinhuaGameplay(device: AndroidDevice, proxy: Mitmproxy,
   await gameReady(device, 'zhajinhua-operation-button-call');
   await gameReady(device, 'zhajinhua-see-hand-card-button');
   await capture('blind_cards');
-  await gameTap(device, 'zhajinhua-see-hand-card-button');
-  await send(events([
+  const seeCards = events([
     { event: 'see_hole_card', player_id: self },
     { event: 'obtain_hole_card', hole_card: ['as', 'ad', 'ac'], hand_strength: 'three_of_a_kind' },
     { event: 'player_bets', valid_bets: validBets(true) },
-  ]));
+  ]);
+  if (animationInfo) {
+    const see = await gameReady(device, 'zhajinhua-see-hand-card-button');
+    /** 点击真实看牌按钮并通过原生牌局消息翻开本人三张牌。 */
+    const revealCards = async () => {
+      adb('shell', 'input', 'tap', String(Math.round(see.bounds.x + see.bounds.width / 2)),
+        String(Math.round(see.bounds.y + see.bounds.height / 2)));
+      await send(seeCards);
+    };
+    await captureNativeTransition(device, 'zhajinhua-flip-cards', animationInfo,
+      { x: 360, y: 1054, width: 148, height: 102 }, revealCards);
+  } else {
+    await gameTap(device, 'zhajinhua-see-hand-card-button');
+    await send(seeCards);
+  }
   // 其余四位玩家的十二张暗牌没有牌名；与 Web 相同，只校验已翻开的三张牌。
   await gameCardNames(device, 'player_card', 'player_card_name_text', ['as', 'ad', 'ac'], { namedOnly: true });
   await gameGone(device, 'zhajinhua-see-hand-card-button');
@@ -65,10 +83,13 @@ export async function zhajinhuaGameplay(device: AndroidDevice, proxy: Mitmproxy,
   await gameReady(device, `zhajinhua-player-container-${PLAYER_IDS[0]}-operating`);
   await gameGone(device, 'zhajinhua-operation-button-call');
   await capture('opponent_turn');
-  await send(events([{ event: 'showdown', players: [
+  const showdown = events([{ event: 'showdown', players: [
     { player_id: self, hole_card: ['as', 'ad', 'ac'], hand_strength: 'three_of_a_kind', is_winner: true },
     { player_id: PLAYER_IDS[0], hole_card: ['kh', 'ks', 'qd'], hand_strength: 'pair', is_winner: false },
-  ] }]));
+  ] }]);
+  if (animationInfo) await captureNativeTransition(device, 'zhajinhua-showdown-cards', animationInfo,
+    { x: 8, y: 697, width: 170, height: 102 }, () => send(showdown));
+  else await send(showdown);
   await expect.poll(async () => (await gameNodes(device)).filter(node => node.res === 'player_cards_container').length,
     { timeout: 30_000 }).toBe(2);
   await capture('showdown');

@@ -29,7 +29,7 @@ export async function runTexasScenario(label: string, context: TexasContext): Pr
   if (label === 'signed_in_texas_pre_game') {
     await gamePreGame(context.device, 'texas-holdem', context.capture);
   } else if (label === 'signed_in_texas_game') {
-    await texasGameplay(context.device, context.proxy, context.room, context.self, context.capture);
+    await texasGameplay(context.device, context.proxy, context.room, context.self, context.capture, context.animationInfo);
   } else {
     if (!flows[label]) throw new Error(`缺少 Android 德州场景实现：${label}`);
     await flows[label](context);
