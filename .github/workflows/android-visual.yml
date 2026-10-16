@@ -138,7 +138,7 @@ jobs:
           distribution: temurin
           java-version: '17'
       - name: 读取固定版本原生驱动源码
-        if: matrix.group == 'texas' || matrix.group == 'zhajinhua' || matrix.group == 'guest'
+        if: matrix.group == 'texas' || matrix.group == 'zhajinhua' || matrix.group == 'guest' || matrix.group == 'social'
         uses: actions/checkout@v4
         with:
           repository: microsoft/playwright
@@ -147,7 +147,7 @@ jobs:
           persist-credentials: false
           sparse-checkout: packages/playwright-core/src/server/android/driver
       - name: 构建牌桌动画兼容驱动
-        if: matrix.group == 'texas' || matrix.group == 'zhajinhua' || matrix.group == 'guest'
+        if: matrix.group == 'texas' || matrix.group == 'zhajinhua' || matrix.group == 'guest' || matrix.group == 'social'
         run: node android/build-driver.mjs
       - name: 准备固定 Android 系统镜像
         run: |

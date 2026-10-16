@@ -24,9 +24,9 @@ export function adb(...argumentsList: string[]): string {
 
 /**
  * 安装已校验的 Release 并固定系统显示条件，正常冷启动应用。
- * @param options - 牌桌使用修复持续动画查询的固定版本原生驱动。
+ * @param options - 牌桌驱动与原生系统转场选项。
  */
-export async function launchApplication(options: { gameDriver?: boolean } = {}): Promise<AndroidDevice> {
+export async function launchApplication(options: { gameDriver?: boolean; enableSystemAnimations?: boolean } = {}): Promise<AndroidDevice> {
   await readVerifiedBuild(artifacts);
   if (adb('shell', 'getprop', 'ro.kernel.qemu').trim() !== '1') throw new Error('只允许在专用模拟器执行。');
   if (adb('shell', 'getprop', 'ro.build.version.sdk').trim() !== '35') throw new Error('截图基准要求 Android API 35。');
@@ -43,7 +43,7 @@ export async function launchApplication(options: { gameDriver?: boolean } = {}):
   adb('shell', 'settings', 'put', 'system', 'accelerometer_rotation', '0');
   adb('shell', 'settings', 'put', 'system', 'user_rotation', '0');
   for (const setting of ['window_animation_scale', 'transition_animation_scale', 'animator_duration_scale']) {
-    adb('shell', 'settings', 'put', 'global', setting, '0');
+    adb('shell', 'settings', 'put', 'global', setting, options.enableSystemAnimations ? '1' : '0');
   }
   adb('shell', 'input', 'keyevent', 'KEYCODE_WAKEUP');
   adb('shell', 'wm', 'dismiss-keyguard');
