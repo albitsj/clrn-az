@@ -106,7 +106,7 @@ export async function zhajinhuaGameplay(device: AndroidDevice, proxy: Mitmproxy,
   if (animationInfo) {
     const selectors = (await gameNodes(device)).filter(node => node.res === 'challenge_player_selector');
     await captureLoopKeyframes(device, 'zhajinhua-challenge-targets', animationInfo,
-      selectors.map(node => node.bounds));
+      selectors.map(node => node.bounds), 3);
   }
   await capture('challenge_select');
   await gameTap(device, 'zhajinhua-cancel-challenge-choosing');

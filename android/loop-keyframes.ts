@@ -47,28 +47,41 @@ export function framePaletteDistance(left: Buffer, right: Buffer): number {
  * @param name - 具体动画名称。
  * @param testInfo - Playwright 快照与报告。
  * @param regions - 每个独立脉动占位控件的可见范围。
+ * @param maxAttempts - 启动相位未知时可跨多个采样窗口寻找完整明暗周期。
  */
 export async function captureLoopKeyframes(device: AndroidDevice, name: string, testInfo: TestInfo,
-  regions: ScreenshotBounds[]): Promise<void> {
+  regions: ScreenshotBounds[], maxAttempts = 1): Promise<void> {
   expect(regions.length).toBeGreaterThan(0);
   const implementation = (device as unknown as { _connection: { toImpl(device: AndroidDevice): {
     _send(method: string): Promise<NativeFrame[]> } } })._connection.toImpl(device);
-  const timeline = await implementation._send('motionFrames');
-  expect(timeline.length).toBeGreaterThanOrEqual(10);
+  const timeline: NativeFrame[] = [];
+  const pictures: Buffer[][] = [];
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    const samples = await implementation._send('motionFrames');
+    expect(samples.length).toBeGreaterThanOrEqual(10);
+    timeline.push(...samples);
+    pictures.push(...samples.map(frame => motionParts(Buffer.from(frame.png, 'base64'), regions).regions));
+    if (regions.every((_, index) => {
+      const levels = pictures.map(parts => brightness(parts[index]));
+      return Math.max(...levels) - Math.min(...levels) > 0.5;
+    })) break;
+  }
   await testInfo.attach(`${name}-timeline`, {
     body: JSON.stringify(timeline.map(({ capturedAt }) => capturedAt)), contentType: 'application/json',
   });
-  const pictures = timeline.map(frame => motionParts(Buffer.from(frame.png, 'base64'), regions).regions);
+  await testInfo.attach(`${name}-regions`, { body: JSON.stringify(regions), contentType: 'application/json' });
   for (const index of regions.keys()) {
     const frames = pictures.map(parts => parts[index]);
     const phases = frames.map((frame, position) => ({ frame, position, light: brightness(frame) }));
     const dark = phases.reduce((best, item) => item.light < best.light ? item : best);
     const light = phases.reduce((best, item) => item.light > best.light ? item : best);
-    expect(light.light - dark.light, `${name} 第 ${index + 1} 个占位控件必须脉动`).toBeGreaterThan(0.5);
     await testInfo.attach(`${name}-${index + 1}-phases`, {
       body: JSON.stringify({ dark: dark.position, light: light.position, delta: light.light - dark.light }),
       contentType: 'application/json',
     });
+    await testInfo.attach(`${name}-${index + 1}-dark-frame`, { body: dark.frame, contentType: 'image/png' });
+    await testInfo.attach(`${name}-${index + 1}-light-frame`, { body: light.frame, contentType: 'image/png' });
+    expect(light.light - dark.light, `${name} 第 ${index + 1} 个占位控件必须脉动`).toBeGreaterThan(0.5);
     for (const [phase, selected] of [['dark', dark], ['light', light]] as const) {
       await testInfo.attach(`${name}-${index + 1}-${phase}`, { body: selected.frame, contentType: 'image/png' });
       const file = `${name}-${index + 1}-${phase}.png`;
