@@ -85,6 +85,15 @@ export async function texasGameplay(device: AndroidDevice, proxy: Mitmproxy, roo
     'accurate-bet-popup-container', { x: 120, y: 360, width: 480, height: 330 }, animationInfo);
   else await closeGameMask(device, 'accurate-bet-popup-container');
   await restore('river', true);
+  if (animationInfo) {
+    await captureNativeTransition(device, 'texas-operation-buttons', animationInfo,
+      { x: 100, y: 865, width: 500, height: 200 }, () => send(events([{ event: 'switch_player',
+        player_id: self, valid_bets: { fold: {}, call: { amount: 20 },
+          raise: { minimum: 40, maximum: 1000 }, all_in: { amount: 1000 } },
+      }])), [], [], 400);
+    await gameReady(device, 'texas-holdem-operation-button-raise');
+    await restore('river', true);
+  }
   await send(events([{ event: 'switch_player', player_id: REPLAY_PLAYER_IDS[0], valid_bets: { call: { amount: 20 } } }]));
   await gameGone(device, 'texas-holdem-operation-button-raise');
   await capture('opponent_turn');

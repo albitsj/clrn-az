@@ -90,7 +90,9 @@ export async function zhajinhuaGameplay(device: AndroidDevice, proxy: Mitmproxy,
     .find(node => node.res === `zhajinhua-player-container-${self}`), 'player_stack_text'),
   { timeout: 30_000 }).toBe(`${self} 960`);
   await capture('quick_raise');
-  await send(restoreTable(self, false, true));
+  if (animationInfo) await captureNativeTransition(device, 'zhajinhua-operation-buttons', animationInfo,
+    { x: 100, y: 865, width: 520, height: 200 }, () => send(restoreTable(self, false, true)), [], [], 400);
+  else await send(restoreTable(self, false, true));
   await gameReady(device, 'zhajinhua-operation-accurate-bet-button');
   const accurateBetClock = [{ x: 350, y: 725, width: 90, height: 40,
     reason: '独立运行的玩家操作倒计时，不属于精确加注弹窗' }];
