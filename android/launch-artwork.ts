@@ -12,7 +12,7 @@ import { maskScreenshot } from './screenshot';
  */
 export async function verifyLaunchArtwork(frames: Buffer[], testInfo: TestInfo): Promise<void> {
   const region = { x: 70, y: 155, width: 580, height: 900 };
-  const clock = { x: 70, y: 220, width: 60, height: 110, reason: 'Pixel Launcher 时钟图标' };
+  const clock = { x: 70, y: 220, width: 60, height: 125, reason: 'Pixel Launcher 时钟图标' };
   const artwork = frames.map(frame => motionParts(maskScreenshot(frame, [clock]), [region]).regions[0]);
   /**
    * 判断截图是否处在应用插画可见的蓝色阶段。

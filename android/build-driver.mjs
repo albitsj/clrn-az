@@ -40,7 +40,7 @@ const patched = source
 
   private static JSONObject tree(UiDevice device)`)
   .replace('case "tree":', `case "launchFrames":
-              // 启动画面跨过系统 Splash；边截屏边编码，持续记录品牌淡入和测试版提示。
+              // 启动画面跨过系统 Splash；边截屏边编码，持续记录应用插画与测试版提示。
               JSONArray launchFrames = new JSONArray();
               long launchDeadline = android.os.SystemClock.uptimeMillis() + 10000;
               while (android.os.SystemClock.uptimeMillis() < launchDeadline && launchFrames.length() < 70) {

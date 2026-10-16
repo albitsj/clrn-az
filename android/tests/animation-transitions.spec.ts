@@ -34,7 +34,7 @@ test('native launch artwork and staging notice appear on a real app start', asyn
         `${applicationId}/com.laiwan_react_native.MainActivity`);
       await captureNativeTransition(device, 'native-launch-and-staging-notice', testInfo,
         { x: 70, y: 155, width: 580, height: 900 }, start,
-        [{ x: 70, y: 220, width: 60, height: 110, reason: 'Pixel Launcher 时钟图标持续走针' }], [
+        [{ x: 70, y: 220, width: 60, height: 125, reason: 'Pixel Launcher 时钟图标持续走针' }], [
           { x: 110, y: 170, width: 500, height: 145 },
           { x: 110, y: 360, width: 500, height: 550 },
         ], 1_500, 'launchFrames', verifyLaunchArtwork);
