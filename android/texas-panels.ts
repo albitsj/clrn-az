@@ -66,10 +66,7 @@ export async function texasPanels(context: TexasContext): Promise<void> {
   await gameGone(device, 'review-board-close-button');
   if (animationInfo) await captureTransientTransition(device, 'texas-system-prompt', animationInfo,
     { x: 90, y: 60, width: 540, height: 190 },
-    async () => {
-      await replay(proxy, 'texas', room, events([{ event: 'check_community_card', player_id: REPLAY_PLAYER_IDS[0] }]));
-      await gameReady(device, 'prompt-item');
-    });
+    () => replay(proxy, 'texas', room, events([{ event: 'check_community_card', player_id: REPLAY_PLAYER_IDS[0] }])));
   await replay(proxy, 'texas', room, { stream: 'room_message', payload: { action: 'text', content: {
     from_user_id: REPLAY_PLAYER_IDS[0], from_user_nickname: 'Player1', text: 'Good hand!',
   } } });

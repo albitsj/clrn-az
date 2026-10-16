@@ -109,8 +109,9 @@ export async function captureNativeTransition(device: AndroidDevice, name: strin
   await testInfo.attach(`${name}-start`, { body: before, contentType: 'image/png' });
   await testInfo.attach(`${name}-end`, { body: after, contentType: 'image/png' });
   if (samplingMethod === 'videoFrames') {
-    expect(frameColorDistance(timeline[0], before), '录屏开始时动画尚未触发').toBeLessThan(7);
-    if (!settleMs && !afterReady) expect(frameColorDistance(timeline.at(-1)!, after), '录屏结束时动画必须完成').toBeLessThan(7);
+    // 半分辨率录屏的双线性放大使牌面边缘逐像素差约为 8–11；首尾仍须保持相同色彩面积。
+    expect(framePaletteDistance(timeline[0], before), '录屏开始时动画尚未触发').toBeLessThan(7);
+    if (!settleMs && !afterReady) expect(framePaletteDistance(timeline.at(-1)!, after), '录屏结束时动画必须完成').toBeLessThan(7);
   } else {
     expect(samePixels(timeline[0], before), '开始采样时动画尚未触发').toBe(true);
     if (!settleMs && !afterReady) expect(samePixels(timeline.at(-1)!, after), '采样结束时动画必须完成').toBe(true);

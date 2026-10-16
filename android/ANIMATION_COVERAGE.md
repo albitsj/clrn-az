@@ -21,7 +21,7 @@
 | 德州语音、系统提示、弹幕、聊天举报/屏蔽、带入审核 | `games.spec.ts` 德州 `_panels` | `texas-holdem-voice`、`texas-system-prompt`、`texas-barrage`、聊天及审核面板关键帧 |
 | 德州操作失败、余额不足、身份失效提示 | `games.spec.ts` 德州 `_panel_variants` | `texas-alert-retry/balance` 入退场、`texas-alert-auth` 入场；分别由真实错误响应触发 |
 | 德州自动补充带入、合谋举报、个人排行榜、加载转圈 | `games.spec.ts` 德州 `_hall` | 对应面板入退场、`texas-loading-spinner` 两个区域各自运动 |
-| 德州下一手预测记录弹层 | `games.spec.ts` 德州 `_hall` 菜单入口 | `texas-holdem-prediction-records-enter/exit` |
+| 德州下一手预测 | `games.spec.ts` 德州 `_hall` | 预测面板和结果保留静态截图；此固定包的菜单未显示预测记录入口，无法触发记录弹层动画 |
 | 拼三张倒计时、发牌、翻牌、快捷加注、精确加注 | `games.spec.ts` 拼三张 `_game` | `zhajinhua-operation-countdown`、`zhajinhua-deal-cards`、`zhajinhua-flip-cards`、`zhajinhua-quick-raise`、精确加注入退场 |
 | 拼三张比牌目标、摊牌胜利光效、升级 | `games.spec.ts` 拼三张 `_game` | 四个目标各自闪烁；同一次摊牌事件验证 `zhajinhua-showdown-cards` 和 `zhajinhua-victory`；升级入退场。结算事件只更新被牌型覆盖的余额语义，保留静态结算截图和余额断言 |
 | 拼三张游戏规则弹层 | `games.spec.ts` 拼三张 `_pre_game` 菜单入口 | `zhajinhua-game-rule-enter/exit` |
@@ -34,3 +34,5 @@
 固定 Staging 包在 `LaunchBranding` 挂载时同步打开不透明提示框，文字的 500 毫秒淡入被提示框遮住，无法在这个包上取得可见像素轨迹。启动场景只声明实际可见的插画和提示出现；若应用将提示延后或提供可测试的无提示启动入口，应为品牌淡入另加逐帧基准。
 
 源码中 `TreasureBox` 只有导出而无页面消费，`PrizeCoinAnimation` 没有调用入口，不能把直接挂载组件产生的图片当作应用视觉回归。德州 `RTCPanel` 的首次初始化依赖尚未挂载的面板 ref，正常 UI 无法打开；这些效果需要应用先提供可达入口。旧引擎房间骨架同样不在固定 React Native 引擎包的可达路径内。
+
+德州预测记录弹层虽然在源码中实现，但本包的菜单选项在 `DrawerMenu` 首次计算时未包含该项；牌桌出现预测按钮后，已显示的菜单选项没有重新计算。真实模拟器菜单截图只有排名、主题、设置、反馈、带入和退出。应用修复入口后再增加该弹层的入退场基线。
