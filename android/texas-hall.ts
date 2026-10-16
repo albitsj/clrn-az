@@ -61,9 +61,11 @@ export async function texasHall(context: TexasContext): Promise<void> {
     { x: 200, y: 260, width: 440, height: 700 }, animationInfo, 'exit');
   await gameGone(device, 'report-pair-play-reason-input');
   await animateGamePanel(device, 'texas-holdem', 'personal-leaderboard', 'texas-holdem-leaderboard-button',
-    { x: 200, y: 200, width: 400, height: 900 }, animationInfo);
-  await expect.poll(async () => (await gameReady(device, 'personal-leader-board-nickname')).text,
-    { timeout: 30_000 }).toMatch(/\S/);
+    { x: 200, y: 200, width: 400, height: 900 }, animationInfo, 'enter', 'motionFrames', [],
+    async () => {
+      await expect.poll(async () => (await gameReady(device, 'personal-leader-board-nickname')).text,
+        { timeout: 30_000 }).toMatch(/\S/);
+    });
   await texasEvents(context, [{ event: 'player_statistics', player_id: self,
     history_buy_in_amount: 1000, played_game_count: 10, settlement_net_amount: 180 }]);
   await gameReady(device, 'personal-leader-board-record-container');
