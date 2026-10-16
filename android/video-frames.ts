@@ -30,7 +30,9 @@ export async function recordNativeVideoFrames(name: string, region: ScreenshotBo
     recorder.once('close', code => code === 0 ? resolve() : reject(new Error(`Android 录屏失败：${error}`)));
   });
   try {
-    await setTimeout(1_000);
+    await Promise.race([setTimeout(1_000), finished.then(() => {
+      throw new Error('Android 录屏在触发动画前意外结束。');
+    })]);
     await trigger();
     await finished;
     adb('pull', remote, video);
