@@ -231,15 +231,10 @@ export async function captureTimedPrompt(device: AndroidDevice, name: string, te
    */
   const crop = (bytes: Buffer) => motionParts(bytes, [region]).regions[0];
   const before = crop(await gameScreenshot(device));
-  const implementation = (device as unknown as { _connection: { toImpl(device: AndroidDevice): {
-    _send(method: string): Promise<NativeFrame[]> } } })._connection.toImpl(device);
-  const pending = implementation._send('motionFrames');
-  await setTimeout(300);
-  await trigger();
-  const frames = (await pending).map(frame => crop(Buffer.from(frame.png, 'base64')));
-  expect(frames.length).toBeGreaterThanOrEqual(10);
-  expect(samePixels(before, frames[0]), `${name} 须在采样开始后出现`).toBe(true);
-  const visible = frames.filter(frame => frameColorDistance(before, frame) > 3);
+  const frames = await recordNativeVideoFrames(name, region, trigger, testInfo);
+  expect(frames.length).toBeGreaterThanOrEqual(20);
+  expect(framePaletteDistance(before, frames[0]), `${name} 须在采样开始后出现`).toBeLessThan(7);
+  const visible = frames.filter(frame => frameColorDistance(before, frame) > 15);
   expect(visible.length, `${name} 须实际显示`).toBeGreaterThanOrEqual(2);
   /**
    * 只截完整提示标题。
@@ -251,17 +246,18 @@ export async function captureTimedPrompt(device: AndroidDevice, name: string, te
    * @param frame - 顶部提示区域的截图。
    */
   const timer = (frame: Buffer) => motionParts(frame, [{ x: 0, y: 165, width: 70, height: 45 }]).regions[0];
-  const settled = visible.filter(frame => frameColorDistance(title(before), title(frame)) > 3);
+  const settled = visible.filter(frame => frameColorDistance(title(before), title(frame)) > 30);
   expect(settled.length, `${name} 标题须完整出现`).toBeGreaterThanOrEqual(2);
-  const first = settled[0];
-  const changed = settled.find(frame => samePixels(title(first), title(frame))
-    && !samePixels(timer(first), timer(frame)));
-  expect(changed, `${name} 标题稳定后倒计时数字必须变化`).toBeDefined();
+  const pair = settled.flatMap((first, index) => settled.slice(index + 1)
+    .filter(changed => frameColorDistance(title(first), title(changed)) < 3
+      && frameColorDistance(timer(first), timer(changed)) > 4)
+    .map(changed => ({ first, changed })))[0];
+  expect(pair, `${name} 标题稳定后倒计时数字必须变化`).toBeDefined();
   await setTimeout(6000);
   const after = crop(await gameScreenshot(device));
   expect(samePixels(after, before), `${name} 倒计时结束后须恢复画面`).toBe(true);
-  for (const [phase, frame] of [['start', before], ['visible', first],
-    ['countdown', changed!], ['end', after]] as const) {
+  for (const [phase, frame] of [['start', before], ['visible', pair!.first],
+    ['countdown', pair!.changed], ['end', after]] as const) {
     const file = `${name}-${phase}.png`;
     await testInfo.attach(file, { body: frame, contentType: 'image/png' });
     if (testInfo.config.updateSnapshots === 'all') expect(frame).toMatchSnapshot(file);
