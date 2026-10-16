@@ -20,7 +20,7 @@ import type { ScreenshotBounds, ScreenshotMask } from './screenshot';
  */
 export async function animateGamePanel(device: AndroidDevice, game: 'texas-holdem' | 'zhajinhua', name: string,
   button: string, region: ScreenshotBounds, testInfo?: TestInfo, phase: 'enter' | 'exit' = 'enter',
-  samplingMethod: 'motionFrames' | 'launchFrames' = 'motionFrames',
+  samplingMethod: 'motionFrames' | 'launchFrames' | 'videoFrames' = 'motionFrames',
   masks: ScreenshotMask[] = [], afterReady?: () => Promise<void>): Promise<void> {
   if (!testInfo) { await gameTap(device, button); return; }
   const { bounds } = await gameReady(device, button);
