@@ -167,7 +167,8 @@ export async function zhajinhuaGameplay(device: AndroidDevice, proxy: Mitmproxy,
     await proxy.command('zhajinhua/operation-reward', { roomId, enabled: true });
     try {
       await animateGamePanel(device, 'zhajinhua', 'level-up', 'zhajinhua-operation-button-call',
-        { x: 0, y: 0, width: 720, height: 250 }, animationInfo);
+        { x: 0, y: 0, width: 720, height: 250 }, animationInfo, 'enter', 'motionFrames', [],
+        async () => { await gameReady(device, 'zhajinhua-level-up-level-text'); });
       await gameReady(device, 'zhajinhua-level-up-level-text');
       await animateGamePanel(device, 'zhajinhua', 'level-up', 'zhajinhua-level-up-close-button',
         { x: 0, y: 0, width: 720, height: 250 }, animationInfo, 'exit');
