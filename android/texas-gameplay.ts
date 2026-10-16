@@ -67,7 +67,7 @@ export async function texasGameplay(device: AndroidDevice, proxy: Mitmproxy, roo
   await gameReady(device, 'raise-bet-popup');
   await capture('raise');
   await animateGamePanel(device, 'texas-holdem', 'raise-bet', 'raise-bet-cancel-button',
-    { x: 320, y: 245, width: 190, height: 430 }, animationInfo, 'exit');
+    { x: 320, y: 245, width: 190, height: 430 }, animationInfo, 'exit', 'videoFrames');
   await gameGone(device, 'raise-bet-popup');
   await animateGamePanel(device, 'texas-holdem', 'accurate-bet', 'texas-holdem-operation-accurate-bet-button',
     { x: 120, y: 360, width: 480, height: 330 }, animationInfo);

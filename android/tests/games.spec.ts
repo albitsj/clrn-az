@@ -84,7 +84,9 @@ for (const [suite, game] of [['texas', 'texas-holdem'], ['zhajinhua', 'zhajinhua
             panelAnimation ? testInfo : undefined);
           else await zhajinhuaGameplay(device, proxy, room!.roomId, account!.userId, capture,
             gameAnimation ? testInfo : undefined);
-          expect(index).toBe(scenario.snapshotStates!.length);
+          // 英文大厅的升级提示会自动消失，已由入场、倒计时和退场帧覆盖。
+          const timedLevelUp = gameAnimation && scenario.pageLabel === 'signed_in_texas_hall';
+          expect(index).toBe(scenario.snapshotStates!.length - Number(timedLevelUp));
         } catch (error) {
           await captureFailure(device, testInfo);
           throw error;

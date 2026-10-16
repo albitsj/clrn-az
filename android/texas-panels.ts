@@ -99,7 +99,8 @@ export async function texasPanels(context: TexasContext): Promise<void> {
   await animateGamePanel(device, 'texas-holdem', 'chat-actions-return', 'in-game-chat-report-button-0',
     { x: 60, y: 800, width: 600, height: 390 }, animationInfo);
   await animateGamePanel(device, 'texas-holdem', 'chat-block', 'report_item_block',
-    { x: 20, y: 410, width: 680, height: 470 }, animationInfo);
+    { x: 20, y: 410, width: 680, height: 470 }, animationInfo, 'enter', 'motionFrames',
+    [{ x: 334, y: 720, width: 110, height: 47, reason: '聊天屏障后面的房间计时独立跳秒' }]);
   await gameReady(device, 'BlockPlayerConfirmPopup:title');
   await capture('chat_block_confirm');
   await animateGamePanel(device, 'texas-holdem', 'chat-block', 'BlockPlayerConfirmPopup:cancelButton',
