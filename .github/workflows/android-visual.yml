@@ -118,7 +118,7 @@ jobs:
         run: node scripts/configure-ci-account.mjs
       - run: npm ci
       - name: 准备短转场录屏解码器
-        if: matrix.group == 'social' || matrix.group == 'texas'
+        if: matrix.group == 'social' || matrix.group == 'texas' || matrix.group == 'zhajinhua'
         run: command -v ffmpeg || { sudo apt-get update && sudo apt-get install -y ffmpeg; }
       - uses: actions/setup-python@v5
         with:
