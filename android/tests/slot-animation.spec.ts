@@ -7,6 +7,7 @@ import { androidScenarios } from '../scenarios';
 import { captureNativeTransition } from '../animation-transition';
 import { verifyLoopAnimation } from '../loop-animation';
 import { captureMovingKeyframes } from '../loop-keyframes';
+import { waitAbsent } from '../native-state';
 
 test('all three native slot reels and reward types animate from real spin responses', async ({}, testInfo) => {
   test.skip(!['all', 'social'].includes(process.env.ANDROID_GROUP || 'all')
@@ -75,6 +76,14 @@ test('all three native slot reels and reward types animate from real spin respon
       await captureNativeTransition(device, 'slot-no-energy-exit', testInfo, noEnergyRegion, pressConfirm);
       const final = await proxy.command<{ spins: number }>('android/slot');
       expect(final.spins, '能量不足由第四次旋转请求触发').toBe(4);
+      const close = await device.info({ res: 'close-button' });
+      /** 点击老虎机自己的关闭按钮，采集面板退场而非只检查最终静态大厅。 */
+      const pressClose = () => adb('shell', 'input', 'tap',
+        String(Math.round(close.bounds.x + close.bounds.width / 2)),
+        String(Math.round(close.bounds.y + close.bounds.height / 2)));
+      await captureNativeTransition(device, 'slot-popup-exit', testInfo,
+        { x: 0, y: 500, width: 720, height: 680 }, pressClose);
+      await waitAbsent(device, { res: 'slot-machine-view' });
     } finally { await device?.close(); }
   }, false, false, true);
 });

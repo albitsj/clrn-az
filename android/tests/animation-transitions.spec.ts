@@ -23,7 +23,11 @@ test('native launch branding and staging notice animate on a real app start', as
       await device.wait({ res: 'staging-confirmation-input' });
       adb('shell', 'am', 'force-stop', applicationId);
       adb('shell', 'input', 'keyevent', 'KEYCODE_HOME');
-      await new Promise(resolve => setTimeout(resolve, 1_200));
+      // HOME 以 5 倍倍率返回桌面；等系统图标稳定，再用标准倍率观察应用启动。
+      await new Promise(resolve => setTimeout(resolve, 4_000));
+      for (const setting of ['window_animation_scale', 'transition_animation_scale', 'animator_duration_scale']) {
+        adb('shell', 'settings', 'put', 'global', setting, '1');
+      }
       /** 预装的原生驱动持续取样，独立 ADB 连接冷启动正式 Release。 */
       const start = () => adb('shell', 'am', 'start', '-n',
         `${applicationId}/com.laiwan_react_native.MainActivity`);
