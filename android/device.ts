@@ -43,7 +43,8 @@ export async function launchApplication(options: { gameDriver?: boolean; enableS
   adb('shell', 'settings', 'put', 'system', 'accelerometer_rotation', '0');
   adb('shell', 'settings', 'put', 'system', 'user_rotation', '0');
   for (const setting of ['window_animation_scale', 'transition_animation_scale', 'animator_duration_scale']) {
-    adb('shell', 'settings', 'put', 'global', setting, options.enableSystemAnimations ? '1' : '0');
+    // 原生 Dialog 动画短于截图调用；专用关键帧用例用系统的慢动作倍率展开真实帧。
+    adb('shell', 'settings', 'put', 'global', setting, options.enableSystemAnimations ? '5' : '0');
   }
   adb('shell', 'input', 'keyevent', 'KEYCODE_WAKEUP');
   adb('shell', 'wm', 'dismiss-keyguard');
@@ -60,7 +61,7 @@ export async function launchApplication(options: { gameDriver?: boolean; enableS
   if (options.gameDriver) {
     const driver = path.resolve('.ttyctl/android-driver');
     const source = JSON.parse(readFileSync(path.join(driver, 'source.json'), 'utf8'));
-    if (source.revision !== '39e3553a4f283a41134d75d7e404484bd9e6865a' || source.patch !== 4) throw new Error('牌桌驱动构建身份无效。');
+    if (source.revision !== '39e3553a4f283a41134d75d7e404484bd9e6865a' || source.patch !== 5) throw new Error('原生动画驱动构建身份无效。');
     for (const pkg of ['com.microsoft.playwright.androiddriver.test', 'com.microsoft.playwright.androiddriver']) {
       if (adb('shell', 'pm', 'list', 'packages', pkg).includes(`package:${pkg}`)) adb('uninstall', pkg);
     }

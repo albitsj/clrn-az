@@ -59,20 +59,26 @@ export async function captureNativeTransition(device: AndroidDevice, name: strin
   await testInfo.attach(`${name}-timeline`, {
     body: JSON.stringify(frames.map(({ capturedAt }) => capturedAt)), contentType: 'application/json',
   });
+  for (const [index, frame] of timeline.entries()) {
+    await testInfo.attach(`${name}-frame-${index}`, { body: frame, contentType: 'image/png' });
+  }
+  await testInfo.attach(`${name}-start`, { body: before, contentType: 'image/png' });
+  await testInfo.attach(`${name}-end`, { body: after, contentType: 'image/png' });
   expect(samePixels(timeline[0], before), '开始采样时动画尚未触发').toBe(true);
   expect(samePixels(timeline.at(-1)!, after), '采样结束时动画必须完成').toBe(true);
   const total = frameColorDistance(before, after);
   expect(total, '入口点击必须产生足够大的可见变化').toBeGreaterThan(3);
   const candidates = timeline.map((frame, index) => ({ frame, index, progress: frameColorDistance(before, frame) / total }))
     .filter(item => item.progress > 0.15 && item.progress < 0.85);
+  await testInfo.attach(`${name}-progress`, {
+    body: JSON.stringify({ total, frames: timeline.map(frame => frameColorDistance(before, frame) / total) }),
+    contentType: 'application/json',
+  });
   expect(candidates.length, '必须采到起点和终点之间的真实动画帧').toBeGreaterThan(0);
   const middle = candidates.reduce((best, item) => Math.abs(item.progress - 0.5) < Math.abs(best.progress - 0.5) ? item : best);
-  await testInfo.attach(`${name}-start`, { body: before, contentType: 'image/png' });
   await testInfo.attach(`${name}-middle`, { body: middle.frame, contentType: 'image/png' });
-  await testInfo.attach(`${name}-end`, { body: after, contentType: 'image/png' });
-  await testInfo.attach(`${name}-progress`, {
-    body: JSON.stringify({ total, middle: middle.index, progress: middle.progress,
-      frames: timeline.map(frame => frameColorDistance(before, frame) / total) }), contentType: 'application/json',
+  await testInfo.attach(`${name}-middle-progress`, {
+    body: JSON.stringify({ index: middle.index, progress: middle.progress }), contentType: 'application/json',
   });
   if (testInfo.config.updateSnapshots === 'all') {
     expect(before).toMatchSnapshot(`${name}-start.png`);

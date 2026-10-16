@@ -43,9 +43,9 @@ const patched = source
               // 无须查询控件树，连续保存真实合成屏幕；JS 端在采样期间通过独立 ADB 点击。
               java.util.ArrayList<android.graphics.Bitmap> motionBitmaps = new java.util.ArrayList<>();
               JSONArray motionFrames = new JSONArray();
-              long motionDeadline = android.os.SystemClock.uptimeMillis() + 1800;
+              long motionDeadline = android.os.SystemClock.uptimeMillis() + 3200;
               try {
-                while (android.os.SystemClock.uptimeMillis() < motionDeadline && motionBitmaps.size() < 16) {
+                while (android.os.SystemClock.uptimeMillis() < motionDeadline && motionBitmaps.size() < 20) {
                   android.graphics.Bitmap motionFrame = InstrumentationRegistry.getInstrumentation().getUiAutomation().takeScreenshot();
                   if (motionFrame == null) throw new IllegalStateException("Native motion screenshot returned no bitmap");
                   motionBitmaps.add(motionFrame);
@@ -124,5 +124,5 @@ const output = path.resolve('.ttyctl/android-driver');
 mkdirSync(output, { recursive: true });
 copyFileSync(path.join(directory, 'app/build/outputs/apk/debug/app-debug.apk'), path.join(output, 'android-driver-target.apk'));
 copyFileSync(path.join(directory, 'app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk'), path.join(output, 'android-driver.apk'));
-writeFileSync(path.join(output, 'source.json'), JSON.stringify({ revision, patch: 4 }));
+writeFileSync(path.join(output, 'source.json'), JSON.stringify({ revision, patch: 5 }));
 console.log('原生控件驱动已构建，应用画面和动画保持原样。');

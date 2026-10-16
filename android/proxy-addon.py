@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 import urllib.request
 from urllib.parse import urlsplit
-from mitmproxy import http
+from mitmproxy import ctx, http
 from presentation import AccountPresentation
 from game_session import GameSession
 
@@ -18,6 +18,9 @@ class AndroidVisualProxy:
         self.records = None
         self.game = None
         self.game_session = None
+        self.matching = os.environ.get('ANDROID_MATCHING') == 'true'
+        self.matching_paths = {'/v1/hall_matching/join', '/v1/hall_matching/quit',
+                               '/v1/hall_matching/keep_waiting'}
         game_type = os.environ.get('ANDROID_GAME')
         if game_type in ('texas-holdem', 'zhajinhua'):
             directory = Path(__file__).resolve().parents[1] / 'visual/cases' / game_type / 'mitmproxy'
@@ -60,6 +63,28 @@ class AndroidVisualProxy:
             self.records.response(flow)
 
     def websocket_message(self, flow):
+        if self.matching and flow.websocket:
+            message = flow.websocket.messages[-1]
+            if message.from_client and message.is_text and not message.injected:
+                try:
+                    frames = [json.loads(line) for line in message.text.splitlines() if line]
+                except (ValueError, TypeError):
+                    frames = []
+                blocked = [frame for frame in frames if isinstance(frame, dict)
+                           and frame.get('method') == 9 and isinstance(frame.get('params'), dict)
+                           and isinstance(frame['params'].get('data'), dict)
+                           and frame['params']['data'].get('path') in self.matching_paths]
+                if blocked:
+                    kept = [frame for frame in frames if frame not in blocked]
+                    if kept:
+                        message.content = '\n'.join(json.dumps(frame) for frame in kept).encode()
+                    else:
+                        message.drop()
+                    replies = [{'id': frame['id'], 'result': {'data': {'ok': True, 'result': {}}}}
+                               for frame in blocked if isinstance(frame.get('id'), int)]
+                    if replies:
+                        ctx.master.commands.call('inject.websocket', flow, True,
+                                                 '\n'.join(json.dumps(reply) for reply in replies).encode(), True)
         if self.game:
             self.game.websocket_message(flow)
 
@@ -68,6 +93,10 @@ class AndroidVisualProxy:
             self.game.websocket_end(flow)
 
     async def request(self, flow):
+        if self.matching and urlsplit(flow.request.path).path in self.matching_paths:
+            flow.response = http.Response.make(200, b'{"ok":true,"result":{}}',
+                                               {'Content-Type': 'application/json'})
+            return
         if self.game and flow.request.host == 'test-mitmproxy.invalid' and urlsplit(flow.request.path).path == '/android/session':
             if flow.request.headers.get('X-E2E-Control-Token') != os.environ['MITMPROXY_CONTROL_TOKEN']:
                 flow.response = http.Response.make(403, b'Forbidden')

@@ -1,10 +1,14 @@
 import { expect, test } from '@playwright/test';
 import type { AndroidDevice } from 'playwright';
-import { adb, launchApplication, waitForHall } from '../device';
+import { adb, compareScreenshot, launchApplication, waitForHall } from '../device';
 import { captureNativeTransition } from '../animation-transition';
 import { withAndroidProxy } from '../proxy';
-import { signIn, navigateScenario } from '../navigation';
+import { signIn, navigateScenario, tap } from '../navigation';
 import { androidScenarios } from '../scenarios';
+import { screenshotMasks } from '../screenshot';
+import { verifyLoopAnimation } from '../loop-animation';
+import { gameScreenshot } from '../game-controls';
+import { waitAbsent } from '../native-state';
 
 test('guest search confirmation animates into and out of the Android screen', async ({}, testInfo) => {
   test.skip(!['all', 'guest'].includes(process.env.ANDROID_GROUP || 'all')
@@ -31,6 +35,39 @@ test('guest search confirmation animates into and out of the Android screen', as
   } finally { await device?.close(); }
 });
 
+test('hall matching spinner animates while the real waiting dialog is visible', async ({}, testInfo) => {
+  test.skip(!['all', 'social'].includes(process.env.ANDROID_GROUP || 'all')
+    || (process.env.ANDROID_LOCALE || 'en') !== 'en', '匹配动画只在英文社交任务采集一次');
+  test.setTimeout(420_000);
+  await withAndroidProxy(async () => {
+    let device: AndroidDevice | undefined;
+    try {
+      device = await launchApplication({ gameDriver: true, enableSystemAnimations: true });
+      await waitForHall(device);
+      await signIn(device);
+      const hall = androidScenarios('en', 'social').find(scenario => scenario.pageLabel === 'signed_in_hall');
+      expect(hall).toBeDefined();
+      await navigateScenario(device, hall!);
+      const masks = await screenshotMasks(device, hall!);
+      await tap(device, 'match-game-item-texas_holdem-tourists');
+      await device.wait({ res: 'game-matching-loading-view' });
+      const countdown = await device.info({ res: 'game-matching-countdown-text' });
+      const cancel = await device.info({ res: 'quick-start-room-cancel' });
+      const spinner = { x: Math.round(cancel.bounds.x + cancel.bounds.width / 2 - 60),
+        y: Math.round(cancel.bounds.y - 178), width: 120, height: 120 };
+      masks.push({ ...countdown.bounds, x: countdown.bounds.x - 4, width: countdown.bounds.width + 8,
+        reason: '匹配计时数字' }, { ...spinner, reason: '匹配图标旋转范围' });
+      /** 保留原生匹配窗口实际绘制的每一帧。 */
+      const capture = () => gameScreenshot(device!);
+      await verifyLoopAnimation(device, 'en-hall-matching', testInfo, [spinner], masks,
+        { takeScreenshot: capture, timeoutMs: 4_000 });
+      await compareScreenshot(device, 'en-hall-matching', testInfo, masks, undefined, capture);
+      await tap(device, 'quick-start-room-cancel');
+      await waitAbsent(device, { res: 'game-matching-loading-view' });
+    } finally { await device?.close(); }
+  }, false, true);
+});
+
 test('club more menu fades into and out of the Android screen', async ({}, testInfo) => {
   test.skip(!['all', 'social'].includes(process.env.ANDROID_GROUP || 'all')
     || (process.env.ANDROID_LOCALE || 'en') !== 'en', '俱乐部动画只在英文社交任务采集一次');
@@ -55,6 +92,34 @@ test('club more menu fades into and out of the Android screen', async ({}, testI
       /** 点击菜单外的真实遮罩关闭弹层。 */
       const pressBackdrop = () => adb('shell', 'input', 'tap', '300', '300');
       await captureNativeTransition(device, 'club-more-exit', testInfo, region, pressBackdrop);
+    } finally { await device?.close(); }
+  });
+});
+
+test('private room game picker slides into and out of the Android screen', async ({}, testInfo) => {
+  test.skip(!['all', 'rooms'].includes(process.env.ANDROID_GROUP || 'all')
+    || (process.env.ANDROID_LOCALE || 'en') !== 'en', '选玩法动画只在英文房间任务采集一次');
+  test.setTimeout(420_000);
+  await withAndroidProxy(async () => {
+    let device: AndroidDevice | undefined;
+    try {
+      device = await launchApplication({ gameDriver: true, enableSystemAnimations: true });
+      await waitForHall(device);
+      await signIn(device);
+      const detail = androidScenarios('en', 'rooms').find(scenario => scenario.pageLabel === 'signed_in_private_room_detail');
+      expect(detail).toBeDefined();
+      await navigateScenario(device, detail!);
+      const button = await device.info({ res: 'create-game-button' });
+      /** 通过真实建房入口打开选玩法抽屉。 */
+      const pressCreate = () => adb('shell', 'input', 'tap',
+        String(Math.round(button.bounds.x + button.bounds.width / 2)),
+        String(Math.round(button.bounds.y + button.bounds.height / 2)));
+      const region = { x: 0, y: 632, width: 720, height: 648 };
+      await captureNativeTransition(device, 'game-picker-enter', testInfo, region, pressCreate);
+      await device.wait({ res: 'select-game-category-text' });
+      /** 使用选玩法抽屉的真实 Android 返回处理关闭它。 */
+      const pressBack = () => adb('shell', 'input', 'keyevent', 'KEYCODE_BACK');
+      await captureNativeTransition(device, 'game-picker-exit', testInfo, region, pressBack);
     } finally { await device?.close(); }
   });
 });
