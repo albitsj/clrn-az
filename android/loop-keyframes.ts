@@ -116,3 +116,29 @@ export async function captureMovingKeyframes(device: AndroidDevice, name: string
     }
   }
 }
+
+/**
+ * 从同一次事件采集的完整屏幕帧，验证同步出现的第二种动画。
+ * @param frames - 主动画采集的原生完整屏幕帧。
+ * @param name - 同步动画的基线名称。
+ * @param testInfo - Playwright 快照与报告。
+ * @param region - 该动画独立的可见范围。
+ */
+export async function captureConcurrentMotion(frames: Buffer[], name: string, testInfo: TestInfo,
+  region: ScreenshotBounds): Promise<void> {
+  const pictures = frames.map(frame => motionParts(frame, [region]).regions[0]);
+  const first = pictures[0];
+  const distances = pictures.map(frame => frameColorDistance(first, frame));
+  const moved = pictures[distances.indexOf(Math.max(...distances))];
+  expect(frameColorDistance(first, moved), `${name} 必须在事件中运动`).toBeGreaterThan(1);
+  for (const [phase, selected] of [['first', first], ['moved', moved]] as const) {
+    const file = `${name}-${phase}.png`;
+    await testInfo.attach(file, { body: selected, contentType: 'image/png' });
+    if (testInfo.config.updateSnapshots === 'all') expect(selected).toMatchSnapshot(file);
+    else {
+      const reference = readFileSync(testInfo.snapshotPath(file));
+      expect(Math.min(...pictures.map(frame => frameColorDistance(frame, reference))),
+        `${name} ${phase} 视觉回归`).toBeLessThanOrEqual(18);
+    }
+  }
+}

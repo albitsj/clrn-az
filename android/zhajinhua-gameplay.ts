@@ -8,7 +8,7 @@ import { closeAnimatedGameMask, closeGameMask } from './game-pregame';
 import { captureNativeTransition } from './animation-transition';
 import { adb } from './device';
 import { animateGamePanel } from './game-panel-animation';
-import { captureLoopKeyframes, captureMovingKeyframes } from './loop-keyframes';
+import { captureConcurrentMotion, captureLoopKeyframes, captureMovingKeyframes } from './loop-keyframes';
 import { captureAssetSequence } from './asset-sequence';
 
 /**
@@ -124,25 +124,19 @@ export async function zhajinhuaGameplay(device: AndroidDevice, proxy: Mitmproxy,
   if (animationInfo) await captureNativeTransition(device, 'zhajinhua-showdown-cards', animationInfo,
     { x: 8, y: 697, width: 170, height: 102 }, () => send(showdown),
     [{ x: 82, y: 697, width: 52, height: 75,
-      reason: '摊牌前独立运行的对手操作倒计时，遮住右上角数字和圆环' }], [], 800);
+      reason: '摊牌前独立运行的对手操作倒计时，遮住右上角数字和圆环' }],
+    [{ x: 235, y: 960, width: 140, height: 110 }], 800, 'motionFrames',
+    frames => captureConcurrentMotion(frames, 'zhajinhua-victory', animationInfo,
+      { x: 235, y: 960, width: 140, height: 110 }));
   else await send(showdown);
   await expect.poll(async () => (await gameNodes(device)).filter(node => node.res === 'player_cards_container').length,
     { timeout: 30_000 }).toBe(2);
   await capture('showdown');
-  // 摊牌牌面高光仍会闪几帧；结算只采集余额和本人获胜光效。
-  if (animationInfo) await new Promise(resolve => setTimeout(resolve, 1200));
   const settlement = events([{ event: 'settlement', players: [
     { player_id: self, net: 120, prize: 120, stack: 1120 },
     { player_id: PLAYER_IDS[0], net: -40, prize: 0, stack: 920 },
   ] }]);
-  if (animationInfo) await captureNativeTransition(device, 'zhajinhua-settlement', animationInfo,
-    { x: 0, y: 680, width: 510, height: 530 }, () => send(settlement),
-    [{ x: 338, y: 726, width: 110, height: 42,
-      reason: '房间倒计时与结算独立运行，保留旁边的牌型和获胜光效' },
-    { x: 78, y: 730, width: 42, height: 34,
-      reason: '对手摊牌的独立牌面高光持续闪烁；结算比较本人牌面和获胜光效' }],
-    [{ x: 210, y: 970, width: 190, height: 215 }]);
-  else await send(settlement);
+  await send(settlement);
   // 与德州一样，摊牌后的牌型会覆盖余额；从当前可见玩家读取明确的余额语义标记。
   await expect.poll(async () => gameSemanticText((await gameNodes(device))
     .find(node => node.res === `zhajinhua-player-container-${self}`), 'player_stack_text'),
