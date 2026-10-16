@@ -10,6 +10,7 @@ import { adb } from './device';
 import { animateGamePanel, captureTimedLevelUp } from './game-panel-animation';
 import { captureConcurrentMotion, captureLoopKeyframes, captureMovingKeyframes } from './loop-keyframes';
 import { captureAssetSequence } from './asset-sequence';
+import type { ScreenshotMask } from './screenshot';
 
 /**
  * 直接使用 Web 八个牌局状态的网络事件，真实点击原生操作按钮。
@@ -21,7 +22,7 @@ import { captureAssetSequence } from './asset-sequence';
  * @param animationInfo - 英文原生发牌、翻牌和摊牌关键帧基准。
  */
 export async function zhajinhuaGameplay(device: AndroidDevice, proxy: Mitmproxy, roomId: string,
-  self: string, capture: (state: string) => Promise<void>, animationInfo?: TestInfo): Promise<void> {
+  self: string, capture: (state: string, masks?: ScreenshotMask[]) => Promise<void>, animationInfo?: TestInfo): Promise<void> {
   /**
    * 发送共用回放事件。
    * @param data - Web 共用的网络事件。
@@ -66,7 +67,8 @@ export async function zhajinhuaGameplay(device: AndroidDevice, proxy: Mitmproxy,
   // 其余四位玩家的十二张暗牌没有牌名；与 Web 相同，只校验已翻开的三张牌。
   await gameCardNames(device, 'player_card', 'player_card_name_text', ['as', 'ad', 'ac'], { namedOnly: true });
   await gameGone(device, 'zhajinhua-see-hand-card-button');
-  await capture('seen_cards');
+  await capture('seen_cards', [{ x: 260, y: 1075, width: 35, height: 40,
+    reason: '看牌后玩家头像下的独立操作秒数仍在跳动' }]);
   const raise = events([{ event: 'raise', player_id: self, amount: 40, stack: 960 },
     { event: 'pot_update', pot_amount: 160 }]);
   if (animationInfo) {

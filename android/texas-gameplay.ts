@@ -95,7 +95,8 @@ export async function texasGameplay(device: AndroidDevice, proxy: Mitmproxy, roo
       hand_strength: 'three_of_a_kind', strength_cards: ['kh', 'ks', 'kd'], is_max_strength: false },
   ] }]);
   if (animationInfo) await captureNativeTransition(device, 'texas-showdown', animationInfo,
-    { x: 0, y: 580, width: 600, height: 600 }, () => send(showdown));
+    { x: 0, y: 580, width: 600, height: 600 }, () => send(showdown),
+    [{ x: 334, y: 720, width: 110, height: 47, reason: '摊牌旁的房间计时独立跳秒' }]);
   else await send(showdown);
   await capture('showdown');
   const settlement = events([{ event: 'settlement', players: [
