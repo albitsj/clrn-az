@@ -89,11 +89,11 @@ test('club more menu fades into and out of the Android screen', async ({}, testI
         String(Math.round(more.bounds.x + more.bounds.width / 2)),
         String(Math.round(more.bounds.y + more.bounds.height / 2)));
       const region = { x: 446, y: 170, width: 250, height: 250 };
-      await captureNativeTransition(device, 'club-more-enter', testInfo, region, pressMore);
+      await captureNativeTransition(device, 'club-more-enter', testInfo, region, pressMore, [], [], 800);
       await device.wait({ res: 'club-more-popup' });
       /** 点击菜单外的真实遮罩关闭弹层。 */
       const pressBackdrop = () => adb('shell', 'input', 'tap', '300', '300');
-      await captureNativeTransition(device, 'club-more-exit', testInfo, region, pressBackdrop);
+      await captureNativeTransition(device, 'club-more-exit', testInfo, region, pressBackdrop, [], [], 800);
       const roomsTab = await device.info({ res: 'club_tab_room' });
       /** 从我的俱乐部切换到牌局空态。 */
       const pressRoomsTab = () => adb('shell', 'input', 'tap',
