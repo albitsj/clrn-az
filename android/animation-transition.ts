@@ -25,6 +25,26 @@ export function frameColorDistance(left: Buffer, right: Buffer): number {
   return difference / (a.width * a.height * 3);
 }
 
+/** 平移弹层的颜色分布距离；保留配色与覆盖比例，允许同一幅画面处在不同纵向位置。
+ * @param left - 第一张局部 PNG。
+ * @param right - 第二张局部 PNG。
+ */
+export function framePaletteDistance(left: Buffer, right: Buffer): number {
+  const a = PNG.sync.read(left), b = PNG.sync.read(right);
+  if (a.width !== b.width || a.height !== b.height) throw new Error('动画帧尺寸变化');
+  let difference = 0;
+  for (let channel = 0; channel < 3; channel++) {
+    const counts = new Int32Array(256);
+    for (let offset = channel; offset < a.data.length; offset += 4) {
+      counts[a.data[offset]]++;
+      counts[b.data[offset]]--;
+    }
+    let balance = 0;
+    for (const count of counts) { balance += count; difference += Math.abs(balance); }
+  }
+  return difference / (a.width * a.height * 3);
+}
+
 /**
  * 点击真实入口期间由原生驱动逐帧截屏；基准约束起点、终点和中途真实像素。
  * @param device - 安装固定补丁驱动的模拟器。
@@ -134,7 +154,8 @@ export async function captureNativeTransition(device: AndroidDevice, name: strin
     // 系统截图间隔约 70–180ms；短动画有时仅采到靠近起点或终点的帧。
     // 起止帧逐像素匹配，独立断言中途帧真实可见，再要求它靠近已审查的轨迹锚点。
     const anchors = samplingMethod === 'videoFrames' ? [reference] : [before, reference, after];
-    expect(Math.min(...candidates.flatMap(item => anchors.map(anchor => frameColorDistance(item.frame, anchor)))),
+    const compare = samplingMethod === 'videoFrames' ? framePaletteDistance : frameColorDistance;
+    expect(Math.min(...candidates.flatMap(item => anchors.map(anchor => compare(item.frame, anchor)))),
       '动画中途帧的实际画面须接近已审查轨迹').toBeLessThanOrEqual(samplingMethod === 'videoFrames' ? 30 : 36);
   }
 }

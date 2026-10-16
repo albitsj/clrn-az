@@ -21,25 +21,7 @@ function brightness(bytes: Buffer): number {
   return sum / (png.width * png.height);
 }
 
-/** 比较颜色分布，允许纯旋转控件处在任意角度，同时保留亮点数量、大小和颜色。
- * @param left - 第一帧局部 PNG。
- * @param right - 第二帧局部 PNG。
- */
-export function framePaletteDistance(left: Buffer, right: Buffer): number {
-  const a = PNG.sync.read(left), b = PNG.sync.read(right);
-  if (a.width !== b.width || a.height !== b.height) throw new Error('动画帧尺寸变化');
-  let difference = 0;
-  for (let channel = 0; channel < 3; channel++) {
-    const counts = new Int32Array(256);
-    for (let offset = channel; offset < a.data.length; offset += 4) {
-      counts[a.data[offset]]++;
-      counts[b.data[offset]]--;
-    }
-    let balance = 0;
-    for (const count of counts) { balance += count; difference += Math.abs(balance); }
-  }
-  return difference / (a.width * a.height * 3);
-}
+export { framePaletteDistance } from './animation-transition';
 
 /**
  * 对循环脉动的每个独立控件保存明暗两端真实屏幕关键帧。
