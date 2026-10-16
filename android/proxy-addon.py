@@ -1,5 +1,6 @@
 """只在专用模拟器的代理边界复用 Web 响应，不改变 APK 或绕过应用初始化。"""
 
+import asyncio
 import importlib.util
 import json
 import os
@@ -26,6 +27,15 @@ class AndroidVisualProxy:
         self.slot_currency = 'coin'
         self.slot_no_energy = False
         self.slot_spins = 0
+        self.skeleton = os.environ.get('ANDROID_SKELETON') == 'true'
+        self.skeleton_hold = False
+        self.skeleton_release = asyncio.Event()
+        self.skeleton_loaded = 0
+        self.skeleton_clubs = [{'id': f'00000000-0000-4000-8000-00000000010{index}',
+                                'club_no': 100 + index, 'name': f'TestClub{index}',
+                                'owner_id': 'visual-owner', 'member_count': 5,
+                                'created_at': '2026-01-01T00:00:00Z', 'admin_ids': [],
+                                'game_type': 'texas_holdem'} for index in (1, 2)]
         game_type = os.environ.get('ANDROID_GAME')
         if game_type in ('texas-holdem', 'zhajinhua'):
             directory = Path(__file__).resolve().parents[1] / 'visual/cases' / game_type / 'mitmproxy'
@@ -128,6 +138,33 @@ class AndroidVisualProxy:
             self.game.websocket_end(flow)
 
     async def request(self, flow):
+        path = urlsplit(flow.request.path).path
+        if self.skeleton and flow.request.host == 'test-mitmproxy.invalid' and path == '/android/skeleton':
+            if flow.request.headers.get('X-E2E-Control-Token') != os.environ['MITMPROXY_CONTROL_TOKEN']:
+                flow.response = http.Response.make(403, b'Forbidden')
+                return
+            if flow.request.method == 'POST':
+                settings = json.loads(flow.request.content)
+                self.skeleton_hold = settings.get('hold') is True
+                if not self.skeleton_hold:
+                    self.skeleton_release.set()
+                else:
+                    self.skeleton_release.clear()
+            flow.response = http.Response.make(200, json.dumps({'loaded': self.skeleton_loaded,
+                'holding': self.skeleton_hold}).encode(), {'Content-Type': 'application/json'})
+            return
+        if self.skeleton and path == '/v10/club' and flow.request.method == 'GET' \
+                and 'user_id' in urlsplit(flow.request.path).query:
+            body = {'ok': True, 'result': {'clubs': [{'id': club['id']} for club in self.skeleton_clubs]}}
+            flow.response = http.Response.make(200, json.dumps(body).encode(), {'Content-Type': 'application/json'})
+            return
+        if self.skeleton and path == '/v10/clubs' and flow.request.method == 'PUT':
+            if self.skeleton_hold:
+                await self.skeleton_release.wait()
+            self.skeleton_loaded += 1
+            flow.response = http.Response.make(200, json.dumps({'ok': True, 'result': self.skeleton_clubs}).encode(),
+                                               {'Content-Type': 'application/json'})
+            return
         if self.slot and flow.request.host == 'test-mitmproxy.invalid' and urlsplit(flow.request.path).path == '/android/slot':
             if flow.request.headers.get('X-E2E-Control-Token') != os.environ['MITMPROXY_CONTROL_TOKEN']:
                 flow.response = http.Response.make(403, b'Forbidden')
