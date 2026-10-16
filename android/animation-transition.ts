@@ -34,7 +34,7 @@ export function frameColorDistance(left: Buffer, right: Buffer): number {
  * @param masks - 区域内与目标无关的独立循环效果；保留掩码说明。
  * @param requiredRegions - 同一效果中必须分别运动的可见子区域。
  * @param settleMs - 触发后仍在滚动的长动画，采样结束后额外等待完成。
- * @param samplingMethod - 启动页使用持续取样命令跨过系统 Splash。
+ * @param samplingMethod - 启动页或延迟出现的弹窗使用持续取样命令。
  */
 export async function captureNativeTransition(device: AndroidDevice, name: string, testInfo: TestInfo,
   region: ScreenshotBounds, trigger: () => unknown, masks: ScreenshotMask[] = [],

@@ -25,7 +25,7 @@ export async function texasPanels(context: TexasContext): Promise<void> {
   // 仅向专用模拟器授权；界面测试不录制或发送真实音频。
   adb('shell', 'pm', 'grant', applicationId, 'android.permission.RECORD_AUDIO');
   await animateGamePanel(device, 'texas-holdem', 'voice', 'texas-holdem-voice-button',
-    { x: 220, y: 835, width: 280, height: 340 }, animationInfo);
+    { x: 220, y: 835, width: 280, height: 340 }, animationInfo, 'enter', 'launchFrames');
   await gameReady(device, 'in-game-audio-root-container');
   await capture('voice');
   await animateGamePanel(device, 'texas-holdem', 'voice', 'in-game-audio-popup-close',
