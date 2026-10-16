@@ -63,12 +63,12 @@ const patched = source
               JSONArray motionFrames = new JSONArray();
               long motionDeadline = android.os.SystemClock.uptimeMillis() + 3200;
               try {
-                while (android.os.SystemClock.uptimeMillis() < motionDeadline && motionBitmaps.size() < 20) {
+              while (android.os.SystemClock.uptimeMillis() < motionDeadline && motionBitmaps.size() < 30) {
                   android.graphics.Bitmap motionFrame = InstrumentationRegistry.getInstrumentation().getUiAutomation().takeScreenshot();
                   if (motionFrame == null) throw new IllegalStateException("Native motion screenshot returned no bitmap");
                   motionBitmaps.add(motionFrame);
                   motionFrames.put(new JSONObject().put("capturedAt", android.os.SystemClock.uptimeMillis()));
-                  android.os.SystemClock.sleep(45);
+                  android.os.SystemClock.sleep(5);
                 }
                 for (int index = 0; index < motionBitmaps.size(); index++) {
                   java.io.ByteArrayOutputStream bytes = new java.io.ByteArrayOutputStream();
@@ -142,5 +142,5 @@ const output = path.resolve('.ttyctl/android-driver');
 mkdirSync(output, { recursive: true });
 copyFileSync(path.join(directory, 'app/build/outputs/apk/debug/app-debug.apk'), path.join(output, 'android-driver-target.apk'));
 copyFileSync(path.join(directory, 'app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk'), path.join(output, 'android-driver.apk'));
-writeFileSync(path.join(output, 'source.json'), JSON.stringify({ revision, patch: 6 }));
+writeFileSync(path.join(output, 'source.json'), JSON.stringify({ revision, patch: 7 }));
 console.log('原生控件驱动已构建，应用画面和动画保持原样。');

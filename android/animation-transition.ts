@@ -91,7 +91,8 @@ export async function captureNativeTransition(device: AndroidDevice, name: strin
   const candidates = timeline.map((frame, index) => ({ frame, index,
     progress: frameColorDistance(before, frame) / total,
     remaining: frameColorDistance(after, frame) / total }))
-    .filter(item => item.progress > 0.08 && item.remaining > 0.08
+    // 200ms 的原生淡入有时只采到靠近终点的一帧，仍要求它与两个端点都有实际像素差。
+    .filter(item => item.progress > 0.02 && item.remaining > 0.02
       && frameColorDistance(before, item.frame) > 1 && frameColorDistance(after, item.frame) > 1);
   await testInfo.attach(`${name}-progress`, {
     body: JSON.stringify({ total, frames: timeline.map(frame => frameColorDistance(before, frame) / total) }),
