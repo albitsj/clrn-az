@@ -8,13 +8,14 @@ import { focusedCaretMask } from './screenshot';
 import { translateCaret } from './caret-mask';
 import { enableGameSetting, restoreTexas, texasEvents, type TexasContext } from './texas-support';
 import { animateGamePanel } from './game-panel-animation';
+import { captureMovingKeyframes } from './loop-keyframes';
 
 /**
  * 复用 Web 的大厅牌桌、自动带入、举报、个人收益、猜牌及升级状态。
  * @param context - 大厅展示夹具下保持真实私人房观察者连接的上下文。
  */
 export async function texasHall(context: TexasContext): Promise<void> {
-  const { device, self, capture, animationInfo } = context;
+  const { device, proxy, self, capture, animationInfo } = context;
   await restoreTexas(context, {}, 'flop', true);
   await gameReady(device, 'auto-rebuy-button');
   await gameReady(device, 'report-pair-play-button');
@@ -27,6 +28,20 @@ export async function texasHall(context: TexasContext): Promise<void> {
     { x: 20, y: 405, width: 680, height: 470 }, animationInfo);
   await gameReady(device, 'auto-rebuy-popup');
   await capture('auto_rebuy');
+  if (animationInfo) {
+    await proxy.command('texas/ui', {});
+    await proxy.command('android/auto-rebuy-hold', { hold: true });
+    try {
+      await gameTap(device, 'auto-rebuy-switch');
+      await expect.poll(async () => (await proxy.command<{ requested: boolean }>('android/auto-rebuy-hold')).requested,
+        { timeout: 5000 }).toBe(true);
+      // 两层图标分别旋转，逐区保存真实画面明暗/位置相位。
+      await captureMovingKeyframes(device, 'texas-loading-spinner', animationInfo,
+        [{ x: 328, y: 610, width: 16, height: 60 }, { x: 345, y: 625, width: 30, height: 30 }]);
+    } finally { await proxy.command('android/auto-rebuy-hold', { hold: false }); }
+    await expect.poll(async () => (await gameReady(device, 'auto-rebuy-switch')).checked,
+      { timeout: 30_000 }).toBe(true);
+  }
   await animateGamePanel(device, 'texas-holdem', 'auto-rebuy', 'auto-rebuy-close-button',
     { x: 20, y: 405, width: 680, height: 470 }, animationInfo, 'exit');
   await gameGone(device, 'auto-rebuy-popup');

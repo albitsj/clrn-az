@@ -37,6 +37,10 @@ class AndroidVisualProxy:
                                 'created_at': '2026-01-01T00:00:00Z', 'admin_ids': [],
                                 'game_type': 'texas_holdem'} for index in (1, 2)]
         self.invitable = os.environ.get('ANDROID_INVITABLE') == 'true'
+        self.auto_rebuy_hold = False
+        self.auto_rebuy_requested = False
+        self.auto_rebuy_release = asyncio.Event()
+        self.auto_rebuy_release.set()
         game_type = os.environ.get('ANDROID_GAME')
         if game_type in ('texas-holdem', 'zhajinhua'):
             directory = Path(__file__).resolve().parents[1] / 'visual/cases' / game_type / 'mitmproxy'
@@ -140,6 +144,30 @@ class AndroidVisualProxy:
 
     async def request(self, flow):
         path = urlsplit(flow.request.path).path
+        if self.game and flow.request.host == 'test-mitmproxy.invalid' \
+                and path == '/android/auto-rebuy-hold':
+            if flow.request.headers.get('X-E2E-Control-Token') != os.environ['MITMPROXY_CONTROL_TOKEN']:
+                flow.response = http.Response.make(403, b'Forbidden')
+                return
+            if flow.request.method == 'POST':
+                settings = json.loads(flow.request.content)
+                self.auto_rebuy_hold = settings.get('hold') is True
+                if self.auto_rebuy_hold:
+                    self.auto_rebuy_requested = False
+                    self.auto_rebuy_release.clear()
+                else:
+                    self.auto_rebuy_release.set()
+            flow.response = http.Response.make(200, json.dumps({'hold': self.auto_rebuy_hold,
+                'requested': self.auto_rebuy_requested}).encode(), {'Content-Type': 'application/json'})
+            return
+        if self.game and self.auto_rebuy_hold and flow.request.method == 'PUT' \
+                and re.fullmatch(r'/v10/texas_holdem/room/[^/]+/user_settings/enable_auto_rebuy', path):
+            self.auto_rebuy_requested = True
+            try:
+                await asyncio.wait_for(self.auto_rebuy_release.wait(), timeout=8)
+            except asyncio.TimeoutError:
+                flow.response = http.Response.make(504, b'Visual auto-rebuy hold expired')
+                return
         if self.invitable and path == '/v2/building/rooms' and flow.request.method == 'PUT':
             room = {'room_id': '00000000-0000-4000-8000-000000000099', 'room_name': 'TestRoom',
                     'created_at': '2026-01-01T00:00:00Z', 'creator_id': 'visual-user-id',

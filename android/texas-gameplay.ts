@@ -121,10 +121,10 @@ export async function texasGameplay(device: AndroidDevice, proxy: Mitmproxy, roo
     }
     for (const name of ['tomato', 'tea', 'water', 'flower', 'heart', 'good', 'beer']) {
       await captureAssetSequence(device, `texas-prop-${name}`, animationInfo,
-        { x: 0, y: 420, width: 390, height: 740 },
+        { x: 0, y: 460, width: 180, height: 230 },
         () => send({ stream: 'room_message', payload: { action: 'props', content: {
           from_user_id: self, to_user_id: REPLAY_PLAYER_IDS[1], file: name,
-        } } }));
+        } } }), { x: 120, y: 700, width: 220, height: 340 });
     }
   }
   let opponentProfileCount = 0;

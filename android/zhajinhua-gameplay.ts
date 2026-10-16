@@ -9,6 +9,7 @@ import { captureNativeTransition } from './animation-transition';
 import { adb } from './device';
 import { animateGamePanel } from './game-panel-animation';
 import { captureLoopKeyframes, captureMovingKeyframes } from './loop-keyframes';
+import { captureAssetSequence } from './asset-sequence';
 
 /**
  * 直接使用 Web 八个牌局状态的网络事件，真实点击原生操作按钮。
@@ -126,7 +127,8 @@ export async function zhajinhuaGameplay(device: AndroidDevice, proxy: Mitmproxy,
     { player_id: PLAYER_IDS[0], net: -40, prize: 0, stack: 920 },
   ] }]);
   if (animationInfo) await captureNativeTransition(device, 'zhajinhua-settlement', animationInfo,
-    { x: 0, y: 680, width: 510, height: 530 }, () => send(settlement));
+    { x: 0, y: 680, width: 510, height: 530 }, () => send(settlement), [],
+    [{ x: 210, y: 970, width: 190, height: 215 }]);
   else await send(settlement);
   // 与德州一样，摊牌后的牌型会覆盖余额；从当前可见玩家读取明确的余额语义标记。
   await expect.poll(async () => gameSemanticText((await gameNodes(device))
@@ -134,6 +136,21 @@ export async function zhajinhuaGameplay(device: AndroidDevice, proxy: Mitmproxy,
   { timeout: 30_000 }).toBe(`${self} 1120`);
   await capture('settlement');
   if (animationInfo) {
+    await new Promise(resolve => setTimeout(resolve, 3000));
+    for (const name of ['angry', 'cry', 'drink', 'puchi', 'titter', 'smirk', 'handclap']) {
+      await captureAssetSequence(device, `zhajinhua-sticker-${name}`, animationInfo,
+        { x: 220, y: 990, width: 180, height: 190 },
+        () => send({ stream: 'room_message', payload: { action: 'sticker', content: {
+          from_user_id: self, to_user_id: PLAYER_IDS[1], file: name,
+        } } }));
+    }
+    for (const name of ['tomato', 'tea', 'water', 'flower', 'heart', 'good', 'beer']) {
+      await captureAssetSequence(device, `zhajinhua-prop-${name}`, animationInfo,
+        { x: 0, y: 460, width: 180, height: 230 },
+        () => send({ stream: 'room_message', payload: { action: 'props', content: {
+          from_user_id: self, to_user_id: PLAYER_IDS[1], file: name,
+        } } }), { x: 120, y: 700, width: 220, height: 340 });
+    }
     // 新牌局清除胜利皇冠，再通过当前房间的真实操作响应触发独立的拼三张升级动画。
     await send(events([{ event: 'new_game', game_id: 'visual-feedback-zhajinhua-game',
       settings: { boot: 1, raise_times: 10, max_round: 20, pot_limit: 2000 } }]));
