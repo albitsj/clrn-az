@@ -58,13 +58,14 @@ export function framePaletteDistance(left: Buffer, right: Buffer): number {
  * @param samplingMethod - 启动页、延迟弹窗或短于截屏间隔的转场使用对应采样命令。
  * @param inspectFrames - 对同一组原生帧中的独立子动画追加视觉断言。
  * @param afterReady - 需要异步业务数据的面板在终点截图前等待语义就绪。
+ * @param videoPhaseAnchors - 独立绘制层可在不同顺序呈现的额外已审查录屏相位。
  */
 export async function captureNativeTransition(device: AndroidDevice, name: string, testInfo: TestInfo,
   region: ScreenshotBounds, trigger: () => unknown, masks: ScreenshotMask[] = [],
   requiredRegions: ScreenshotBounds[] = [], settleMs = 0,
   samplingMethod: 'motionFrames' | 'launchFrames' | 'videoFrames' = 'motionFrames',
   inspectFrames?: (frames: Buffer[], testInfo: TestInfo) => Promise<void>,
-  afterReady?: () => Promise<void>): Promise<void> {
+  afterReady?: () => Promise<void>, videoPhaseAnchors: string[] = []): Promise<void> {
   /**
    * 截出固定的动画绘制区域。
    * @param bytes - 原生完整屏幕 PNG。
@@ -153,7 +154,9 @@ export async function captureNativeTransition(device: AndroidDevice, name: strin
     const reference = readFileSync(testInfo.snapshotPath(`${name}-middle.png`));
     // 系统截图间隔约 70–180ms；短动画有时仅采到靠近起点或终点的帧。
     // 起止帧逐像素匹配，独立断言中途帧真实可见，再要求它靠近已审查的轨迹锚点。
-    const anchors = samplingMethod === 'videoFrames' ? [reference] : [before, reference, after];
+    const anchors = samplingMethod === 'videoFrames'
+      ? [reference, ...videoPhaseAnchors.map(file => readFileSync(testInfo.snapshotPath(file)))]
+      : [before, reference, after];
     const compare = samplingMethod === 'videoFrames' ? framePaletteDistance : frameColorDistance;
     expect(Math.min(...candidates.flatMap(item => anchors.map(anchor => compare(item.frame, anchor)))),
       '动画中途帧的实际画面须接近已审查轨迹').toBeLessThanOrEqual(samplingMethod === 'videoFrames' ? 30 : 36);
