@@ -136,6 +136,9 @@ export async function texasGameplay(device: AndroidDevice, proxy: Mitmproxy, roo
     await restore('river', true);
     await send(events([{ event: 'switch_player', player_id: REPLAY_PLAYER_IDS[0],
       valid_bets: { call: { amount: 20 } } }]));
+    // 上一轮弃牌的标签退场和座位切换会继续绘制一小段时间；
+    // 等它们结束后再取全压特效的第一帧，确保第一帧是稳定的起点。
+    await new Promise(resolve => setTimeout(resolve, 1200));
   }
   const allIn = events([{ event: 'all_in', player_id: REPLAY_PLAYER_IDS[0], amount: 960, stack: 0 },
     { event: 'all_in_show_hole_card', players: [{ player_id: REPLAY_PLAYER_IDS[0], hole_card: ['kh', 'ks'] }] }]);
