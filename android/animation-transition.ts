@@ -137,14 +137,16 @@ export async function captureNativeTransition(device: AndroidDevice, name: strin
   }
   const total = frameColorDistance(before, after);
   expect(total, '入口点击必须产生足够大的可见变化').toBeGreaterThan(3);
+  // 小尺寸文字标签的总变化可能只有 7；固定要求离首尾各 7 会排除真实中途帧。
+  const middleDistance = samplingMethod === 'videoFrames' ? Math.min(7, total * 0.2) : 1;
   // BottomSheet 的弹簧轨迹可能越过终点；用“同时区别于首尾”选关键帧。
   const candidates = timeline.map((frame, index) => ({ frame, index,
     progress: frameColorDistance(before, frame) / total,
     remaining: frameColorDistance(after, frame) / total }))
     // 200ms 的原生淡入有时只采到靠近终点的一帧，仍要求它与两个端点都有实际像素差。
     .filter(item => item.progress > 0.02 && item.remaining > 0.02
-      && frameColorDistance(before, item.frame) > (samplingMethod === 'videoFrames' ? 7 : 1)
-      && frameColorDistance(after, item.frame) > (samplingMethod === 'videoFrames' ? 7 : 1));
+      && frameColorDistance(before, item.frame) > middleDistance
+      && frameColorDistance(after, item.frame) > middleDistance);
   await testInfo.attach(`${name}-progress`, {
     body: JSON.stringify({ total, frames: timeline.map(frame => frameColorDistance(before, frame) / total) }),
     contentType: 'application/json',
