@@ -2,7 +2,7 @@ import { expect, type TestInfo } from '@playwright/test';
 import type { AndroidDevice } from 'playwright';
 import type { Mitmproxy } from '../e2e/helpers/mitmproxy-client';
 import { events, REPLAY_PLAYER_IDS, restoreTable, type Street } from '../visual/cases/texas-holdem/replayData';
-import { flattenNodes, gameReady, gameGone, gameTap, gameNodes, gameSemanticText } from './game-controls';
+import { flattenNodes, gameConnected, gameReady, gameGone, gameTap, gameNodes, gameSemanticText } from './game-controls';
 import { replay, gameCardNames } from './game-replay';
 import { closeAnimatedGameMask, closeGameMask } from './game-pregame';
 import { dismissKeyboard } from './keyboard';
@@ -92,7 +92,17 @@ export async function texasGameplay(device: AndroidDevice, proxy: Mitmproxy, roo
       '真实拖动必须改变加注数值').not.toBe(initialRaise);
   }
   // 原生录屏确认取消按钮直接移除面板，没有可供回归的退场过渡帧。
-  await gameTap(device, 'raise-bet-cancel-button');
+  for (let attempt = 0; attempt < 3; attempt++) {
+    await gameConnected(device);
+    await gameTap(device, 'raise-bet-cancel-button');
+    try {
+      await expect.poll(async () => (await gameNodes(device)).some(node => node.res === 'raise-bet-popup'),
+        { timeout: 10_000, intervals: [250] }).toBe(false);
+      break;
+    } catch (error) {
+      if (attempt === 2) throw error;
+    }
+  }
   await gameGone(device, 'raise-bet-popup');
   await animateGamePanel(device, 'texas-holdem', 'accurate-bet', 'texas-holdem-operation-accurate-bet-button',
     { x: 120, y: 360, width: 480, height: 330 }, animationInfo);
@@ -223,7 +233,7 @@ export async function texasGameplay(device: AndroidDevice, proxy: Mitmproxy, roo
   await capture('own_profile');
   await animateGamePanel(device, 'texas-holdem', 'own-profile', 'player-profile-popup-close',
     { x: 180, y: 90, width: 520, height: 500 }, animationInfo,
-    'exit', 'motionFrames', ownProfileMasks,
+    'exit', 'videoFrames', ownProfileMasks,
     async () => { await gameGone(device, 'player-profile-popup-close'); });
   await gameGone(device, 'player-profile-popup-close');
   await profile(REPLAY_PLAYER_IDS[0]);

@@ -89,7 +89,7 @@ export async function texasPanels(context: TexasContext): Promise<void> {
     { timeout: 30_000 }).toContain('Player1: Good hand!');
   await capture('chat_history');
   await animateGamePanel(device, 'texas-holdem', 'chat-actions', 'in-game-chat-report-button-0',
-    { x: 60, y: 800, width: 600, height: 390 }, animationInfo);
+    { x: 60, y: 800, width: 600, height: 390 }, animationInfo, 'enter', 'videoFrames');
   await gameReady(device, 'in_game_report_message_component');
   await capture('chat_actions');
   await animateGamePanel(device, 'texas-holdem', 'chat-report', 'report_item_report',
@@ -123,7 +123,7 @@ export async function texasPanels(context: TexasContext): Promise<void> {
   await gameReady(device, 'buy-in-review-close-button');
   await capture('buy_in_review');
   await animateGamePanel(device, 'texas-holdem', 'buy-in-review', 'buy-in-review-close-button',
-    { x: 70, y: 440, width: 580, height: 270 }, animationInfo, 'exit');
+    { x: 70, y: 440, width: 580, height: 270 }, animationInfo, 'exit', 'videoFrames');
   await gameGone(device, 'buy-in-review-close-button');
   // 先清除旧回合的跟注标记，避免相同牌面让恢复等待误命中上一帧。
   /** 读取本轮本人实际可见的玩家容器。 */

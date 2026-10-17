@@ -1,6 +1,6 @@
 import { expect } from '@playwright/test';
 import { REPLAY_PLAYER_IDS } from '../visual/cases/texas-holdem/replayData';
-import { gameGone, gameNodes, gameReady, gameTap } from './game-controls';
+import { gameConnected, gameGone, gameNodes, gameReady, gameTap } from './game-controls';
 import { closeGameMask } from './game-pregame';
 import { replay } from './game-replay';
 import { adb } from './device';
@@ -31,6 +31,7 @@ export async function texasPanelVariants(context: TexasContext): Promise<void> {
    * @param resource - 当前实际可见的原生按钮资源标识。
    */
   const press = async (resource: string) => {
+    await gameConnected(device);
     const { bounds } = await gameReady(device, resource);
     return () => adb('shell', 'input', 'tap', String(Math.round(bounds.x + bounds.width / 2)),
       String(Math.round(bounds.y + bounds.height / 2)));
@@ -61,6 +62,7 @@ export async function texasPanelVariants(context: TexasContext): Promise<void> {
   adb('shell', 'input', 'tap', String(chat.x + 8), String(chat.y + 80));
   await gameGone(device, 'in-game-chat-container');
   await proxy.command('texas/ui', { rpcError: 'retry' });
+  await gameConnected(device);
   if (animationInfo) await captureNativeTransition(device, 'texas-alert-retry-enter', animationInfo,
     alertRegion, await press('texas-holdem-operation-button-call'), alertMasks, [], 0, 'videoFrames');
   else await gameTap(device, 'texas-holdem-operation-button-call');

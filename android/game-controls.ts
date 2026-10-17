@@ -159,6 +159,21 @@ export async function gameGone(device: AndroidDevice, res: string): Promise<void
     { timeout: 45_000, intervals: [250] }).toBe(false);
 }
 
+/** 等待房间重连遮罩退去并确认牌桌至少一秒内持续可操作。
+ * @param device - 专用模拟器连接。
+ */
+export async function gameConnected(device: AndroidDevice): Promise<void> {
+  const initial = await gameNodes(device);
+  if (!initial.some(node => /Connecting\.\.\./.test(node.text || ''))) return;
+  let availableSince = 0;
+  await expect.poll(async () => {
+    const connecting = (await gameNodes(device)).some(node => /Connecting\.\.\./.test(node.text || ''));
+    if (connecting) availableSince = 0;
+    else if (!availableSince) availableSince = Date.now();
+    return !connecting && Date.now() - availableSince >= 1_000;
+  }, { timeout: 120_000, intervals: [250] }).toBe(true);
+}
+
 /**
  * 根据两次一致的真实布局点击控件，使用 adb 输入避免驱动等待循环动画空闲。
  * @param device - 专用模拟器连接。
@@ -167,6 +182,7 @@ export async function gameGone(device: AndroidDevice, res: string): Promise<void
  */
 export async function gameTap(device: AndroidDevice, res: string, nativeInput = false): Promise<void> {
   console.log(`ANDROID > 游戏点击 ${res}`);
+  await gameConnected(device);
   let previous: ScreenshotBounds | undefined;
   let node: NativeNode;
   await expect(async () => {

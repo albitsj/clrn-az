@@ -1,7 +1,7 @@
 import type { TestInfo } from '@playwright/test';
 import type { AndroidDevice } from 'playwright';
 import { adb } from './device';
-import { gameReady, gameTap } from './game-controls';
+import { gameConnected, gameReady, gameTap } from './game-controls';
 import { captureNativeTransition, captureTimedPrompt } from './animation-transition';
 import type { ScreenshotBounds, ScreenshotMask } from './screenshot';
 
@@ -26,6 +26,7 @@ export async function animateGamePanel(device: AndroidDevice, game: 'texas-holde
   masks: ScreenshotMask[] = [], afterReady?: () => Promise<void>,
   videoPhaseAnchors: string[] = []): Promise<void> {
   if (!testInfo) { await gameTap(device, button); return; }
+  await gameConnected(device);
   const { bounds } = await gameReady(device, button);
   /** 通过独立 ADB 连接点击真实牌桌控件，使驱动同时截取每一帧。 */
   const press = () => adb('shell', 'input', 'tap',
