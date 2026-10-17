@@ -49,7 +49,7 @@ export async function texasHall(context: TexasContext): Promise<void> {
       { timeout: 30_000 }).toBe(true);
   }
   await animateGamePanel(device, 'texas-holdem', 'auto-rebuy', 'auto-rebuy-close-button',
-    { x: 320, y: 430, width: 340, height: 400 }, animationInfo, 'exit');
+    { x: 320, y: 430, width: 340, height: 400 }, animationInfo, 'exit', 'videoFrames');
   await gameGone(device, 'auto-rebuy-popup');
   await animateGamePanel(device, 'texas-holdem', 'pair-play-report', 'report-pair-play-button',
     { x: 200, y: 260, width: 440, height: 700 }, animationInfo);

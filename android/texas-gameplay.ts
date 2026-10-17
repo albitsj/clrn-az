@@ -99,7 +99,8 @@ export async function texasGameplay(device: AndroidDevice, proxy: Mitmproxy, roo
   await gameReady(device, 'accurate-bet-popup-container');
   await capture('accurate_raise');
   if (animationInfo) await closeAnimatedGameMask(device, 'texas-holdem', 'accurate-bet',
-    'accurate-bet-popup-container', { x: 120, y: 360, width: 480, height: 330 }, animationInfo);
+    'accurate-bet-popup-container', { x: 120, y: 360, width: 480, height: 330 }, animationInfo,
+    [], 'videoFrames');
   else await closeGameMask(device, 'accurate-bet-popup-container');
   await restore('river', true);
   if (animationInfo) {
@@ -164,7 +165,8 @@ export async function texasGameplay(device: AndroidDevice, proxy: Mitmproxy, roo
   ] }]);
   if (animationInfo) await captureNativeTransition(device, 'texas-showdown', animationInfo,
     { x: 0, y: 580, width: 600, height: 600 }, () => send(showdown),
-    [{ x: 334, y: 720, width: 110, height: 47, reason: '摊牌旁的房间计时独立跳秒' }], [], 1600);
+    [{ x: 334, y: 720, width: 110, height: 47, reason: '摊牌旁的房间计时独立跳秒' }], [], 1600,
+    'videoFrames');
   else await send(showdown);
   await capture('showdown');
   const settlement = events([{ event: 'settlement', players: [
