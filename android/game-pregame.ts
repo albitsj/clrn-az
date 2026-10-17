@@ -115,7 +115,7 @@ export async function gamePreGame(device: AndroidDevice, game: 'texas-holdem' | 
       { x: 130, y: 330, width: 460, height: 610 }, animationInfo);
     await gameReady(device, 'game-rule-popup');
     await animateGamePanel(device, game, 'game-rule', 'game-rule-popup-close-button',
-      { x: 130, y: 330, width: 460, height: 610 }, animationInfo, 'exit', 'motionFrames', [], async () => {
+      { x: 130, y: 330, width: 460, height: 610 }, animationInfo, 'exit', 'videoFrames', [], async () => {
         // 背景房间连接提示可能在面板退场后出现；终点须等它确实消失。
         await setTimeout(1_000);
         await expect.poll(async () => (await gameNodes(device)).some(node => /Connecting\.\.\./.test(node.text || '')),

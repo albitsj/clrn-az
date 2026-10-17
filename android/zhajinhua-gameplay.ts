@@ -106,7 +106,7 @@ export async function zhajinhuaGameplay(device: AndroidDevice, proxy: Mitmproxy,
   await capture('accurate_raise');
   if (animationInfo) await closeAnimatedGameMask(device, 'zhajinhua', 'accurate-bet',
     'accurate-bet-popup-container', { x: 150, y: 400, width: 430, height: 480 }, animationInfo,
-    accurateBetClock);
+    accurateBetClock, 'videoFrames');
   else await closeGameMask(device, 'accurate-bet-popup-container');
   await gameTap(device, 'zhajinhua-operation-button-battle');
   await expect.poll(async () => (await gameNodes(device)).filter(node => node.res === 'challenge_player_selector').length,
