@@ -220,9 +220,7 @@ test('private room invite sheet slides into and out of the Android screen', asyn
         throw error;
       }
       const button = await gameReady(device, 'invite-friends-button');
-      // Android 15 房号剪贴板预览会一直盖在邀请入口下方；关闭系统浮层后再取应用帧。
-      adb('shell', 'input', 'tap', '208', '1040');
-      await new Promise(resolve => setTimeout(resolve, 1800));
+      await new Promise(resolve => setTimeout(resolve, 800));
       /** 从私人房详情的实际按钮打开分享应用抽屉。 */
       const pressInvite = () => adb('shell', 'input', 'tap',
         String(Math.round(button.bounds.x + button.bounds.width / 2)),
