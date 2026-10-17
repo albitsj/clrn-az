@@ -5,6 +5,7 @@ import { withAndroidProxy } from '../proxy';
 import { signIn, tap } from '../navigation';
 import { gameNodes } from '../game-controls';
 import { captureLoopKeyframes } from '../loop-keyframes';
+import { waitAbsent } from '../native-state';
 
 test('every native club placeholder pulses while detail response is pending', async ({}, testInfo) => {
   test.skip(!['all', 'social'].includes(process.env.ANDROID_GROUP || 'all')
@@ -25,8 +26,9 @@ test('every native club placeholder pulses while detail response is pending', as
       const placeholders = (await gameNodes(device))
         .filter(node => node.res === 'ClubItemPlaceholder_container' && node.bounds.width > 0);
       expect(placeholders, '两个真实俱乐部 ID 都应绘出各自的骨架').toHaveLength(2);
+      await waitAbsent(device, { text: 'There is a slight network issue, please retry.' });
       await captureLoopKeyframes(device, 'club-list-skeleton', testInfo,
-        placeholders.map(node => node.bounds));
+        placeholders.map(node => node.bounds), 5);
       await proxy.command('android/skeleton', { hold: false });
       await expect.poll(async () => (await proxy.command<{ loaded: number }>('android/skeleton')).loaded,
         { timeout: 30_000 }).toBeGreaterThan(initial);

@@ -34,7 +34,8 @@ export async function texasPanels(context: TexasContext): Promise<void> {
   await gameReady(device, 'in-game-audio-root-container');
   await capture('voice');
   await animateGamePanel(device, 'texas-holdem', 'voice', 'in-game-audio-popup-close',
-    { x: 220, y: 820, width: 280, height: 450 }, animationInfo, 'exit', 'videoFrames');
+    { x: 220, y: 820, width: 280, height: 450 }, animationInfo, 'exit', 'videoFrames', [],
+    undefined, ['texas-holdem-voice-exit-open-phase.png']);
   await gameGone(device, 'in-game-audio-root-container');
   await gameTap(device, 'texas-holdem-leaderboard-button');
   await gameReady(device, 'public-leader-board-item-round-0', '10');

@@ -56,7 +56,8 @@ test('native account stack slides in and out', async ({}, testInfo) => {
       await tap(device, 'settings-tab');
       await reveal(device, { res: 'account-security' });
       const entry = await device.info({ res: 'account-security' });
-      const region = { x: 180, y: 160, width: 520, height: 1000 };
+      // 底部导航自身的头像动画在页面切换前后持续播放，采样区域止于导航上方。
+      const region = { x: 180, y: 160, width: 520, height: 970 };
       /** 点击真实账号安全入口，采集 Android 自定义水平入栈轨迹。 */
       const enter = () => adb('shell', 'input', 'tap',
         String(Math.round(entry.bounds.x + entry.bounds.width / 2)),

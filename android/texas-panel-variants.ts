@@ -14,8 +14,10 @@ import { enableGameSetting, restoreTexas, texasEvents, type TexasContext } from 
 export async function texasPanelVariants(context: TexasContext): Promise<void> {
   const { device, proxy, room, self, capture, animationInfo } = context;
   const alertRegion = { x: 80, y: 525, width: 560, height: 265 };
-  const alertMasks = [{ x: 270, y: 720, width: 180, height: 28,
-    reason: '错误弹窗下方的牌局倒计时独立跳秒' }];
+  const alertMasks = [
+    { x: 270, y: 720, width: 180, height: 28, reason: '错误弹窗下方的牌局倒计时独立跳秒' },
+    { x: 80, y: 690, width: 15, height: 50, reason: '弹窗左侧的玩家倒计时独立跳秒' },
+  ];
   /** 事先读取按钮边界，使点击落在原生采样窗口内。
    * @param resource - 当前实际可见的原生按钮资源标识。
    */
