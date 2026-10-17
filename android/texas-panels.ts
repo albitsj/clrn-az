@@ -76,7 +76,7 @@ export async function texasPanels(context: TexasContext): Promise<void> {
     const barrage = await gameReady(device, 'barrage_text', 'Player1: Good hand!');
     await captureMovingKeyframes(device, 'texas-barrage', animationInfo,
       [{ x: 0, y: barrage.bounds.y - 8, width: 720, height: barrage.bounds.height + 16 }],
-      18, framePaletteDistance);
+      18, framePaletteDistance, 1, ['texas-barrage-1-first-alternate.png']);
   }
   await gameTap(device, 'texas-holdem-chat-button');
   await gameTap(device, '-in-game-chat-message-tab');
