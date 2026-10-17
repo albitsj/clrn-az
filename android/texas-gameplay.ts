@@ -193,7 +193,8 @@ export async function texasGameplay(device: AndroidDevice, proxy: Mitmproxy, roo
   await gameTap(device, 'player-profile-block-button');
   await capture('block');
   await animateGamePanel(device, 'texas-holdem', 'opponent-profile-2', 'player-profile-popup-close',
-    { x: 180, y: 90, width: 520, height: 500 }, animationInfo, 'exit');
+    { x: 180, y: 90, width: 520, height: 500 }, animationInfo,
+    'exit', 'motionFrames', [], async () => { await gameGone(device, 'player-profile-popup-close'); });
   if (animationInfo) {
     await restore('river', true);
     const actionPlayer = REPLAY_PLAYER_IDS[1];
