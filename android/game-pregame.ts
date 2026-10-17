@@ -179,9 +179,21 @@ export async function gamePreGame(device: AndroidDevice, game: 'texas-holdem' | 
   /** 点击聊天抽屉外的真实遮罩。 */
   const closeChat = () => adb('shell', 'input', 'tap', String(Math.round(chat.x + 8)),
     String(Math.round(chat.y + 80)));
-  if (animationInfo) await captureNativeTransition(device, `${game}-chat-exit`, animationInfo,
-    { x: 110, y: 760, width: 140, height: 500 }, closeChat, [], [], 0, 'videoFrames');
-  else closeChat();
+  if (animationInfo) {
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        await captureNativeTransition(device, `${game}-chat-exit`, animationInfo,
+          { x: 110, y: 760, width: 140, height: 500 }, closeChat, [], [], 0, 'videoFrames');
+        break;
+      } catch (error) {
+        // 模拟器录屏偶尔在 300ms 退场期间重复上一帧；只对缺失中途采样重新触发真实抽屉。
+        if (attempt === 2 || !String(error).includes('必须采到起点和终点之间的真实动画帧')) throw error;
+        await gameGone(device, 'in-game-chat-container');
+        await tap(device, `${game}-chat-button`);
+        await gameReady(device, 'in-game-chat-container');
+      }
+    }
+  } else closeChat();
   await gameGone(device, 'in-game-chat-container');
   await animateGamePanel(device, game, 'buy-in-applications', 'buy-in-application-button',
     { x: 110, y: 400, width: 470, height: 450 }, animationInfo);
