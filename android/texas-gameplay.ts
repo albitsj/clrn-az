@@ -246,7 +246,7 @@ export async function texasGameplay(device: AndroidDevice, proxy: Mitmproxy, roo
   await capture('statistics_help', [], () => gameTap(device, 'PlayerStatisticComponent_Item_1', true));
   await gameGone(device, 'toastText1');
   await animateGamePanel(device, 'texas-holdem', 'report', 'player-profile-report-button',
-    { x: 50, y: 250, width: 620, height: 380 }, animationInfo);
+    { x: 50, y: 250, width: 620, height: 380 }, animationInfo, 'enter', 'videoFrames');
   await gameReady(device, 'report-field-input');
   await dismissKeyboard(device);
   await capture('report');
@@ -258,7 +258,7 @@ export async function texasGameplay(device: AndroidDevice, proxy: Mitmproxy, roo
   await capture('block');
   await animateGamePanel(device, 'texas-holdem', 'opponent-profile-2', 'player-profile-popup-close',
     { x: 180, y: 90, width: 520, height: 500 }, animationInfo,
-    'exit', 'motionFrames', profileNetworkMask,
+    'exit', 'videoFrames', profileNetworkMask,
     async () => { await gameGone(device, 'player-profile-popup-close'); });
   expect((await proxy.command<{ replayedMessages: number }>('status')).replayedMessages).toBeGreaterThan(0);
 }
