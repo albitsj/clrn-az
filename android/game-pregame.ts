@@ -126,6 +126,9 @@ export async function gamePreGame(device: AndroidDevice, game: 'texas-holdem' | 
     ['buy_in', 'texas-holdem-buy-in-popup-visible-marker', 'buy-in-close-button'],
     ['renew', 'renew-popup-close-button', 'renew-popup-close-button'],
   ]) {
+    // 重连遮罩会短暂盖住菜单按钮；等真实牌桌恢复后再点击下一项。
+    await expect.poll(async () => (await gameNodes(device)).some(node => /Connecting\.\.\./.test(node.text || '')),
+      { timeout: 45_000 }).toBe(false);
     await tap(device, 'menu-button');
     await gameReady(device, `drawer-menu-item-${state}`);
     const renewalReady = state === 'renew' && animationInfo ? async () => {

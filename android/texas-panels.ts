@@ -76,7 +76,8 @@ export async function texasPanels(context: TexasContext): Promise<void> {
     const x = Math.max(0, barrage.bounds.x - 8);
     await captureMovingKeyframes(device, 'texas-barrage', animationInfo,
       [{ x, y: barrage.bounds.y - 8, width: Math.min(720 - x, barrage.bounds.width + 16),
-        height: barrage.bounds.height + 16 }], 18, framePaletteDistance);
+        height: barrage.bounds.height + 16 }], 18, framePaletteDistance, 1,
+      ['texas-barrage-1-overlap.png']);
   }
   await gameTap(device, 'texas-holdem-chat-button');
   await gameTap(device, '-in-game-chat-message-tab');

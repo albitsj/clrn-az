@@ -130,7 +130,7 @@ export async function texasGameplay(device: AndroidDevice, proxy: Mitmproxy, roo
       await expect.poll(playerAction, { timeout: 30_000 }).toBe(false);
       const timer = await gameReady(device, 'texas-holdem-active-countdown');
       await captureNativeTransition(device, `texas-player-action-${action}`, animationInfo,
-        { x: 80, y: 465, width: 115, height: 155 },
+        { x: 80, y: 465, width: 115, height: 130 },
         () => send(events([{ event: action, player_id: actionPlayer, amount: 40, stack: 920 }])),
         [{ ...timer.bounds, reason: '玩家动作期间独立运行的操作倒计时' }]);
       await expect.poll(playerAction, { timeout: 30_000 }).toBe(true);
