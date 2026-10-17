@@ -18,6 +18,15 @@ export async function texasPanelVariants(context: TexasContext): Promise<void> {
     { x: 270, y: 720, width: 180, height: 28, reason: '错误弹窗下方的牌局倒计时独立跳秒' },
     { x: 80, y: 690, width: 55, height: 85, reason: '弹窗左侧的玩家倒计时独立跳秒' },
   ];
+  const tableBackMasks = [
+    { x: 260, y: 225, width: 50, height: 55, reason: '弹窗背后的对手背牌会随牌桌回放异步显隐' },
+    { x: 16, y: 550, width: 54, height: 70, reason: '弹窗背后的对手背牌会随牌桌回放异步显隐' },
+    { x: 16, y: 745, width: 54, height: 60, reason: '弹窗背后的对手背牌会随牌桌回放异步显隐' },
+  ];
+  const ownTurnMasks = [
+    { x: 207, y: 1020, width: 275, height: 34, reason: '弹窗背后的本人回合标识会独立切换' },
+    { x: 207, y: 1054, width: 148, height: 148, reason: '弹窗背后的本人头像与筹码状态会独立切换' },
+  ];
   /** 事先读取按钮边界，使点击落在原生采样窗口内。
    * @param resource - 当前实际可见的原生按钮资源标识。
    */
@@ -35,7 +44,7 @@ export async function texasPanelVariants(context: TexasContext): Promise<void> {
     if (mode === 'pending') expect((await gameNodes(device)).filter(node => node.res === 'buy-in-approved-applications-tab')).toHaveLength(2);
     if (mode === 'resolved') expect((await gameNodes(device)).filter(node => node.res === 'buy-in-application-status')).toHaveLength(3);
     if (mode === 'more') expect((await gameReady(device, 'buy-in-application-list-more')).enabled).toBe(true);
-    await capture(`applications_${mode}`);
+    await capture(`applications_${mode}`, [tableBackMasks[0], ...ownTurnMasks]);
     await closeGameMask(device, 'buy-in-application-list');
   }
   await enableGameSetting(device, 'player-voice');
@@ -45,9 +54,9 @@ export async function texasPanelVariants(context: TexasContext): Promise<void> {
   await gameTap(device, 'texas-holdem-chat-button');
   await gameTap(device, '-in-game-chat-record-tab');
   await gameReady(device, 'in-game-chat-audio-message-0');
-  await capture('chat_audio_history');
+  await capture('chat_audio_history', tableBackMasks);
   await gameTap(device, 'in-game-chat-barrage-switch');
-  await capture('chat_barrage_off');
+  await capture('chat_barrage_off', tableBackMasks);
   const chat = (await gameReady(device, 'in-game-chat-mask')).bounds;
   adb('shell', 'input', 'tap', String(chat.x + 8), String(chat.y + 80));
   await gameGone(device, 'in-game-chat-container');
@@ -59,7 +68,8 @@ export async function texasPanelVariants(context: TexasContext): Promise<void> {
   // 操作错误弹窗没有 buttonId；与 Web 一样按真实按钮文字校验和操作。
   await expect.poll(async () => (await gameNodes(device)).some(node => /^(Retry|重试|重試)$/.test(node.text || '')),
     { timeout: 30_000 }).toBe(true);
-  await capture('alert_retry');
+  await capture('alert_retry', [...tableBackMasks,
+    { ...ownTurnMasks[0], y: 1010, height: 44 }, ownTurnMasks[1]]);
   if (animationInfo) {
     const cancel = await device.info({ text: /^(取消|Cancel)$/ });
     await captureNativeTransition(device, 'texas-alert-retry-exit', animationInfo, alertRegion,
