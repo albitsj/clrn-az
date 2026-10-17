@@ -34,7 +34,7 @@ test('native launch artwork and staging notice appear on a real app start', asyn
         `${applicationId}/com.laiwan_react_native.MainActivity`);
       await captureNativeTransition(device, 'native-launch-and-staging-notice', testInfo,
         { x: 70, y: 155, width: 580, height: 900 }, start,
-        [{ x: 70, y: 220, width: 60, height: 125, reason: 'Pixel Launcher 时钟图标持续走针' }], [
+        [{ x: 70, y: 220, width: 70, height: 125, reason: 'Pixel Launcher 时钟图标持续走针' }], [
           { x: 110, y: 170, width: 500, height: 145 },
           { x: 110, y: 360, width: 500, height: 550 },
         ], 1_500, 'launchFrames', verifyLaunchArtwork);
@@ -86,14 +86,16 @@ test('guest search confirmation animates into and out of the Android screen', as
         String(Math.round(entrance.bounds.x + entrance.bounds.width / 2)),
         String(Math.round(entrance.bounds.y + entrance.bounds.height / 2)));
       const region = { x: 58, y: 495, width: 604, height: 345 };
-      await captureNativeTransition(device, 'search-confirmation-enter', testInfo, region, pressSearch);
+      await captureNativeTransition(device, 'search-confirmation-enter', testInfo, region,
+        pressSearch, [], [], 0, 'videoFrames');
       const cancel = await device.info({ res: 'cancel-button' });
       expect(cancel.bounds.width).toBeGreaterThan(0);
       /** 点击真实取消按钮，不直接卸载弹窗。 */
       const pressCancel = () => adb('shell', 'input', 'tap',
         String(Math.round(cancel.bounds.x + cancel.bounds.width / 2)),
         String(Math.round(cancel.bounds.y + cancel.bounds.height / 2)));
-      await captureNativeTransition(device, 'search-confirmation-exit', testInfo, region, pressCancel);
+      await captureNativeTransition(device, 'search-confirmation-exit', testInfo, region,
+        pressCancel, [], [], 0, 'videoFrames');
     } finally { await device?.close(); }
   });
 });
