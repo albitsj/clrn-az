@@ -29,7 +29,8 @@ export async function zhajinhuaGameplay(device: AndroidDevice, proxy: Mitmproxy,
    */
   const send = (data: unknown) => replay(proxy, 'zhajinhua', roomId, data);
   if (animationInfo) await captureNativeTransition(device, 'zhajinhua-deal-cards', animationInfo,
-    { x: 360, y: 1054, width: 148, height: 102 }, () => send(restoreTable(self)));
+    { x: 360, y: 1054, width: 148, height: 102 }, () => send(restoreTable(self)),
+    [], [], 0, 'videoFrames');
   else await send(restoreTable(self));
   await expect.poll(async () => (await gameNodes(device))
     .filter(node => node.res?.startsWith('zhajinhua-player-container-')).length, { timeout: 30_000 }).toBe(5);

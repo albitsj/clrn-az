@@ -170,13 +170,14 @@ export async function captureNativeTransition(device: AndroidDevice, name: strin
         maskScreenshot(readFileSync(testInfo.snapshotPath(file)), endCompareMasks))),
     '动画终点视觉回归').toBe(true);
     const reference = readFileSync(testInfo.snapshotPath(`${name}-middle.png`));
-    // 系统截图间隔约 70–180ms；短动画有时仅采到靠近起点或终点的帧。
-    // 起止帧逐像素匹配，独立断言中途帧真实可见，再要求它靠近已审查的轨迹锚点。
-    const anchors = samplingMethod === 'videoFrames'
-      ? [reference, ...videoPhaseAnchors.map(file => readFileSync(testInfo.snapshotPath(file)))]
-      : [before, reference, after];
+    // 原生截图可能落在已审查中途相位的两侧，但靠近起止帧的无关闪屏不能冒充转场。
+    // 非录屏路径既要走过基准中至少一半的可见变化，也必须靠近真实中途基准。
+    const reviewedCandidates = samplingMethod === 'videoFrames' ? candidates : candidates.filter(item =>
+      frameColorDistance(before, item.frame) >= frameColorDistance(before, reference) / 2
+      && frameColorDistance(after, item.frame) >= frameColorDistance(after, reference) / 2);
+    const anchors = [reference, ...videoPhaseAnchors.map(file => readFileSync(testInfo.snapshotPath(file)))];
     const compare = samplingMethod === 'videoFrames' ? framePaletteDistance : frameColorDistance;
-    expect(Math.min(...candidates.flatMap(item => anchors.map(anchor => compare(item.frame, anchor)))),
+    expect(Math.min(...reviewedCandidates.flatMap(item => anchors.map(anchor => compare(item.frame, anchor)))),
       '动画中途帧的实际画面须接近已审查轨迹').toBeLessThanOrEqual(samplingMethod === 'videoFrames' ? 30 : 36);
   }
 }

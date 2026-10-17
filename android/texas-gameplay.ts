@@ -74,7 +74,7 @@ export async function texasGameplay(device: AndroidDevice, proxy: Mitmproxy, roo
     await capture(street);
   }
   await animateGamePanel(device, 'texas-holdem', 'raise-bet', 'texas-holdem-operation-button-raise',
-    { x: 320, y: 245, width: 190, height: 430 }, animationInfo);
+    { x: 320, y: 245, width: 190, height: 430 }, animationInfo, 'enter', 'videoFrames');
   await gameReady(device, 'raise-bet-popup');
   await capture('raise');
   if (animationInfo) {
@@ -238,7 +238,7 @@ export async function texasGameplay(device: AndroidDevice, proxy: Mitmproxy, roo
   await dismissKeyboard(device);
   await capture('report');
   if (animationInfo) await closeAnimatedGameMask(device, 'texas-holdem', 'report',
-    'report-field-input', { x: 50, y: 250, width: 620, height: 380 }, animationInfo);
+    'report-field-input', { x: 50, y: 250, width: 620, height: 380 }, animationInfo, [], 'videoFrames');
   else await closeGameMask(device, 'report-field-input');
   await profile(REPLAY_PLAYER_IDS[0]);
   await gameTap(device, 'player-profile-block-button');

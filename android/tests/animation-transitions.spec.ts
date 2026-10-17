@@ -64,7 +64,8 @@ test('native account stack slides in and out', async ({}, testInfo) => {
       const enter = () => adb('shell', 'input', 'tap',
         String(Math.round(entry.bounds.x + entry.bounds.width / 2)),
         String(Math.round(entry.bounds.y + entry.bounds.height / 2)));
-      await captureNativeTransition(device, 'native-stack-enter', testInfo, region, enter);
+      await captureNativeTransition(device, 'native-stack-enter', testInfo, region, enter,
+        [], [], 0, 'videoFrames');
       await gameReady(device, 'account-security-items-list');
       /** 系统返回调用当前导航栈的水平出栈动画。 */
       const exit = () => adb('shell', 'input', 'keyevent', 'KEYCODE_BACK');

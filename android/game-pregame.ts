@@ -63,14 +63,16 @@ export async function closeGameMask(device: AndroidDevice, marker: string): Prom
  * @param region - 动画绘制范围。
  * @param testInfo - 英文动画关键帧报告。
  * @param masks - 与面板无关的动态区域。
+ * @param samplingMethod - 短退场动画使用原生录屏取得足够的中途帧。
  */
 export async function closeAnimatedGameMask(device: AndroidDevice, game: 'texas-holdem' | 'zhajinhua',
   name: string, marker: string, region: ScreenshotBounds, testInfo?: TestInfo,
-  masks: ScreenshotMask[] = []): Promise<void> {
+  masks: ScreenshotMask[] = [], samplingMethod: 'motionFrames' | 'videoFrames' = 'motionFrames'): Promise<void> {
   if (!testInfo) { await closeGameMask(device, marker); return; }
   const point = await gameMaskClosePoint(device, marker);
   await captureNativeTransition(device, `${game}-${name}-exit`, testInfo, region,
-    () => adb('shell', 'input', 'tap', String(Math.round(point.x)), String(Math.round(point.y))), masks, [], 600);
+    () => adb('shell', 'input', 'tap', String(Math.round(point.x)), String(Math.round(point.y))),
+    masks, [], 600, samplingMethod);
   await gameGone(device, marker);
 }
 
@@ -102,7 +104,7 @@ export async function gamePreGame(device: AndroidDevice, game: 'texas-holdem' | 
   await capture('card_rank');
   if ((await gameNodes(device)).some(node => node.res === 'card-rank-popup-close')) {
     await animateGamePanel(device, game, 'card-rank', 'card-rank-popup-close',
-      { x: 110, y: 400, width: 440, height: 600 }, animationInfo, 'exit');
+      { x: 110, y: 400, width: 440, height: 600 }, animationInfo, 'exit', 'videoFrames');
   }
   else await closeAnimatedGameMask(device, game, 'card-rank', 'card-rank-list',
     { x: 110, y: 400, width: 440, height: 600 }, animationInfo);
@@ -138,7 +140,8 @@ export async function gamePreGame(device: AndroidDevice, game: 'texas-holdem' | 
         { timeout: 45_000 }).toBeGreaterThan(0);
     } : undefined;
     await animateGamePanel(device, game, state, `drawer-menu-item-${state}`,
-      { x: 110, y: 360, width: 480, height: 500 }, animationInfo, 'enter', 'motionFrames', [], renewalReady);
+      { x: 110, y: 360, width: 480, height: 500 }, animationInfo, 'enter',
+      game === 'zhajinhua' && state === 'settings' ? 'videoFrames' : 'motionFrames', [], renewalReady);
     await gameGone(device, 'drawer-menu-item-exit');
     await gameReady(device, ready);
     if (state === 'renew') {
@@ -150,7 +153,8 @@ export async function gamePreGame(device: AndroidDevice, game: 'texas-holdem' | 
     }
     await capture(state);
     await animateGamePanel(device, game, state, close,
-      { x: 110, y: 360, width: 480, height: 500 }, animationInfo, 'exit');
+      { x: 110, y: 360, width: 480, height: 500 }, animationInfo, 'exit',
+      game === 'texas-holdem' && state === 'settings' ? 'videoFrames' : 'motionFrames');
     await gameGone(device, ready);
   }
   await animateGamePanel(device, game, 'leaderboard',
@@ -162,7 +166,7 @@ export async function gamePreGame(device: AndroidDevice, game: 'texas-holdem' | 
   await closeAnimatedGameMask(device, game, 'leaderboard', 'public-leader-board-container',
     { x: 110, y: 400, width: 470, height: 450 }, animationInfo);
   await animateGamePanel(device, game, 'game-record', 'game-record-button',
-    { x: 150, y: 400, width: 440, height: 450 }, animationInfo, 'enter', 'motionFrames', [],
+    { x: 150, y: 400, width: 440, height: 450 }, animationInfo, 'enter', 'videoFrames', [],
     async () => { await gameReady(device, 'review-board-description-text'); });
   await gameReady(device, 'review-board-description-text');
   await capture('game_record');
@@ -200,7 +204,8 @@ export async function gamePreGame(device: AndroidDevice, game: 'texas-holdem' | 
   } else closeChat();
   await gameGone(device, 'in-game-chat-container');
   await animateGamePanel(device, game, 'buy-in-applications', 'buy-in-application-button',
-    { x: 110, y: 400, width: 470, height: 450 }, animationInfo);
+    { x: 110, y: 400, width: 470, height: 450 }, animationInfo, 'enter',
+    game === 'zhajinhua' ? 'videoFrames' : 'motionFrames');
   await gameReady(device, 'buy-in-application-no-requests');
   await capture('buy_in_applications');
   await closeAnimatedGameMask(device, game, 'buy-in-applications', 'buy-in-application-list',
