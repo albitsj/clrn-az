@@ -14,14 +14,15 @@ import type { ScreenshotBounds, ScreenshotMask } from './screenshot';
  * @param region - 不包含牌桌循环箭头的面板可见区域。
  * @param testInfo - 仅英文牌桌动画场景采集关键帧。
  * @param phase - 入场或退场。
- * @param samplingMethod - 首次语音权限检查会延迟弹窗，使用持续采样。
+ * @param samplingMethod - 拼三张短弹窗默认持续录屏；其他延迟弹窗也可显式选择采样方式。
  * @param masks - 与面板无关的计时器等动态区域。
  * @param afterReady - 面板加载业务数据后再固定终点画面。
  * @param videoPhaseAnchors - 经原生录屏审查的其他有效相位。
  */
 export async function animateGamePanel(device: AndroidDevice, game: 'texas-holdem' | 'zhajinhua', name: string,
   button: string, region: ScreenshotBounds, testInfo?: TestInfo, phase: 'enter' | 'exit' = 'enter',
-  samplingMethod: 'motionFrames' | 'launchFrames' | 'videoFrames' = 'motionFrames',
+  samplingMethod: 'motionFrames' | 'launchFrames' | 'videoFrames' = game === 'zhajinhua'
+    ? 'videoFrames' : 'motionFrames',
   masks: ScreenshotMask[] = [], afterReady?: () => Promise<void>,
   videoPhaseAnchors: string[] = []): Promise<void> {
   if (!testInfo) { await gameTap(device, button); return; }

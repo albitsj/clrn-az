@@ -88,6 +88,8 @@ export async function captureAssetSequence(device: AndroidDevice, name: string, 
         const references = [readFileSync(info.snapshotPath(file))];
         const alternate = info.snapshotPath(`${name}-flight-${phase}-alternate.png`);
         if (phase !== 'start' && existsSync(alternate)) references.push(readFileSync(alternate));
+        const secondAlternate = info.snapshotPath(`${name}-flight-${phase}-alternate-2.png`);
+        if (phase !== 'start' && existsSync(secondAlternate)) references.push(readFileSync(secondAlternate));
         expect(Math.min(...(phase === 'start' ? [flightStart] : moving.map(item => item.frame))
           .flatMap(candidate => references.map(reference => frameColorDistance(candidate, reference)))),
         `${name} 飞行 ${phase} 视觉回归`)

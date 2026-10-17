@@ -100,7 +100,7 @@ export async function zhajinhuaGameplay(device: AndroidDevice, proxy: Mitmproxy,
   const accurateBetClock = [{ x: 350, y: 725, width: 90, height: 40,
     reason: '独立运行的玩家操作倒计时，不属于精确加注弹窗' }];
   await animateGamePanel(device, 'zhajinhua', 'accurate-bet', 'zhajinhua-operation-accurate-bet-button',
-    { x: 150, y: 400, width: 430, height: 480 }, animationInfo, 'enter', 'motionFrames', accurateBetClock,
+    { x: 150, y: 400, width: 430, height: 480 }, animationInfo, 'enter', 'videoFrames', accurateBetClock,
     async () => { await gameReady(device, 'accurate-bet-popup-container'); });
   await gameReady(device, 'accurate-bet-popup-container');
   await capture('accurate_raise');

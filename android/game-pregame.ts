@@ -67,7 +67,8 @@ export async function closeGameMask(device: AndroidDevice, marker: string): Prom
  */
 export async function closeAnimatedGameMask(device: AndroidDevice, game: 'texas-holdem' | 'zhajinhua',
   name: string, marker: string, region: ScreenshotBounds, testInfo?: TestInfo,
-  masks: ScreenshotMask[] = [], samplingMethod: 'motionFrames' | 'videoFrames' = 'motionFrames'): Promise<void> {
+  masks: ScreenshotMask[] = [], samplingMethod: 'motionFrames' | 'videoFrames' = game === 'zhajinhua'
+    ? 'videoFrames' : 'motionFrames'): Promise<void> {
   if (!testInfo) { await closeGameMask(device, marker); return; }
   const point = await gameMaskClosePoint(device, marker);
   await captureNativeTransition(device, `${game}-${name}-exit`, testInfo, region,
@@ -142,8 +143,7 @@ export async function gamePreGame(device: AndroidDevice, game: 'texas-holdem' | 
     } : undefined;
     await animateGamePanel(device, game, state, `drawer-menu-item-${state}`,
       { x: 110, y: 360, width: 480, height: 500 }, animationInfo, 'enter',
-      (game === 'zhajinhua' && (state === 'settings' || state === 'theme'))
-        || (game === 'texas-holdem' && state === 'theme')
+      game === 'zhajinhua' || (game === 'texas-holdem' && state === 'theme')
         ? 'videoFrames' : 'motionFrames', [], renewalReady);
     await gameGone(device, 'drawer-menu-item-exit');
     await gameReady(device, ready);
@@ -162,8 +162,7 @@ export async function gamePreGame(device: AndroidDevice, game: 'texas-holdem' | 
     } : undefined;
     await animateGamePanel(device, game, state, close,
       { x: 110, y: 360, width: 480, height: 500 }, animationInfo, 'exit',
-      (game === 'texas-holdem' && state === 'settings')
-        || (game === 'zhajinhua' && (state === 'theme' || state === 'renew'))
+      game === 'zhajinhua' || (game === 'texas-holdem' && state === 'settings')
         ? 'videoFrames' : 'motionFrames', [], exitReady);
     await gameGone(device, ready);
   }
