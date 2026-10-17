@@ -199,7 +199,8 @@ test('private room game picker slides into and out of the Android screen', async
       await device.wait({ res: 'select-game-category-text' });
       /** 使用选玩法抽屉的真实 Android 返回处理关闭它。 */
       const pressBack = () => adb('shell', 'input', 'keyevent', 'KEYCODE_BACK');
-      await captureNativeTransition(device, 'game-picker-exit', testInfo, region, pressBack);
+      await captureNativeTransition(device, 'game-picker-exit', testInfo, region, pressBack,
+        [], [], 0, 'videoFrames');
     } finally { await device?.close(); }
   });
 });
