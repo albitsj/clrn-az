@@ -99,7 +99,8 @@ export async function gamePreGame(device: AndroidDevice, game: 'texas-holdem' | 
   await gameReady(device, 'drawer-menu-item-exit');
   await capture('menu');
   await animateGamePanel(device, game, 'card-rank', 'drawer-menu-item-card_rank',
-    { x: 110, y: 400, width: 440, height: 600 }, animationInfo);
+    { x: 110, y: 400, width: 440, height: 600 }, animationInfo, 'enter',
+    game === 'zhajinhua' ? 'videoFrames' : 'motionFrames');
   await gameReady(device, 'card-rank-list');
   await capture('card_rank');
   if ((await gameNodes(device)).some(node => node.res === 'card-rank-popup-close')) {
@@ -141,7 +142,8 @@ export async function gamePreGame(device: AndroidDevice, game: 'texas-holdem' | 
     } : undefined;
     await animateGamePanel(device, game, state, `drawer-menu-item-${state}`,
       { x: 110, y: 360, width: 480, height: 500 }, animationInfo, 'enter',
-      (game === 'zhajinhua' && state === 'settings') || (game === 'texas-holdem' && state === 'theme')
+      (game === 'zhajinhua' && (state === 'settings' || state === 'theme'))
+        || (game === 'texas-holdem' && state === 'theme')
         ? 'videoFrames' : 'motionFrames', [], renewalReady);
     await gameGone(device, 'drawer-menu-item-exit');
     await gameReady(device, ready);

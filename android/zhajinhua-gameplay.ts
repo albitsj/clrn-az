@@ -60,7 +60,7 @@ export async function zhajinhuaGameplay(device: AndroidDevice, proxy: Mitmproxy,
       await send(seeCards);
     };
     await captureNativeTransition(device, 'zhajinhua-flip-cards', animationInfo,
-      { x: 360, y: 1054, width: 148, height: 102 }, revealCards, [], [], 800);
+      { x: 360, y: 1054, width: 148, height: 102 }, revealCards, [], [], 800, 'videoFrames');
   } else {
     await gameTap(device, 'zhajinhua-see-hand-card-button');
     await send(seeCards);
@@ -93,7 +93,8 @@ export async function zhajinhuaGameplay(device: AndroidDevice, proxy: Mitmproxy,
   await capture('quick_raise');
   if (animationInfo) await captureNativeTransition(device, 'zhajinhua-operation-buttons', animationInfo,
     // 下方三张手牌独立重绘；只比较操作按钮及文字。
-    { x: 100, y: 865, width: 520, height: 180 }, () => send(restoreTable(self, false, true)), [], [], 400);
+    { x: 100, y: 865, width: 520, height: 180 }, () => send(restoreTable(self, false, true)),
+    [], [], 400, 'videoFrames');
   else await send(restoreTable(self, false, true));
   await gameReady(device, 'zhajinhua-operation-accurate-bet-button');
   const accurateBetClock = [{ x: 350, y: 725, width: 90, height: 40,
