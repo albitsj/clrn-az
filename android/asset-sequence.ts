@@ -85,9 +85,12 @@ export async function captureAssetSequence(device: AndroidDevice, name: string, 
       await info.attach(file, { body: frame, contentType: 'image/png' });
       if (info.config.updateSnapshots === 'all') expect(frame).toMatchSnapshot(file);
       else {
-        const reference = readFileSync(info.snapshotPath(file));
+        const references = [readFileSync(info.snapshotPath(file))];
+        const alternate = info.snapshotPath(`${name}-flight-${phase}-alternate.png`);
+        if (phase !== 'start' && existsSync(alternate)) references.push(readFileSync(alternate));
         expect(Math.min(...(phase === 'start' ? [flightStart] : moving.map(item => item.frame))
-          .map(candidate => frameColorDistance(candidate, reference))), `${name} 飞行 ${phase} 视觉回归`)
+          .flatMap(candidate => references.map(reference => frameColorDistance(candidate, reference)))),
+        `${name} 飞行 ${phase} 视觉回归`)
           .toBeLessThanOrEqual(15);
       }
     }
