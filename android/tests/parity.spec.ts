@@ -13,6 +13,9 @@ for (const scenario of androidScenarios(locale, process.env.ANDROID_GROUP)) {
       application.signedIn = true;
     }
     const backgroundBanner = await navigateScenario(application.device, scenario);
+    if (scenario.pageLabel === 'signed_in_gift_card_exchange' && locale === 'en') {
+      await application.device.wait({ res: 'gift-card-input', text: 'Please input gift card code' });
+    }
     const name = `${locale}-${scenario.pageLabel.replaceAll('_', '-')}`;
     const masks = await screenshotMasks(application.device, scenario, backgroundBanner);
     if (scenario.pageLabel === 'signed_in_hall' && locale === 'en') {
@@ -27,7 +30,9 @@ for (const scenario of androidScenarios(locale, process.env.ANDROID_GROUP)) {
         { takeScreenshot: captureBanner, timeoutMs: 12_000 });
     }
     const alternateLayouts = scenario.pageLabel === 'signed_in_reset_password' && locale === 'en'
-      ? ['en-signed-in-reset-password-wrap.png', 'en-signed-in-reset-password-clipped.png'] : [];
+      ? ['en-signed-in-reset-password-wrap.png', 'en-signed-in-reset-password-clipped.png']
+      : scenario.pageLabel === 'signed_in_gift_card_exchange' && locale === 'en'
+        ? ['en-signed-in-gift-card-exchange-clipped.png'] : [];
     await compareScreenshot(application.device, name, testInfo, masks, undefined, undefined, alternateLayouts);
   });
 }
