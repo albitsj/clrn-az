@@ -87,7 +87,8 @@ test('guest search confirmation animates into and out of the Android screen', as
         String(Math.round(entrance.bounds.y + entrance.bounds.height / 2)));
       const region = { x: 58, y: 495, width: 604, height: 345 };
       await captureNativeTransition(device, 'search-confirmation-enter', testInfo, region,
-        pressSearch, [], [], 0, 'videoFrames');
+        pressSearch, [], [], 0, 'videoFrames', undefined, undefined,
+        ['search-confirmation-enter-middle-alt.png']);
       const cancel = await device.info({ res: 'cancel-button' });
       expect(cancel.bounds.width).toBeGreaterThan(0);
       /** 点击真实取消按钮，不直接卸载弹窗。 */
