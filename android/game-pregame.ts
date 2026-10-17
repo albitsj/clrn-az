@@ -166,6 +166,14 @@ export async function gamePreGame(device: AndroidDevice, game: 'texas-holdem' | 
         ? 'videoFrames' : 'motionFrames', [], exitReady);
     await gameGone(device, ready);
   }
+  if (game === 'zhajinhua') {
+    // 续费面板结束后房间可能独立重连；排行榜起点必须是稳定牌桌。
+    await expect.poll(async () => (await gameNodes(device)).some(node => /Connecting\.\.\./.test(node.text || '')),
+      { timeout: 45_000 }).toBe(false);
+    await setTimeout(1_000);
+    await expect.poll(async () => (await gameNodes(device)).some(node => /Connecting\.\.\./.test(node.text || '')),
+      { timeout: 45_000 }).toBe(false);
+  }
   await animateGamePanel(device, game, 'leaderboard',
     game === 'texas-holdem' ? 'texas-holdem-leaderboard-button' : 'zhajinhua-learder-borard-button',
     { x: 110, y: 400, width: 470, height: 450 }, animationInfo);
@@ -215,7 +223,8 @@ export async function gamePreGame(device: AndroidDevice, game: 'texas-holdem' | 
   await gameGone(device, 'in-game-chat-container');
   await animateGamePanel(device, game, 'buy-in-applications', 'buy-in-application-button',
     { x: 110, y: 400, width: 470, height: 450 }, animationInfo, 'enter',
-    game === 'zhajinhua' ? 'videoFrames' : 'motionFrames');
+    game === 'zhajinhua' ? 'videoFrames' : 'motionFrames', [], undefined,
+    game === 'zhajinhua' ? ['zhajinhua-buy-in-applications-enter-middle-alternate.png'] : []);
   await gameReady(device, 'buy-in-application-no-requests');
   await capture('buy_in_applications');
   await closeAnimatedGameMask(device, game, 'buy-in-applications', 'buy-in-application-list',
