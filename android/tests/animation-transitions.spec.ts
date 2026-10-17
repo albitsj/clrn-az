@@ -211,7 +211,11 @@ test('private room invite sheet slides into and out of the Android screen', asyn
       await signIn(device);
       // 私人房标签直接呈现当前房间详情；建房入口会进入空房页面。
       await tap(device, 'private-room-tab');
-      await gameReady(device, 'copy-house-number-button');
+      try { await gameReady(device, 'copy-house-number-button'); }
+      catch (error) {
+        await testInfo.attach('invite-entry-screen', { body: await gameScreenshot(device), contentType: 'image/png' });
+        throw error;
+      }
       const button = await gameReady(device, 'invite-friends-button');
       // Android 15 房号剪贴板预览会一直盖在邀请入口下方；关闭系统浮层后再取应用帧。
       adb('shell', 'input', 'tap', '208', '1040');
