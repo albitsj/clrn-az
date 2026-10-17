@@ -209,10 +209,9 @@ test('private room invite sheet slides into and out of the Android screen', asyn
       device = await launchApplication({ gameDriver: true, enableSystemAnimations: true });
       await waitForHall(device);
       await signIn(device);
-      const detail = androidScenarios('en', 'rooms').find(scenario => scenario.pageLabel === 'signed_in_private_room_detail');
-      expect(detail).toBeDefined();
-      // 与房间页面回归共用同一条可达路径，进入已有个人房详情后再打开邀请抽屉。
-      await navigateScenario(device, detail!);
+      // 大厅的个人房入口在已有房间时直接打开详情，不经过选玩法抽屉。
+      await tap(device, 'hall-tab');
+      await tap(device, 'personal-house-create');
       await gameReady(device, 'copy-house-number-button');
       const button = await gameReady(device, 'invite-friends-button');
       // Android 15 房号剪贴板预览会一直盖在邀请入口下方；关闭系统浮层后再取应用帧。
