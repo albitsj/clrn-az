@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { setTimeout } from 'node:timers/promises';
 import { expect, type TestInfo } from '@playwright/test';
 import type { AndroidDevice } from 'playwright';
-import { frameColorDistance } from './animation-transition';
+import { frameColorDistance, framePaletteDistance } from './animation-transition';
 import { gameScreenshot } from './game-controls';
 import { motionParts, samePixels } from './motion-regions';
 import type { ScreenshotBounds } from './screenshot';
@@ -54,8 +54,10 @@ export async function captureAssetSequence(device: AndroidDevice, name: string, 
       const references = [readFileSync(info.snapshotPath(file))];
       const alternate = info.snapshotPath(`${name}-${phase}-alternate.png`);
       if (phase !== 'start' && existsSync(alternate)) references.push(readFileSync(alternate));
+      // 飞行道具在接收者身上经过的时刻可变；颜色构成锁定素材，下面的飞行区域另锁定位置。
+      const compare = flightRegion && phase !== 'start' ? framePaletteDistance : frameColorDistance;
       expect(Math.min(...(phase === 'start' ? [before] : visible.map(item => item.frame))
-        .flatMap(candidate => references.map(reference => frameColorDistance(candidate, reference)))),
+        .flatMap(candidate => references.map(reference => compare(candidate, reference)))),
       `${name} ${phase} 视觉回归`)
         .toBeLessThanOrEqual(15);
     }
