@@ -118,14 +118,12 @@ export async function texasPanels(context: TexasContext): Promise<void> {
     user_nickname: 'Player2', nickname: 'Player2', amount: 500,
   } } };
   if (animationInfo) await captureNativeTransition(device, 'texas-holdem-buy-in-review-enter', animationInfo,
-    { x: 70, y: 440, width: 580, height: 400 }, () => replay(proxy, 'texas', room, application),
-    [{ x: 334, y: 720, width: 110, height: 47, reason: '带入审核后面的房间计时独立跳秒' }]);
+    { x: 70, y: 440, width: 580, height: 270 }, () => replay(proxy, 'texas', room, application));
   else await replay(proxy, 'texas', room, application);
   await gameReady(device, 'buy-in-review-close-button');
   await capture('buy_in_review');
   await animateGamePanel(device, 'texas-holdem', 'buy-in-review', 'buy-in-review-close-button',
-    { x: 70, y: 440, width: 580, height: 400 }, animationInfo, 'exit', 'motionFrames',
-    [{ x: 334, y: 720, width: 110, height: 47, reason: '带入审核后面的房间计时独立跳秒' }]);
+    { x: 70, y: 440, width: 580, height: 270 }, animationInfo, 'exit');
   await gameGone(device, 'buy-in-review-close-button');
   // 先清除旧回合的跟注标记，避免相同牌面让恢复等待误命中上一帧。
   /** 读取本轮本人实际可见的玩家容器。 */
