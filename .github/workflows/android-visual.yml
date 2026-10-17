@@ -151,7 +151,12 @@ jobs:
           sparse-checkout: packages/playwright-core/src/server/android/driver
       - name: 构建牌桌动画兼容驱动
         if: matrix.group == 'texas' || matrix.group == 'zhajinhua' || matrix.group == 'guest' || matrix.group == 'social' || matrix.group == 'rooms' || matrix.group == 'account'
-        run: node android/build-driver.mjs
+        run: |
+          for attempt in 1 2 3; do
+            if node android/build-driver.mjs; then break; fi
+            if [ "$attempt" = 3 ]; then exit 1; fi
+            sleep $((attempt * 20))
+          done
       - name: 准备固定 Android 系统镜像
         run: |
           sdk_manager="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
