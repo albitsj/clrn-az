@@ -191,6 +191,8 @@ export async function texasGameplay(device: AndroidDevice, proxy: Mitmproxy, roo
     }
   }
   let opponentProfileCount = 0;
+  const profileNetworkMask = [{ x: 635, y: 145, width: 85, height: 65,
+    reason: '玩家资料后面的实时网络延迟独立变化' }];
   /**
    * 打开玩家资料，等待统计数据实际完成加载。
    * @param player - 共享夹具玩家或本人 ID。
@@ -201,7 +203,8 @@ export async function texasGameplay(device: AndroidDevice, proxy: Mitmproxy, roo
     const name = player === self ? 'own-profile' : `opponent-profile-${++opponentProfileCount}`;
     await animateGamePanel(device, 'texas-holdem', name,
       node!.res!, { x: 180, y: 90, width: 520, height: 500 }, animationInfo,
-      'enter', 'motionFrames', [], async () => { await gameReady(device, 'PlayerStatisticComponent_Item_Value_0'); });
+      'enter', 'motionFrames', profileNetworkMask,
+      async () => { await gameReady(device, 'PlayerStatisticComponent_Item_Value_0'); });
     await gameReady(device, 'player-profile-popup-close');
     await gameReady(device, 'PlayerStatisticComponent_Item_Value_0');
   };
@@ -209,7 +212,8 @@ export async function texasGameplay(device: AndroidDevice, proxy: Mitmproxy, roo
   await capture('own_profile');
   await animateGamePanel(device, 'texas-holdem', 'own-profile', 'player-profile-popup-close',
     { x: 180, y: 90, width: 520, height: 500 }, animationInfo,
-    'exit', 'motionFrames', [], async () => { await gameGone(device, 'player-profile-popup-close'); });
+    'exit', 'motionFrames', profileNetworkMask,
+    async () => { await gameGone(device, 'player-profile-popup-close'); });
   await gameGone(device, 'player-profile-popup-close');
   await profile(REPLAY_PLAYER_IDS[0]);
   await gameReady(device, 'player-profile-nickname', 'Player1');
@@ -232,6 +236,7 @@ export async function texasGameplay(device: AndroidDevice, proxy: Mitmproxy, roo
   await capture('block');
   await animateGamePanel(device, 'texas-holdem', 'opponent-profile-2', 'player-profile-popup-close',
     { x: 180, y: 90, width: 520, height: 500 }, animationInfo,
-    'exit', 'motionFrames', [], async () => { await gameGone(device, 'player-profile-popup-close'); });
+    'exit', 'motionFrames', profileNetworkMask,
+    async () => { await gameGone(device, 'player-profile-popup-close'); });
   expect((await proxy.command<{ replayedMessages: number }>('status')).replayedMessages).toBeGreaterThan(0);
 }
