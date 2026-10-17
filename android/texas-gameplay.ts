@@ -79,12 +79,15 @@ export async function texasGameplay(device: AndroidDevice, proxy: Mitmproxy, roo
   await capture('raise');
   if (animationInfo) {
     await gameReady(device, 'raise-bet-slider');
+    const initialRaise = (await gameReady(device, 'raise-bet-display-text')).text;
     await captureNativeTransition(device, 'texas-raise-slider', animationInfo,
       { x: 285, y: 245, width: 295, height: 630 },
       () => adb('shell', 'input', 'swipe', '333', '814', '333', '530', '450'),
       [{ x: 285, y: 725, width: 160, height: 35,
         reason: '加注滑块后面的牌局倒计时独立跳秒' }], [], 0, 'videoFrames',
-      undefined, undefined, [], ['texas-raise-slider-end-500.png']);
+      undefined, undefined, [], ['texas-raise-slider-end-500.png', 'texas-raise-slider-end-492.png']);
+    expect((await gameReady(device, 'raise-bet-display-text')).text,
+      '真实拖动必须改变加注数值').not.toBe(initialRaise);
   }
   // 原生录屏确认取消按钮直接移除面板，没有可供回归的退场过渡帧。
   await gameTap(device, 'raise-bet-cancel-button');
