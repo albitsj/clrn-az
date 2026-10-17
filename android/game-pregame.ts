@@ -161,7 +161,8 @@ export async function gamePreGame(device: AndroidDevice, game: 'texas-holdem' | 
     await animateGamePanel(device, game, state, close,
       { x: 110, y: 360, width: 480, height: 500 }, animationInfo, 'exit',
       (game === 'texas-holdem' && state === 'settings')
-        || (game === 'zhajinhua' && state === 'theme') ? 'videoFrames' : 'motionFrames', [], exitReady);
+        || (game === 'zhajinhua' && (state === 'theme' || state === 'renew'))
+        ? 'videoFrames' : 'motionFrames', [], exitReady);
     await gameGone(device, ready);
   }
   await animateGamePanel(device, game, 'leaderboard',
