@@ -77,6 +77,17 @@ test('all three native slot reels and reward types animate from real spin respon
         String(Math.round(bannerAgain.bounds.x + bannerAgain.bounds.width / 2)),
         String(Math.round(bannerAgain.bounds.y + bannerAgain.bounds.height / 2)));
       await device.wait({ res: 'slot-machine-view' });
+      // 控件树在弹层入场中途已出现；等不受滚轮图案影响的左边框停止移动后再点击。
+      const noEnergyRegion = { x: 80, y: 510, width: 40, height: 380 };
+      /** 只采集不会受滚轮随机停靠图案影响的弹层左边框。 */
+      const border = async () => motionParts(await gameScreenshot(device!), [noEnergyRegion]).regions[0];
+      let stableBorder = await border();
+      let stableSince = Date.now();
+      await expect(async () => {
+        const current = await border();
+        if (!samePixels(current, stableBorder)) { stableBorder = current; stableSince = Date.now(); }
+        expect(Date.now() - stableSince).toBeGreaterThanOrEqual(600);
+      }).toPass({ timeout: 10_000, intervals: [150] });
       await proxy.command('android/slot', { currency: 'coin', noEnergy: true });
       const spin = await device.info({ res: 'spin-button' });
       /** 真实能量不足 RPC 触发老虎机窗口切换到专用提示。 */
@@ -84,7 +95,6 @@ test('all three native slot reels and reward types animate from real spin respon
         String(Math.round(spin.bounds.x + spin.bounds.width / 2)),
         String(Math.round(spin.bounds.y + spin.bounds.height / 2)));
       // 左侧边框不受每次打开时滚轮随机停靠图案影响；完整提示另做逐像素基准。
-      const noEnergyRegion = { x: 80, y: 510, width: 40, height: 380 };
       await captureNativeTransition(device, 'slot-no-energy-enter', testInfo, noEnergyRegion, pressEmptySpin);
       const prompt = await device.info({ res: 'slot-no-energy-popup-container' });
       expect(prompt.bounds.width).toBeGreaterThan(0);
