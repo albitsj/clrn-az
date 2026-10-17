@@ -145,11 +145,12 @@ export async function texasGameplay(device: AndroidDevice, proxy: Mitmproxy, roo
         return player && flattenNodes(player).some(node => node.res === `texas-holdem-player-action-${action}`);
       };
       await expect.poll(playerAction, { timeout: 30_000 }).toBe(false);
-      const timer = await gameReady(device, 'texas-holdem-active-countdown');
+      await gameReady(device, 'texas-holdem-active-countdown');
       await captureNativeTransition(device, `texas-player-action-${action}`, animationInfo,
-        { x: 80, y: 465, width: 115, height: 130 },
+        // 动作标签右侧不与玩家头像倒计时重叠，可完整观察标签而无需遮罩。
+        { x: 132, y: 465, width: 63, height: 130 },
         () => send(events([{ event: action, player_id: actionPlayer, amount: 40, stack: 920 }])),
-        [{ ...timer.bounds, reason: '玩家动作期间独立运行的操作倒计时' }], [], 0, 'videoFrames');
+        [], [], 0, 'videoFrames');
       await expect.poll(playerAction, { timeout: 30_000 }).toBe(true);
     }
     await restore('river', true);
