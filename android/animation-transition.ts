@@ -62,6 +62,7 @@ export function framePaletteDistance(left: Buffer, right: Buffer): number {
  * @param endPhaseAnchors - 手势落点离散化造成的已审查终点画面。
  * @param endCompareMasks - 终点独立数值区域；原始终点仍保留在报告中供审查。
  * @param startPhaseAnchors - 系统启动器布局不同但均已审查的起点画面。
+ * @param startCompareMasks - 仅用于比较触发前桌面帧的系统动态图标区域；坐标相对截图裁切范围。
  */
 export async function captureNativeTransition(device: AndroidDevice, name: string, testInfo: TestInfo,
   region: ScreenshotBounds, trigger: () => unknown, masks: ScreenshotMask[] = [],
@@ -70,13 +71,16 @@ export async function captureNativeTransition(device: AndroidDevice, name: strin
   inspectFrames?: (frames: Buffer[], testInfo: TestInfo) => Promise<void>,
   afterReady?: () => Promise<void>, videoPhaseAnchors: string[] = [],
   endPhaseAnchors: string[] = [], endCompareMasks: ScreenshotMask[] = [],
-  startPhaseAnchors: string[] = []): Promise<void> {
+  startPhaseAnchors: string[] = [], startCompareMasks: ScreenshotMask[] = []): Promise<void> {
   /**
    * 截出固定的动画绘制区域。
    * @param bytes - 原生完整屏幕 PNG。
    */
   const crop = (bytes: Buffer) => motionParts(maskScreenshot(bytes, masks), [region]).regions[0];
   if (masks.length) await testInfo.attach(`${name}-masks`, { body: JSON.stringify(masks), contentType: 'application/json' });
+  if (startCompareMasks.length) await testInfo.attach(`${name}-start-masks`, {
+    body: JSON.stringify(startCompareMasks), contentType: 'application/json',
+  });
   const before = crop(await gameScreenshot(device));
   const implementation = (device as unknown as { _connection: { toImpl(device: AndroidDevice): {
     _send(method: string): Promise<NativeFrame[]> } } })._connection.toImpl(device);
@@ -120,7 +124,8 @@ export async function captureNativeTransition(device: AndroidDevice, name: strin
     expect(framePaletteDistance(timeline[0], before), '录屏开始时动画尚未触发').toBeLessThan(7);
     if (!settleMs && !afterReady) expect(framePaletteDistance(timeline.at(-1)!, after), '录屏结束时动画必须完成').toBeLessThan(7);
   } else {
-    expect(samePixels(timeline[0], before), '开始采样时动画尚未触发').toBe(true);
+    expect(samePixels(maskScreenshot(timeline[0], startCompareMasks),
+      maskScreenshot(before, startCompareMasks)), '开始采样时动画尚未触发').toBe(true);
     if (!settleMs && !afterReady) expect(samePixels(timeline.at(-1)!, after), '采样结束时动画必须完成').toBe(true);
   }
   if (requiredRegions.length) {
@@ -158,7 +163,8 @@ export async function captureNativeTransition(device: AndroidDevice, name: strin
     expect(after).toMatchSnapshot(`${name}-end.png`);
   } else {
     expect([`${name}-start.png`, ...startPhaseAnchors]
-      .some(file => samePixels(before, readFileSync(testInfo.snapshotPath(file)))), '动画起点视觉回归').toBe(true);
+      .some(file => samePixels(maskScreenshot(before, startCompareMasks),
+        maskScreenshot(readFileSync(testInfo.snapshotPath(file)), startCompareMasks))), '动画起点视觉回归').toBe(true);
     expect([`${name}-end.png`, ...endPhaseAnchors]
       .some(file => samePixels(maskScreenshot(after, endCompareMasks),
         maskScreenshot(readFileSync(testInfo.snapshotPath(file)), endCompareMasks))),
