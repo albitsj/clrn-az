@@ -180,7 +180,8 @@ export async function texasGameplay(device: AndroidDevice, proxy: Mitmproxy, roo
   await profile(self);
   await capture('own_profile');
   await animateGamePanel(device, 'texas-holdem', 'own-profile', 'player-profile-popup-close',
-    { x: 180, y: 90, width: 520, height: 500 }, animationInfo, 'exit');
+    { x: 180, y: 90, width: 520, height: 500 }, animationInfo,
+    'exit', 'motionFrames', [], async () => { await gameGone(device, 'player-profile-popup-close'); });
   await gameGone(device, 'player-profile-popup-close');
   await profile(REPLAY_PLAYER_IDS[0]);
   await gameReady(device, 'player-profile-nickname', 'Player1');
