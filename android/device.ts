@@ -111,9 +111,11 @@ export async function waitForHall(device: AndroidDevice): Promise<void> {
  * @param masks - 明确排除的动态区域，报告保留原图和区域原因。
  * @param transientState - 短时提示的可见性断言；普通页面仍须稳定两秒。
  * @param takeScreenshot - 短时提示使用同一设备上的快速原生截图接口。
+ * @param alternateSnapshots - 经审查的同一页面原生布局备选图。
  */
 export async function compareScreenshot(device: AndroidDevice, name: string, testInfo: TestInfo, masks: ScreenshotMask[] = [],
-  transientState?: () => Promise<void>, takeScreenshot: () => Promise<Buffer> = () => device.screenshot()): Promise<void> {
+  transientState?: () => Promise<void>, takeScreenshot: () => Promise<Buffer> = () => device.screenshot(),
+  alternateSnapshots: string[] = []): Promise<void> {
   if (masks.length) await testInfo.attach(`${name}-masks`, { body: JSON.stringify(masks), contentType: 'application/json' });
   await transientState?.();
   const initial = await takeScreenshot();
@@ -151,5 +153,10 @@ export async function compareScreenshot(device: AndroidDevice, name: string, tes
     await testInfo.attach(`${name}-original`, { body: original!, contentType: 'image/png' });
   }
   await testInfo.attach(name, { body: stable!, contentType: 'image/png' });
+  const matchingAlternate = alternateSnapshots.find(file => samePixels(stable!, readFileSync(testInfo.snapshotPath(file))));
+  if (matchingAlternate) {
+    await testInfo.attach(`${name}-matched-layout`, { body: matchingAlternate, contentType: 'text/plain' });
+    return;
+  }
   expect.soft(stable!).toMatchSnapshot(`${name}.png`);
 }

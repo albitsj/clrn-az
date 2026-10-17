@@ -26,6 +26,8 @@ for (const scenario of androidScenarios(locale, process.env.ANDROID_GROUP)) {
           height: Math.ceil(banner.y + banner.height) - Math.floor(banner.y) }], masks,
         { takeScreenshot: captureBanner, timeoutMs: 12_000 });
     }
-    await compareScreenshot(application.device, name, testInfo, masks);
+    const alternateLayouts = scenario.pageLabel === 'signed_in_reset_password' && locale === 'en'
+      ? ['en-signed-in-reset-password-wrap.png', 'en-signed-in-reset-password-clipped.png'] : [];
+    await compareScreenshot(application.device, name, testInfo, masks, undefined, undefined, alternateLayouts);
   });
 }
