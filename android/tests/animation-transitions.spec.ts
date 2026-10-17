@@ -212,6 +212,8 @@ test('private room invite sheet slides into and out of the Android screen', asyn
       await signIn(device);
       // 私人房标签直接呈现当前房间详情；建房入口会进入空房页面。
       await tap(device, 'private-room-tab');
+      // 首次进入会显示“邀请好友”新手引导，先通过真实完成按钮关闭。
+      await reveal(device, { res: 'copy-house-number-button' });
       try { await gameReady(device, 'copy-house-number-button'); }
       catch (error) {
         await testInfo.attach('invite-entry-screen', { body: await gameScreenshot(device), contentType: 'image/png' });
