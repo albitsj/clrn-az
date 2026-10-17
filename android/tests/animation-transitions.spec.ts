@@ -37,7 +37,8 @@ test('native launch artwork and staging notice appear on a real app start', asyn
         [{ x: 70, y: 220, width: 70, height: 125, reason: 'Pixel Launcher 时钟图标持续走针' }], [
           { x: 110, y: 170, width: 500, height: 145 },
           { x: 110, y: 360, width: 500, height: 550 },
-        ], 1_500, 'launchFrames', verifyLaunchArtwork);
+        ], 1_500, 'launchFrames', verifyLaunchArtwork, undefined, [], [], [],
+        ['native-launch-and-staging-notice-start-alternate.png']);
       await device.wait({ res: 'staging-confirmation-input' }, { timeout: 120_000 });
     } finally { await device?.close(); }
   });
