@@ -59,13 +59,15 @@ export function framePaletteDistance(left: Buffer, right: Buffer): number {
  * @param inspectFrames - 对同一组原生帧中的独立子动画追加视觉断言。
  * @param afterReady - 需要异步业务数据的面板在终点截图前等待语义就绪。
  * @param videoPhaseAnchors - 独立绘制层可在不同顺序呈现的额外已审查录屏相位。
+ * @param endPhaseAnchors - 手势落点离散化造成的已审查终点画面。
  */
 export async function captureNativeTransition(device: AndroidDevice, name: string, testInfo: TestInfo,
   region: ScreenshotBounds, trigger: () => unknown, masks: ScreenshotMask[] = [],
   requiredRegions: ScreenshotBounds[] = [], settleMs = 0,
   samplingMethod: 'motionFrames' | 'launchFrames' | 'videoFrames' = 'motionFrames',
   inspectFrames?: (frames: Buffer[], testInfo: TestInfo) => Promise<void>,
-  afterReady?: () => Promise<void>, videoPhaseAnchors: string[] = []): Promise<void> {
+  afterReady?: () => Promise<void>, videoPhaseAnchors: string[] = [],
+  endPhaseAnchors: string[] = []): Promise<void> {
   /**
    * 截出固定的动画绘制区域。
    * @param bytes - 原生完整屏幕 PNG。
@@ -153,7 +155,8 @@ export async function captureNativeTransition(device: AndroidDevice, name: strin
     expect(after).toMatchSnapshot(`${name}-end.png`);
   } else {
     expect(samePixels(before, readFileSync(testInfo.snapshotPath(`${name}-start.png`))), '动画起点视觉回归').toBe(true);
-    expect(samePixels(after, readFileSync(testInfo.snapshotPath(`${name}-end.png`))), '动画终点视觉回归').toBe(true);
+    expect([`${name}-end.png`, ...endPhaseAnchors]
+      .some(file => samePixels(after, readFileSync(testInfo.snapshotPath(file)))), '动画终点视觉回归').toBe(true);
     const reference = readFileSync(testInfo.snapshotPath(`${name}-middle.png`));
     // 系统截图间隔约 70–180ms；短动画有时仅采到靠近起点或终点的帧。
     // 起止帧逐像素匹配，独立断言中途帧真实可见，再要求它靠近已审查的轨迹锚点。

@@ -82,7 +82,8 @@ export async function texasGameplay(device: AndroidDevice, proxy: Mitmproxy, roo
       { x: 285, y: 245, width: 295, height: 630 },
       () => adb('shell', 'input', 'swipe', '333', '814', '333', '530', '450'),
       [{ x: 285, y: 725, width: 160, height: 35,
-        reason: '加注滑块后面的牌局倒计时独立跳秒' }], [], 0, 'videoFrames');
+        reason: '加注滑块后面的牌局倒计时独立跳秒' }], [], 0, 'videoFrames',
+      undefined, undefined, [], ['texas-raise-slider-end-500.png']);
   }
   // 原生录屏确认取消按钮直接移除面板，没有可供回归的退场过渡帧。
   await gameTap(device, 'raise-bet-cancel-button');
