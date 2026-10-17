@@ -185,7 +185,8 @@ export async function gamePreGame(device: AndroidDevice, game: 'texas-holdem' | 
   const closeRecord = () => adb('shell', 'input', 'tap', String(Math.round(reviewMask.x + 8)),
     String(Math.round(reviewMask.y + 80)));
   if (animationInfo) await captureNativeTransition(device, `${game}-game-record-exit`, animationInfo,
-    { x: 150, y: 400, width: 440, height: 450 }, closeRecord);
+    { x: 150, y: 400, width: 440, height: 450 }, closeRecord, [], [], 0,
+    game === 'zhajinhua' ? 'videoFrames' : 'motionFrames');
   else closeRecord();
   await gameGone(device, 'review-board-description-text');
   await animateGamePanel(device, game, 'chat', `${game}-chat-button`,
