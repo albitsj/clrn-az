@@ -54,7 +54,8 @@ export async function texasGameplay(device: AndroidDevice, proxy: Mitmproxy, roo
       };
       /** 四种翻牌动作均可能短于原生截图间隔，改用持续录屏。 */
       await captureNativeTransition(device, `texas-${street}-cards`, animationInfo, regions[street], publish,
-        [], [], 0, 'videoFrames');
+        [], [], 0, 'videoFrames', undefined, undefined,
+        street === 'preflop' ? ['texas-preflop-cards-backed.png'] : []);
     } else await send(restoreTable(self, street, opponent));
     const count = { preflop: 0, flop: 3, turn: 4, river: 5 }[street];
     await gameCardNames(device, 'community_card', 'community_card_name_text', ['ah', 'kd', '7c', '2s', 'qs']
