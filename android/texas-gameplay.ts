@@ -42,8 +42,17 @@ export async function texasGameplay(device: AndroidDevice, proxy: Mitmproxy, roo
       river: { x: 492, y: 603, width: 78, height: 117 },
     };
     if (animationInfo && !opponent) {
+      /** 起手牌先建立背面牌位，再下发手牌；整批状态与手牌同帧渲染会跳过翻牌中间帧。 */
+      const publish = async () => {
+        const state = restoreTable(self, street, opponent);
+        if (street !== 'preflop') { await send(state); return; }
+        const hand = state.queue.find(item => item.event === 'hand_card');
+        if (!hand) throw new Error('起手牌回放缺少 hand_card 事件。');
+        await send({ ...state, queue: state.queue.filter(item => item !== hand) });
+        await new Promise(resolve => setTimeout(resolve, 400));
+        await send(events([hand]));
+      };
       /** 起手牌及单张转牌、河牌不足原生截图间隔，改用持续录屏。 */
-      const publish = () => send(restoreTable(self, street, opponent));
       await captureNativeTransition(device, `texas-${street}-cards`, animationInfo, regions[street], publish,
         [], [], 0, street === 'flop' ? 'motionFrames' : 'videoFrames');
     } else await send(restoreTable(self, street, opponent));
