@@ -109,7 +109,8 @@ test('all three native slot reels and reward types animate from real spin respon
       const pressConfirm = () => adb('shell', 'input', 'tap',
         String(Math.round(confirm.bounds.x + confirm.bounds.width / 2)),
         String(Math.round(confirm.bounds.y + confirm.bounds.height / 2)));
-      await captureNativeTransition(device, 'slot-no-energy-exit', testInfo, noEnergyRegion, pressConfirm);
+      await captureNativeTransition(device, 'slot-no-energy-exit', testInfo, noEnergyRegion, pressConfirm,
+        [], [], 0, 'videoFrames');
       const final = await proxy.command<{ spins: number }>('android/slot');
       expect(final.spins, '能量不足由第四次旋转请求触发').toBe(4);
       await waitAbsent(device, { res: 'slot-machine-view' });
