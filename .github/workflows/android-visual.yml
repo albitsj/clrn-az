@@ -117,6 +117,9 @@ jobs:
           TESTING_API_TOKEN: ${{ secrets.TESTING_API_TOKEN }}
         run: node scripts/configure-ci-account.mjs
       - run: npm ci
+      - name: 准备短转场录屏解码器
+        if: matrix.group == 'guest' || matrix.group == 'account' || matrix.group == 'social' || matrix.group == 'rooms' || matrix.group == 'texas' || matrix.group == 'zhajinhua'
+        run: command -v ffmpeg || { sudo apt-get update && sudo apt-get install -y ffmpeg; }
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -138,7 +141,7 @@ jobs:
           distribution: temurin
           java-version: '17'
       - name: 读取固定版本原生驱动源码
-        if: matrix.group == 'texas' || matrix.group == 'zhajinhua'
+        if: matrix.group == 'texas' || matrix.group == 'zhajinhua' || matrix.group == 'guest' || matrix.group == 'social' || matrix.group == 'rooms' || matrix.group == 'account'
         uses: actions/checkout@v4
         with:
           repository: microsoft/playwright
@@ -147,8 +150,13 @@ jobs:
           persist-credentials: false
           sparse-checkout: packages/playwright-core/src/server/android/driver
       - name: 构建牌桌动画兼容驱动
-        if: matrix.group == 'texas' || matrix.group == 'zhajinhua'
-        run: node android/build-driver.mjs
+        if: matrix.group == 'texas' || matrix.group == 'zhajinhua' || matrix.group == 'guest' || matrix.group == 'social' || matrix.group == 'rooms' || matrix.group == 'account'
+        run: |
+          for attempt in 1 2 3; do
+            if node android/build-driver.mjs; then break; fi
+            if [ "$attempt" = 3 ]; then exit 1; fi
+            sleep $((attempt * 20))
+          done
       - name: 准备固定 Android 系统镜像
         run: |
           sdk_manager="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"

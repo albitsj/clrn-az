@@ -1,0 +1,21 @@
+{
+  "applicationCommit": "02708b700e45ce82616a474f022c3a9e7ca32b03",
+  "assets": {
+    "fire/fire": ["d6aa7db28d4595a45f724cab3c341da98da31ddf992d554ad371db662366b0b6", 8],
+    "props/beer": ["33caeb2f5c03bf94ee52534898c32786bf1316af2d1e19cddd291055e4229ea4", 10],
+    "props/flower": ["87127784852b204616c8513781436483d15ec17f98b674b1f970754fe6313909", 10],
+    "props/good": ["d912289c7049916f6901f8379a5c6a24cc0d129c12f03643e91bcde9559cf482", 15],
+    "props/heart": ["8b696d9d373270827124d74eee4b817f24620e7b5c0d5b8aa45fe6dacc04eb3a", 10],
+    "props/tea": ["1d8f6fabfd516099123cfd90f4e0c7580bb642af1a4b3f156cab112431bc0d5a", 10],
+    "props/tomato": ["95c22685a04ca92c3772cec3a1cc553444734f2d6356209891fdc0c616a92fb2", 9],
+    "props/water": ["084cb09bb33950543de9708c6d811c5e81ecae9f54e1bbf4f080f27dbab006ee", 10],
+    "stickers/angry": ["5f70592615cc0c1fadcc68ecf725d813afc0c8093ef1d91d3f6bfe893f933312", 5],
+    "stickers/cry": ["37ed09d405ff90282d825127ba78525a8e99716f50b73af7052ad279451aa438", 5],
+    "stickers/drink": ["381b187c52a23fa29e0e5f771b04d52f92ea4a958e266f2ae2d945cfea07032c", 5],
+    "stickers/handclap": ["893ab58bf6ae456dcfe6819fa909dc9173fb94b51536e3a065c8fb8f98ba4e06", 5],
+    "stickers/puchi": ["dbc2f60c2038360406dca8639a3ede70f19039341ef1b47dfb5811a61b5a4377", 5],
+    "stickers/smirk": ["cc3c70c1aacb8919d76954b62aebc7ce6b11bf86407b4ee88010d66d0149ede9", 5],
+    "stickers/titter": ["29b38168424fb42f72fdd1ee5da18576b68c87fb8ce389385d767e0a493b8f99", 5],
+    "victory/circle": ["2dd3cccc513d2000beb6cdc380cff9fd7ffb407ba7f564e7b6d267a61acb9a67", 24]
+  }
+}

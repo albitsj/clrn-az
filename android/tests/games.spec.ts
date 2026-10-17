@@ -34,7 +34,12 @@ for (const [suite, game] of [['texas', 'texas-holdem'], ['zhajinhua', 'zhajinhua
       test.setTimeout(1_200_000);
       await withAndroidProxy(async proxy => {
         if (scenario.pageLabel === 'signed_in_texas_records_v2') await proxy.command('texas/records', { empty: true });
-        const device = await launchApplication({ gameDriver: true });
+        const panelAnimation = locale === 'en' && scenario.pageLabel.endsWith('_pre_game');
+        const gameAnimation = locale === 'en' && (scenario.pageLabel.endsWith('_game')
+          || ['signed_in_texas_hall', 'signed_in_texas_panels', 'signed_in_texas_panel_variants']
+            .includes(scenario.pageLabel));
+        const device = await launchApplication({ gameDriver: true,
+          enableSystemAnimations: panelAnimation || gameAnimation });
         let room: RoomSession | null = null;
         let index = 0;
         try {
@@ -70,11 +75,18 @@ for (const [suite, game] of [['texas', 'texas-holdem'], ['zhajinhua', 'zhajinhua
           };
           const { account } = await gameSession(proxy);
           expect(account).not.toBeNull();
-          if (suite === 'texas') await runTexasScenario(scenario.pageLabel,
-            { device, proxy, room: room!.roomId, self: account!.userId, capture });
-          else if (scenario.pageLabel.endsWith('_pre_game')) await gamePreGame(device, game, capture);
-          else await zhajinhuaGameplay(device, proxy, room!.roomId, account!.userId, capture);
-          expect(index).toBe(scenario.snapshotStates!.length);
+          if (suite === 'texas' && scenario.pageLabel === 'signed_in_texas_pre_game') {
+            await gamePreGame(device, game, capture, panelAnimation ? testInfo : undefined);
+          } else if (suite === 'texas') await runTexasScenario(scenario.pageLabel,
+            { device, proxy, room: room!.roomId, self: account!.userId, capture,
+              animationInfo: gameAnimation ? testInfo : undefined });
+          else if (scenario.pageLabel.endsWith('_pre_game')) await gamePreGame(device, game, capture,
+            panelAnimation ? testInfo : undefined);
+          else await zhajinhuaGameplay(device, proxy, room!.roomId, account!.userId, capture,
+            gameAnimation ? testInfo : undefined);
+          // 英文大厅的升级提示会自动消失，已由入场、倒计时和退场帧覆盖。
+          const timedLevelUp = gameAnimation && scenario.pageLabel === 'signed_in_texas_hall';
+          expect(index).toBe(scenario.snapshotStates!.length - Number(timedLevelUp));
         } catch (error) {
           await captureFailure(device, testInfo);
           throw error;

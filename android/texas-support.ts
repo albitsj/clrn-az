@@ -1,4 +1,4 @@
-import { expect } from '@playwright/test';
+import { expect, type TestInfo } from '@playwright/test';
 import type { AndroidDevice } from 'playwright';
 import type { Mitmproxy } from '../e2e/helpers/mitmproxy-client';
 import { events, restoreTable, type Street, type TableOptions } from '../visual/cases/texas-holdem/replayData';
@@ -10,6 +10,7 @@ import { gameMenu } from './game-pregame';
 
 export type TexasContext = {
   device: AndroidDevice; proxy: Mitmproxy; room: string; self: string;
+  animationInfo?: TestInfo;
   capture(state: string, masks?: ScreenshotMask[], triggerToast?: () => Promise<string | void>): Promise<void>;
 };
 

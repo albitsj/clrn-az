@@ -52,6 +52,7 @@ export async function gameMarker(device: AndroidDevice, resource: string): Promi
 export async function gameNodes(device: AndroidDevice): Promise<NativeNode[]> {
   const internal = device as unknown as { _connection: { toImpl(device: AndroidDevice): {
     _send(method: string): Promise<NativeNode> } } };
+  let connectionRetries = 0;
   for (let attempt = 0; ; attempt++) {
     const timeout = new AbortController();
     try {
@@ -63,7 +64,20 @@ export async function gameNodes(device: AndroidDevice): Promise<NativeNode[]> {
         }),
       ]);
       if (!root?.bounds || !Array.isArray(root.children)) throw new Error('原生驱动没有返回完整控件树。');
-      return flattenNodes(root);
+      const nodes = flattenNodes(root);
+      // Staging 的原生网络超时对话框会盖住整棵牌桌控件树；只对该明确文案执行真实重试。
+      const timeoutAlert = nodes.some(node => node.res?.endsWith(':id/alert_title')
+        && node.text === 'Connection Timeout');
+      const retry = nodes.find(node => node.res === 'android:id/button1' && node.text === 'RETRY');
+      if (timeoutAlert && retry) {
+        if (++connectionRetries > 3) throw new Error('Staging 连接超时，对话框重试三次后仍未恢复。');
+        console.log(`ANDROID > Staging 连接超时，点击原生 RETRY（${connectionRetries}/3）`);
+        const { x, y, width, height } = retry.bounds;
+        adb('shell', 'input', 'tap', String(Math.round(x + width / 2)), String(Math.round(y + height / 2)));
+        await setTimeout(1_000);
+        continue;
+      }
+      return nodes;
     } catch (error) {
       // 转场会在驱动遍历过程中移除子节点；重读整棵树，不返回残缺或伪造的空结果。
       if (attempt >= 4 || !/NullPointerException|StaleObjectException/.test(String(error))) throw error;

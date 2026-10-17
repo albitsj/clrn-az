@@ -24,9 +24,9 @@ export function adb(...argumentsList: string[]): string {
 
 /**
  * 安装已校验的 Release 并固定系统显示条件，正常冷启动应用。
- * @param options - 牌桌使用修复持续动画查询的固定版本原生驱动。
+ * @param options - 牌桌驱动与原生系统转场选项。
  */
-export async function launchApplication(options: { gameDriver?: boolean } = {}): Promise<AndroidDevice> {
+export async function launchApplication(options: { gameDriver?: boolean; enableSystemAnimations?: boolean } = {}): Promise<AndroidDevice> {
   await readVerifiedBuild(artifacts);
   if (adb('shell', 'getprop', 'ro.kernel.qemu').trim() !== '1') throw new Error('只允许在专用模拟器执行。');
   if (adb('shell', 'getprop', 'ro.build.version.sdk').trim() !== '35') throw new Error('截图基准要求 Android API 35。');
@@ -43,7 +43,8 @@ export async function launchApplication(options: { gameDriver?: boolean } = {}):
   adb('shell', 'settings', 'put', 'system', 'accelerometer_rotation', '0');
   adb('shell', 'settings', 'put', 'system', 'user_rotation', '0');
   for (const setting of ['window_animation_scale', 'transition_animation_scale', 'animator_duration_scale']) {
-    adb('shell', 'settings', 'put', 'global', setting, '0');
+    // 原生 Dialog 动画短于截图调用；专用关键帧用例用系统的慢动作倍率展开真实帧。
+    adb('shell', 'settings', 'put', 'global', setting, options.enableSystemAnimations ? '5' : '0');
   }
   adb('shell', 'input', 'keyevent', 'KEYCODE_WAKEUP');
   adb('shell', 'wm', 'dismiss-keyguard');
@@ -60,7 +61,7 @@ export async function launchApplication(options: { gameDriver?: boolean } = {}):
   if (options.gameDriver) {
     const driver = path.resolve('.ttyctl/android-driver');
     const source = JSON.parse(readFileSync(path.join(driver, 'source.json'), 'utf8'));
-    if (source.revision !== '39e3553a4f283a41134d75d7e404484bd9e6865a' || source.patch !== 3) throw new Error('牌桌驱动构建身份无效。');
+    if (source.revision !== '39e3553a4f283a41134d75d7e404484bd9e6865a' || source.patch !== 6) throw new Error('原生动画驱动构建身份无效。');
     for (const pkg of ['com.microsoft.playwright.androiddriver.test', 'com.microsoft.playwright.androiddriver']) {
       if (adb('shell', 'pm', 'list', 'packages', pkg).includes(`package:${pkg}`)) adb('uninstall', pkg);
     }
@@ -110,9 +111,11 @@ export async function waitForHall(device: AndroidDevice): Promise<void> {
  * @param masks - 明确排除的动态区域，报告保留原图和区域原因。
  * @param transientState - 短时提示的可见性断言；普通页面仍须稳定两秒。
  * @param takeScreenshot - 短时提示使用同一设备上的快速原生截图接口。
+ * @param alternateSnapshots - 经审查的同一页面原生布局备选图。
  */
 export async function compareScreenshot(device: AndroidDevice, name: string, testInfo: TestInfo, masks: ScreenshotMask[] = [],
-  transientState?: () => Promise<void>, takeScreenshot: () => Promise<Buffer> = () => device.screenshot()): Promise<void> {
+  transientState?: () => Promise<void>, takeScreenshot: () => Promise<Buffer> = () => device.screenshot(),
+  alternateSnapshots: string[] = []): Promise<void> {
   if (masks.length) await testInfo.attach(`${name}-masks`, { body: JSON.stringify(masks), contentType: 'application/json' });
   await transientState?.();
   const initial = await takeScreenshot();
@@ -150,5 +153,10 @@ export async function compareScreenshot(device: AndroidDevice, name: string, tes
     await testInfo.attach(`${name}-original`, { body: original!, contentType: 'image/png' });
   }
   await testInfo.attach(name, { body: stable!, contentType: 'image/png' });
+  const matchingAlternate = alternateSnapshots.find(file => samePixels(stable!, readFileSync(testInfo.snapshotPath(file))));
+  if (matchingAlternate) {
+    await testInfo.attach(`${name}-matched-layout`, { body: matchingAlternate, contentType: 'text/plain' });
+    return;
+  }
   expect.soft(stable!).toMatchSnapshot(`${name}.png`);
 }
