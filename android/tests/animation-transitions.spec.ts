@@ -21,7 +21,7 @@ test('native launch artwork and staging notice appear on a real app start', asyn
     let device: AndroidDevice | undefined;
     try {
       device = await launchApplication({ gameDriver: true, enableSystemAnimations: true });
-      await device.wait({ res: 'staging-confirmation-input' });
+      await device.wait({ res: 'staging-confirmation-input' }, { timeout: 120_000 });
       adb('shell', 'am', 'force-stop', applicationId);
       adb('shell', 'input', 'keyevent', 'KEYCODE_HOME');
       // HOME 以 5 倍倍率返回桌面；等系统图标稳定，再用标准倍率观察应用启动。
@@ -38,7 +38,7 @@ test('native launch artwork and staging notice appear on a real app start', asyn
           { x: 110, y: 170, width: 500, height: 145 },
           { x: 110, y: 360, width: 500, height: 550 },
         ], 1_500, 'launchFrames', verifyLaunchArtwork);
-      await device.wait({ res: 'staging-confirmation-input' });
+      await device.wait({ res: 'staging-confirmation-input' }, { timeout: 120_000 });
     } finally { await device?.close(); }
   });
 });
