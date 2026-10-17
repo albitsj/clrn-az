@@ -78,7 +78,7 @@ export async function captureNativeTransition(device: AndroidDevice, name: strin
   const timeout = new AbortController();
   let frames: NativeFrame[];
   if (samplingMethod === 'videoFrames') {
-    if (masks.length || requiredRegions.length) throw new Error('录屏转场需单独定义不含遮罩的绘制范围。');
+    if (requiredRegions.length) throw new Error('录屏转场需单独定义不含子区域的绘制范围。');
     frames = (await recordNativeVideoFrames(name, region, trigger, testInfo))
       .map((png, index) => ({ capturedAt: index * 33, png: png.toString('base64') }));
   } else {
@@ -95,7 +95,9 @@ export async function captureNativeTransition(device: AndroidDevice, name: strin
   expect(frames.length, '原生驱动至少采集三帧').toBeGreaterThanOrEqual(3);
   const originals = frames.map(frame => Buffer.from(frame.png, 'base64'));
   if (inspectFrames) await inspectFrames(originals, testInfo);
-  const timeline = samplingMethod === 'videoFrames' ? originals : originals.map(crop);
+  const timeline = samplingMethod === 'videoFrames'
+    ? originals.map(frame => maskScreenshot(frame, masks.map(mask => ({ ...mask,
+      x: mask.x - region.x, y: mask.y - region.y })))) : originals.map(crop);
   if (settleMs) await setTimeout(settleMs);
   if (afterReady) await afterReady();
   const after = crop(await gameScreenshot(device));

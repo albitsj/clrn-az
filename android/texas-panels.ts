@@ -9,7 +9,7 @@ import { focusedCaretMask } from './screenshot';
 import { translateCaret } from './caret-mask';
 import { gameTapText, restoreTexas, texasEvents, type TexasContext } from './texas-support';
 import { animateGamePanel } from './game-panel-animation';
-import { captureNativeTransition, captureTransientTransition } from './animation-transition';
+import { captureNativeTransition, captureTransientTransition, framePaletteDistance } from './animation-transition';
 import { captureMovingKeyframes } from './loop-keyframes';
 
 /**
@@ -73,8 +73,10 @@ export async function texasPanels(context: TexasContext): Promise<void> {
   await gameReady(device, 'barrage_text', 'Player1: Good hand!');
   if (animationInfo) {
     const barrage = await gameReady(device, 'barrage_text', 'Player1: Good hand!');
+    const x = Math.max(0, barrage.bounds.x - 8);
     await captureMovingKeyframes(device, 'texas-barrage', animationInfo,
-      [{ x: 0, y: barrage.bounds.y - 8, width: 720, height: barrage.bounds.height + 16 }]);
+      [{ x, y: barrage.bounds.y - 8, width: Math.min(720 - x, barrage.bounds.width + 16),
+        height: barrage.bounds.height + 16 }], 18, framePaletteDistance);
   }
   await gameTap(device, 'texas-holdem-chat-button');
   await gameTap(device, '-in-game-chat-message-tab');

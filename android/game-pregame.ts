@@ -180,7 +180,7 @@ export async function gamePreGame(device: AndroidDevice, game: 'texas-holdem' | 
   const closeChat = () => adb('shell', 'input', 'tap', String(Math.round(chat.x + 8)),
     String(Math.round(chat.y + 80)));
   if (animationInfo) await captureNativeTransition(device, `${game}-chat-exit`, animationInfo,
-    { x: 110, y: 760, width: 140, height: 500 }, closeChat);
+    { x: 110, y: 760, width: 140, height: 500 }, closeChat, [], [], 0, 'videoFrames');
   else closeChat();
   await gameGone(device, 'in-game-chat-container');
   await animateGamePanel(device, game, 'buy-in-applications', 'buy-in-application-button',
