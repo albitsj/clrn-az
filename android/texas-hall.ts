@@ -26,7 +26,7 @@ export async function texasHall(context: TexasContext): Promise<void> {
   await capture('hall_menu');
   await closeGameMask(device, 'drawer-menu-item-exit');
   await animateGamePanel(device, 'texas-holdem', 'auto-rebuy', 'auto-rebuy-button',
-    { x: 320, y: 430, width: 340, height: 400 }, animationInfo);
+    { x: 320, y: 430, width: 340, height: 400 }, animationInfo, 'enter', 'videoFrames');
   await gameReady(device, 'auto-rebuy-popup');
   await capture('auto_rebuy');
   if (animationInfo) {
