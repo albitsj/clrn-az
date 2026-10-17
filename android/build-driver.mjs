@@ -136,6 +136,12 @@ if (!['setWaitForIdleTimeout(100)', 'if (child != null)', 'case "marker":', 'cas
 writeFileSync(java, patched);
 const gradle = path.join(directory, 'build.gradle');
 writeFileSync(gradle, readFileSync(gradle, 'utf8').replaceAll('jcenter()', 'mavenCentral()'));
+// GitHub runner 首次下载 Gradle 发行包时，官方 Wrapper 默认 10 秒读超时过短。
+const wrapperProperties = path.join(directory, 'gradle/wrapper/gradle-wrapper.properties');
+const properties = readFileSync(wrapperProperties, 'utf8');
+writeFileSync(wrapperProperties, /^networkTimeout=/m.test(properties)
+  ? properties.replace(/^networkTimeout=.*$/m, 'networkTimeout=120000')
+  : `${properties.trimEnd()}\nnetworkTimeout=120000\n`);
 execFileSync(path.join(directory, 'gradlew'), ['--no-daemon', ':app:assembleDebug', ':app:assembleAndroidTest'],
   { cwd: directory, stdio: 'inherit', timeout: 600_000 });
 const output = path.resolve('.ttyctl/android-driver');
