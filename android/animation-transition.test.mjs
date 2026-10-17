@@ -49,3 +49,7 @@ test('整块画面闪烁不能冒充菜单淡入，即使真实起点和终点�
   }
   await assert.rejects(compare([start, PNG.sync.write(flash), end]), /动画中途帧的实际画面须接近已审查轨迹/);
 });
+
+test('起点直接跳到终点不能冒充菜单淡入', async () => {
+  await assert.rejects(compare([start, start, end]), /必须采到起点和终点之间的真实动画帧/);
+});
