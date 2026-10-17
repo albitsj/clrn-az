@@ -176,7 +176,7 @@ export async function gamePreGame(device: AndroidDevice, game: 'texas-holdem' | 
   else closeRecord();
   await gameGone(device, 'review-board-description-text');
   await animateGamePanel(device, game, 'chat', `${game}-chat-button`,
-    { x: 110, y: 860, width: 140, height: 310 }, animationInfo);
+    { x: 110, y: 860, width: 140, height: 310 }, animationInfo, 'enter', 'videoFrames');
   await gameReady(device, 'in-game-chat-container');
   await capture('chat');
   const chat = (await gameReady(device, 'in-game-chat-mask')).bounds;
