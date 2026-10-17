@@ -149,7 +149,7 @@ export async function texasGameplay(device: AndroidDevice, proxy: Mitmproxy, roo
       await captureNativeTransition(device, `texas-player-action-${action}`, animationInfo,
         { x: 80, y: 465, width: 115, height: 130 },
         () => send(events([{ event: action, player_id: actionPlayer, amount: 40, stack: 920 }])),
-        [{ ...timer.bounds, reason: '玩家动作期间独立运行的操作倒计时' }]);
+        [{ ...timer.bounds, reason: '玩家动作期间独立运行的操作倒计时' }], [], 0, 'videoFrames');
       await expect.poll(playerAction, { timeout: 30_000 }).toBe(true);
     }
     await restore('river', true);
@@ -224,7 +224,7 @@ export async function texasGameplay(device: AndroidDevice, proxy: Mitmproxy, roo
     const name = player === self ? 'own-profile' : `opponent-profile-${++opponentProfileCount}`;
     await animateGamePanel(device, 'texas-holdem', name,
       node!.res!, { x: 180, y: 90, width: 520, height: 500 }, animationInfo,
-      'enter', 'motionFrames', player === self ? ownProfileMasks : profileNetworkMask,
+      'enter', 'videoFrames', player === self ? ownProfileMasks : profileNetworkMask,
       async () => { await gameReady(device, 'PlayerStatisticComponent_Item_Value_0'); });
     await gameReady(device, 'player-profile-popup-close');
     await gameReady(device, 'PlayerStatisticComponent_Item_Value_0');
