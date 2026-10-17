@@ -153,10 +153,15 @@ export async function gamePreGame(device: AndroidDevice, game: 'texas-holdem' | 
         { timeout: 45_000 }).toBeGreaterThan(0);
     }
     await capture(state);
+    const exitReady = game === 'zhajinhua' && state === 'buy_in' && animationInfo ? async () => {
+      // 房间重连提示会独立于买入面板入退场；终点等其消失后再与牌桌基准比较。
+      await expect.poll(async () => (await gameNodes(device)).some(node => /Connecting\.\.\./.test(node.text || '')),
+        { timeout: 45_000 }).toBe(false);
+    } : undefined;
     await animateGamePanel(device, game, state, close,
       { x: 110, y: 360, width: 480, height: 500 }, animationInfo, 'exit',
       (game === 'texas-holdem' && state === 'settings')
-        || (game === 'zhajinhua' && state === 'theme') ? 'videoFrames' : 'motionFrames');
+        || (game === 'zhajinhua' && state === 'theme') ? 'videoFrames' : 'motionFrames', [], exitReady);
     await gameGone(device, ready);
   }
   await animateGamePanel(device, game, 'leaderboard',
