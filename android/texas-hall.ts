@@ -58,7 +58,7 @@ export async function texasHall(context: TexasContext): Promise<void> {
   await dismissKeyboard(device);
   await capture('pair_play_report');
   await animateGamePanel(device, 'texas-holdem', 'pair-play-report', 'report-pair-play-close-button',
-    { x: 200, y: 260, width: 440, height: 700 }, animationInfo, 'exit');
+    { x: 200, y: 260, width: 440, height: 700 }, animationInfo, 'exit', 'videoFrames');
   await gameGone(device, 'report-pair-play-reason-input');
   await animateGamePanel(device, 'texas-holdem', 'personal-leaderboard', 'texas-holdem-leaderboard-button',
     { x: 200, y: 200, width: 400, height: 900 }, animationInfo, 'enter', 'motionFrames', [],

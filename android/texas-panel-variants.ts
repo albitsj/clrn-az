@@ -16,7 +16,7 @@ export async function texasPanelVariants(context: TexasContext): Promise<void> {
   const alertRegion = { x: 80, y: 525, width: 560, height: 265 };
   const alertMasks = [
     { x: 270, y: 720, width: 180, height: 28, reason: '错误弹窗下方的牌局倒计时独立跳秒' },
-    { x: 80, y: 690, width: 55, height: 85, reason: '弹窗左侧的玩家倒计时独立跳秒' },
+    { x: 80, y: 690, width: 55, height: 100, reason: '弹窗左侧的玩家倒计时独立跳秒' },
   ];
   const tableBackMasks = [
     { x: 260, y: 225, width: 50, height: 55, reason: '弹窗背后的对手背牌会随牌桌回放异步显隐' },
