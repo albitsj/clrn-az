@@ -52,9 +52,9 @@ export async function texasGameplay(device: AndroidDevice, proxy: Mitmproxy, roo
         await new Promise(resolve => setTimeout(resolve, 400));
         await send(events([hand]));
       };
-      /** 起手牌及单张转牌、河牌不足原生截图间隔，改用持续录屏。 */
+      /** 四种翻牌动作均可能短于原生截图间隔，改用持续录屏。 */
       await captureNativeTransition(device, `texas-${street}-cards`, animationInfo, regions[street], publish,
-        [], [], 0, street === 'flop' ? 'motionFrames' : 'videoFrames');
+        [], [], 0, 'videoFrames');
     } else await send(restoreTable(self, street, opponent));
     const count = { preflop: 0, flop: 3, turn: 4, river: 5 }[street];
     await gameCardNames(device, 'community_card', 'community_card_name_text', ['ah', 'kd', '7c', '2s', 'qs']

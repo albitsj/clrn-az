@@ -162,7 +162,8 @@ export async function gamePreGame(device: AndroidDevice, game: 'texas-holdem' | 
   await closeAnimatedGameMask(device, game, 'leaderboard', 'public-leader-board-container',
     { x: 110, y: 400, width: 470, height: 450 }, animationInfo);
   await animateGamePanel(device, game, 'game-record', 'game-record-button',
-    { x: 150, y: 400, width: 440, height: 450 }, animationInfo);
+    { x: 150, y: 400, width: 440, height: 450 }, animationInfo, 'enter', 'motionFrames', [],
+    async () => { await gameReady(device, 'review-board-description-text'); });
   await gameReady(device, 'review-board-description-text');
   await capture('game_record');
   // 战绩从右侧展开；说明文字只占面板中间，不能用其边界判断遮罩位置。
