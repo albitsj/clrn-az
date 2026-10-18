@@ -12,7 +12,13 @@ Web 另外有 5 个下载帮助场景。当前 Staging APK 的发布渠道为 `d
 
 启动页另由 `launch-pages.spec.ts` 在游客组三种语言任务采集。先通过应用设置选择语言，再冷启动，保存测试环境提示出现后的完整 `720×1280` 屏幕，命名为 `<locale>-launch-staging-notice.png`。整屏连续稳定两秒后比较，不裁切、不加页面遮罩。截图中心将它与启动动画放在同一“应用启动”场景的“页面”分类。可用 `group=guest`、`locale=all`、`filter=launch_staging_notice` 定向生成和比较。
 
-原有 `native-launch-artwork-visible.png` 是启动瞬间的局部插画验证图，不能作为完整启动页；纯品牌插画随原生启动动画短暂出现，测试环境提示随后覆盖页面。完整静态截图保留真实提示，不通过修改应用或隐藏弹窗制造品牌页面。
+品牌启动页由 `launch-branding.spec.ts` 通过真实确认按钮进入：代理暂缓 `/node/v1/status`，在应用自然等待初始化的阶段保存 `<locale>-launch-branding.png`。不改应用状态、系统时钟或超时；整屏须稳定两秒且前后没有测试提示或错误弹窗，释放真实请求后还必须正常进入大厅。两种启动状态可用 `filter=launch_(staging_notice|branding)` 一起比较。
+
+启动截图沿用正式基准的英文系统环境，应用语言由真实设置切换。提示文案随应用语言变化；当前 APK 的品牌文案读取系统语言，因此这组三语品牌图均显示 `GoPlay360 / Play with friends`。这记录实际行为，不通过修改内部语言存储制造中文品牌。原有 `native-launch-artwork-visible.png` 继续作为启动瞬间的局部插画检查，不当作完整启动页。
+
+三语测试环境提示基准来自 [reference 39153754436](https://github.com/albitsj/clrn-az/actions/runs/39153754436)，使用 [APK 7319](https://github.com/kevinanew/clrn/releases/tag/android-staging-7319-fcf7a0a22576)。只接收这轮成功用例的完整 PNG，保留全部原动画基准。
+
+三语完整品牌页基准来自 [reference 39154218107](https://github.com/albitsj/clrn-az/actions/runs/39154218107)，使用同一 APK，三个用例全部通过。每张均为原生完整屏幕，英文系统下三张品牌图的 SHA-256 相同，已核对品牌、标语、角色和水面完整可见。
 
 战绩直接复用 Web 的完整状态清单：旧版 32 个、新版 30 个状态，三种语言，共 186 张截图。覆盖加载、空列表、列表底部、分数选择汇总、侧滑删除、详情输赢展开、结算、回放入口、分页和故障恢复。与基础场景及冒烟图合计 400 张正式基准。德州完整 95 个状态、拼三张完整 26 个状态已接入同一份 Web 清单，涵盖操作控件、边池、旁观、聊天举报、带入审核、牌谱、主题、语音面板、大厅和故障恢复；三语合计 763 张截图，由 253 个测试用例执行。全部基准均来自固定 x86_64 CI 环境并经过审查；回归结果以对应提交的 compare 运行及 PR 检查为准。
 
