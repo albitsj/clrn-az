@@ -1,0 +1,57 @@
+import { expect, test } from '@playwright/test';
+import type { AndroidDevice } from 'playwright';
+import { PNG } from 'pngjs';
+import { adb, applicationId, artifacts, compareScreenshot, launchApplication, waitForHall } from '../device';
+import { captureFailure } from '../diagnostics';
+import { selectLanguage } from '../navigation';
+import { dismissKeyboard } from '../keyboard';
+import { gameNodes, gameReady, gameScreenshot } from '../game-controls';
+import { withAndroidProxy } from '../proxy';
+
+const locale = process.env.ANDROID_LOCALE || 'en';
+
+test(`${locale} launch_branding full screen while initialization waits`, async ({}, testInfo) => {
+  test.skip(!['all', 'guest'].includes(process.env.ANDROID_GROUP || 'all'), '启动页面在游客任务按三种语言采集');
+  test.setTimeout(300_000);
+  await withAndroidProxy(async proxy => {
+    let device: AndroidDevice | undefined;
+    try {
+      device = await launchApplication({ gameDriver: true });
+      await waitForHall(device);
+      await selectLanguage(device, locale);
+      await proxy.command('android/launch-network', { hold: true });
+      adb('shell', 'am', 'force-stop', applicationId);
+      adb('shell', 'am', 'start', '-n', `${applicationId}/com.laiwan_react_native.MainActivity`);
+      await device.wait({ res: 'staging-confirmation-input' }, { timeout: 120_000 });
+      await device.fill({ res: 'staging-confirmation-input' }, 'CONFIRM');
+      await dismissKeyboard(device);
+      const { bounds } = await gameReady(device, 'confirm-button');
+      const network = await proxy.command<{ requested: number }>('android/launch-network');
+      expect(network.requested, '必须真正拦截启动健康检查').toBeGreaterThan(0);
+      adb('shell', 'input', 'tap', String(Math.round(bounds.x + bounds.width / 2)),
+        String(Math.round(bounds.y + bounds.height / 2)));
+      await gameReady(device, 'launch-screen-container');
+      /** 验证当前仍是品牌启动页，再保存无裁切、无遮罩的完整真实屏幕。 */
+      const fullScreen = async () => {
+        const nodes = await gameNodes(device!);
+        expect(nodes.some(node => node.res === 'launch-screen-container')).toBe(true);
+        expect(nodes.some(node => ['staging-confirmation-input', 'settings-tab', 'android:id/alertTitle']
+          .includes(node.res || ''))).toBe(false);
+        const bytes = await gameScreenshot(device!);
+        const picture = PNG.sync.read(bytes);
+        expect({ width: picture.width, height: picture.height }).toEqual({ width: 720, height: 1280 });
+        return bytes;
+      };
+      await compareScreenshot(device, `${locale}-launch-branding`, testInfo, [], undefined, fullScreen);
+      await proxy.command('android/launch-network', { hold: false });
+      await device.wait({ res: 'settings-tab' }, { timeout: 120_000 });
+    } catch (error) {
+      if (device) await captureFailure(device, testInfo);
+      throw error;
+    } finally {
+      await proxy.command('android/launch-network', { hold: false });
+      await testInfo.attach('build-info', { path: `${artifacts}/build-info.json`, contentType: 'application/json' });
+      await device?.close();
+    }
+  });
+});
