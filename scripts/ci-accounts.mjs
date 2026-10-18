@@ -42,7 +42,8 @@ export function androidAccountMatrix(runId, selectedGroup = 'all', selectedLocal
     'texas/en': [
       ['pregame-first', 'signed_in_texas_pre_game_first$'],
       ['pregame-second', 'signed_in_texas_(?:pre_game_second|optional_pre_game)$'],
-      ['game', 'signed_in_texas_game$'],
+      ['game-table', 'signed_in_texas_game_table$'],
+      ['game-effects', 'signed_in_texas_game_effects$'],
       ['panels', 'signed_in_texas_(?:panels|panel_variants)$'],
       ['other', 'signed_in_texas_(?:hall|records_v2|controls|table_states|hall_variants)$'],
     ],
@@ -53,7 +54,7 @@ export function androidAccountMatrix(runId, selectedGroup = 'all', selectedLocal
     ],
   };
   const shardOffsets = {
-    'texas/zh-Hans': 24, 'texas/zh-Hant': 25, 'texas/en': 26, 'zhajinhua/en': 30,
+    'texas/zh-Hans': 24, 'texas/zh-Hant': 25, 'texas/en': 26, 'zhajinhua/en': 31,
   };
   if (selectedGroup !== 'all' && !groups.includes(selectedGroup)) throw new Error('未知安卓业务组。');
   if (selectedLocale !== 'all' && !locales.includes(selectedLocale)) throw new Error('未知安卓语言。');

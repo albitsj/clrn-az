@@ -30,12 +30,15 @@ for (const [suite, game] of [['texas', 'texas-holdem'], ['zhajinhua', 'zhajinhua
   const scenarios = enabled ? buildScenarios({ VISUAL_LOCALES: locale, VISUAL_SCOPE: 'full', VISUAL_SUITE: suite })
     .filter(scenario => scenario.viewport.label === 'mobile') : [];
   for (const scenario of scenarios) {
-    const parts = locale === 'en' && (scenario.pageLabel === 'signed_in_zhajinhua_pre_game'
-      || scenario.pageLabel === 'signed_in_texas_pre_game')
-      ? ['first', 'second'] as const : ['all'] as const;
+    const parts = locale !== 'en' ? ['all'] as const
+      : scenario.pageLabel === 'signed_in_texas_game' ? ['table', 'effects'] as const
+        : ['signed_in_zhajinhua_pre_game', 'signed_in_texas_pre_game'].includes(scenario.pageLabel)
+          ? ['first', 'second'] as const : ['all'] as const;
     for (const part of parts) {
       const states = part === 'first' ? scenario.snapshotStates!.slice(0, 7)
-        : part === 'second' ? scenario.snapshotStates!.slice(7) : scenario.snapshotStates!;
+        : part === 'second' ? scenario.snapshotStates!.slice(7)
+          : part === 'table' ? scenario.snapshotStates!.slice(0, 10)
+            : part === 'effects' ? scenario.snapshotStates!.slice(10) : scenario.snapshotStates!;
       const label = part === 'all' ? scenario.pageLabel : `${scenario.pageLabel}_${part}`;
       test(`${locale} / ${suite} / ${label}`, async ({ ownedRoom }, testInfo) => {
         test.setTimeout(1_200_000);
@@ -83,12 +86,14 @@ for (const [suite, game] of [['texas', 'texas-holdem'], ['zhajinhua', 'zhajinhua
             const { account } = await gameSession(proxy);
             expect(account).not.toBeNull();
             if (suite === 'texas' && scenario.pageLabel === 'signed_in_texas_pre_game') {
-            await gamePreGame(device, game, capture, panelAnimation ? testInfo : undefined, part);
+            await gamePreGame(device, game, capture, panelAnimation ? testInfo : undefined,
+              part === 'first' || part === 'second' ? part : 'all');
             } else if (suite === 'texas') await runTexasScenario(scenario.pageLabel,
               { device, proxy, room: room!.roomId, self: account!.userId, capture,
-                animationInfo: gameAnimation ? testInfo : undefined });
+              animationInfo: gameAnimation ? testInfo : undefined },
+            part === 'table' || part === 'effects' ? part : 'all');
             else if (scenario.pageLabel.endsWith('_pre_game')) await gamePreGame(device, game, capture,
-              panelAnimation ? testInfo : undefined, part);
+            panelAnimation ? testInfo : undefined, part === 'first' || part === 'second' ? part : 'all');
             else await zhajinhuaGameplay(device, proxy, room!.roomId, account!.userId, capture,
               gameAnimation ? testInfo : undefined);
             // 英文大厅的升级提示会自动消失，已由入场、倒计时和退场帧覆盖。
