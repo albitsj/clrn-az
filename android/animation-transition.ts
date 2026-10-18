@@ -272,8 +272,8 @@ export async function captureNativeTransition(device: AndroidDevice, name: strin
     const reference = readFileSync(testInfo.snapshotPath(`${name}-middle.png`));
     // 原生截图可能落在已审查中途相位的两侧，但靠近起止帧的无关闪屏不能冒充转场。
     // 非录屏路径要求基准变化幅度；录屏路径在空间匹配时逐个检查已审查相位。
-    const minimumStartChange = frameColorDistance(before, reference) / 2;
-    const minimumEndChange = frameColorDistance(after, reference) / 2;
+    const minimumStartChange = Math.min(frameColorDistance(before, reference) / 2, total * 0.3);
+    const minimumEndChange = Math.min(frameColorDistance(after, reference) / 2, total * 0.3);
     const anchors = [reference, ...videoPhaseAnchors.map(file => readFileSync(testInfo.snapshotPath(file)))];
     if (samplingMethod === 'videoFrames') assertReviewedVideoMiddle(before, after, candidates, anchors);
     else {

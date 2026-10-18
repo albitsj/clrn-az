@@ -106,7 +106,8 @@ export async function gamePreGame(device: AndroidDevice, game: 'texas-holdem' | 
   await capture('card_rank');
   if ((await gameNodes(device)).some(node => node.res === 'card-rank-popup-close')) {
     await animateGamePanel(device, game, 'card-rank', 'card-rank-popup-close',
-      { x: 110, y: 400, width: 440, height: 600 }, animationInfo, 'exit', 'videoFrames');
+      { x: 110, y: 400, width: 440, height: 600 }, animationInfo, 'exit', 'videoFrames', [], undefined,
+      game === 'texas-holdem' ? ['texas-holdem-card-rank-exit-late-phase.png'] : []);
   }
   else await closeAnimatedGameMask(device, game, 'card-rank', 'card-rank-list',
     { x: 110, y: 400, width: 440, height: 600 }, animationInfo);

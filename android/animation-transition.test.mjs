@@ -18,15 +18,16 @@ const { width, height } = PNG.sync.read(start);
 /**
  * 用真实已审查截图模拟原生驱动，保留完整的采样与基准比较流程。
  * @param frames - 原生驱动返回的时间线。
+ * @param scene - 使用已审查的具体转场画面。
  */
-async function compare(frames) {
+async function compare(frames, scene = { name, start, end, width, height }) {
   let screens = 0;
   const device = { _connection: { /** 返回本例的模拟原生驱动。 */ toImpl: () => ({
     /** 按驱动命令返回屏幕或连续帧。
      * @param method - 原生驱动命令。
      */
     _send: async method => method === 'screen'
-      ? (screens++ === 0 ? start : end).toString('base64')
+      ? (screens++ === 0 ? scene.start : scene.end).toString('base64')
       : frames.map((png, index) => ({ capturedAt: index * 100, png: png.toString('base64') })),
   }) } };
   const info = { /** 测试无需保留附件。 */ attach: async () => {}, config: { updateSnapshots: 'none' },
@@ -34,7 +35,8 @@ async function compare(frames) {
      * @param file - 基准文件名。
      */
     snapshotPath: file => `${snapshots}${file}` };
-  await captureNativeTransition(device, name, info, { x: 0, y: 0, width, height }, () => {});
+  await captureNativeTransition(device, scene.name, info,
+    { x: 0, y: 0, width: scene.width, height: scene.height }, () => {});
 }
 
 test('真实俱乐部菜单中途关键帧通过转场视觉回归', async () => {
@@ -53,6 +55,16 @@ test('整块画面闪烁不能冒充菜单淡入，即使真实起点和终点�
 
 test('起点直接跳到终点不能冒充菜单淡入', async () => {
   await assert.rejects(compare([start, start, end]), /必须采到起点和终点之间的真实动画帧/);
+});
+
+test('真实后期弹窗相位仍能通过非录屏视觉回归', async () => {
+  const sceneName = 'texas-holdem-buy-in-applications-enter';
+  const sceneStart = readFileSync(`${snapshots}${sceneName}-start.png`);
+  const sceneEnd = readFileSync(`${snapshots}${sceneName}-end.png`);
+  const late = readFileSync(`${snapshots}${sceneName}-late-phase.png`);
+  const size = PNG.sync.read(sceneStart);
+  await compare([sceneStart, late, sceneEnd], { name: sceneName,
+    start: sceneStart, end: sceneEnd, width: size.width, height: size.height });
 });
 
 const videoName = 'slot-popup-exit';
