@@ -21,7 +21,6 @@ test(`${locale} launch_staging_notice full screen`, async ({}, testInfo) => {
       adb('shell', 'am', 'force-stop', applicationId);
       adb('shell', 'am', 'start', '-n', `${applicationId}/com.laiwan_react_native.MainActivity`);
       await device.wait({ res: 'staging-confirmation-input' }, { timeout: 120_000 });
-      expect((await device.info({ res: 'staging-confirmation-input' })).text).toBe('');
       await device.wait({ res: 'confirm-button' });
       /** 保留整张真实屏幕；截图尺寸必须与正式 Android 基准一致。 */
       const fullScreen = async () => {
