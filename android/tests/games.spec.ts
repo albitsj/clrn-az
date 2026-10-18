@@ -33,10 +33,13 @@ for (const [suite, game] of [['texas', 'texas-holdem'], ['zhajinhua', 'zhajinhua
     const parts = locale !== 'en' ? ['all'] as const
       : ['signed_in_texas_game', 'signed_in_zhajinhua_game'].includes(scenario.pageLabel)
         ? ['table', 'effects'] as const
-        : ['signed_in_zhajinhua_pre_game', 'signed_in_texas_pre_game'].includes(scenario.pageLabel)
-          ? ['first', 'second'] as const : ['all'] as const;
+        : scenario.pageLabel === 'signed_in_texas_pre_game' ? ['first', 'middle', 'second'] as const
+          : scenario.pageLabel === 'signed_in_zhajinhua_pre_game' ? ['first', 'second'] as const
+            : ['all'] as const;
     for (const part of parts) {
-      const states = part === 'first' ? scenario.snapshotStates!.slice(0, 7)
+      const states = part === 'first' ? scenario.snapshotStates!.slice(0,
+        scenario.pageLabel === 'signed_in_texas_pre_game' ? 3 : 7)
+        : part === 'middle' ? scenario.snapshotStates!.slice(3, 7)
         : part === 'second' ? scenario.snapshotStates!.slice(7)
           : part === 'table' ? scenario.pageLabel === 'signed_in_texas_game'
             ? scenario.snapshotStates!.slice(0, 10) : scenario.snapshotStates!
@@ -92,7 +95,7 @@ for (const [suite, game] of [['texas', 'texas-holdem'], ['zhajinhua', 'zhajinhua
             expect(account).not.toBeNull();
             if (suite === 'texas' && scenario.pageLabel === 'signed_in_texas_pre_game') {
             await gamePreGame(device, game, capture, panelAnimation ? testInfo : undefined,
-              part === 'first' || part === 'second' ? part : 'all');
+              part === 'first' || part === 'middle' || part === 'second' ? part : 'all');
             } else if (suite === 'texas') await runTexasScenario(scenario.pageLabel,
               { device, proxy, room: room!.roomId, self: account!.userId, capture,
               animationInfo: gameAnimation ? testInfo : undefined },

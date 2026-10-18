@@ -83,10 +83,10 @@ export async function closeAnimatedGameMask(device: AndroidDevice, game: 'texas-
  * @param game - 本轮玩法。
  * @param capture - 按共享状态名截图。
  * @param animationInfo - 英文原生动画关键帧基准；其他语言复用静态页面截图。
- * @param phase - 长开局前场景按前后阶段拆分时执行的部分。
+ * @param phase - 长开局前场景按房间阶段拆分时执行的部分。
  */
 export async function gamePreGame(device: AndroidDevice, game: 'texas-holdem' | 'zhajinhua', capture: Capture,
-  animationInfo?: TestInfo, phase: 'all' | 'first' | 'second' = 'all'): Promise<void> {
+  animationInfo?: TestInfo, phase: 'all' | 'first' | 'middle' | 'second' = 'all'): Promise<void> {
   await gameReady(device, game === 'texas-holdem' ? 'texas-holdem-room-name-text' : 'zhajinhua-text-room-name', 'TestRoom');
   /** 仅房间重连遮罩打断静态截图时重试同一状态，仍须通过原有逐像素断言。
    * @param state - 当前共用截图状态。
@@ -102,47 +102,51 @@ export async function gamePreGame(device: AndroidDevice, game: 'texas-holdem' | 
     }
   };
   if (phase !== 'second') {
-    await capture('waiting_table');
-    if (game === 'zhajinhua' && animationInfo) {
-      const arrows = (await gameNodes(device)).filter(node => node.res?.startsWith('seat-guide-')
-        && node.bounds.width > 0 && node.bounds.height > 0);
-      expect(arrows, '九个空座箭头必须分别可见').toHaveLength(9);
-      await captureMovingKeyframes(device, 'zhajinhua-seat-guides', animationInfo,
-        arrows.map(node => node.bounds));
-    }
-    await animateGamePanel(device, game, 'drawer-menu', 'menu-button',
-      { x: 120, y: 300, width: 180, height: 500 }, animationInfo, 'enter',
-      game === 'zhajinhua' ? 'videoFrames' : 'motionFrames', [], undefined,
-      game === 'texas-holdem' ? [
-        'texas-holdem-drawer-menu-enter-early-phase.png',
-        'texas-holdem-drawer-menu-enter-late-phase.png',
-      ] : []);
-    await gameReady(device, 'drawer-menu-item-exit');
-    await capture('menu');
-    await animateGamePanel(device, game, 'card-rank', 'drawer-menu-item-card_rank',
-      { x: 110, y: 400, width: 440, height: 600 }, animationInfo, 'enter', 'videoFrames');
-    await gameReady(device, 'card-rank-list');
-    await captureConnected('card_rank');
-    if ((await gameNodes(device)).some(node => node.res === 'card-rank-popup-close')) {
-      await animateGamePanel(device, game, 'card-rank', 'card-rank-popup-close',
-        { x: 110, y: 400, width: 440, height: 600 }, animationInfo, 'exit', 'videoFrames', [], undefined,
-        game === 'texas-holdem' ? ['texas-holdem-card-rank-exit-late-phase.png'] : []);
-    }
-    else await closeAnimatedGameMask(device, game, 'card-rank', 'card-rank-list',
-      { x: 110, y: 400, width: 440, height: 600 }, animationInfo);
-    if (game === 'zhajinhua') {
-      await tap(device, 'menu-button');
-      await animateGamePanel(device, game, 'game-rule', 'drawer-menu-item-game_rule',
-        { x: 130, y: 330, width: 460, height: 610 }, animationInfo);
-      await gameReady(device, 'game-rule-popup');
-      await animateGamePanel(device, game, 'game-rule', 'game-rule-popup-close-button',
-        { x: 130, y: 330, width: 460, height: 610 }, animationInfo, 'exit', 'videoFrames', [], async () => {
-          // 背景房间连接提示可能在面板退场后出现；终点须等它确实消失。
-          await setTimeout(1_000);
-          await expect.poll(async () => (await gameNodes(device)).some(node => /Connecting\.\.\./.test(node.text || '')),
-            { timeout: 30_000 }).toBe(false);
-        });
-      await gameGone(device, 'game-rule-popup');
+    if (phase !== 'middle') {
+      await capture('waiting_table');
+      if (game === 'zhajinhua' && animationInfo) {
+        const arrows = (await gameNodes(device)).filter(node => node.res?.startsWith('seat-guide-')
+          && node.bounds.width > 0 && node.bounds.height > 0);
+        expect(arrows, '九个空座箭头必须分别可见').toHaveLength(9);
+        await captureMovingKeyframes(device, 'zhajinhua-seat-guides', animationInfo,
+          arrows.map(node => node.bounds));
+      }
+      await animateGamePanel(device, game, 'drawer-menu', 'menu-button',
+        { x: 120, y: 300, width: 180, height: 500 }, animationInfo, 'enter',
+        game === 'zhajinhua' ? 'videoFrames' : 'motionFrames', [], undefined,
+        game === 'texas-holdem' ? [
+          'texas-holdem-drawer-menu-enter-early-phase.png',
+          'texas-holdem-drawer-menu-enter-late-phase.png',
+        ] : []);
+      await gameReady(device, 'drawer-menu-item-exit');
+      await capture('menu');
+      await animateGamePanel(device, game, 'card-rank', 'drawer-menu-item-card_rank',
+        { x: 110, y: 400, width: 440, height: 600 }, animationInfo, 'enter', 'videoFrames');
+      await gameReady(device, 'card-rank-list');
+      await captureConnected('card_rank');
+      if ((await gameNodes(device)).some(node => node.res === 'card-rank-popup-close')) {
+        await animateGamePanel(device, game, 'card-rank', 'card-rank-popup-close',
+          { x: 110, y: 400, width: 440, height: 600 }, animationInfo, 'exit', 'videoFrames', [], undefined,
+          game === 'texas-holdem' ? ['texas-holdem-card-rank-exit-late-phase.png'] : []);
+      }
+      else await closeAnimatedGameMask(device, game, 'card-rank', 'card-rank-list',
+        { x: 110, y: 400, width: 440, height: 600 }, animationInfo);
+      // 德州牌型说明后的房间重连偶尔持续不恢复；后续面板用新建的独立房间采样。
+      if (game === 'texas-holdem' && phase === 'first') return;
+      if (game === 'zhajinhua') {
+        await tap(device, 'menu-button');
+        await animateGamePanel(device, game, 'game-rule', 'drawer-menu-item-game_rule',
+          { x: 130, y: 330, width: 460, height: 610 }, animationInfo);
+        await gameReady(device, 'game-rule-popup');
+        await animateGamePanel(device, game, 'game-rule', 'game-rule-popup-close-button',
+          { x: 130, y: 330, width: 460, height: 610 }, animationInfo, 'exit', 'videoFrames', [], async () => {
+            // 背景房间连接提示可能在面板退场后出现；终点须等它确实消失。
+            await setTimeout(1_000);
+            await expect.poll(async () => (await gameNodes(device)).some(node => /Connecting\.\.\./.test(node.text || '')),
+              { timeout: 30_000 }).toBe(false);
+          });
+        await gameGone(device, 'game-rule-popup');
+      }
     }
     for (const [state, ready, close] of [
       ['theme', 'game-settings-card-theme-simple', 'game-settings-close-button'],
@@ -194,7 +198,7 @@ export async function gamePreGame(device: AndroidDevice, game: 'texas-holdem' | 
       await expect.poll(async () => (await gameNodes(device)).some(node => /Connecting\.\.\./.test(node.text || '')),
         { timeout: 45_000 }).toBe(false);
     }
-    if (phase === 'first') return;
+    if (phase === 'first' || phase === 'middle') return;
   }
   await animateGamePanel(device, game, 'leaderboard',
     game === 'texas-holdem' ? 'texas-holdem-leaderboard-button' : 'zhajinhua-learder-borard-button',
