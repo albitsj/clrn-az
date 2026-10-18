@@ -95,6 +95,18 @@ test('录屏中的反向位置不能冒充弹窗滑出', () => {
     /动画中途帧的实际画面须接近已审查轨迹/);
 });
 
+test('录屏中的横向错位不能冒充弹窗滑出', () => {
+  const background = PNG.sync.read(videoStart);
+  const source = PNG.sync.read(videoMiddle);
+  for (let y = 0; y < source.height; y++) for (let x = 0; x < source.width - 80; x++) {
+    const from = (y * source.width + x) * 4;
+    const to = (y * source.width + x + 80) * 4;
+    source.data.copy(background.data, to, from, from + 4);
+  }
+  assert.throws(() => compareVideo([videoStart, PNG.sync.write(background), videoEnd]),
+    /动画中途帧的实际画面须接近已审查轨迹/);
+});
+
 test('录屏直接跳到终点不能冒充弹窗滑出', () => {
   assert.throws(() => compareVideo([videoStart, videoStart, videoEnd]),
     /必须采到起点和终点之间的真实动画帧/);

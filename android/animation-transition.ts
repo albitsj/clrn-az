@@ -45,31 +45,61 @@ export function framePaletteDistance(left: Buffer, right: Buffer): number {
   return difference / (a.width * a.height * 3);
 }
 
-/** Compare the actual position of a recorded phase, including small local errors.
- * @param left - Recorded frame.
- * @param right - Reviewed phase.
+type VideoThumbnail = { pixels: Uint8Array; width: number; height: number };
+
+/** Keep horizontal position and visual detail while making video comparisons inexpensive.
+ * @param png - Recorded frame or reviewed phase.
  */
-function videoSpatialDistance(left: Buffer, right: Buffer): number {
-  const a = PNG.sync.read(left), b = PNG.sync.read(right);
-  if (a.width !== b.width || a.height !== b.height) throw new Error('动画帧尺寸变化');
-  const cells = new Float64Array(16);
-  const pixels = new Uint32Array(16);
-  let total = 0;
-  for (let y = 0; y < a.height; y++) for (let x = 0; x < a.width; x++) {
-    const cell = Math.min(3, Math.floor(y * 4 / a.height)) * 4
-      + Math.min(3, Math.floor(x * 4 / a.width));
-    const offset = (y * a.width + x) * 4;
-    for (let channel = 0; channel < 3; channel++) {
-      const delta = Math.abs(a.data[offset + channel] - b.data[offset + channel]);
-      cells[cell] += delta;
-      total += delta;
-    }
-    pixels[cell]++;
+function videoThumbnail(png: Buffer): VideoThumbnail {
+  const source = PNG.sync.read(png);
+  const width = Math.min(60, source.width);
+  const height = Math.max(1, Math.round(source.height * width / source.width));
+  const pixels = new Uint8Array(width * height * 3);
+  for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) {
+    const from = (Math.floor((y + 0.5) * source.height / height) * source.width
+      + Math.floor((x + 0.5) * source.width / width)) * 4;
+    const to = (y * width + x) * 3;
+    for (let channel = 0; channel < 3; channel++) pixels[to + channel] = source.data[from + channel];
   }
-  const average = total / (a.width * a.height * 3);
-  const local = Math.max(...cells.map((value, index) => value / (pixels[index] * 3)));
-  // The mean catches a uniform flash; the local bound catches a misplaced part of a panel.
-  return Math.max(average / 30, local / 45);
+  return { pixels, width, height };
+}
+
+/** Align a reviewed vertical slide phase without allowing horizontal displacement.
+ * @param actual - Recorded phase thumbnail.
+ * @param reference - Reviewed phase thumbnail.
+ */
+function alignedVideoDistance(actual: VideoThumbnail, reference: VideoThumbnail): number {
+  if (actual.width !== reference.width || actual.height !== reference.height) throw new Error('动画帧尺寸变化');
+  const { width, height } = actual;
+  const limit = Math.min(30, Math.floor(height * 0.4));
+  let best = Infinity;
+  for (let shift = -limit; shift <= limit; shift++) {
+    let difference = 0;
+    const rows = height - Math.abs(shift);
+    for (let y = Math.max(0, -shift); y < Math.min(height, height - shift); y++) {
+      const from = y * width * 3;
+      const to = (y + shift) * width * 3;
+      for (let channel = 0; channel < width * 3; channel++) {
+        difference += Math.abs(actual.pixels[from + channel] - reference.pixels[to + channel]);
+      }
+    }
+    best = Math.min(best, difference / (rows * width * 3) + Math.abs(shift) / height * 5);
+  }
+  return best;
+}
+
+/** Mirror only the reviewed phase to detect inverted content at the same video timing.
+ * @param reference - Reviewed phase thumbnail.
+ */
+function mirroredThumbnail(reference: VideoThumbnail): VideoThumbnail {
+  const { width, height } = reference;
+  const pixels = new Uint8Array(reference.pixels.length);
+  for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) {
+    const from = (y * width + width - 1 - x) * 3;
+    const to = (y * width + x) * 3;
+    pixels.set(reference.pixels.subarray(from, from + 3), to);
+  }
+  return { pixels, width, height };
 }
 
 /** Select only real in-between frames; video compression alone cannot create a transition.
@@ -98,14 +128,27 @@ export function middleCandidates(before: Buffer, after: Buffer, timeline: Buffer
  * @param anchors - Reviewed native video phases.
  */
 export function assertReviewedVideoMiddle(before: Buffer, after: Buffer,
-  candidates: { frame: Buffer }[], anchors: Buffer[]): void {
+  candidates: { frame: Buffer; progress: number; remaining: number }[], anchors: Buffer[]): void {
   expect(candidates.length, '必须采到起点和终点之间的真实动画帧').toBeGreaterThan(0);
-  const distances = candidates.flatMap(({ frame }) => anchors.map(anchor => {
-    if (frameColorDistance(before, frame) < frameColorDistance(before, anchor) / 4
-      || frameColorDistance(after, frame) < frameColorDistance(after, anchor) / 4) return Infinity;
-    return videoSpatialDistance(frame, anchor);
-  }));
-  expect(Math.min(...distances), '动画中途帧的实际画面须接近已审查轨迹').toBeLessThanOrEqual(1);
+  const total = frameColorDistance(before, after);
+  const references = anchors.map(anchor => {
+    const thumbnail = videoThumbnail(anchor);
+    return { start: frameColorDistance(before, anchor) / total,
+      end: frameColorDistance(after, anchor) / total,
+      thumbnail, inverted: mirroredThumbnail(thumbnail) };
+  });
+  const distances = candidates.flatMap(({ frame, progress, remaining }) => {
+    const actual = videoThumbnail(frame);
+    return references.map(reference => {
+      if (progress < reference.start / 4 || remaining < reference.end / 4) return Infinity;
+      const distance = alignedVideoDistance(actual, reference.thumbnail);
+      if (distance > 46) return Infinity;
+      // A vertically shifted phase can be valid; a mirrored or misplaced drawing cannot.
+      const inverted = alignedVideoDistance(actual, reference.inverted);
+      return inverted + 6 < distance ? Infinity : distance;
+    });
+  });
+  expect(Math.min(...distances), '动画中途帧的实际画面须接近已审查轨迹').toBeLessThanOrEqual(46);
 }
 
 /**
