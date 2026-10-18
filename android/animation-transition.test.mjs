@@ -123,3 +123,54 @@ test('录屏直接跳到终点不能冒充弹窗滑出', () => {
   assert.throws(() => compareVideo([videoStart, videoStart, videoEnd]),
     /必须采到起点和终点之间的真实动画帧/);
 });
+
+/** Drive the complete video capture path with a fixed native recording.
+ * @param sceneName - Reviewed transition name.
+ * @param timeline - Frames returned by the native recorder.
+ */
+async function compareRecordedVideo(sceneName, timeline) {
+  const sceneStart = readFileSync(`${snapshots}${sceneName}-start.png`);
+  const sceneEnd = readFileSync(`${snapshots}${sceneName}-end.png`);
+  const size = PNG.sync.read(sceneStart);
+  let screens = 0;
+  const device = { _connection: { /** Return the exact start and end screenshots. */ toImpl: () => ({
+    /** Mock the Android screen command.
+     * @param method - Native driver command.
+     */
+    _send: async method => method === 'screen'
+      ? (screens++ === 0 ? sceneStart : sceneEnd).toString('base64') : [],
+  }) } };
+  const info = { /** Discard test attachments. */ attach: async () => {},
+    config: { updateSnapshots: 'none' },
+    /** Resolve real reviewed snapshots.
+     * @param file - Snapshot name.
+     */
+    snapshotPath: file => `${snapshots}${file}` };
+  await captureNativeTransition(device, sceneName, info,
+    { x: 0, y: 0, width: size.width, height: size.height }, () => {},
+    [], [], 0, 'videoFrames', undefined, undefined, [], [], [], [], [], async () => timeline);
+}
+
+for (const [sceneName, brightness] of [['native-stack-enter', -10], ['game-picker-exit', -40]]) {
+  test(`${sceneName} 真实中途相位通过完整录屏比较`, async () => {
+    const sceneStart = readFileSync(`${snapshots}${sceneName}-start.png`);
+    const sceneMiddle = readFileSync(`${snapshots}${sceneName}-middle.png`);
+    const sceneEnd = readFileSync(`${snapshots}${sceneName}-end.png`);
+    await compareRecordedVideo(sceneName, [sceneStart, sceneMiddle, sceneEnd]);
+  });
+
+  test(`${sceneName} 整体亮度闪屏不能冒充真实滑动`, async () => {
+    const sceneStart = readFileSync(`${snapshots}${sceneName}-start.png`);
+    const sceneEnd = readFileSync(`${snapshots}${sceneName}-end.png`);
+    const flash = PNG.sync.read(sceneStart);
+    for (let offset = 0; offset < flash.data.length; offset += 4) {
+      for (let channel = 0; channel < 3; channel++) {
+        flash.data[offset + channel] = Math.max(0, Math.min(255, flash.data[offset + channel] + brightness));
+      }
+    }
+    const timeline = [...Array(30).fill(sceneStart), ...Array(3).fill(PNG.sync.write(flash)),
+      ...Array(117).fill(sceneEnd)];
+    await assert.rejects(compareRecordedVideo(sceneName, timeline),
+      /动画中途帧的实际画面须接近已审查轨迹/);
+  });
+}

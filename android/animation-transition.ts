@@ -7,6 +7,7 @@ import { gameScreenshot } from './game-controls';
 import { motionParts, samePixels } from './motion-regions';
 import { maskScreenshot, type ScreenshotBounds, type ScreenshotMask } from './screenshot';
 import { recordNativeVideoFrames } from './video-frames';
+import { alignedVideoDistance, localMotionDistance, mirroredThumbnail, videoThumbnail } from './video-motion';
 
 type NativeFrame = { capturedAt: number; png: string };
 
@@ -45,63 +46,6 @@ export function framePaletteDistance(left: Buffer, right: Buffer): number {
   return difference / (a.width * a.height * 3);
 }
 
-type VideoThumbnail = { pixels: Uint8Array; width: number; height: number };
-
-/** Keep horizontal position and visual detail while making video comparisons inexpensive.
- * @param png - Recorded frame or reviewed phase.
- */
-function videoThumbnail(png: Buffer): VideoThumbnail {
-  const source = PNG.sync.read(png);
-  const width = Math.min(60, source.width);
-  const height = Math.max(1, Math.round(source.height * width / source.width));
-  const pixels = new Uint8Array(width * height * 3);
-  for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) {
-    const from = (Math.floor((y + 0.5) * source.height / height) * source.width
-      + Math.floor((x + 0.5) * source.width / width)) * 4;
-    const to = (y * width + x) * 3;
-    for (let channel = 0; channel < 3; channel++) pixels[to + channel] = source.data[from + channel];
-  }
-  return { pixels, width, height };
-}
-
-/** Align a reviewed vertical slide phase without allowing horizontal displacement.
- * @param actual - Recorded phase thumbnail.
- * @param reference - Reviewed phase thumbnail.
- */
-function alignedVideoDistance(actual: VideoThumbnail, reference: VideoThumbnail): number {
-  if (actual.width !== reference.width || actual.height !== reference.height) throw new Error('动画帧尺寸变化');
-  const { width, height } = actual;
-  const limit = Math.min(30, Math.floor(height * 0.4));
-  let best = Infinity;
-  for (let shift = -limit; shift <= limit; shift++) {
-    let difference = 0;
-    const rows = height - Math.abs(shift);
-    for (let y = Math.max(0, -shift); y < Math.min(height, height - shift); y++) {
-      const from = y * width * 3;
-      const to = (y + shift) * width * 3;
-      for (let channel = 0; channel < width * 3; channel++) {
-        difference += Math.abs(actual.pixels[from + channel] - reference.pixels[to + channel]);
-      }
-    }
-    best = Math.min(best, difference / (rows * width * 3) + Math.abs(shift) / height * 5);
-  }
-  return best;
-}
-
-/** Mirror only the reviewed phase to detect inverted content at the same video timing.
- * @param reference - Reviewed phase thumbnail.
- */
-function mirroredThumbnail(reference: VideoThumbnail): VideoThumbnail {
-  const { width, height } = reference;
-  const pixels = new Uint8Array(reference.pixels.length);
-  for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) {
-    const from = (y * width + width - 1 - x) * 3;
-    const to = (y * width + x) * 3;
-    pixels.set(reference.pixels.subarray(from, from + 3), to);
-  }
-  return { pixels, width, height };
-}
-
 /** Select only real in-between frames; video compression alone cannot create a transition.
  * @param before - Exact start frame.
  * @param after - Exact end frame.
@@ -135,7 +79,7 @@ export function assertReviewedVideoMiddle(before: Buffer, after: Buffer,
     const thumbnail = videoThumbnail(anchor);
     return { start: frameColorDistance(before, anchor) / total,
       end: frameColorDistance(after, anchor) / total,
-      thumbnail, inverted: mirroredThumbnail(thumbnail) };
+      thumbnail, inverted: mirroredThumbnail(thumbnail), localMotion: localMotionDistance(before, anchor) };
   });
   const distances = candidates.flatMap(({ frame, progress, remaining }) => {
     const actual = videoThumbnail(frame);
@@ -145,7 +89,10 @@ export function assertReviewedVideoMiddle(before: Buffer, after: Buffer,
       if (distance > 46) return Infinity;
       // A vertically shifted phase can be valid; a mirrored or misplaced drawing cannot.
       const inverted = alignedVideoDistance(actual, reference.inverted);
-      return inverted + 6 < distance ? Infinity : distance;
+      if (inverted + 6 < distance) return Infinity;
+      // A global flash may have the same colours and mean distance as a sliding panel.
+      if (localMotionDistance(before, frame) < Math.max(2.5, reference.localMotion * 0.15)) return Infinity;
+      return distance;
     });
   });
   expect(Math.min(...distances), '动画中途帧的实际画面须接近已审查轨迹').toBeLessThanOrEqual(46);
@@ -169,6 +116,7 @@ export function assertReviewedVideoMiddle(before: Buffer, after: Buffer,
  * @param endCompareMasks - 终点独立数值区域；原始终点仍保留在报告中供审查。
  * @param startPhaseAnchors - 系统启动器布局不同但均已审查的起点画面。
  * @param startCompareMasks - 仅用于比较触发前桌面帧的系统动态图标区域；坐标相对截图裁切范围。
+ * @param videoRecorder - 可替换的原生录屏采集器，供完整录屏路径回归测试使用。
  */
 export async function captureNativeTransition(device: AndroidDevice, name: string, testInfo: TestInfo,
   region: ScreenshotBounds, trigger: () => unknown, masks: ScreenshotMask[] = [],
@@ -177,7 +125,8 @@ export async function captureNativeTransition(device: AndroidDevice, name: strin
   inspectFrames?: (frames: Buffer[], testInfo: TestInfo) => Promise<void>,
   afterReady?: () => Promise<void>, videoPhaseAnchors: string[] = [],
   endPhaseAnchors: string[] = [], endCompareMasks: ScreenshotMask[] = [],
-  startPhaseAnchors: string[] = [], startCompareMasks: ScreenshotMask[] = []): Promise<void> {
+  startPhaseAnchors: string[] = [], startCompareMasks: ScreenshotMask[] = [],
+  videoRecorder: typeof recordNativeVideoFrames = recordNativeVideoFrames): Promise<void> {
   /**
    * 截出固定的动画绘制区域。
    * @param bytes - 原生完整屏幕 PNG。
@@ -194,7 +143,7 @@ export async function captureNativeTransition(device: AndroidDevice, name: strin
   let frames: NativeFrame[];
   if (samplingMethod === 'videoFrames') {
     if (requiredRegions.length) throw new Error('录屏转场需单独定义不含子区域的绘制范围。');
-    frames = (await recordNativeVideoFrames(name, region, trigger, testInfo))
+    frames = (await videoRecorder(name, region, trigger, testInfo))
       .map((png, index) => ({ capturedAt: index * 33, png: png.toString('base64') }));
   } else {
     try {
