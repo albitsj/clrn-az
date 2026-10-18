@@ -26,8 +26,13 @@ test(`${locale} launch_branding full screen while initialization waits`, async (
       await device.fill({ res: 'staging-confirmation-input' }, 'CONFIRM');
       await dismissKeyboard(device);
       const { bounds } = await gameReady(device, 'confirm-button');
-      const network = await proxy.command<{ requested: number }>('android/launch-network');
-      expect(network.requested, '必须真正拦截启动健康检查').toBeGreaterThan(0);
+      // 预热健康检查自行超时后，真实确认会重新初始化，留出完整五秒采样窗口。
+      // 不延长应用超时，也不把可见错误提示关闭后当作成功截图。
+      await expect.poll(async () => {
+        const network = await proxy.command<{ requested: number; lastRequestedAt: number }>('android/launch-network');
+        expect(network.requested, '必须真正拦截启动健康检查').toBeGreaterThan(0);
+        return Date.now() - network.lastRequestedAt;
+      }, { timeout: 30_000, intervals: [500] }).toBeGreaterThan(6000);
       adb('shell', 'input', 'tap', String(Math.round(bounds.x + bounds.width / 2)),
         String(Math.round(bounds.y + bounds.height / 2)));
       await expect.poll(() => gameMarker(device!, 'launch-screen-container'), { timeout: 4000 }).not.toBeNull();
