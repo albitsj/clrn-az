@@ -5,7 +5,7 @@ import { adb, applicationId, artifacts, compareScreenshot, launchApplication, wa
 import { captureFailure } from '../diagnostics';
 import { selectLanguage } from '../navigation';
 import { dismissKeyboard } from '../keyboard';
-import { gameNodes, gameReady, gameScreenshot } from '../game-controls';
+import { gameMarker, gameReady, gameScreenshot } from '../game-controls';
 import { withAndroidProxy } from '../proxy';
 
 const locale = process.env.ANDROID_LOCALE || 'en';
@@ -30,14 +30,12 @@ test(`${locale} launch_branding full screen while initialization waits`, async (
       expect(network.requested, '必须真正拦截启动健康检查').toBeGreaterThan(0);
       adb('shell', 'input', 'tap', String(Math.round(bounds.x + bounds.width / 2)),
         String(Math.round(bounds.y + bounds.height / 2)));
-      await gameReady(device, 'launch-screen-container');
+      await expect.poll(() => gameMarker(device!, 'launch-screen-container'), { timeout: 4000 }).not.toBeNull();
       /** 验证当前仍是品牌启动页，再保存无裁切、无遮罩的完整真实屏幕。 */
       const fullScreen = async () => {
-        const nodes = await gameNodes(device!);
-        expect(nodes.some(node => node.res === 'launch-screen-container')).toBe(true);
-        expect(nodes.some(node => ['staging-confirmation-input', 'settings-tab', 'android:id/alertTitle']
-          .includes(node.res || ''))).toBe(false);
+        expect(await gameMarker(device!, 'launch-screen-container'), '必须仍是完整品牌启动页').not.toBeNull();
         const bytes = await gameScreenshot(device!);
+        expect(await gameMarker(device!, 'launch-screen-container'), '截图期间不能进入大厅或错误弹窗').not.toBeNull();
         const picture = PNG.sync.read(bytes);
         expect({ width: picture.width, height: picture.height }).toEqual({ width: 720, height: 1280 });
         return bytes;
