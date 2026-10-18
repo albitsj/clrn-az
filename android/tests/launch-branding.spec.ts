@@ -23,9 +23,13 @@ test(`${locale} launch_branding full screen while initialization waits`, async (
       adb('shell', 'am', 'force-stop', applicationId);
       adb('shell', 'am', 'start', '-n', `${applicationId}/com.laiwan_react_native.MainActivity`);
       await device.wait({ res: 'staging-confirmation-input' }, { timeout: 120_000 });
-      await device.fill({ res: 'staging-confirmation-input' }, 'CONFIRM');
+      const confirmation = { en: 'CONFIRM', 'zh-Hans': '确认', 'zh-Hant': '確認' }[locale];
+      expect(confirmation).toBeDefined();
+      await device.fill({ res: 'staging-confirmation-input' }, confirmation!);
       await dismissKeyboard(device);
-      const { bounds } = await gameReady(device, 'confirm-button');
+      const button = await gameReady(device, 'confirm-button');
+      expect(button.enabled).toBe(true);
+      const { bounds } = button;
       // 预热健康检查自行超时后，真实确认会重新初始化，留出完整五秒采样窗口。
       // 不延长应用超时，也不把可见错误提示关闭后当作成功截图。
       await expect.poll(async () => {
