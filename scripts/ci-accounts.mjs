@@ -50,7 +50,8 @@ export function androidAccountMatrix(runId, selectedGroup = 'all', selectedLocal
     'zhajinhua/en': [
       ['pregame-first', 'signed_in_zhajinhua_pre_game_first$'],
       ['pregame-second', 'signed_in_zhajinhua_pre_game_second$'],
-      ['game', 'signed_in_zhajinhua_game$'],
+      ['game-table', 'signed_in_zhajinhua_game_table$'],
+      ['game-effects', 'signed_in_zhajinhua_game_effects$'],
     ],
   };
   const shardOffsets = {
