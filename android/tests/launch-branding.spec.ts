@@ -31,11 +31,18 @@ test(`${locale} launch_branding full screen while initialization waits`, async (
       adb('shell', 'input', 'tap', String(Math.round(bounds.x + bounds.width / 2)),
         String(Math.round(bounds.y + bounds.height / 2)));
       await expect.poll(() => gameMarker(device!, 'launch-screen-container'), { timeout: 4000 }).not.toBeNull();
+      await expect.poll(() => gameMarker(device!, 'staging-dialog'), { timeout: 4000 }).toBeNull();
+      /** 启动页可能仍在原生弹窗下，必须同时排除提示和系统错误按钮。 */
+      const assertBranding = async () => {
+        expect(await gameMarker(device!, 'launch-screen-container'), '必须仍是完整品牌启动页').not.toBeNull();
+        expect(await gameMarker(device!, 'staging-dialog'), '测试环境提示必须已真实关闭').toBeNull();
+        expect(await gameMarker(device!, 'android:id/button1'), '不能把原生错误弹窗当品牌页').toBeNull();
+      };
       /** 验证当前仍是品牌启动页，再保存无裁切、无遮罩的完整真实屏幕。 */
       const fullScreen = async () => {
-        expect(await gameMarker(device!, 'launch-screen-container'), '必须仍是完整品牌启动页').not.toBeNull();
+        await assertBranding();
         const bytes = await gameScreenshot(device!);
-        expect(await gameMarker(device!, 'launch-screen-container'), '截图期间不能进入大厅或错误弹窗').not.toBeNull();
+        await assertBranding();
         const picture = PNG.sync.read(bytes);
         expect({ width: picture.width, height: picture.height }).toEqual({ width: 720, height: 1280 });
         return bytes;
