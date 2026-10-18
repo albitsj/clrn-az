@@ -16,12 +16,13 @@ export function validateDeployment(record) {
 }
 
 /**
- * master 推送读取本次检出的部署记录；手动执行可指定标签，PR 和定时运行使用最新 Release。
+ * master 推送与 PR 使用本次检出的部署记录；手动执行可指定标签，定时任务使用最新 Release。
  * @param env - GitHub Actions 环境及可选手动标签。
  * @param readRecord - 读取当前检出提交中的部署 JSON。
  */
 export function deploymentTarget(env, readRecord) {
-  if (env.GITHUB_EVENT_NAME === 'push' && env.GITHUB_REF === 'refs/heads/master') {
+  if (env.GITHUB_EVENT_NAME === 'pull_request'
+    || (env.GITHUB_EVENT_NAME === 'push' && env.GITHUB_REF === 'refs/heads/master')) {
     const record = validateDeployment(readRecord());
     return { release_tag: record.release_tag, application_commit: record.sha };
   }

@@ -34,12 +34,42 @@ export function androidAccountMatrix(runId, selectedGroup = 'all', selectedLocal
   const groups = ['guest', 'account', 'social', 'rooms', 'wallet-help', 'records', 'texas', 'zhajinhua'];
   const executionOrder = ['texas', 'zhajinhua', ...groups.filter(group => group !== 'texas' && group !== 'zhajinhua')];
   const locales = ['zh-Hans', 'zh-Hant', 'en'];
+  const texasTable = 'signed_in_texas_(?:pre_game|optional_pre_game|game|panels)$';
+  const texasOther = 'signed_in_texas_(?:hall|records_v2|controls|table_states|panel_variants|hall_variants)$';
+  const shards = {
+    'texas/zh-Hans': [['table', texasTable], ['other', texasOther]],
+    'texas/zh-Hant': [['table', texasTable], ['other', texasOther]],
+    'texas/en': [
+      ['pregame-first', 'signed_in_texas_pre_game_first$'],
+      ['pregame-middle', 'signed_in_texas_pre_game_middle$'],
+      ['pregame-second', 'signed_in_texas_(?:pre_game_second|optional_pre_game)$'],
+      ['game-table', 'signed_in_texas_game_table$'],
+      ['game-effects', 'signed_in_texas_game_effects$'],
+      ['panels', 'signed_in_texas_(?:panels|panel_variants)$'],
+      ['other', 'signed_in_texas_(?:hall|records_v2|controls|table_states|hall_variants)$'],
+    ],
+    'zhajinhua/en': [
+      ['pregame-first', 'signed_in_zhajinhua_pre_game_first$'],
+      ['pregame-second', 'signed_in_zhajinhua_pre_game_second$'],
+      ['game-table', 'signed_in_zhajinhua_game_table$'],
+      ['game-effects', 'signed_in_zhajinhua_game_effects$'],
+    ],
+  };
+  const shardOffsets = {
+    'texas/zh-Hans': 24, 'texas/zh-Hant': 25, 'texas/en': 26, 'zhajinhua/en': 32,
+  };
   if (selectedGroup !== 'all' && !groups.includes(selectedGroup)) throw new Error('未知安卓业务组。');
   if (selectedLocale !== 'all' && !locales.includes(selectedLocale)) throw new Error('未知安卓语言。');
   return { include: executionOrder.filter(group => selectedGroup === 'all' || group === selectedGroup)
     .flatMap(group => locales.filter(locale => selectedLocale === 'all' || locale === selectedLocale)
-      .map(locale => ({ group, locale, account: allocateCiAccount(runId,
-        groups.indexOf(group) * 3 + locales.indexOf(locale)) }))) };
+      .flatMap(locale => {
+        const key = `${group}/${locale}`;
+        const parts = shards[key] || [['all', '']];
+        return parts.map(([shard, filter], index) => ({ group, locale, shard, filter,
+          label: `${group} / ${locale}${shard === 'all' ? '' : ` / ${shard}`}`,
+          account: allocateCiAccount(runId, index === 0
+            ? groups.indexOf(group) * 3 + locales.indexOf(locale) : shardOffsets[key] + index - 1) }));
+      })) };
 }
 
 /**

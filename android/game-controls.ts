@@ -52,6 +52,7 @@ export async function gameMarker(device: AndroidDevice, resource: string): Promi
 export async function gameNodes(device: AndroidDevice): Promise<NativeNode[]> {
   const internal = device as unknown as { _connection: { toImpl(device: AndroidDevice): {
     _send(method: string): Promise<NativeNode> } } };
+  let connectionRetries = 0;
   for (let attempt = 0; ; attempt++) {
     const timeout = new AbortController();
     try {
@@ -63,7 +64,20 @@ export async function gameNodes(device: AndroidDevice): Promise<NativeNode[]> {
         }),
       ]);
       if (!root?.bounds || !Array.isArray(root.children)) throw new Error('原生驱动没有返回完整控件树。');
-      return flattenNodes(root);
+      const nodes = flattenNodes(root);
+      // Staging 的原生网络超时对话框会盖住整棵牌桌控件树；只对该明确文案执行真实重试。
+      const timeoutAlert = nodes.some(node => node.res?.endsWith(':id/alert_title')
+        && node.text === 'Connection Timeout');
+      const retry = nodes.find(node => node.res === 'android:id/button1' && node.text === 'RETRY');
+      if (timeoutAlert && retry) {
+        if (++connectionRetries > 3) throw new Error('Staging 连接超时，对话框重试三次后仍未恢复。');
+        console.log(`ANDROID > Staging 连接超时，点击原生 RETRY（${connectionRetries}/3）`);
+        const { x, y, width, height } = retry.bounds;
+        adb('shell', 'input', 'tap', String(Math.round(x + width / 2)), String(Math.round(y + height / 2)));
+        await setTimeout(1_000);
+        continue;
+      }
+      return nodes;
     } catch (error) {
       // 转场会在驱动遍历过程中移除子节点；重读整棵树，不返回残缺或伪造的空结果。
       if (attempt >= 4 || !/NullPointerException|StaleObjectException/.test(String(error))) throw error;
@@ -145,6 +159,22 @@ export async function gameGone(device: AndroidDevice, res: string): Promise<void
     { timeout: 45_000, intervals: [250] }).toBe(false);
 }
 
+/** 等待房间重连遮罩退去并确认牌桌至少一秒内持续可操作。
+ * @param device - 专用模拟器连接。
+ * @param stableMs - 指定入口需要额外连续无重连遮罩的时间。
+ */
+export async function gameConnected(device: AndroidDevice, stableMs = 0): Promise<void> {
+  const initial = await gameNodes(device);
+  if (!stableMs && !initial.some(node => /Connecting\.\.\./.test(node.text || ''))) return;
+  let availableSince = 0;
+  await expect.poll(async () => {
+    const connecting = (await gameNodes(device)).some(node => /Connecting\.\.\./.test(node.text || ''));
+    if (connecting) availableSince = 0;
+    else if (!availableSince) availableSince = Date.now();
+    return !connecting && Date.now() - availableSince >= Math.max(1_000, stableMs);
+  }, { timeout: 120_000, intervals: [250] }).toBe(true);
+}
+
 /**
  * 根据两次一致的真实布局点击控件，使用 adb 输入避免驱动等待循环动画空闲。
  * @param device - 专用模拟器连接。
@@ -153,6 +183,7 @@ export async function gameGone(device: AndroidDevice, res: string): Promise<void
  */
 export async function gameTap(device: AndroidDevice, res: string, nativeInput = false): Promise<void> {
   console.log(`ANDROID > 游戏点击 ${res}`);
+  await gameConnected(device);
   let previous: ScreenshotBounds | undefined;
   let node: NativeNode;
   await expect(async () => {

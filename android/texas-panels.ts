@@ -1,5 +1,5 @@
 import { expect } from '@playwright/test';
-import { REPLAY_PLAYER_IDS } from '../visual/cases/texas-holdem/replayData';
+import { events, REPLAY_PLAYER_IDS } from '../visual/cases/texas-holdem/replayData';
 import { flattenNodes, gameGone, gameNodes, gameReady, gameSemanticText, gameTap, gameTextWithin } from './game-controls';
 import { captureGameThemes, closeGameMask, gameMenu } from './game-pregame';
 import { gameCardNames, replay } from './game-replay';
@@ -8,23 +8,34 @@ import { dismissKeyboard } from './keyboard';
 import { focusedCaretMask } from './screenshot';
 import { translateCaret } from './caret-mask';
 import { gameTapText, restoreTexas, texasEvents, type TexasContext } from './texas-support';
+import { animateGamePanel } from './game-panel-animation';
+import { captureNativeTransition, captureTransientTransition, framePaletteDistance } from './animation-transition';
+import { captureMovingKeyframes } from './loop-keyframes';
 
 /**
  * 复用 Web 的二十一个面板、聊天、带入审核和手牌展示状态。
  * @param context - 当前真实房间、连接与共用顺序截图入口。
  */
 export async function texasPanels(context: TexasContext): Promise<void> {
-  const { device, proxy, room, self, capture } = context;
+  const { device, proxy, room, self, capture, animationInfo } = context;
   await restoreTexas(context, {}, 'flop', true);
   await captureGameThemes(device, capture);
   await gameTap(device, 'game-settings-close-button');
   await gameGone(device, 'game-settings-popup-container');
   // 仅向专用模拟器授权；界面测试不录制或发送真实音频。
   adb('shell', 'pm', 'grant', applicationId, 'android.permission.RECORD_AUDIO');
+  // 首次打开需完成 Android 权限服务初始化；第二次仍由真实按钮触发相同入场动画。
   await gameTap(device, 'texas-holdem-voice-button');
   await gameReady(device, 'in-game-audio-root-container');
-  await capture('voice');
   await gameTap(device, 'in-game-audio-popup-close');
+  await gameGone(device, 'in-game-audio-root-container');
+  await animateGamePanel(device, 'texas-holdem', 'voice', 'texas-holdem-voice-button',
+    { x: 220, y: 820, width: 280, height: 450 }, animationInfo, 'enter', 'videoFrames');
+  await gameReady(device, 'in-game-audio-root-container');
+  await capture('voice');
+  await animateGamePanel(device, 'texas-holdem', 'voice', 'in-game-audio-popup-close',
+    { x: 220, y: 820, width: 280, height: 450 }, animationInfo, 'exit', 'videoFrames', [],
+    undefined, ['texas-holdem-voice-exit-open-phase.png']);
   await gameGone(device, 'in-game-audio-root-container');
   await gameTap(device, 'texas-holdem-leaderboard-button');
   await gameReady(device, 'public-leader-board-item-round-0', '10');
@@ -54,10 +65,19 @@ export async function texasPanels(context: TexasContext): Promise<void> {
   await captureRecord('record_actions');
   await gameTap(device, 'review-board-close-button');
   await gameGone(device, 'review-board-close-button');
+  if (animationInfo) await captureTransientTransition(device, 'texas-system-prompt', animationInfo,
+    { x: 90, y: 60, width: 540, height: 190 },
+    () => replay(proxy, 'texas', room, events([{ event: 'check_community_card', player_id: REPLAY_PLAYER_IDS[0] }])));
   await replay(proxy, 'texas', room, { stream: 'room_message', payload: { action: 'text', content: {
     from_user_id: REPLAY_PLAYER_IDS[0], from_user_nickname: 'Player1', text: 'Good hand!',
   } } });
   await gameReady(device, 'barrage_text', 'Player1: Good hand!');
+  if (animationInfo) {
+    const barrage = await gameReady(device, 'barrage_text', 'Player1: Good hand!');
+    await captureMovingKeyframes(device, 'texas-barrage', animationInfo,
+      [{ x: 0, y: barrage.bounds.y - 8, width: 720, height: barrage.bounds.height + 16 }],
+      18, framePaletteDistance, 1, ['texas-barrage-1-first-alternate.png']);
+  }
   await gameTap(device, 'texas-holdem-chat-button');
   await gameTap(device, '-in-game-chat-message-tab');
   await expect.poll(async () => (await gameNodes(device)).some(node => node.res?.startsWith('in-game-chat-phrase-')),
@@ -68,30 +88,42 @@ export async function texasPanels(context: TexasContext): Promise<void> {
   await expect.poll(async () => gameTextWithin(await gameNodes(device), 'in-game-chat-text-message-0'),
     { timeout: 30_000 }).toContain('Player1: Good hand!');
   await capture('chat_history');
-  await gameTap(device, 'in-game-chat-report-button-0');
+  await animateGamePanel(device, 'texas-holdem', 'chat-actions', 'in-game-chat-report-button-0',
+    { x: 60, y: 800, width: 600, height: 390 }, animationInfo, 'enter', 'videoFrames');
   await gameReady(device, 'in_game_report_message_component');
   await capture('chat_actions');
-  await gameTap(device, 'report_item_report');
+  await animateGamePanel(device, 'texas-holdem', 'chat-report', 'report_item_report',
+    { x: 20, y: 360, width: 680, height: 560 }, animationInfo, 'enter', 'motionFrames',
+    [{ x: 334, y: 720, width: 110, height: 47, reason: '举报弹窗后面的房间计时独立跳秒' }]);
   await gameReady(device, 'report-popup-title');
   await dismissKeyboard(device);
   await capture('chat_report');
   await closeGameMask(device, 'report-popup-title');
-  await gameTap(device, 'in-game-chat-report-button-0');
-  await gameTap(device, 'report_item_block');
+  await animateGamePanel(device, 'texas-holdem', 'chat-actions-return', 'in-game-chat-report-button-0',
+    { x: 60, y: 800, width: 600, height: 390 }, animationInfo);
+  await animateGamePanel(device, 'texas-holdem', 'chat-block', 'report_item_block',
+    { x: 20, y: 410, width: 680, height: 470 }, animationInfo, 'enter', 'motionFrames',
+    [{ x: 334, y: 720, width: 110, height: 47, reason: '聊天屏障后面的房间计时独立跳秒' }]);
   await gameReady(device, 'BlockPlayerConfirmPopup:title');
   await capture('chat_block_confirm');
-  await gameTap(device, 'BlockPlayerConfirmPopup:cancelButton');
+  await animateGamePanel(device, 'texas-holdem', 'chat-block', 'BlockPlayerConfirmPopup:cancelButton',
+    { x: 20, y: 410, width: 680, height: 470 }, animationInfo, 'exit', 'motionFrames',
+    [{ x: 334, y: 720, width: 110, height: 47, reason: '聊天屏障后面的房间计时独立跳秒' }]);
   await gameGone(device, 'BlockPlayerConfirmPopup:title');
   const chat = (await gameReady(device, 'in-game-chat-mask')).bounds;
   adb('shell', 'input', 'tap', String(chat.x + 8), String(chat.y + 80));
   await gameGone(device, 'in-game-chat-container');
-  await replay(proxy, 'texas', room, { stream: 'buy_in', payload: { action: 'apply_buy_in', content: {
+  const application = { stream: 'buy_in', payload: { action: 'apply_buy_in', content: {
     application_id: 'visual-application', user_id: REPLAY_PLAYER_IDS[1],
     user_nickname: 'Player2', nickname: 'Player2', amount: 500,
-  } } });
+  } } };
+  if (animationInfo) await captureNativeTransition(device, 'texas-holdem-buy-in-review-enter', animationInfo,
+    { x: 70, y: 440, width: 580, height: 270 }, () => replay(proxy, 'texas', room, application));
+  else await replay(proxy, 'texas', room, application);
   await gameReady(device, 'buy-in-review-close-button');
   await capture('buy_in_review');
-  await gameTap(device, 'buy-in-review-close-button');
+  await animateGamePanel(device, 'texas-holdem', 'buy-in-review', 'buy-in-review-close-button',
+    { x: 70, y: 440, width: 580, height: 270 }, animationInfo, 'exit', 'videoFrames');
   await gameGone(device, 'buy-in-review-close-button');
   // 先清除旧回合的跟注标记，避免相同牌面让恢复等待误命中上一帧。
   /** 读取本轮本人实际可见的玩家容器。 */

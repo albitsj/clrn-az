@@ -39,7 +39,47 @@ const patched = source
   }
 
   private static JSONObject tree(UiDevice device)`)
-  .replace('case "tree":', `case "transientFrames":
+  .replace('case "tree":', `case "launchFrames":
+              // 启动画面跨过系统 Splash；边截屏边编码，持续记录应用插画与测试版提示。
+              JSONArray launchFrames = new JSONArray();
+              long launchDeadline = android.os.SystemClock.uptimeMillis() + 10000;
+              while (android.os.SystemClock.uptimeMillis() < launchDeadline && launchFrames.length() < 70) {
+                android.graphics.Bitmap launchFrame = InstrumentationRegistry.getInstrumentation().getUiAutomation().takeScreenshot();
+                if (launchFrame == null) throw new IllegalStateException("Native launch screenshot returned no bitmap");
+                try {
+                  java.io.ByteArrayOutputStream bytes = new java.io.ByteArrayOutputStream();
+                  if (!launchFrame.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, bytes))
+                    throw new IllegalStateException("Native launch PNG encoding failed");
+                  launchFrames.put(new JSONObject().put("capturedAt", android.os.SystemClock.uptimeMillis())
+                    .put("png", android.util.Base64.encodeToString(bytes.toByteArray(), android.util.Base64.NO_WRAP)));
+                } finally { launchFrame.recycle(); }
+                android.os.SystemClock.sleep(20);
+              }
+              response.put("result", launchFrames);
+              break;
+            case "motionFrames":
+              // 无须查询控件树，连续保存真实合成屏幕；JS 端在采样期间通过独立 ADB 点击。
+              java.util.ArrayList<android.graphics.Bitmap> motionBitmaps = new java.util.ArrayList<>();
+              JSONArray motionFrames = new JSONArray();
+              long motionDeadline = android.os.SystemClock.uptimeMillis() + 3200;
+              try {
+              while (android.os.SystemClock.uptimeMillis() < motionDeadline && motionBitmaps.size() < 20) {
+                  android.graphics.Bitmap motionFrame = InstrumentationRegistry.getInstrumentation().getUiAutomation().takeScreenshot();
+                  if (motionFrame == null) throw new IllegalStateException("Native motion screenshot returned no bitmap");
+                  motionBitmaps.add(motionFrame);
+                  motionFrames.put(new JSONObject().put("capturedAt", android.os.SystemClock.uptimeMillis()));
+                  android.os.SystemClock.sleep(45);
+                }
+                for (int index = 0; index < motionBitmaps.size(); index++) {
+                  java.io.ByteArrayOutputStream bytes = new java.io.ByteArrayOutputStream();
+                  if (!motionBitmaps.get(index).compress(android.graphics.Bitmap.CompressFormat.PNG, 100, bytes))
+                    throw new IllegalStateException("Native motion PNG encoding failed");
+                  motionFrames.getJSONObject(index).put("png", android.util.Base64.encodeToString(bytes.toByteArray(), android.util.Base64.NO_WRAP));
+                }
+                response.put("result", motionFrames);
+              } finally { for (android.graphics.Bitmap frame : motionBitmaps) frame.recycle(); }
+              break;
+            case "transientFrames":
               // 先采集真实位图，再压缩传输，避免 PNG 编码耗尽短时提示的显示时间。
               java.util.ArrayList<android.graphics.Bitmap> bitmaps = new java.util.ArrayList<>();
               JSONArray frames = new JSONArray();
@@ -91,16 +131,22 @@ const patched = source
               response.put("result", found == null ? JSONObject.NULL : found);
               break;
             case "tree":`);
-if (!['setWaitForIdleTimeout(100)', 'if (child != null)', 'case "marker":', 'case "screen":', 'case "transientFrames":']
+if (!['setWaitForIdleTimeout(100)', 'if (child != null)', 'case "marker":', 'case "screen":', 'case "transientFrames":', 'case "motionFrames":', 'case "launchFrames":']
   .every(fragment => patched.includes(fragment))) throw new Error('原生驱动补丁没有完整应用。');
 writeFileSync(java, patched);
 const gradle = path.join(directory, 'build.gradle');
 writeFileSync(gradle, readFileSync(gradle, 'utf8').replaceAll('jcenter()', 'mavenCentral()'));
+// GitHub runner 首次下载 Gradle 发行包时，官方 Wrapper 默认 10 秒读超时过短。
+const wrapperProperties = path.join(directory, 'gradle/wrapper/gradle-wrapper.properties');
+const properties = readFileSync(wrapperProperties, 'utf8');
+writeFileSync(wrapperProperties, /^networkTimeout=/m.test(properties)
+  ? properties.replace(/^networkTimeout=.*$/m, 'networkTimeout=120000')
+  : `${properties.trimEnd()}\nnetworkTimeout=120000\n`);
 execFileSync(path.join(directory, 'gradlew'), ['--no-daemon', ':app:assembleDebug', ':app:assembleAndroidTest'],
   { cwd: directory, stdio: 'inherit', timeout: 600_000 });
 const output = path.resolve('.ttyctl/android-driver');
 mkdirSync(output, { recursive: true });
 copyFileSync(path.join(directory, 'app/build/outputs/apk/debug/app-debug.apk'), path.join(output, 'android-driver-target.apk'));
 copyFileSync(path.join(directory, 'app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk'), path.join(output, 'android-driver.apk'));
-writeFileSync(path.join(output, 'source.json'), JSON.stringify({ revision, patch: 3 }));
+writeFileSync(path.join(output, 'source.json'), JSON.stringify({ revision, patch: 6 }));
 console.log('原生控件驱动已构建，应用画面和动画保持原样。');

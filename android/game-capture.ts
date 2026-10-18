@@ -4,10 +4,22 @@ import type { TestInfo } from '@playwright/test';
 import { compareScreenshot } from './device';
 import { gameNodes, gameReady, gameMarker, gameScreenshot } from './game-controls';
 import { expect } from '@playwright/test';
-import type { ScreenshotMask } from './screenshot';
+import type { ScreenshotBounds, ScreenshotMask } from './screenshot';
 import { foregroundPanels, visibleMasks, networkStatusMask, countdownMask } from './game-masks';
 import { captureToast } from './game-transient';
 import { captureChallengeAnimation } from './game-animation';
+import { verifyLoopAnimation } from './loop-animation';
+import { captureMovingKeyframes } from './loop-keyframes';
+
+/**
+ * 使原生控件边界及绘制余量落到实际截图的整数像素。
+ * @param bounds - 原生控件边界。
+ */
+function pixelBounds(bounds: ScreenshotBounds): ScreenshotBounds {
+  const x = Math.floor(bounds.x), y = Math.floor(bounds.y);
+  return { x, y, width: Math.ceil(bounds.x + bounds.width) - x,
+    height: Math.ceil(bounds.y + bounds.height) - y };
+}
 
 /**
  * 保留真实牌桌布局，仅遮罩网络延迟、倒计时和循环座位指示箭头等动态区域。
@@ -88,6 +100,20 @@ export async function captureGame(device: AndroidDevice, name: string, testInfo:
   if (name.endsWith('-zhajinhua-game-challenge-select')) {
     await captureChallengeAnimation(device, name, testInfo, masks);
     return;
+  }
+  if (name.endsWith('-pre-game-waiting-table')) {
+    const guides = masks.filter(mask => /^seat-guide-\d+ 完整箭头动画范围$/.test(mask.reason));
+    expect(guides.length, '等待开局的空座引导箭头必须可见').toBeGreaterThan(0);
+    await verifyLoopAnimation(device, name, testInfo, guides.map(pixelBounds), masks);
+  }
+  if (/-signed-in-(?:texas|zhajinhua)-game-opponent-turn$/.test(name)) {
+    const marker = name.includes('-zhajinhua-') ? 'zhajinhua-active-countdown' : 'texas-holdem-active-countdown';
+    const countdown = nodes.filter(node => node.res === marker);
+    expect(countdown, '对手行动时必须出现原生倒计时').toHaveLength(1);
+    const regions = countdown.map(node => pixelBounds({ x: node.bounds.x - 2, y: node.bounds.y - 2,
+      width: node.bounds.width + 4, height: node.bounds.height + 4 }));
+    await verifyLoopAnimation(device, name, testInfo, regions, masks);
+    if (name.startsWith('en-')) await captureMovingKeyframes(device, `${name}-countdown`, testInfo, regions);
   }
   if (triggerToast) {
     const expectedText = await triggerToast();
