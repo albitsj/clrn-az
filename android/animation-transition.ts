@@ -45,6 +45,69 @@ export function framePaletteDistance(left: Buffer, right: Buffer): number {
   return difference / (a.width * a.height * 3);
 }
 
+/** Compare the actual position of a recorded phase, including small local errors.
+ * @param left - Recorded frame.
+ * @param right - Reviewed phase.
+ */
+function videoSpatialDistance(left: Buffer, right: Buffer): number {
+  const a = PNG.sync.read(left), b = PNG.sync.read(right);
+  if (a.width !== b.width || a.height !== b.height) throw new Error('动画帧尺寸变化');
+  const cells = new Float64Array(16);
+  const pixels = new Uint32Array(16);
+  let total = 0;
+  for (let y = 0; y < a.height; y++) for (let x = 0; x < a.width; x++) {
+    const cell = Math.min(3, Math.floor(y * 4 / a.height)) * 4
+      + Math.min(3, Math.floor(x * 4 / a.width));
+    const offset = (y * a.width + x) * 4;
+    for (let channel = 0; channel < 3; channel++) {
+      const delta = Math.abs(a.data[offset + channel] - b.data[offset + channel]);
+      cells[cell] += delta;
+      total += delta;
+    }
+    pixels[cell]++;
+  }
+  const average = total / (a.width * a.height * 3);
+  const local = Math.max(...cells.map((value, index) => value / (pixels[index] * 3)));
+  // The mean catches a uniform flash; the local bound catches a misplaced part of a panel.
+  return Math.max(average / 30, local / 45);
+}
+
+/** Select only real in-between frames; video compression alone cannot create a transition.
+ * @param before - Exact start frame.
+ * @param after - Exact end frame.
+ * @param timeline - Frames collected by the native driver.
+ * @param samplingMethod - Native capture method.
+ */
+export function middleCandidates(before: Buffer, after: Buffer, timeline: Buffer[],
+  samplingMethod: 'motionFrames' | 'launchFrames' | 'videoFrames'): {
+    frame: Buffer; index: number; progress: number; remaining: number }[] {
+  const total = frameColorDistance(before, after);
+  const minimum = samplingMethod === 'videoFrames' ? Math.min(7, total * 0.2) : 1;
+  return timeline.map((frame, index) => ({ frame, index,
+    progress: frameColorDistance(before, frame) / total,
+    remaining: frameColorDistance(after, frame) / total }))
+    .filter(item => item.progress > 0.02 && item.remaining > 0.02
+      && frameColorDistance(before, item.frame) > minimum
+      && frameColorDistance(after, item.frame) > minimum);
+}
+
+/** Require a recorded frame to follow an approved spatial phase, away from both endpoints.
+ * @param before - Exact start frame.
+ * @param after - Exact end frame.
+ * @param candidates - Frames with visible motion.
+ * @param anchors - Reviewed native video phases.
+ */
+export function assertReviewedVideoMiddle(before: Buffer, after: Buffer,
+  candidates: { frame: Buffer }[], anchors: Buffer[]): void {
+  expect(candidates.length, '必须采到起点和终点之间的真实动画帧').toBeGreaterThan(0);
+  const distances = candidates.flatMap(({ frame }) => anchors.map(anchor => {
+    if (frameColorDistance(before, frame) < frameColorDistance(before, anchor) / 4
+      || frameColorDistance(after, frame) < frameColorDistance(after, anchor) / 4) return Infinity;
+    return videoSpatialDistance(frame, anchor);
+  }));
+  expect(Math.min(...distances), '动画中途帧的实际画面须接近已审查轨迹').toBeLessThanOrEqual(1);
+}
+
 /**
  * 点击真实入口期间由原生驱动逐帧截屏；基准约束起点、终点和中途真实像素。
  * @param device - 安装固定补丁驱动的模拟器。
@@ -137,16 +200,8 @@ export async function captureNativeTransition(device: AndroidDevice, name: strin
   }
   const total = frameColorDistance(before, after);
   expect(total, '入口点击必须产生足够大的可见变化').toBeGreaterThan(3);
-  // 小尺寸文字标签的总变化可能只有 7；固定要求离首尾各 7 会排除真实中途帧。
-  const middleDistance = samplingMethod === 'videoFrames' ? Math.min(7, total * 0.2) : 1;
   // BottomSheet 的弹簧轨迹可能越过终点；用“同时区别于首尾”选关键帧。
-  const candidates = timeline.map((frame, index) => ({ frame, index,
-    progress: frameColorDistance(before, frame) / total,
-    remaining: frameColorDistance(after, frame) / total }))
-    // 200ms 的原生淡入有时只采到靠近终点的一帧，仍要求它与两个端点都有实际像素差。
-    .filter(item => item.progress > 0.02 && item.remaining > 0.02
-      && frameColorDistance(before, item.frame) > middleDistance
-      && frameColorDistance(after, item.frame) > middleDistance);
+  const candidates = middleCandidates(before, after, timeline, samplingMethod);
   await testInfo.attach(`${name}-progress`, {
     body: JSON.stringify({ total, frames: timeline.map(frame => frameColorDistance(before, frame) / total) }),
     contentType: 'application/json',
@@ -173,16 +228,19 @@ export async function captureNativeTransition(device: AndroidDevice, name: strin
     '动画终点视觉回归').toBe(true);
     const reference = readFileSync(testInfo.snapshotPath(`${name}-middle.png`));
     // 原生截图可能落在已审查中途相位的两侧，但靠近起止帧的无关闪屏不能冒充转场。
-    // 非录屏路径既要走过基准中至少一半的可见变化，也必须靠近真实中途基准。
+    // 非录屏路径要求基准变化幅度；录屏路径在空间匹配时逐个检查已审查相位。
     const minimumStartChange = frameColorDistance(before, reference) / 2;
     const minimumEndChange = frameColorDistance(after, reference) / 2;
-    const reviewedCandidates = samplingMethod === 'videoFrames' ? candidates : candidates.filter(item =>
-      frameColorDistance(before, item.frame) >= minimumStartChange
-      && frameColorDistance(after, item.frame) >= minimumEndChange);
     const anchors = [reference, ...videoPhaseAnchors.map(file => readFileSync(testInfo.snapshotPath(file)))];
-    const compare = samplingMethod === 'videoFrames' ? framePaletteDistance : frameColorDistance;
-    expect(Math.min(...reviewedCandidates.flatMap(item => anchors.map(anchor => compare(item.frame, anchor)))),
-      '动画中途帧的实际画面须接近已审查轨迹').toBeLessThanOrEqual(samplingMethod === 'videoFrames' ? 30 : 36);
+    if (samplingMethod === 'videoFrames') assertReviewedVideoMiddle(before, after, candidates, anchors);
+    else {
+      const reviewedCandidates = candidates.filter(item =>
+        frameColorDistance(before, item.frame) >= minimumStartChange
+        && frameColorDistance(after, item.frame) >= minimumEndChange);
+      expect(Math.min(...reviewedCandidates.flatMap(item => anchors.map(anchor =>
+        frameColorDistance(item.frame, anchor)))), '动画中途帧的实际画面须接近已审查轨迹')
+        .toBeLessThanOrEqual(36);
+    }
   }
 }
 
