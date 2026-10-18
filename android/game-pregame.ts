@@ -88,6 +88,19 @@ export async function closeAnimatedGameMask(device: AndroidDevice, game: 'texas-
 export async function gamePreGame(device: AndroidDevice, game: 'texas-holdem' | 'zhajinhua', capture: Capture,
   animationInfo?: TestInfo, phase: 'all' | 'first' | 'second' = 'all'): Promise<void> {
   await gameReady(device, game === 'texas-holdem' ? 'texas-holdem-room-name-text' : 'zhajinhua-text-room-name', 'TestRoom');
+  /** 仅房间重连遮罩打断静态截图时重试同一状态，仍须通过原有逐像素断言。
+   * @param state - 当前共用截图状态。
+   */
+  const captureConnected = async (state: string) => {
+    for (let attempt = 0; attempt < 2; attempt++) {
+      await gameConnected(device, 2_000);
+      try { await capture(state); return; }
+      catch (error) {
+        const reconnecting = (await gameNodes(device)).some(node => /Connecting\.\.\./.test(node.text || ''));
+        if (attempt || !reconnecting || !String(error).includes('页面像素必须保持稳定')) throw error;
+      }
+    }
+  };
   if (phase !== 'second') {
     await capture('waiting_table');
     if (game === 'zhajinhua' && animationInfo) {
@@ -109,14 +122,7 @@ export async function gamePreGame(device: AndroidDevice, game: 'texas-holdem' | 
     await animateGamePanel(device, game, 'card-rank', 'drawer-menu-item-card_rank',
       { x: 110, y: 400, width: 440, height: 600 }, animationInfo, 'enter', 'videoFrames');
     await gameReady(device, 'card-rank-list');
-    for (let attempt = 0; attempt < 2; attempt++) {
-      await gameConnected(device, 2_000);
-      try { await capture('card_rank'); break; }
-      catch (error) {
-        const reconnecting = (await gameNodes(device)).some(node => /Connecting\.\.\./.test(node.text || ''));
-        if (attempt || !reconnecting || !String(error).includes('页面像素必须保持稳定')) throw error;
-      }
-    }
+    await captureConnected('card_rank');
     if ((await gameNodes(device)).some(node => node.res === 'card-rank-popup-close')) {
       await animateGamePanel(device, game, 'card-rank', 'card-rank-popup-close',
         { x: 110, y: 400, width: 440, height: 600 }, animationInfo, 'exit', 'videoFrames', [], undefined,
@@ -157,7 +163,7 @@ export async function gamePreGame(device: AndroidDevice, game: 'texas-holdem' | 
       } : undefined;
       await animateGamePanel(device, game, state, `drawer-menu-item-${state}`,
         { x: 110, y: 360, width: 480, height: 500 }, animationInfo, 'enter',
-        game === 'zhajinhua' || (game === 'texas-holdem' && state === 'theme')
+        game === 'zhajinhua' || (game === 'texas-holdem' && ['theme', 'buy_in'].includes(state))
           ? 'videoFrames' : 'motionFrames', [], renewalReady);
       await gameGone(device, 'drawer-menu-item-exit');
       await gameReady(device, ready);
@@ -168,7 +174,7 @@ export async function gamePreGame(device: AndroidDevice, game: 'texas-holdem' | 
         await expect.poll(async () => Number((await gameReady(device, 'renew-popup-spend-diamond')).text?.trim()),
           { timeout: 45_000 }).toBeGreaterThan(0);
       }
-      await capture(state);
+      await captureConnected(state);
       const exitReady = game === 'zhajinhua' && state === 'buy_in' && animationInfo ? async () => {
         // 房间重连提示会独立于买入面板入退场；终点等其消失后再与牌桌基准比较。
         await expect.poll(async () => (await gameNodes(device)).some(node => /Connecting\.\.\./.test(node.text || '')),
@@ -198,9 +204,22 @@ export async function gamePreGame(device: AndroidDevice, game: 'texas-holdem' | 
   await capture('leaderboard');
   await closeAnimatedGameMask(device, game, 'leaderboard', 'public-leader-board-container',
     { x: 110, y: 400, width: 470, height: 450 }, animationInfo);
-  await animateGamePanel(device, game, 'game-record', 'game-record-button',
-    { x: 150, y: 400, width: 440, height: 450 }, animationInfo, 'enter', 'videoFrames', [],
-    async () => { await gameReady(device, 'review-board-description-text'); });
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      await animateGamePanel(device, game, 'game-record', 'game-record-button',
+        { x: 150, y: 400, width: 440, height: 450 }, animationInfo, 'enter', 'videoFrames', [],
+        async () => { await gameReady(device, 'review-board-description-text'); });
+      break;
+    } catch (error) {
+      // 短侧滑偶尔整段落在录屏的两帧之间；只在缺少合格中途帧时关闭真实侧栏并重采。
+      if (attempt === 2 || !String(error).includes('动画中途帧的实际画面须接近已审查轨迹')) throw error;
+      const retryMask = (await gameReady(device, 'screen-mask-touch-to-close')).bounds;
+      adb('shell', 'input', 'tap', String(Math.round(retryMask.x + 8)), String(Math.round(retryMask.y + 80)));
+      await gameGone(device, 'screen-mask-touch-to-close');
+      await setTimeout(1_000);
+      await gameConnected(device, 2_000);
+    }
+  }
   await gameReady(device, 'review-board-description-text');
   await capture('game_record');
   // 战绩从右侧展开；说明文字只占面板中间，不能用其边界判断遮罩位置。
@@ -237,6 +256,8 @@ export async function gamePreGame(device: AndroidDevice, game: 'texas-holdem' | 
     }
   } else closeChat();
   await gameGone(device, 'in-game-chat-container');
+  // 聊天抽屉退场后房间偶尔独立重连；下一段动画的起点必须是无遮挡的真实牌桌。
+  await gameConnected(device, 2_000);
   await animateGamePanel(device, game, 'buy-in-applications', 'buy-in-application-button',
     { x: 110, y: 400, width: 470, height: 450 }, animationInfo, 'enter',
     game === 'zhajinhua' ? 'videoFrames' : 'motionFrames', [], undefined,
