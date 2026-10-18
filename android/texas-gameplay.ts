@@ -191,7 +191,11 @@ export async function texasGameplay(device: AndroidDevice, proxy: Mitmproxy, roo
   if (animationInfo) await captureNativeTransition(device, 'texas-showdown', animationInfo,
     { x: 0, y: 580, width: 600, height: 600 }, () => send(showdown),
     [{ x: 334, y: 720, width: 110, height: 47, reason: '摊牌旁的房间计时独立跳秒' }], [], 1600,
-    'videoFrames');
+    'videoFrames', undefined, async () => {
+      // 房间重连提示偶尔在录屏结束后盖住牌面，等稳定牌桌再校验终点。
+      await expect.poll(async () => (await gameNodes(device)).some(node => /Connecting\.\.\./.test(node.text || '')),
+        { timeout: 45_000 }).toBe(false);
+    });
   else await send(showdown);
   await capture('showdown');
   const settlement = events([{ event: 'settlement', players: [

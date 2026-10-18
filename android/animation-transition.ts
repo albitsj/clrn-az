@@ -221,16 +221,16 @@ export async function captureNativeTransition(device: AndroidDevice, name: strin
     const reference = readFileSync(testInfo.snapshotPath(`${name}-middle.png`));
     // 原生截图可能落在已审查中途相位的两侧，但靠近起止帧的无关闪屏不能冒充转场。
     // 非录屏路径要求基准变化幅度；录屏路径在空间匹配时逐个检查已审查相位。
-    const minimumStartChange = Math.min(frameColorDistance(before, reference) / 2, total * 0.3);
-    const minimumEndChange = Math.min(frameColorDistance(after, reference) / 2, total * 0.3);
     const anchors = [reference, ...videoPhaseAnchors.map(file => readFileSync(testInfo.snapshotPath(file)))];
     if (samplingMethod === 'videoFrames') assertReviewedVideoMiddle(before, after, candidates, anchors);
     else {
-      const reviewedCandidates = candidates.filter(item =>
-        frameColorDistance(before, item.frame) >= minimumStartChange
-        && frameColorDistance(after, item.frame) >= minimumEndChange);
-      expect(Math.min(...reviewedCandidates.flatMap(item => anchors.map(anchor =>
-        frameColorDistance(item.frame, anchor)))), '动画中途帧的实际画面须接近已审查轨迹')
+      const reviewedDistances = candidates.flatMap(item => anchors
+        .filter(anchor => frameColorDistance(before, item.frame)
+          >= Math.min(frameColorDistance(before, anchor) / 2, total * 0.3)
+          && frameColorDistance(after, item.frame)
+          >= Math.min(frameColorDistance(after, anchor) / 2, total * 0.3))
+        .map(anchor => frameColorDistance(item.frame, anchor)));
+      expect(Math.min(...reviewedDistances), '动画中途帧的实际画面须接近已审查轨迹')
         .toBeLessThanOrEqual(36);
     }
   }

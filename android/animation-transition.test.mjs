@@ -36,7 +36,8 @@ async function compare(frames, scene = { name, start, end, width, height }) {
      */
     snapshotPath: file => `${snapshots}${file}` };
   await captureNativeTransition(device, scene.name, info,
-    { x: 0, y: 0, width: scene.width, height: scene.height }, () => {});
+    { x: 0, y: 0, width: scene.width, height: scene.height }, () => {},
+    [], [], 0, 'motionFrames', undefined, undefined, scene.anchors || []);
 }
 
 test('真实俱乐部菜单中途关键帧通过转场视觉回归', async () => {
@@ -65,6 +66,17 @@ test('真实后期弹窗相位仍能通过非录屏视觉回归', async () => {
   const size = PNG.sync.read(sceneStart);
   await compare([sceneStart, late, sceneEnd], { name: sceneName,
     start: sceneStart, end: sceneEnd, width: size.width, height: size.height });
+});
+
+test('已审查的早期菜单相位按自身运动幅度通过视觉回归', async () => {
+  const sceneName = 'texas-holdem-drawer-menu-enter';
+  const sceneStart = readFileSync(`${snapshots}${sceneName}-start.png`);
+  const sceneEnd = readFileSync(`${snapshots}${sceneName}-end.png`);
+  const early = readFileSync(`${snapshots}${sceneName}-early-phase.png`);
+  const size = PNG.sync.read(sceneStart);
+  await compare([sceneStart, early, sceneEnd], { name: sceneName,
+    start: sceneStart, end: sceneEnd, width: size.width, height: size.height,
+    anchors: [`${sceneName}-early-phase.png`, `${sceneName}-late-phase.png`] });
 });
 
 const videoName = 'slot-popup-exit';

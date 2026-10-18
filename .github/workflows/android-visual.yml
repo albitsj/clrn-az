@@ -84,7 +84,7 @@ jobs:
         run: node scripts/plan-ci-accounts.mjs android
   visual:
     needs: accounts
-    name: Android (${{ matrix.group }} / ${{ matrix.locale }})
+    name: Android (${{ matrix.label }})
     strategy:
       fail-fast: false
       matrix: ${{ fromJSON(needs.accounts.outputs.matrix) }}
@@ -104,6 +104,7 @@ jobs:
       ANDROID_GROUP: ${{ matrix.group }}
       ANDROID_LOCALE: ${{ matrix.locale }}
       ANDROID_FILTER: ${{ inputs.filter || '' }}
+      ANDROID_SHARD_FILTER: ${{ matrix.filter }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -194,7 +195,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: android-staging-visual-${{ matrix.group }}-${{ matrix.locale }}-${{ github.run_id }}-${{ github.run_attempt }}
+          name: android-staging-visual-${{ matrix.group }}-${{ matrix.locale }}-${{ matrix.shard }}-${{ github.run_id }}-${{ github.run_attempt }}
           retention-days: 14
           path: |
             android/playwright-report/
@@ -205,6 +206,6 @@ jobs:
         if: always() && inputs.mode == 'reference'
         uses: actions/upload-artifact@v4
         with:
-          name: android-staging-reference-${{ matrix.group }}-${{ matrix.locale }}-${{ github.run_id }}
+          name: android-staging-reference-${{ matrix.group }}-${{ matrix.locale }}-${{ matrix.shard }}-${{ github.run_id }}
           path: android/snapshots/
           retention-days: 14
