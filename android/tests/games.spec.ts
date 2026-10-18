@@ -69,7 +69,7 @@ for (const [suite, game] of [['texas', 'texas-holdem'], ['zhajinhua', 'zhajinhua
              * @param triggerToast - 遮罩准备完成后才点击触发短时提示。
              */
             const capture = async (state: string, masks: ScreenshotMask[] = [], triggerToast?: () => Promise<string | void>) => {
-              expect(state).toBe(states[index++]);
+              expect(state).toBe(states[index]);
               console.log(`ANDROID > ${suite} 截图状态 ${state}`);
               const transient = ['statistics_help', 'accurate_raise_minimum_error'].includes(state) ? 'toastText1'
                 : ['prediction_result', 'prediction_loss', 'prediction_diamond'].includes(state) ? 'bet-next-hand-result-amount'
@@ -82,6 +82,7 @@ for (const [suite, game] of [['texas', 'texas-holdem'], ['zhajinhua', 'zhajinhua
               };
               await captureGame(device, `${locale}-${scenario.pageLabel.replaceAll('_', '-')}-${state.replaceAll('_', '-')}`, testInfo,
                 transient, expectedAlerts[state], masks, triggerToast);
+              index++;
             };
             const { account } = await gameSession(proxy);
             expect(account).not.toBeNull();

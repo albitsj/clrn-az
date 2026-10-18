@@ -1,7 +1,7 @@
 import type { AndroidDevice } from 'playwright';
 import { setTimeout } from 'node:timers/promises';
 import { expect, type TestInfo } from '@playwright/test';
-import { gameTap as tap, gameReady, gameGone, gameNodes } from './game-controls';
+import { gameTap as tap, gameConnected, gameReady, gameGone, gameNodes } from './game-controls';
 import { adb } from './device';
 import { animateGamePanel } from './game-panel-animation';
 import presentation from '../visual/fixtures/account-presentation.json';
@@ -109,7 +109,14 @@ export async function gamePreGame(device: AndroidDevice, game: 'texas-holdem' | 
     await animateGamePanel(device, game, 'card-rank', 'drawer-menu-item-card_rank',
       { x: 110, y: 400, width: 440, height: 600 }, animationInfo, 'enter', 'videoFrames');
     await gameReady(device, 'card-rank-list');
-    await capture('card_rank');
+    for (let attempt = 0; attempt < 2; attempt++) {
+      await gameConnected(device, 2_000);
+      try { await capture('card_rank'); break; }
+      catch (error) {
+        const reconnecting = (await gameNodes(device)).some(node => /Connecting\.\.\./.test(node.text || ''));
+        if (attempt || !reconnecting || !String(error).includes('页面像素必须保持稳定')) throw error;
+      }
+    }
     if ((await gameNodes(device)).some(node => node.res === 'card-rank-popup-close')) {
       await animateGamePanel(device, game, 'card-rank', 'card-rank-popup-close',
         { x: 110, y: 400, width: 440, height: 600 }, animationInfo, 'exit', 'videoFrames', [], undefined,

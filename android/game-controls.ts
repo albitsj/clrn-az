@@ -161,16 +161,17 @@ export async function gameGone(device: AndroidDevice, res: string): Promise<void
 
 /** 等待房间重连遮罩退去并确认牌桌至少一秒内持续可操作。
  * @param device - 专用模拟器连接。
+ * @param stableMs - 指定入口需要额外连续无重连遮罩的时间。
  */
-export async function gameConnected(device: AndroidDevice): Promise<void> {
+export async function gameConnected(device: AndroidDevice, stableMs = 0): Promise<void> {
   const initial = await gameNodes(device);
-  if (!initial.some(node => /Connecting\.\.\./.test(node.text || ''))) return;
+  if (!stableMs && !initial.some(node => /Connecting\.\.\./.test(node.text || ''))) return;
   let availableSince = 0;
   await expect.poll(async () => {
     const connecting = (await gameNodes(device)).some(node => /Connecting\.\.\./.test(node.text || ''));
     if (connecting) availableSince = 0;
     else if (!availableSince) availableSince = Date.now();
-    return !connecting && Date.now() - availableSince >= 1_000;
+    return !connecting && Date.now() - availableSince >= Math.max(1_000, stableMs);
   }, { timeout: 120_000, intervals: [250] }).toBe(true);
 }
 
