@@ -12,10 +12,12 @@ from urllib.parse import urlsplit
 from mitmproxy import ctx, http
 from presentation import AccountPresentation
 from game_session import GameSession
+from launch_network import LaunchNetwork
 
 
 class AndroidVisualProxy:
     def __init__(self):
+        self.launch = LaunchNetwork()
         self.presentation = AccountPresentation()
         self.records = None
         self.game = None
@@ -143,6 +145,8 @@ class AndroidVisualProxy:
             self.game.websocket_end(flow)
 
     async def request(self, flow):
+        if await self.launch.request(flow):
+            return
         path = urlsplit(flow.request.path).path
         if self.game and flow.request.host == 'test-mitmproxy.invalid' \
                 and path == '/android/auto-rebuy-hold':
