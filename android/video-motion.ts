@@ -57,7 +57,7 @@ export function mirroredThumbnail(reference: VideoThumbnail): VideoThumbnail {
   return { pixels, width, height };
 }
 
-/** Measure motion left after removing a uniform RGB brightness shift from the whole region.
+/** Measure motion left after removing a uniform, clipped RGB shift from the whole region.
  * @param before - Exact frame before the transition.
  * @param frame - Recorded or reviewed phase.
  */
@@ -66,23 +66,30 @@ export function localMotionDistance(before: Buffer, frame: Buffer): number {
   if (a.width !== b.width || a.height !== b.height) throw new Error('动画帧尺寸变化');
   const pixels = a.width * a.height;
   const counts = Array.from({ length: 3 }, () => new Uint32Array(511));
+  const clippedLow = new Uint32Array(3), clippedHigh = new Uint32Array(3);
   for (let offset = 0; offset < a.data.length; offset += 4) {
     for (let channel = 0; channel < 3; channel++) {
-      counts[channel][b.data[offset + channel] - a.data[offset + channel] + 255]++;
+      // Saturated output pixels hide the actual brightness offset; derive it from unclipped pixels.
+      if (b.data[offset + channel] === 0) clippedLow[channel]++;
+      else if (b.data[offset + channel] === 255) clippedHigh[channel]++;
+      else {
+        counts[channel][b.data[offset + channel] - a.data[offset + channel] + 255]++;
+      }
     }
   }
-  const median = counts.map(values => {
-    let seen = 0;
+  const commonShift = counts.map((values, channel) => {
+    let best = 0;
     for (let index = 0; index < values.length; index++) {
-      seen += values[index];
-      if (seen >= pixels / 2) return index - 255;
+      if (values[index] > values[best]) best = index;
     }
-    return 0;
+    if (values[best] === 0) return clippedHigh[channel] >= clippedLow[channel] ? 255 : -255;
+    return best - 255;
   });
   let motion = 0;
   for (let offset = 0; offset < a.data.length; offset += 4) {
     for (let channel = 0; channel < 3; channel++) {
-      motion += Math.abs(b.data[offset + channel] - a.data[offset + channel] - median[channel]);
+      const expected = Math.max(0, Math.min(255, a.data[offset + channel] + commonShift[channel]));
+      motion += Math.abs(b.data[offset + channel] - expected);
     }
   }
   return motion / (pixels * 3);

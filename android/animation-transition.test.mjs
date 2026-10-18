@@ -151,7 +151,8 @@ async function compareRecordedVideo(sceneName, timeline) {
     [], [], 0, 'videoFrames', undefined, undefined, [], [], [], [], [], async () => timeline);
 }
 
-for (const [sceneName, brightness] of [['native-stack-enter', -10], ['game-picker-exit', -40]]) {
+for (const [sceneName, brightness] of [['native-stack-enter', -10], ['game-picker-exit', -40],
+  ['texas-showdown', -40]]) {
   test(`${sceneName} 真实中途相位通过完整录屏比较`, async () => {
     const sceneStart = readFileSync(`${snapshots}${sceneName}-start.png`);
     const sceneMiddle = readFileSync(`${snapshots}${sceneName}-middle.png`);
@@ -174,3 +175,17 @@ for (const [sceneName, brightness] of [['native-stack-enter', -10], ['game-picke
       /动画中途帧的实际画面须接近已审查轨迹/);
   });
 }
+
+test('录屏中的纯白饱和闪屏不能冒充滑动', async () => {
+  const sceneName = 'game-picker-exit';
+  const sceneStart = readFileSync(`${snapshots}${sceneName}-start.png`);
+  const sceneEnd = readFileSync(`${snapshots}${sceneName}-end.png`);
+  const white = PNG.sync.read(sceneStart);
+  for (let offset = 0; offset < white.data.length; offset += 4) {
+    white.data.fill(255, offset, offset + 3);
+  }
+  const timeline = [...Array(30).fill(sceneStart), ...Array(3).fill(PNG.sync.write(white)),
+    ...Array(117).fill(sceneEnd)];
+  await assert.rejects(compareRecordedVideo(sceneName, timeline),
+    /动画中途帧的实际画面须接近已审查轨迹/);
+});
