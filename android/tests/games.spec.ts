@@ -30,7 +30,8 @@ for (const [suite, game] of [['texas', 'texas-holdem'], ['zhajinhua', 'zhajinhua
   const scenarios = enabled ? buildScenarios({ VISUAL_LOCALES: locale, VISUAL_SCOPE: 'full', VISUAL_SUITE: suite })
     .filter(scenario => scenario.viewport.label === 'mobile') : [];
   for (const scenario of scenarios) {
-    const parts = suite === 'zhajinhua' && locale === 'en' && scenario.pageLabel === 'signed_in_zhajinhua_pre_game'
+    const parts = locale === 'en' && (scenario.pageLabel === 'signed_in_zhajinhua_pre_game'
+      || scenario.pageLabel === 'signed_in_texas_pre_game')
       ? ['first', 'second'] as const : ['all'] as const;
     for (const part of parts) {
       const states = part === 'first' ? scenario.snapshotStates!.slice(0, 7)
@@ -82,7 +83,7 @@ for (const [suite, game] of [['texas', 'texas-holdem'], ['zhajinhua', 'zhajinhua
             const { account } = await gameSession(proxy);
             expect(account).not.toBeNull();
             if (suite === 'texas' && scenario.pageLabel === 'signed_in_texas_pre_game') {
-              await gamePreGame(device, game, capture, panelAnimation ? testInfo : undefined);
+            await gamePreGame(device, game, capture, panelAnimation ? testInfo : undefined, part);
             } else if (suite === 'texas') await runTexasScenario(scenario.pageLabel,
               { device, proxy, room: room!.roomId, self: account!.userId, capture,
                 animationInfo: gameAnimation ? testInfo : undefined });

@@ -110,8 +110,8 @@ test('仓库账号分区固定，不能选用另一仓库账号，接受分区�
 
 test('安卓超时场景分片后独占账号，筛选保持槽位，牌桌优先', () => {
   const full = androidAccountMatrix('29').include;
-  assert.equal(full.length, 31);
-  assert.equal(new Set(full.map(item => item.account)).size, 31);
+  assert.equal(full.length, 32);
+  assert.equal(new Set(full.map(item => item.account)).size, 32);
   const groups = ['guest', 'account', 'social', 'rooms', 'wallet-help', 'records', 'texas', 'zhajinhua'];
   const locales = ['zh-Hans', 'zh-Hant', 'en'];
   assert.deepEqual([...new Set(full.map(item => `${item.group}/${item.locale}`))],
@@ -126,7 +126,7 @@ test('安卓超时场景分片后独占账号，筛选保持槽位，牌桌优�
       'controls', 'table_states', 'panel_variants', 'hall_variants'],
     'texas/zh-Hant': ['pre_game', 'optional_pre_game', 'game', 'panels', 'hall', 'records_v2',
       'controls', 'table_states', 'panel_variants', 'hall_variants'],
-    'texas/en': ['pre_game', 'optional_pre_game', 'game', 'panels', 'hall', 'records_v2',
+    'texas/en': ['pre_game_first', 'pre_game_second', 'optional_pre_game', 'game', 'panels', 'hall', 'records_v2',
       'controls', 'table_states', 'panel_variants', 'hall_variants'],
     'zhajinhua/en': ['pre_game_first', 'pre_game_second', 'game'],
   };
