@@ -58,17 +58,11 @@ node android/download-release.mjs
 ANDROID_SERIAL=emulator-5554 ANDROID_GROUP=guest ANDROID_LOCALE=en node scripts/with-test-account.mjs -- node android/run-visual.mjs
 ```
 
-默认扫描 `android-staging-<构建编号>-<提交前12位>` 格式的已发布 Android Staging Releases（包括 prerelease），下载 `android-staging.apk` 并选最新版本。指定版本重现问题（替换为实际标签）：
-
-```sh
-ANDROID_RELEASE_TAG='android-staging-<构建编号>-<提交前12位>' node android/download-release.mjs
-```
-
-下载后核对构建环境、应用标识、提交、架构、附件大小和 SHA-256；安装前再次校验，安装后检查版本。最新 Release 缺少附件会直接失败，不会悄悄退回旧版本。每次报告附带 `build-info.json`，用于确认实际测试的应用提交。
+下载器只读取当前提交的 `deployments/staging.json`，按其中的 `release_tag` 下载 `android-staging.apk`。下载后核对构建环境、应用标识、完整应用提交、架构、附件大小和 SHA-256；安装前再次校验部署记录与 APK，安装后检查版本。指定 Release 缺少附件会直接失败。每次报告附带 `build-info.json`，用于确认实际测试的应用提交。
 
 ## GitHub Actions
 
-工作流为 `Android Staging 视觉回归`，维护在 `albitsj/clrn-az` 的 `master`。应用仓库完成 APK 上传及远端校验后，使用现有 Woodpecker 发布凭据向本仓库的 `deployments/staging.json` 提交记录：`environment`、`sha`、`deployed_at` 与 H5 协议一致，`release_tag` 锁定 APK。master 推送按当前检出提交的 JSON 下载标签，并核对 `build-info.json` 的完整应用提交；PR 和每日定时任务使用最新 APK，手动运行可指定标签。草稿 PR 只运行仓库检查，标记为可审查后再运行完整模拟器矩阵。
+工作流为 `Android Staging 视觉回归`，维护在 `albitsj/clrn-az` 的 `master`。应用仓库 master 完成 APK 上传及远端校验后，使用现有 Woodpecker 发布凭据向本仓库的 `deployments/staging.json` 提交记录：`environment`、`sha`、`deployed_at` 与 H5 协议一致，`release_tag` 锁定 APK。master 推送、PR、每日定时任务和手动任务都按当前检出提交的 JSON 下载标签，并核对 `build-info.json` 的完整应用提交。草稿 PR 只运行仓库检查，标记为可审查后再运行完整模拟器矩阵。
 
 APK 与构建信息继续发布到 **kevinanew/clrn 的公开 Release**，下载步骤使用内置 `github.token` 读取，不增加下载或 dispatch Secret。现有 Woodpecker `android_visual_staging_github_token` 需同时具备 CLRN 和 clrn-az 的 Contents 读写权限；不需要 Actions 写权限。Release 附注标签仍指向 CLRN master 的提交，应用提交记录在标签说明和 `build-info.json` 中。
 
@@ -90,12 +84,11 @@ APK 与构建信息继续发布到 **kevinanew/clrn 的公开 Release**，下载
 
 拼三张三语全部 78 张基准来自 [reference 38673980189](https://github.com/kevinanew/clrn/actions/runs/38673980189)，使用 [APK 7235](https://github.com/kevinanew/clrn/releases/tag/android-staging-7235-72d60d0080df)，六个场景全部通过且已审查。三语独立 compare [38676799300](https://github.com/kevinanew/clrn/actions/runs/38676799300) 全部通过。
 
-通过 GitHub CLI 指定包含工作流的分支和经确认的 Release 标签，生成候选基准：
+通过 GitHub CLI 在部署记录已固定的分支上生成候选基准：
 
 ```sh
 gh workflow run android-visual.yml --repo albitsj/clrn-az \
-  --ref master -f mode=reference \
-  -f release_tag='android-staging-<构建编号>-<提交前12位>'
+  --ref master -f mode=reference
 ```
 
 在 PR 验证期间，将 `--ref master` 替换为 PR 分支。工作流至少运行过一次后可通过 CLI 指定分支；Actions 网页中的手动运行入口还要求工作流存在于默认分支。成功后下载 `android-staging-reference-*` 产物，审查图片，再将 PNG 放回 `android/snapshots/android-35-x86_64-720x1280-<locale>/`，通过 PR 更新。reference 仅生成候选基准，不代表比较通过。
@@ -122,7 +115,7 @@ ANDROID_SERIAL=emulator-5554 ANDROID_VISUAL_MODE=reference node scripts/with-tes
 
 英文登录大厅还采样实际老虎机横幅，最多连续取样五个窗口直到看到轮转，再比较真实关键帧。`animation-assets.json` 记录当前 APK 所属应用提交及全部 16 个动画 WebP 的 SHA-256 和帧数。英文游客任务直接读取已验证的 Release APK，要求其中每个 WebP 动画逐字节匹配、帧数大于一，且不能出现未登记的新素材；哈希同时锁定每帧像素、帧顺序和时长。应用提交改变时必须先复核这份清单。此素材检查覆盖打包内容，牌桌运行时另验证每种表情、道具飞行和全压火焰的实际屏幕关键帧。
 
-原生套件关闭 Playwright 的后台 WebView 发现；后台 ADB 探测失败会关闭整个设备连接，而本套件不使用浏览器调试接口。原生操作、截图及应用错误仍正常失败，不自动重试场景。
+原生套件关闭 Playwright 的后台 WebView 发现；后台 ADB 探测失败会关闭整个设备连接，而本套件不使用浏览器调试接口。原生操作、截图及应用错误仍正常失败，不自动重试场景。CI 每轮只构建一次固定版本原生驱动，通过同轮产物分发给需要它的模拟器任务，避免并发请求 Maven 被限流。
 
 列表滚动固定后，三语高级建房基准来自 [38674831805](https://github.com/kevinanew/clrn/actions/runs/38674831805) 的八个通过场景和 [38675676317](https://github.com/kevinanew/clrn/actions/runs/38675676317) 的简体德州场景；三语新版战绩页脚来自完整通过的 [38674838931](https://github.com/kevinanew/clrn/actions/runs/38674838931)，其余 87 张新版战绩图与原基准匹配。
 

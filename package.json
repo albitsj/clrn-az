@@ -8,7 +8,8 @@
   "scripts": {
     "lint": "npm run lint:js && npm run lint:python && npm run lint:shell && npm run lint:workflows && npm run lint:lines",
     "test": "node scripts/test-local.mjs",
-    "check": "npm run lint && npm run typecheck && npm test",
+    "test:android:collect": "playwright test --config android/playwright.config.ts --list > /dev/null",
+    "check": "npm run lint && npm run typecheck && npm run test:android:collect && npm test",
     "lint:js": "eslint . --max-warnings=0",
     "lint:python": "uvx --from ruff==0.15.12 ruff check .",
     "lint:shell": "node scripts/lint-shell.mjs",

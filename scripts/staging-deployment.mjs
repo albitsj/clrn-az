@@ -1,9 +1,8 @@
-import { appendFileSync, readFileSync } from 'node:fs';
-import { pathToFileURL } from 'node:url';
+import { readFileSync } from 'node:fs';
 
 /**
- * 校验与 H5 相同的 staging 记录字段，并锁定本次上传的 Android Release。
- * @param record - 应用发布流水线提交的部署记录。
+ * 校验应用流水线提交的部署记录。
+ * @param record - 当前检出提交中的部署 JSON。
  */
 export function validateDeployment(record) {
   const match = /^android-staging-([1-9][0-9]{0,8})-([a-f0-9]{12})$/.exec(record?.release_tag);
@@ -16,27 +15,9 @@ export function validateDeployment(record) {
 }
 
 /**
- * master 推送与 PR 使用本次检出的部署记录；手动执行可指定标签，定时任务使用最新 Release。
- * @param env - GitHub Actions 环境及可选手动标签。
- * @param readRecord - 读取当前检出提交中的部署 JSON。
+ * 当前检出提交的部署记录是唯一的 APK 版本来源。
+ * @param file - 当前检出提交的 deployments/staging.json 路径。
  */
-export function deploymentTarget(env, readRecord) {
-  if (env.GITHUB_EVENT_NAME === 'pull_request'
-    || (env.GITHUB_EVENT_NAME === 'push' && env.GITHUB_REF === 'refs/heads/master')) {
-    const record = validateDeployment(readRecord());
-    return { release_tag: record.release_tag, application_commit: record.sha };
-  }
-  const tag = env.ANDROID_RELEASE_TAG || '';
-  if (tag && !/^android-staging-[1-9][0-9]{0,8}-[a-f0-9]{12}$/.test(tag)) {
-    throw new Error('无效的 Android Release 标签。');
-  }
-  return { release_tag: tag, application_commit: '' };
-}
-
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  if (!process.env.GITHUB_OUTPUT) throw new Error('部署规划需要 GITHUB_OUTPUT。');
-  const target = deploymentTarget(process.env, () =>
-    JSON.parse(readFileSync(new URL('../deployments/staging.json', import.meta.url), 'utf8')));
-  appendFileSync(process.env.GITHUB_OUTPUT,
-    Object.entries(target).map(([key, value]) => `${key}=${value}\n`).join(''));
+export function readDeploymentRecord(file) {
+  return validateDeployment(JSON.parse(readFileSync(file, 'utf8')));
 }

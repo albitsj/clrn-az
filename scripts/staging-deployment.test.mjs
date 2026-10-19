@@ -1,13 +1,12 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { deploymentTarget, validateDeployment } from './staging-deployment.mjs';
+import { readDeploymentRecord, validateDeployment } from './staging-deployment.mjs';
 
 const record = { environment: 'staging', sha: 'a'.repeat(40),
   deployed_at: '2026-10-15T12:00:00.000Z', release_tag: `android-staging-123-${'a'.repeat(12)}` };
 
-test('部署推送锁定上传标签和完整应用提交，不选择其他最新版本', () => {
-  assert.deepEqual(deploymentTarget({ GITHUB_EVENT_NAME: 'push', GITHUB_REF: 'refs/heads/master' }, () => record),
-    { release_tag: record.release_tag, application_commit: record.sha });
+test('只接受与完整应用提交一致的 staging 部署记录', () => {
+  assert.deepEqual(validateDeployment(record), record);
   for (const invalid of [null, {}, { ...record, environment: 'production' },
     { ...record, sha: 'b'.repeat(40) }, { ...record, deployed_at: 'bad' },
     { ...record, release_tag: 'injected\noutput=value' }]) {
@@ -15,18 +14,8 @@ test('部署推送锁定上传标签和完整应用提交，不选择其他最�
   }
 });
 
-test('PR 使用检出的固定部署，手动执行指定标签，定时任务仍使用最新版本', () => {
-  assert.deepEqual(deploymentTarget({ GITHUB_EVENT_NAME: 'pull_request' }, () => record),
-    { release_tag: record.release_tag, application_commit: record.sha });
-  /** 定时和手动事件不应该读取固定部署记录。 */
-  const unexpectedRead = () => { throw new Error('不应读取部署记录'); };
-  for (const event of ['schedule', 'workflow_dispatch']) {
-    assert.deepEqual(deploymentTarget({ GITHUB_EVENT_NAME: event }, unexpectedRead),
-      { release_tag: '', application_commit: '' });
-  }
-  assert.equal(deploymentTarget({ GITHUB_EVENT_NAME: 'workflow_dispatch',
-    ANDROID_RELEASE_TAG: record.release_tag }, unexpectedRead).release_tag, record.release_tag);
-  assert.throws(() => deploymentTarget({ ANDROID_RELEASE_TAG: 'invalid' }, unexpectedRead));
-  assert.throws(() => deploymentTarget({ GITHUB_EVENT_NAME: 'pull_request' }, unexpectedRead));
-  assert.throws(() => deploymentTarget({ GITHUB_EVENT_NAME: 'push', GITHUB_REF: 'refs/heads/master' }, unexpectedRead));
+test('检出提交直接读取固定部署记录', () => {
+  const current = readDeploymentRecord(new URL('../deployments/staging.json', import.meta.url));
+  assert.equal(current.environment, 'staging');
+  assert.ok(current.sha.startsWith(current.release_tag.split('-').at(-1)));
 });

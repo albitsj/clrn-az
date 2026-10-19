@@ -29,10 +29,6 @@ on:
     - cron: '42 22 * * *'
   workflow_dispatch:
     inputs:
-      release_tag:
-        description: 'Android Staging Release 标签；留空选最新发布版本'
-        type: string
-        default: ''
       group:
         description: '业务组；默认全部'
         type: choice
@@ -66,24 +62,56 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.plan.outputs.matrix }}
-      release_tag: ${{ steps.deployment.outputs.release_tag }}
-      application_commit: ${{ steps.deployment.outputs.application_commit }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
-      - id: deployment
-        env:
-          ANDROID_RELEASE_TAG: ${{ inputs.release_tag }}
-        run: node scripts/staging-deployment.mjs
       - id: plan
         env:
           CI_ANDROID_GROUP: ${{ inputs.group || 'all' }}
           CI_ANDROID_LOCALE: ${{ inputs.locale || 'all' }}
         run: node scripts/plan-ci-accounts.mjs android
+  driver:
+    if: >-
+      (github.event_name != 'pull_request' ||
+       (github.event.pull_request.head.repo.full_name == github.repository && !github.event.pull_request.draft))
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: 读取固定版本原生驱动源码
+        uses: actions/checkout@v4
+        with:
+          repository: microsoft/playwright
+          ref: 39e3553a4f283a41134d75d7e404484bd9e6865a
+          path: .ttyctl/playwright-driver-source
+          persist-credentials: false
+          sparse-checkout: packages/playwright-core/src/server/android/driver
+      - name: 构建牌桌动画兼容驱动
+        run: |
+          for attempt in 1 2 3; do
+            if node android/build-driver.mjs; then break; fi
+            if [ "$attempt" = 3 ]; then exit 1; fi
+            sleep $((attempt * 20))
+          done
+      - name: 保存固定原生驱动
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-visual-driver
+          path: .ttyctl/android-driver/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 1
   visual:
-    needs: accounts
+    needs: [accounts, driver]
     name: Android (${{ matrix.label }})
     strategy:
       fail-fast: false
@@ -132,8 +160,6 @@ jobs:
       - name: 下载并校验 Release APK
         env:
           GH_TOKEN: ${{ github.token }}
-          ANDROID_RELEASE_TAG: ${{ needs.accounts.outputs.release_tag }}
-          ANDROID_EXPECTED_APPLICATION_COMMIT: ${{ needs.accounts.outputs.application_commit }}
         run: node android/download-release.mjs
       - name: 安装原生控件测试驱动
         run: npx playwright install android
@@ -141,23 +167,18 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - name: 读取固定版本原生驱动源码
+      - name: 下载固定原生驱动
         if: matrix.group == 'texas' || matrix.group == 'zhajinhua' || matrix.group == 'guest' || matrix.group == 'social' || matrix.group == 'rooms' || matrix.group == 'account'
-        uses: actions/checkout@v4
+        uses: actions/download-artifact@v4
         with:
-          repository: microsoft/playwright
-          ref: 39e3553a4f283a41134d75d7e404484bd9e6865a
-          path: .ttyctl/playwright-driver-source
-          persist-credentials: false
-          sparse-checkout: packages/playwright-core/src/server/android/driver
-      - name: 构建牌桌动画兼容驱动
+          name: android-visual-driver
+          path: .ttyctl/android-driver
+      - name: 校验固定原生驱动产物
         if: matrix.group == 'texas' || matrix.group == 'zhajinhua' || matrix.group == 'guest' || matrix.group == 'social' || matrix.group == 'rooms' || matrix.group == 'account'
         run: |
-          for attempt in 1 2 3; do
-            if node android/build-driver.mjs; then break; fi
-            if [ "$attempt" = 3 ]; then exit 1; fi
-            sleep $((attempt * 20))
-          done
+          test -s .ttyctl/android-driver/android-driver-target.apk
+          test -s .ttyctl/android-driver/android-driver.apk
+          node -e 'const source = require("./.ttyctl/android-driver/source.json"); if (source.revision !== "39e3553a4f283a41134d75d7e404484bd9e6865a" || source.patch !== 6) process.exit(1)'
       - name: 准备固定 Android 系统镜像
         run: |
           sdk_manager="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
