@@ -4,16 +4,7 @@ name: Android Staging 视觉回归
 on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
-    paths:
-      - 'deployments/staging.json'
-      - 'android/**'
-      - 'visual/**'
-      - 'e2e/**'
-      - 'scripts/**'
-      - 'tsconfig.json'
-      - 'package.json'
-      - 'package-lock.json'
-      - '.github/workflows/android-visual.yml'
+    # 每次 PR 提交都回归，使结果可匹配当前测试提交。
   push:
     branches: [master]
     paths:
