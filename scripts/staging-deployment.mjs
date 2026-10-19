@@ -14,7 +14,10 @@ export function validateDeployment(record) {
   return record;
 }
 
-/** 当前检出提交的部署记录是唯一的 APK 版本来源。 */
-export function readDeploymentRecord() {
-  return validateDeployment(JSON.parse(readFileSync(new URL('../deployments/staging.json', import.meta.url), 'utf8')));
+/**
+ * 当前检出提交的部署记录是唯一的 APK 版本来源。
+ * @param file - 当前检出提交的 deployments/staging.json 路径。
+ */
+export function readDeploymentRecord(file) {
+  return validateDeployment(JSON.parse(readFileSync(file, 'utf8')));
 }

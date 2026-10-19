@@ -15,7 +15,7 @@ test('只接受与完整应用提交一致的 staging 部署记录', () => {
 });
 
 test('检出提交直接读取固定部署记录', () => {
-  const current = readDeploymentRecord();
+  const current = readDeploymentRecord(new URL('../deployments/staging.json', import.meta.url));
   assert.equal(current.environment, 'staging');
   assert.ok(current.sha.startsWith(current.release_tag.split('-').at(-1)));
 });

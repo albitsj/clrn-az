@@ -6,7 +6,7 @@ import { readDeploymentRecord } from '../scripts/staging-deployment.mjs';
 import { releaseRepository, packageName, validateRelease, validateBuildInformation, verifyPackage } from './release.mjs';
 
 const directory = fileURLToPath(new URL('./artifacts', import.meta.url));
-const deployment = readDeploymentRecord();
+const deployment = readDeploymentRecord(new URL('../deployments/staging.json', import.meta.url));
 if (process.env.GITHUB_ACTIONS === 'true' && !process.env.GH_TOKEN) {
   throw new Error('下载步骤需要把 GitHub Actions 内置 github.token 传入 GH_TOKEN（读取公开的 CLRN Release）。');
 }

@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { createReadStream } from 'node:fs';
 import { readFile, stat } from 'node:fs/promises';
+import { resolve } from 'node:path';
 import { readDeploymentRecord } from '../scripts/staging-deployment.mjs';
 
 export const releaseRepository = 'kevinanew/clrn';
@@ -66,7 +67,7 @@ export async function verifyPackage(file, information) {
  * @param directory - 下载目录。
  */
 export async function readVerifiedBuild(directory) {
-  const deployment = readDeploymentRecord();
+  const deployment = readDeploymentRecord(resolve(directory, '../../../deployments/staging.json'));
   const information = JSON.parse(await readFile(`${directory}/build-info.json`, 'utf8'));
   const release = JSON.parse(await readFile(`${directory}/release.json`, 'utf8'));
   validateBuildInformation(information, validateRelease(release, deployment.release_tag), deployment.sha);
