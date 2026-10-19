@@ -4,7 +4,7 @@ import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
-import { packageName, selectRelease, validateBuildInformation, verifyPackage } from './release.mjs';
+import { packageName, validateRelease, validateBuildInformation, verifyPackage } from './release.mjs';
 
 const content = Buffer.from('安装包完整性测试');
 const information = {
@@ -22,22 +22,19 @@ const release = {
   ],
 };
 
-test('选中预发布 APK，忽略其他平台和草稿，并可固定旧版本', () => {
-  const old = { ...release, published_at: '2026-10-13T00:00:00Z', tag_name: `android-staging-7185-${'e'.repeat(12)}` };
-  const list = [old, { ...release, draft: true }, { ...release, tag_name: 'ios-production' }, release];
-  assert.equal(selectRelease(list), release);
-  assert.equal(selectRelease(list, old.tag_name), old);
-  assert.throws(() => selectRelease(list, 'production'), /无效/);
-  assert.throws(() => selectRelease([{ ...release, body: '' }]), /未找到/);
-});
-
-test('最新发布缺包必须失败，不能悄悄回退到旧包', () => {
-  assert.throws(() => selectRelease([{ ...release, assets: [] }]), /附件/);
-  assert.throws(() => selectRelease([{ ...release, assets: [...release.assets, release.assets[1]] }]), /附件/);
+test('只接受部署记录指定且附件完整的已发布 APK', () => {
+  assert.equal(validateRelease(release, information.releaseTag), release);
+  for (const candidate of [{ ...release, draft: true }, { ...release, tag_name: 'ios-production' },
+    { ...release, body: '' }, { ...release, published_at: null }]) {
+    assert.throws(() => validateRelease(candidate, information.releaseTag), /无效/);
+  }
+  assert.throws(() => validateRelease(release, `android-staging-7185-${'e'.repeat(12)}`), /无效/);
+  assert.throws(() => validateRelease({ ...release, assets: [] }, information.releaseTag), /附件/);
+  assert.throws(() => validateRelease({ ...release, assets: [...release.assets, release.assets[1]] },
+    information.releaseTag), /附件/);
 });
 
 test('拒绝生产包、错误应用、提交、版本和不匹配的附件摘要', () => {
-  assert.equal(validateBuildInformation(information, release), information);
   assert.equal(validateBuildInformation(information, release, information.applicationCommit), information);
   assert.throws(() => validateBuildInformation(information, release,
     `${information.applicationCommit.slice(0, 12)}${'a'.repeat(28)}`), /不匹配/);

@@ -29,10 +29,6 @@ on:
     - cron: '42 22 * * *'
   workflow_dispatch:
     inputs:
-      release_tag:
-        description: 'Android Staging Release 标签；留空使用检出提交中的固定部署版本'
-        type: string
-        default: ''
       group:
         description: '业务组；默认全部'
         type: choice
@@ -66,17 +62,11 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.plan.outputs.matrix }}
-      release_tag: ${{ steps.deployment.outputs.release_tag }}
-      application_commit: ${{ steps.deployment.outputs.application_commit }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
-      - id: deployment
-        env:
-          ANDROID_RELEASE_TAG: ${{ inputs.release_tag }}
-        run: node scripts/staging-deployment.mjs
       - id: plan
         env:
           CI_ANDROID_GROUP: ${{ inputs.group || 'all' }}
@@ -132,8 +122,6 @@ jobs:
       - name: 下载并校验 Release APK
         env:
           GH_TOKEN: ${{ github.token }}
-          ANDROID_RELEASE_TAG: ${{ needs.accounts.outputs.release_tag }}
-          ANDROID_EXPECTED_APPLICATION_COMMIT: ${{ needs.accounts.outputs.application_commit }}
         run: node android/download-release.mjs
       - name: 安装原生控件测试驱动
         run: npx playwright install android
