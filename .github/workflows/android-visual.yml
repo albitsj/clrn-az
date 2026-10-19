@@ -30,7 +30,7 @@ on:
   workflow_dispatch:
     inputs:
       release_tag:
-        description: 'Android Staging Release 标签；留空选最新发布版本'
+        description: 'Android Staging Release 标签；留空使用检出提交中的固定部署版本'
         type: string
         default: ''
       group:

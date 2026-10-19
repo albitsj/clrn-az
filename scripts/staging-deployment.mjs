@@ -1,3 +1,4 @@
+// 默认固定检出提交中的部署版本，仅手动显式选包时验证其他分支 Release。
 import { appendFileSync, readFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 
@@ -16,21 +17,20 @@ export function validateDeployment(record) {
 }
 
 /**
- * master 推送与 PR 使用本次检出的部署记录；手动执行可指定标签，定时任务使用最新 Release。
+ * 所有任务默认使用本次检出的部署记录，手动执行可显式指定分支 Release。
  * @param env - GitHub Actions 环境及可选手动标签。
  * @param readRecord - 读取当前检出提交中的部署 JSON。
  */
 export function deploymentTarget(env, readRecord) {
-  if (env.GITHUB_EVENT_NAME === 'pull_request'
-    || (env.GITHUB_EVENT_NAME === 'push' && env.GITHUB_REF === 'refs/heads/master')) {
-    const record = validateDeployment(readRecord());
-    return { release_tag: record.release_tag, application_commit: record.sha };
+  const tag = env.GITHUB_EVENT_NAME === 'workflow_dispatch' ? env.ANDROID_RELEASE_TAG : '';
+  if (tag) {
+    if (!/^android-staging-[1-9][0-9]{0,8}-[a-f0-9]{12}$/.test(tag)) {
+      throw new Error('无效的 Android Release 标签。');
+    }
+    return { release_tag: tag, application_commit: '' };
   }
-  const tag = env.ANDROID_RELEASE_TAG || '';
-  if (tag && !/^android-staging-[1-9][0-9]{0,8}-[a-f0-9]{12}$/.test(tag)) {
-    throw new Error('无效的 Android Release 标签。');
-  }
-  return { release_tag: tag, application_commit: '' };
+  const record = validateDeployment(readRecord());
+  return { release_tag: record.release_tag, application_commit: record.sha };
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
