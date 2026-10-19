@@ -68,7 +68,7 @@ ANDROID_RELEASE_TAG='android-staging-<构建编号>-<提交前12位>' node andro
 
 ## GitHub Actions
 
-工作流为 `Android Staging 视觉回归`，维护在 `albitsj/clrn-az` 的 `master`。应用仓库完成 APK 上传及远端校验后，使用现有 Woodpecker 发布凭据向本仓库的 `deployments/staging.json` 提交记录：`environment`、`sha`、`deployed_at` 与 H5 协议一致，`release_tag` 锁定 APK。master 推送按当前检出提交的 JSON 下载标签，并核对 `build-info.json` 的完整应用提交；PR 和每日定时任务使用最新 APK，手动运行可指定标签。草稿 PR 只运行仓库检查，标记为可审查后再运行完整模拟器矩阵。
+工作流为 `Android Staging 视觉回归`，维护在 `albitsj/clrn-az` 的 `master`。应用仓库 master 完成 APK 上传及远端校验后，使用现有 Woodpecker 发布凭据向本仓库的 `deployments/staging.json` 提交记录：`environment`、`sha`、`deployed_at` 与 H5 协议一致，`release_tag` 锁定 APK。master 推送按当前检出提交的 JSON 下载标签，并核对 `build-info.json` 的完整应用提交；PR、每日定时任务和未指定标签的手动任务也固定检出提交中的记录；手动运行可显式指定任意分支已发布的测试标签。草稿 PR 只运行仓库检查，标记为可审查后再运行完整模拟器矩阵。
 
 APK 与构建信息继续发布到 **kevinanew/clrn 的公开 Release**，下载步骤使用内置 `github.token` 读取，不增加下载或 dispatch Secret。现有 Woodpecker `android_visual_staging_github_token` 需同时具备 CLRN 和 clrn-az 的 Contents 读写权限；不需要 Actions 写权限。Release 附注标签仍指向 CLRN master 的提交，应用提交记录在标签说明和 `build-info.json` 中。
 
