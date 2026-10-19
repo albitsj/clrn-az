@@ -115,7 +115,7 @@ ANDROID_SERIAL=emulator-5554 ANDROID_VISUAL_MODE=reference node scripts/with-tes
 
 英文登录大厅还采样实际老虎机横幅，最多连续取样五个窗口直到看到轮转，再比较真实关键帧。`animation-assets.json` 记录当前 APK 所属应用提交及全部 16 个动画 WebP 的 SHA-256 和帧数。英文游客任务直接读取已验证的 Release APK，要求其中每个 WebP 动画逐字节匹配、帧数大于一，且不能出现未登记的新素材；哈希同时锁定每帧像素、帧顺序和时长。应用提交改变时必须先复核这份清单。此素材检查覆盖打包内容，牌桌运行时另验证每种表情、道具飞行和全压火焰的实际屏幕关键帧。
 
-原生套件关闭 Playwright 的后台 WebView 发现；后台 ADB 探测失败会关闭整个设备连接，而本套件不使用浏览器调试接口。原生操作、截图及应用错误仍正常失败，不自动重试场景。
+原生套件关闭 Playwright 的后台 WebView 发现；后台 ADB 探测失败会关闭整个设备连接，而本套件不使用浏览器调试接口。原生操作、截图及应用错误仍正常失败，不自动重试场景。CI 每轮只构建一次固定版本原生驱动，通过同轮产物分发给需要它的模拟器任务，避免并发请求 Maven 被限流。
 
 列表滚动固定后，三语高级建房基准来自 [38674831805](https://github.com/kevinanew/clrn/actions/runs/38674831805) 的八个通过场景和 [38675676317](https://github.com/kevinanew/clrn/actions/runs/38675676317) 的简体德州场景；三语新版战绩页脚来自完整通过的 [38674838931](https://github.com/kevinanew/clrn/actions/runs/38674838931)，其余 87 张新版战绩图与原基准匹配。
 
