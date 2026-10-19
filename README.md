@@ -24,3 +24,7 @@ Actions 只需 `CLRN_CI_TEST_ACCOUNTS_V2`（安卓新 70 个账号）和 `TESTIN
 持续集成和本机共用同一准备逻辑；失败时停止测试，本机释放账号锁。详见 [余额准备](android/README.md#测试开始前的金币准备)。
 
 应用各工作分支 push 会发布独立测试 Release。CI、本机下载、定时和手动任务都只使用当前检出提交的 `deployments/staging.json`。测试应用 PR 时，应在测试 PR 的部署记录中固定该 Release 和完整应用提交。
+
+应用普通分支发布测试包后，会同步本仓库的同名分支、`deployments/staging.json` 和普通 PR。
+后续测试修复直接提交到同名分支；新的应用构建只更新部署记录，保留已有修复。
+应用合并并发布后自动提升部署记录，再复验合并测试 PR。接入顺序、权限和协议见[应用测试项目对接说明](https://github.com/kevinanew/laiwan_prd/blob/master/docs/frontends/laiwan_react_native.html#branch-testing)。

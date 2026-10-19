@@ -1,3 +1,4 @@
+# 使用当前提交中的固定 APK；同名分支的普通 PR 自动运行完整回归。
 name: Android Staging 视觉回归
 
 on:
@@ -58,7 +59,21 @@ concurrency:
   queue: max
 
 jobs:
+  deployment:
+    name: 核对分支部署记录
+    if: >-
+      github.event_name != 'pull_request' ||
+      (github.event.pull_request.head.repo.full_name == github.repository && !github.event.pull_request.draft)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: 核对固定版本和应用分支
+        run: node scripts/validate-test-branch.mjs
   accounts:
+    needs: deployment
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.plan.outputs.matrix }}
@@ -73,6 +88,7 @@ jobs:
           CI_ANDROID_LOCALE: ${{ inputs.locale || 'all' }}
         run: node scripts/plan-ci-accounts.mjs android
   driver:
+    needs: deployment
     if: >-
       (github.event_name != 'pull_request' ||
        (github.event.pull_request.head.repo.full_name == github.repository && !github.event.pull_request.draft))
