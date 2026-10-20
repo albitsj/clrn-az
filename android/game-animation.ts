@@ -67,7 +67,8 @@ export async function captureChallengeAnimation(device: AndroidDevice, name: str
     await testInfo.attach(`${name}-original`, { body: best!.original, contentType: 'image/png' });
     await testInfo.attach(name, { body: best!.bytes, contentType: 'image/png' });
     if (reference) expect(best!.bytes).toMatchSnapshot(`${name}.png`);
-    for (const [index, frame] of matchingFrames.entries()) {
+    // 三语言页面仍逐分区完整匹配；额外的动画相位截图只保留英文。
+    if (name.startsWith('en-')) for (const [index, frame] of matchingFrames.entries()) {
       await testInfo.attach(`${name}-matched-player-${index + 1}`, { body: frame, contentType: 'image/png' });
     }
   } catch (error) {

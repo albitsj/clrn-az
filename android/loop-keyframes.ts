@@ -1,3 +1,4 @@
+import { requireEnglishAnimation } from './animation-locale';
 import { readFileSync } from 'node:fs';
 import { expect, type TestInfo } from '@playwright/test';
 import type { AndroidDevice } from 'playwright';
@@ -33,6 +34,7 @@ export { framePaletteDistance } from './animation-transition';
  */
 export async function captureLoopKeyframes(device: AndroidDevice, name: string, testInfo: TestInfo,
   regions: ScreenshotBounds[], maxAttempts = 1): Promise<void> {
+  requireEnglishAnimation();
   expect(regions.length).toBeGreaterThan(0);
   const implementation = (device as unknown as { _connection: { toImpl(device: AndroidDevice): {
     _send(method: string): Promise<NativeFrame[]> } } })._connection.toImpl(device);
@@ -89,6 +91,7 @@ export async function captureMovingKeyframes(device: AndroidDevice, name: string
   regions: ScreenshotBounds[], distanceLimit = 18,
   compareDistance: (left: Buffer, right: Buffer) => number = frameColorDistance,
   maxAttempts = 1, phaseAnchors: string[] = []): Promise<void> {
+  requireEnglishAnimation();
   expect(regions.length).toBeGreaterThan(0);
   const implementation = (device as unknown as { _connection: { toImpl(device: AndroidDevice): {
     _send(method: string): Promise<NativeFrame[]> } } })._connection.toImpl(device);
@@ -127,6 +130,7 @@ export async function captureMovingKeyframes(device: AndroidDevice, name: string
  */
 export async function captureConcurrentMotion(frames: Buffer[], name: string, testInfo: TestInfo,
   region: ScreenshotBounds): Promise<void> {
+  requireEnglishAnimation();
   const pictures = frames.map(frame => motionParts(frame, [region]).regions[0]);
   const first = pictures[0];
   const distances = pictures.map(frame => frameColorDistance(first, frame));

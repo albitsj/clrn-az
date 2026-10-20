@@ -1,3 +1,4 @@
+import { requireEnglishAnimation } from './animation-locale';
 import { existsSync, readFileSync } from 'node:fs';
 import { setTimeout } from 'node:timers/promises';
 import { expect, type TestInfo } from '@playwright/test';
@@ -20,6 +21,7 @@ type NativeFrame = { capturedAt: number; png: string };
  */
 export async function captureAssetSequence(device: AndroidDevice, name: string, info: TestInfo,
   region: ScreenshotBounds, trigger: () => Promise<unknown>, flightRegion?: ScreenshotBounds): Promise<void> {
+  requireEnglishAnimation();
   /**
    * 从完整原生截图中裁出效果范围。
    * @param bytes - 原生截图 PNG。
