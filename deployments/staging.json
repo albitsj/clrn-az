@@ -1,1 +1,1 @@
-{"environment":"staging","sha":"35c8e80787e7606086f7c3ff4edd7db23b368922","deployed_at":"2026-10-20T17:32:01.851Z","release_tag":"android-staging-7337-35c8e80787e7"}
+{"environment":"staging","sha":"b99077e07427f469838aeb34811975cda4fe2487","deployed_at":"2026-10-20T19:33:56.923Z","release_tag":"android-staging-100001002-b99077e07427","application":{"repository":"kevinanew/laiwan_react_native","branch":"staging-android-hall-card-visibility","build_number":100001002,"channel":"branch"}}
