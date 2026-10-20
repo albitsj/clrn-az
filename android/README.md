@@ -8,6 +8,8 @@
 
 Web 另外有 5 个下载帮助场景。当前 Staging APK 的发布渠道为 `default`，原生 `SettingItems._listAndroidAdSectionItems` 仅在 `self-host` 渠道显示该入口，因此在 `unavailablePages` 明确列为不可达，不计入通过数量。
 
+动画关键帧统一只保留英文（`en`）一套；采集入口会拒绝其他语言，普通页面继续保留三语言。截图中心的动画单列展示，不提供多语言切换。
+
 动画测试清单见 [ANIMATION_COVERAGE.md](ANIMATION_COVERAGE.md)。英文模拟器对实际入口采集起点、中途和终点，循环效果保存多个运动相位；短弹层使用 Android 原生录屏。素材测试另锁定 WebP 的逐帧哈希与时长。手动工作流的 `reference` 模式只生成待审查候选图，提交基准后须用 `compare` 模式验证。
 
 启动页另由 `launch-pages.spec.ts` 在游客组三种语言任务采集。先通过应用设置选择语言，再冷启动，保存测试环境提示出现后的完整 `720×1280` 屏幕，命名为 `<locale>-launch-staging-notice.png`。整屏连续稳定两秒后比较，不裁切、不加页面遮罩。截图中心将它与启动动画放在同一“应用启动”场景的“页面”分类。可用 `group=guest`、`locale=all`、`filter=launch_staging_notice` 定向生成和比较。

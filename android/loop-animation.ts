@@ -1,3 +1,4 @@
+import { requireEnglishAnimation } from './animation-locale';
 import { setTimeout } from 'node:timers/promises';
 import { expect, type TestInfo } from '@playwright/test';
 import type { AndroidDevice } from 'playwright';
@@ -27,6 +28,7 @@ export function changedMotionRegions(first: Buffer[], current: Buffer[]): boolea
 export async function verifyLoopAnimation(device: AndroidDevice, name: string, testInfo: TestInfo,
   regions: ScreenshotBounds[], masks: ScreenshotMask[],
   options: { takeScreenshot?: () => Promise<Buffer>; timeoutMs?: number } = {}): Promise<void> {
+  requireEnglishAnimation();
   expect(regions.length, '须找到至少一个可见的原生动画区域').toBeGreaterThan(0);
   // 与已有遮罩采用同一坐标；保留整张原图，以便审查目标和周边像素。
   await testInfo.attach(`${name}-motion-regions`, {

@@ -1,3 +1,4 @@
+import { requireEnglishAnimation } from './animation-locale';
 import { readFileSync } from 'node:fs';
 import { setTimeout } from 'node:timers/promises';
 import { expect, type TestInfo } from '@playwright/test';
@@ -127,6 +128,7 @@ export async function captureNativeTransition(device: AndroidDevice, name: strin
   endPhaseAnchors: string[] = [], endCompareMasks: ScreenshotMask[] = [],
   startPhaseAnchors: string[] = [], startCompareMasks: ScreenshotMask[] = [],
   videoRecorder: typeof recordNativeVideoFrames = recordNativeVideoFrames): Promise<void> {
+  requireEnglishAnimation();
   /**
    * 截出固定的动画绘制区域。
    * @param bytes - 原生完整屏幕 PNG。
@@ -247,6 +249,7 @@ export async function captureNativeTransition(device: AndroidDevice, name: strin
  */
 export async function captureTransientTransition(device: AndroidDevice, name: string, testInfo: TestInfo,
   region: ScreenshotBounds, trigger: () => unknown, settleMs = 2500): Promise<void> {
+  requireEnglishAnimation();
   /**
    * 从完整原生截图裁切提示区域。
    * @param bytes - 原生完整屏幕 PNG。
@@ -297,6 +300,7 @@ export async function captureTransientTransition(device: AndroidDevice, name: st
  */
 export async function captureTimedPrompt(device: AndroidDevice, name: string, testInfo: TestInfo,
   region: ScreenshotBounds, trigger: () => unknown): Promise<void> {
+  requireEnglishAnimation();
   /**
    * 裁切固定上方面板。
    * @param bytes - 原生完整屏幕 PNG。
