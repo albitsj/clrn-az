@@ -101,12 +101,13 @@ export async function captureGame(device: AndroidDevice, name: string, testInfo:
     await captureChallengeAnimation(device, name, testInfo, masks);
     return;
   }
-  if (name.endsWith('-pre-game-waiting-table')) {
+  // 普通页面仍按三语言比较；循环动画的采样附件只在英文生成。
+  if (name.startsWith('en-') && name.endsWith('-pre-game-waiting-table')) {
     const guides = masks.filter(mask => /^seat-guide-\d+ 完整箭头动画范围$/.test(mask.reason));
     expect(guides.length, '等待开局的空座引导箭头必须可见').toBeGreaterThan(0);
     await verifyLoopAnimation(device, name, testInfo, guides.map(pixelBounds), masks);
   }
-  if (/-signed-in-(?:texas|zhajinhua)-game-opponent-turn$/.test(name)) {
+  if (name.startsWith('en-') && /-signed-in-(?:texas|zhajinhua)-game-opponent-turn$/.test(name)) {
     const marker = name.includes('-zhajinhua-') ? 'zhajinhua-active-countdown' : 'texas-holdem-active-countdown';
     const countdown = nodes.filter(node => node.res === marker);
     expect(countdown, '对手行动时必须出现原生倒计时').toHaveLength(1);
