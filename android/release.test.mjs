@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
-import { packageName, validateRelease, validateBuildInformation, verifyPackage } from './release.mjs';
+import { packageName, readVerifiedBuild, validateRelease, validateBuildInformation, verifyPackage } from './release.mjs';
 
 const content = Buffer.from('安装包完整性测试');
 const information = {
@@ -58,5 +58,36 @@ test('实际文件校验能识别截断与等长内容篡改', async () => {
     await assert.rejects(verifyPackage(file, information), /SHA-256/);
   } finally {
     await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test('运行前以部署记录为唯一版本来源，拒绝缓存旧包并接受记录指定的新包', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'clrn-deployment-test-'));
+  const directory = join(root, 'android/artifacts/current');
+  const deploymentFile = join(root, 'deployments/staging.json');
+  const deployment = { environment: 'staging', sha: information.applicationCommit,
+    deployed_at: '2026-10-20T00:00:00.000Z', release_tag: information.releaseTag };
+  try {
+    await mkdir(directory, { recursive: true });
+    await mkdir(join(root, 'deployments'));
+    await writeFile(deploymentFile, JSON.stringify(deployment));
+    await writeFile(join(directory, 'build-info.json'), JSON.stringify(information));
+    await writeFile(join(directory, 'release.json'), JSON.stringify(release));
+    await writeFile(join(directory, packageName), content);
+    assert.deepEqual(await readVerifiedBuild(directory), information);
+
+    const next = { ...information, applicationCommit: 'a'.repeat(40), buildNumber: 7188,
+      releaseTag: `android-staging-7188-${'a'.repeat(12)}` };
+    await writeFile(deploymentFile, JSON.stringify({ ...deployment,
+      sha: next.applicationCommit, release_tag: next.releaseTag }));
+    await assert.rejects(readVerifiedBuild(directory), /无效/);
+    await writeFile(join(directory, 'release.json'), JSON.stringify({ ...release, tag_name: next.releaseTag }));
+    await assert.rejects(readVerifiedBuild(directory), /不匹配/);
+    await writeFile(join(directory, 'build-info.json'), JSON.stringify(next));
+    assert.deepEqual(await readVerifiedBuild(directory), next);
+    await writeFile(join(directory, packageName), Buffer.alloc(content.length));
+    await assert.rejects(readVerifiedBuild(directory), /SHA-256/);
+  } finally {
+    await rm(root, { recursive: true, force: true });
   }
 });
