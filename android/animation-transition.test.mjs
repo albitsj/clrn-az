@@ -1,3 +1,4 @@
+/** 验证转场采集的真实相位比较及延迟边界解析，防止完整首尾截图被错误裁切。 */
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
@@ -139,18 +140,37 @@ test('录屏直接跳到终点不能冒充弹窗滑出', () => {
 /** Drive the complete video capture path with a fixed native recording.
  * @param sceneName - Reviewed transition name.
  * @param timeline - Frames returned by the native recorder.
+ * @param dynamicRegion - 使用带偏移的完整屏幕验证录屏后才解析的控件边界。
  */
-async function compareRecordedVideo(sceneName, timeline) {
+async function compareRecordedVideo(sceneName, timeline, dynamicRegion = false) {
   const sceneStart = readFileSync(`${snapshots}${sceneName}-start.png`);
   const sceneEnd = readFileSync(`${snapshots}${sceneName}-end.png`);
   const size = PNG.sync.read(sceneStart);
+  const region = { x: dynamicRegion ? 17 : 0, y: dynamicRegion ? 23 : 0,
+    width: size.width, height: size.height };
+  let triggered = false, resolutions = 0;
+  /** 在入场触发后读取控件边界，模拟弹窗在初始屏幕中尚不存在。 */
+  const resolveRegion = async () => {
+    assert.equal(triggered, true, '不得在入场前查询尚不存在的弹窗');
+    resolutions++;
+    return region;
+  };
+  /** 把真实局部截图放入更大的模拟屏幕，检查首尾帧也使用同一偏移。
+   * @param bytes - 已审查的真实局部截图。
+   */
+  const screen = bytes => {
+    if (!dynamicRegion) return bytes;
+    const canvas = new PNG({ width: size.width + 40, height: size.height + 50 });
+    PNG.bitblt(PNG.sync.read(bytes), canvas, 0, 0, size.width, size.height, region.x, region.y);
+    return PNG.sync.write(canvas);
+  };
   let screens = 0;
   const device = { _connection: { /** Return the exact start and end screenshots. */ toImpl: () => ({
     /** Mock the Android screen command.
      * @param method - Native driver command.
      */
     _send: async method => method === 'screen'
-      ? (screens++ === 0 ? sceneStart : sceneEnd).toString('base64') : [],
+      ? screen(screens++ === 0 ? sceneStart : sceneEnd).toString('base64') : [],
   }) } };
   const info = { /** Discard test attachments. */ attach: async () => {},
     config: { updateSnapshots: 'none' },
@@ -159,8 +179,20 @@ async function compareRecordedVideo(sceneName, timeline) {
      */
     snapshotPath: file => `${snapshots}${file}` };
   await captureNativeTransition(device, sceneName, info,
-    { x: 0, y: 0, width: size.width, height: size.height }, () => {},
-    [], [], 0, 'videoFrames', undefined, undefined, [], [], [], [], [], async () => timeline);
+    dynamicRegion ? resolveRegion : region,
+    /** 模拟真实入口，边界必须等此操作之后才能读取。 */ () => { triggered = true; },
+    [], [], 0, 'videoFrames', undefined, undefined, [], [], [], [], [],
+    /** 模拟录屏完成后的延迟解码；只替换外部录屏接口，仍执行完整首尾及中途像素比较。
+     * @param _name - 转场名称。
+     * @param recordedRegion - 固定边界或延迟读取边界的回调。
+     * @param trigger - 录屏开始后点击入口。
+     */
+    async (_name, recordedRegion, trigger) => {
+      await trigger();
+      assert.deepEqual(typeof recordedRegion === 'function' ? await recordedRegion() : recordedRegion, region);
+      return timeline;
+    });
+  assert.equal(resolutions, dynamicRegion ? 1 : 0, '同一转场的所有相位只能解析一次边界');
 }
 
 for (const [sceneName, brightness] of [['native-stack-enter', -10], ['game-picker-exit', -40],
@@ -200,4 +232,9 @@ test('录屏中的纯白饱和闪屏不能冒充滑动', async () => {
     ...Array(117).fill(sceneEnd)];
   await assert.rejects(compareRecordedVideo(sceneName, timeline),
     /动画中途帧的实际画面须接近已审查轨迹/);
+});
+
+/** 使用真实俱乐部转场验证延迟裁剪，不生成或替换任何正式截图基准。 */
+test('录屏完成后按实际边界裁切完整首尾截图，所有相位保持相同坐标', async () => {
+  await compareRecordedVideo(name, [start, middle, end], true);
 });
