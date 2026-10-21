@@ -1,3 +1,4 @@
+/** 录制真实 Android 转场，待弹窗布局可用后按同一边界解码关键帧。 */
 import { execFileSync, spawn } from 'node:child_process';
 import { mkdirSync, readFileSync, readdirSync } from 'node:fs';
 import path from 'node:path';
@@ -6,14 +7,16 @@ import type { TestInfo } from '@playwright/test';
 import { adb } from './device';
 import type { ScreenshotBounds } from './screenshot';
 
+export type AnimationRegion = ScreenshotBounds | (() => Promise<ScreenshotBounds>);
+
 /**
  * 用 SurfaceFlinger 录屏采集短于单次 UiAutomation 截图间隔的转场。
  * @param name - 用于隔离临时录屏和报告附件的效果名。
- * @param region - 只解码所需的可见绘制区域。
+ * @param region - 绘制区域或录屏完成后读取真实控件边界的回调。
  * @param trigger - 录屏开始后从独立 ADB 连接触发真实入口。
  * @param testInfo - 保存原始视频以便检查每个选出的关键帧。
  */
-export async function recordNativeVideoFrames(name: string, region: ScreenshotBounds,
+export async function recordNativeVideoFrames(name: string, region: AnimationRegion,
   trigger: () => unknown, testInfo: TestInfo): Promise<Buffer[]> {
   const serial = process.env.ANDROID_SERIAL || '';
   if (!/^emulator-\d+$/.test(serial)) throw new Error('录屏仅允许专用 Android 模拟器。');
@@ -40,7 +43,7 @@ export async function recordNativeVideoFrames(name: string, region: ScreenshotBo
     await testInfo.attach(`${name}-native-video`, { path: video, contentType: 'video/mp4' });
     const frames = path.join(directory, 'frames');
     mkdirSync(frames);
-    const { x, y, width, height } = region;
+    const { x, y, width, height } = typeof region === 'function' ? await region() : region;
     execFileSync('ffmpeg', ['-y', '-v', 'error', '-i', video, '-vf',
       `fps=30,scale=720:1280:flags=lanczos,crop=${width}:${height}:${x}:${y}`,
       path.join(frames, 'frame-%04d.png')],

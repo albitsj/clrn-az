@@ -1,3 +1,4 @@
+/** 采集并比较原生转场，所有相位使用同一次解析的完整绘制边界。 */
 import { requireEnglishAnimation } from './animation-locale';
 import { readFileSync } from 'node:fs';
 import { setTimeout } from 'node:timers/promises';
@@ -7,7 +8,7 @@ import type { AndroidDevice } from 'playwright';
 import { gameScreenshot } from './game-controls';
 import { motionParts, samePixels } from './motion-regions';
 import { maskScreenshot, type ScreenshotBounds, type ScreenshotMask } from './screenshot';
-import { recordNativeVideoFrames } from './video-frames';
+import { recordNativeVideoFrames, type AnimationRegion } from './video-frames';
 import { alignedVideoDistance, localMotionDistance, mirroredThumbnail, videoThumbnail } from './video-motion';
 
 type NativeFrame = { capturedAt: number; png: string };
@@ -104,7 +105,7 @@ export function assertReviewedVideoMiddle(before: Buffer, after: Buffer,
  * @param device - 安装固定补丁驱动的模拟器。
  * @param name - 本次具体动画效果的基准前缀。
  * @param testInfo - Playwright 测试报告。
- * @param region - 排除无关页面变化的完整动画绘制范围。
+ * @param region - 完整绘制范围，入场弹窗可在采样完成后读取实际控件边界。
  * @param trigger - 使用独立 ADB 连接执行实际点击，避免阻塞截图命令。
  * @param masks - 区域内与目标无关的独立循环效果；保留掩码说明。
  * @param requiredRegions - 同一效果中必须分别运动的可见子区域。
@@ -120,7 +121,7 @@ export function assertReviewedVideoMiddle(before: Buffer, after: Buffer,
  * @param videoRecorder - 可替换的原生录屏采集器，供完整录屏路径回归测试使用。
  */
 export async function captureNativeTransition(device: AndroidDevice, name: string, testInfo: TestInfo,
-  region: ScreenshotBounds, trigger: () => unknown, masks: ScreenshotMask[] = [],
+  region: AnimationRegion, trigger: () => unknown, masks: ScreenshotMask[] = [],
   requiredRegions: ScreenshotBounds[] = [], settleMs = 0,
   samplingMethod: 'motionFrames' | 'launchFrames' | 'videoFrames' = 'motionFrames',
   inspectFrames?: (frames: Buffer[], testInfo: TestInfo) => Promise<void>,
@@ -129,23 +130,30 @@ export async function captureNativeTransition(device: AndroidDevice, name: strin
   startPhaseAnchors: string[] = [], startCompareMasks: ScreenshotMask[] = [],
   videoRecorder: typeof recordNativeVideoFrames = recordNativeVideoFrames): Promise<void> {
   requireEnglishAnimation();
+  let resolvedRegion = typeof region === 'function' ? undefined : region;
+  /** 只解析一次边界，录屏及完整首尾截图使用同一坐标，禁止回退到不完整的固定区域。 */
+  const resolveRegion = async (): Promise<ScreenshotBounds> => {
+    resolvedRegion ??= typeof region === 'function' ? await region() : region;
+    return resolvedRegion;
+  };
   /**
    * 截出固定的动画绘制区域。
    * @param bytes - 原生完整屏幕 PNG。
    */
-  const crop = (bytes: Buffer) => motionParts(maskScreenshot(bytes, masks), [region]).regions[0];
+  const crop = (bytes: Buffer) => motionParts(maskScreenshot(bytes, masks), [resolvedRegion!]).regions[0];
   if (masks.length) await testInfo.attach(`${name}-masks`, { body: JSON.stringify(masks), contentType: 'application/json' });
   if (startCompareMasks.length) await testInfo.attach(`${name}-start-masks`, {
     body: JSON.stringify(startCompareMasks), contentType: 'application/json',
   });
-  const before = crop(await gameScreenshot(device));
+  // 入场之前弹窗尚不存在，保留完整起点，待真实边界就绪再裁切。
+  const originalBefore = await gameScreenshot(device);
   const implementation = (device as unknown as { _connection: { toImpl(device: AndroidDevice): {
     _send(method: string): Promise<NativeFrame[]> } } })._connection.toImpl(device);
   const timeout = new AbortController();
   let frames: NativeFrame[];
   if (samplingMethod === 'videoFrames') {
     if (requiredRegions.length) throw new Error('录屏转场需单独定义不含子区域的绘制范围。');
-    frames = (await videoRecorder(name, region, trigger, testInfo))
+    frames = (await videoRecorder(name, typeof region === 'function' ? resolveRegion : region, trigger, testInfo))
       .map((png, index) => ({ capturedAt: index * 33, png: png.toString('base64') }));
   } else {
     try {
@@ -158,12 +166,15 @@ export async function captureNativeTransition(device: AndroidDevice, name: strin
       frames = await pending;
     } finally { timeout.abort(); }
   }
+  const bounds = await resolveRegion();
+  await testInfo.attach(`${name}-region`, { body: JSON.stringify(bounds), contentType: 'application/json' });
+  const before = crop(originalBefore);
   expect(frames.length, '原生驱动至少采集三帧').toBeGreaterThanOrEqual(3);
   const originals = frames.map(frame => Buffer.from(frame.png, 'base64'));
   if (inspectFrames) await inspectFrames(originals, testInfo);
   const timeline = samplingMethod === 'videoFrames'
     ? originals.map(frame => maskScreenshot(frame, masks.map(mask => ({ ...mask,
-      x: mask.x - region.x, y: mask.y - region.y })))) : originals.map(crop);
+      x: mask.x - bounds.x, y: mask.y - bounds.y })))) : originals.map(crop);
   if (settleMs) await setTimeout(settleMs);
   if (afterReady) await afterReady();
   const after = crop(await gameScreenshot(device));
