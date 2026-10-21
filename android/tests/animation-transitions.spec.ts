@@ -1,3 +1,4 @@
+/** 通过真实原生入口验证转场；搜索确认框按实际布局保留完整弹窗。 */
 import { expect, test } from '@playwright/test';
 import type { AndroidDevice } from 'playwright';
 import { adb, applicationId, compareScreenshot, launchApplication, waitForHall } from '../device';
@@ -92,10 +93,21 @@ test('guest search confirmation animates into and out of the Android screen', as
       const pressSearch = () => adb('shell', 'input', 'tap',
         String(Math.round(entrance.bounds.x + entrance.bounds.width / 2)),
         String(Math.round(entrance.bounds.y + entrance.bounds.height / 2)));
-      const region = { x: 58, y: 495, width: 604, height: 345 };
-      await captureNativeTransition(device, 'search-confirmation-enter', testInfo, region,
-        pressSearch, [], [], 0, 'videoFrames', undefined, undefined,
-        ['search-confirmation-enter-middle-alt.png']);
+      /** 入场完成后读取实际弹窗，完整保留上缘、关闭按钮及底部按钮。 */
+      const searchRegion = async () => {
+        const panel = await gameReady(device!, 'confirm-pop-up-image-background');
+        return { ...panel.bounds };
+      };
+      await captureNativeTransition(device, 'search-confirmation-enter', testInfo, searchRegion,
+        pressSearch, [], [], 0, 'videoFrames');
+      const region = await searchRegion();
+      for (const resource of ['close-button', 'pop-up-title-text', 'pop-up-message-text', 'cancel-button', 'confirm-button']) {
+        const control = await gameReady(device, resource);
+        expect(control.bounds.x).toBeGreaterThanOrEqual(region.x);
+        expect(control.bounds.y).toBeGreaterThanOrEqual(region.y);
+        expect(control.bounds.x + control.bounds.width).toBeLessThanOrEqual(region.x + region.width);
+        expect(control.bounds.y + control.bounds.height).toBeLessThanOrEqual(region.y + region.height);
+      }
       const cancel = await device.info({ res: 'cancel-button' });
       expect(cancel.bounds.width).toBeGreaterThan(0);
       /** 点击真实取消按钮，不直接卸载弹窗。 */
