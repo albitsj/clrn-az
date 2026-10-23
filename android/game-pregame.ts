@@ -64,16 +64,17 @@ export async function closeGameMask(device: AndroidDevice, marker: string): Prom
  * @param testInfo - 英文动画关键帧报告。
  * @param masks - 与面板无关的动态区域。
  * @param samplingMethod - 短退场动画使用原生录屏取得足够的中途帧。
+ * @param videoPhaseAnchors - 已逐图审查的额外退场相位。
  */
 export async function closeAnimatedGameMask(device: AndroidDevice, game: 'texas-holdem' | 'zhajinhua',
   name: string, marker: string, region: ScreenshotBounds, testInfo?: TestInfo,
   masks: ScreenshotMask[] = [], samplingMethod: 'motionFrames' | 'videoFrames' = game === 'zhajinhua'
-    ? 'videoFrames' : 'motionFrames'): Promise<void> {
+    ? 'videoFrames' : 'motionFrames', videoPhaseAnchors: string[] = []): Promise<void> {
   if (!testInfo) { await closeGameMask(device, marker); return; }
   const point = await gameMaskClosePoint(device, marker);
   await captureNativeTransition(device, `${game}-${name}-exit`, testInfo, region,
     () => adb('shell', 'input', 'tap', String(Math.round(point.x)), String(Math.round(point.y))),
-    masks, [], 600, samplingMethod);
+    masks, [], 600, samplingMethod, undefined, undefined, videoPhaseAnchors);
   await gameGone(device, marker);
 }
 
