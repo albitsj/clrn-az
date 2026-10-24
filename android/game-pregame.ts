@@ -135,7 +135,10 @@ export async function gamePreGame(device: AndroidDevice, game: 'texas-holdem' | 
       // 德州牌型说明后的房间重连偶尔持续不恢复；后续面板用新建的独立房间采样。
       if (game === 'texas-holdem' && phase === 'first') return;
       if (game === 'zhajinhua') {
+        // 牌型面板退场后房间会独立重连；菜单和规则入口须等遮罩连续消失。
+        await gameConnected(device, 5_000);
         await tap(device, 'menu-button');
+        await gameConnected(device, 2_000);
         await animateGamePanel(device, game, 'game-rule', 'drawer-menu-item-game_rule',
           { x: 130, y: 330, width: 460, height: 610 }, animationInfo);
         await gameReady(device, 'game-rule-popup');

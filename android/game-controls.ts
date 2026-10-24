@@ -176,14 +176,11 @@ export async function gameConnected(device: AndroidDevice, stableMs = 0): Promis
 }
 
 /**
- * 根据两次一致的真实布局点击控件，使用 adb 输入避免驱动等待循环动画空闲。
+ * 两次读取相同且启用的真实控件边界，防止弹层重绘期间点到旧位置。
  * @param device - 专用模拟器连接。
  * @param res - 与 Web 共用的 testID。
- * @param nativeInput - 短时提示使用现有驱动点击，避免启动 shell 输入进程耗尽显示时间。
  */
-export async function gameTap(device: AndroidDevice, res: string, nativeInput = false): Promise<void> {
-  console.log(`ANDROID > 游戏点击 ${res}`);
-  await gameConnected(device);
+export async function gameTapPoint(device: AndroidDevice, res: string): Promise<{ x: number; y: number }> {
   let previous: ScreenshotBounds | undefined;
   let node: NativeNode;
   await expect(async () => {
@@ -194,7 +191,19 @@ export async function gameTap(device: AndroidDevice, res: string, nativeInput = 
     expect(previous).toEqual(before);
   }).toPass({ timeout: 45_000, intervals: [200] });
   const { x, y, width, height } = node!.bounds;
-  const point = { x: Math.round(x + width / 2), y: Math.round(y + height / 2) };
+  return { x: Math.round(x + width / 2), y: Math.round(y + height / 2) };
+}
+
+/**
+ * 根据两次一致的真实布局点击控件，使用 adb 输入避免驱动等待循环动画空闲。
+ * @param device - 专用模拟器连接。
+ * @param res - 与 Web 共用的 testID。
+ * @param nativeInput - 短时提示使用现有驱动点击，避免启动 shell 输入进程耗尽显示时间。
+ */
+export async function gameTap(device: AndroidDevice, res: string, nativeInput = false): Promise<void> {
+  console.log(`ANDROID > 游戏点击 ${res}`);
+  await gameConnected(device);
+  const point = await gameTapPoint(device, res);
   if (nativeInput) await device.input.tap(point);
   else adb('shell', 'input', 'tap', String(point.x), String(point.y));
 }

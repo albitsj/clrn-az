@@ -1,7 +1,7 @@
 import type { TestInfo } from '@playwright/test';
 import type { AndroidDevice } from 'playwright';
 import { adb } from './device';
-import { gameConnected, gameReady, gameTap } from './game-controls';
+import { gameConnected, gameReady, gameTap, gameTapPoint } from './game-controls';
 import { captureNativeTransition, captureTimedPrompt } from './animation-transition';
 import type { ScreenshotBounds, ScreenshotMask } from './screenshot';
 
@@ -27,11 +27,9 @@ export async function animateGamePanel(device: AndroidDevice, game: 'texas-holde
   videoPhaseAnchors: string[] = []): Promise<void> {
   if (!testInfo) { await gameTap(device, button); return; }
   await gameConnected(device);
-  const { bounds } = await gameReady(device, button);
+  const point = await gameTapPoint(device, button);
   /** 通过独立 ADB 连接点击真实牌桌控件，使驱动同时截取每一帧。 */
-  const press = () => adb('shell', 'input', 'tap',
-    String(Math.round(bounds.x + bounds.width / 2)),
-    String(Math.round(bounds.y + bounds.height / 2)));
+  const press = () => adb('shell', 'input', 'tap', String(point.x), String(point.y));
   await captureNativeTransition(device, `${game}-${name}-${phase}`, testInfo, region, press,
     masks, [], 0, samplingMethod, undefined, afterReady, videoPhaseAnchors);
 }
