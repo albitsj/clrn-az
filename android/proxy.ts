@@ -69,13 +69,22 @@ export async function withAndroidProxy<T>(task: (proxy: Mitmproxy) => Promise<T>
       response.writeHead(500).end('Invalid fixture request');
     }
   });
-  await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve));
-  const address = server.address();
-  if (!address || typeof address === 'string') throw new Error('夹具服务启动失败。');
-  const previousProxy = adb('shell', 'settings', 'get', 'global', 'http_proxy').trim();
+  let previousProxy: string | undefined;
   let proxyPort: string | undefined;
+  const failures: unknown[] = [];
+  let result: T;
   try {
-    return await withMitmproxy(task, {
+    await new Promise<void>((resolve, reject) => {
+      server.once('error', reject);
+      server.listen(0, '127.0.0.1', resolve);
+    });
+    const address = server.address();
+    if (!address || typeof address === 'string') throw new Error('夹具服务启动失败。');
+    // 上一轮连接失败后，框架重试可能早于 adbd 重连；只等待连接，不重放失败的原生命令。
+    // adb() 仍限定专用模拟器并保留 120 秒上限，持续离线必须失败。
+    adb('wait-for-device');
+    previousProxy = adb('shell', 'settings', 'get', 'global', 'http_proxy').trim();
+    result = await withMitmproxy(task, {
       addonPath: path.join(__dirname, 'proxy-addon.py'),
       environment: { ...process.env, ANDROID_RECORDS: String(records === true),
         ANDROID_GAME: typeof records === 'string' ? records : '', ANDROID_MATCHING: String(matching),
@@ -92,14 +101,29 @@ export async function withAndroidProxy<T>(task: (proxy: Mitmproxy) => Promise<T>
         await configureProxy(directory, proxy.server);
       },
     });
+  } catch (error) {
+    failures.push(error);
   } finally {
     try {
-      adb('shell', 'settings', 'put', 'global', 'http_proxy', previousProxy === 'null' ? ':0' : previousProxy);
-    } finally {
-      try {
-        if (proxyPort) removeReverse(proxyPort);
+      if (previousProxy !== undefined) {
+        adb('shell', 'settings', 'put', 'global', 'http_proxy', previousProxy === 'null' ? ':0' : previousProxy);
       }
-      finally { await new Promise<void>(resolve => server.close(() => resolve())); }
+    } catch (error) { failures.push(error); }
+    try { if (proxyPort) removeReverse(proxyPort); }
+    catch (error) { failures.push(error); }
+    if (server.listening) {
+      await new Promise<void>(resolve => server.close(error => {
+        if (error) failures.push(error);
+        resolve();
+      }));
     }
   }
+  if (failures.length === 1) throw failures[0];
+  if (failures.length > 1) {
+    // Playwright 序列化 cause，但不保存 AggregateError.errors；消息也须列出全部失败。
+    const details = failures.map(error => String(error)).join('\n');
+    throw new AggregateError(failures, `Android 代理会话失败；按发生顺序保留原始错误和清理错误。\n${details}`,
+      { cause: failures[0] });
+  }
+  return result!;
 }
