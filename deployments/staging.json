@@ -1,1 +1,1 @@
-{"environment":"staging","sha":"5a1ea17c014aa1f705be3fd42aa0fd58c0fa3b41","deployed_at":"2026-10-21T14:12:19.284Z","release_tag":"android-staging-100001201-5a1ea17c014a","application":{"repository":"kevinanew/laiwan_react_native","branch":"staging-android-english-notice-title","build_number":100001201,"channel":"branch"}}
+{"environment":"staging","sha":"3775acace4eb515ef884ee81b90585e900d0eb7a","deployed_at":"2026-10-23T19:19:32.483Z","release_tag":"android-staging-300000301-3775acace4eb"}
