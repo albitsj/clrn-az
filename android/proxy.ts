@@ -8,6 +8,21 @@ import { visualNetworkRouter } from './network-routes';
 import { adb } from './device';
 
 /**
+ * ADB 守护进程偶发断连时，仅重试可安全重复的代理配置命令。
+ * @param argumentsList - 限定到专用模拟器的 ADB 参数。
+ */
+function proxyAdb(...argumentsList: string[]): string {
+  for (let attempt = 0; ; attempt++) {
+    try { return adb(...argumentsList); }
+    catch (error) {
+      if (attempt >= 2 || !/protocol fault|device offline|device .* not found/.test(String(error))) throw error;
+      console.warn(`ANDROID > ADB 代理命令断连，等待专用模拟器重连后重试 (${attempt + 1}/2)`);
+      adb('wait-for-device');
+    }
+  }
+}
+
+/**
  * 在专用模拟器安装本轮 CA，并只把该模拟器的流量转入隔离代理。
  * @param directory - 本轮代理的临时配置目录。
  * @param server - 主机回环地址上的代理 URL。
@@ -37,7 +52,7 @@ async function configureProxy(directory: string, server: string): Promise<void> 
  * @param port - 本轮独占的代理端口。
  */
 function removeReverse(port: string): void {
-  try { adb('reverse', '--remove', `tcp:${port}`); }
+  try { proxyAdb('reverse', '--remove', `tcp:${port}`); }
   catch (error) {
     if (!String(error).includes(`listener 'tcp:${port}' not found`)) throw error;
   }
@@ -72,9 +87,10 @@ export async function withAndroidProxy<T>(task: (proxy: Mitmproxy) => Promise<T>
   await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve));
   const address = server.address();
   if (!address || typeof address === 'string') throw new Error('夹具服务启动失败。');
-  const previousProxy = adb('shell', 'settings', 'get', 'global', 'http_proxy').trim();
+  let previousProxy: string | undefined;
   let proxyPort: string | undefined;
   try {
+    previousProxy = proxyAdb('shell', 'settings', 'get', 'global', 'http_proxy').trim();
     return await withMitmproxy(task, {
       addonPath: path.join(__dirname, 'proxy-addon.py'),
       environment: { ...process.env, ANDROID_RECORDS: String(records === true),
@@ -94,7 +110,9 @@ export async function withAndroidProxy<T>(task: (proxy: Mitmproxy) => Promise<T>
     });
   } finally {
     try {
-      adb('shell', 'settings', 'put', 'global', 'http_proxy', previousProxy === 'null' ? ':0' : previousProxy);
+      if (previousProxy !== undefined) {
+        proxyAdb('shell', 'settings', 'put', 'global', 'http_proxy', previousProxy === 'null' ? ':0' : previousProxy);
+      }
     } finally {
       try {
         if (proxyPort) removeReverse(proxyPort);
