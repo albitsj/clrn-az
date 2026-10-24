@@ -1,7 +1,8 @@
 /** 通过真实原生入口验证转场；搜索确认框按实际布局保留完整弹窗。 */
 import { expect, test } from '@playwright/test';
 import type { AndroidDevice } from 'playwright';
-import { adb, applicationId, compareScreenshot, launchApplication, waitForHall } from '../device';
+import { adb, applicationId, compareScreenshot, launchApplication, waitForHall, waitForStagingNotice } from '../device';
+import { captureFailure } from '../diagnostics';
 import { captureNativeTransition } from '../animation-transition';
 import { verifyLaunchArtwork } from '../launch-artwork';
 import { withAndroidProxy } from '../proxy';
@@ -22,7 +23,7 @@ test('native launch artwork and staging notice appear on a real app start', asyn
     let device: AndroidDevice | undefined;
     try {
       device = await launchApplication({ gameDriver: true, enableSystemAnimations: true });
-      await device.wait({ res: 'staging-confirmation-input' }, { timeout: 120_000 });
+      await waitForStagingNotice(device);
       adb('shell', 'am', 'force-stop', applicationId);
       adb('shell', 'input', 'keyevent', 'KEYCODE_HOME');
       // HOME 以 5 倍倍率返回桌面；等系统图标稳定，再用标准倍率观察应用启动。
@@ -44,7 +45,10 @@ test('native launch artwork and staging notice appear on a real app start', asyn
           'native-launch-and-staging-notice-start-alternate-2.png',
         ],
         [{ x: 0, y: 780, width: 580, height: 105, reason: 'Pixel Launcher 底部图标在启动前自行微调' }]);
-      await device.wait({ res: 'staging-confirmation-input' }, { timeout: 120_000 });
+      await waitForStagingNotice(device);
+    } catch (error) {
+      if (device) await captureFailure(device, testInfo);
+      throw error;
     } finally { await device?.close(); }
   });
 });

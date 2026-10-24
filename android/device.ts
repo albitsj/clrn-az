@@ -82,12 +82,12 @@ export async function launchApplication(options: { gameDriver?: boolean; enableS
 }
 
 /**
- * 完整通过测试环境确认，再等待正常初始化完成；不取消任何初始化错误。
+ * 等待真实测试环境确认框；只清除明确属于 Pixel Launcher 的系统 ANR。
  * @param device - 专用模拟器连接。
  */
-export async function waitForHall(device: AndroidDevice): Promise<void> {
+export async function waitForStagingNotice(device: AndroidDevice): Promise<void> {
   for (let attempt = 0; ; attempt++) {
-    try { await device.wait({ res: 'staging-confirmation-input' }, { timeout: 30_000 }); break; }
+    try { await device.wait({ res: 'staging-confirmation-input' }, { timeout: 30_000 }); return; }
     catch (error) {
       // CI 系统桌面偶发 ANR 会遮住应用；只关闭明确属于 Pixel Launcher 的弹窗。
       const launcher = await device.info({ text: "Pixel Launcher isn't responding" }).catch(() => undefined);
@@ -97,6 +97,14 @@ export async function waitForHall(device: AndroidDevice): Promise<void> {
       await device.tap({ res: 'android:id/aerr_close' });
     }
   }
+}
+
+/**
+ * 完整通过测试环境确认，再等待正常初始化完成；不取消任何初始化错误。
+ * @param device - 专用模拟器连接。
+ */
+export async function waitForHall(device: AndroidDevice): Promise<void> {
+  await waitForStagingNotice(device);
   await device.fill({ res: 'staging-confirmation-input' }, 'CONFIRM');
   await dismissKeyboard(device);
   await device.tap({ res: 'confirm-button' });

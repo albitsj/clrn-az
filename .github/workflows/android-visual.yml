@@ -133,8 +133,15 @@ jobs:
       ANDROID_LOCALE: ${{ matrix.locale }}
       ANDROID_FILTER: ${{ inputs.filter || '' }}
       ANDROID_SHARD_FILTER: ${{ matrix.filter }}
+      ANDROID_DIAGNOSTICS_DIR: android/artifacts/diagnostics
+      ANDROID_DIAGNOSTICS_SHARD: ${{ matrix.shard }}
     steps:
       - uses: actions/checkout@v4
+      - name: 开始 Android 初始化诊断
+        env:
+          CLRN_CI_TEST_ACCOUNTS: ${{ secrets.CLRN_CI_TEST_ACCOUNTS_V2 }}
+          TESTING_API_TOKEN: ${{ secrets.TESTING_API_TOKEN }}
+        run: python3 android/ci_diagnostics.py start
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
@@ -210,8 +217,23 @@ jobs:
           disk-size: 4096M
           disable-animations: true
           disable-spellchecker: true
+          pre-emulator-launch-script: python3 android/ci_diagnostics.py install-emulator-wrapper
           emulator-options: -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader_indirect -camera-back none -camera-front none -skin 720x1280
-          script: node android/run-visual.mjs
+          script: python3 android/ci_diagnostics.py run -- node android/run-visual.mjs
+      - name: 完成 Android 清理诊断
+        if: always()
+        env:
+          CLRN_CI_TEST_ACCOUNTS: ${{ secrets.CLRN_CI_TEST_ACCOUNTS_V2 }}
+          TESTING_API_TOKEN: ${{ secrets.TESTING_API_TOKEN }}
+        run: python3 android/ci_diagnostics.py stop
+      - name: 保存脱敏 Android 诊断
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-diagnostics-${{ matrix.group }}-${{ matrix.locale }}-${{ matrix.shard }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: android/artifacts/diagnostics/
+          if-no-files-found: error
+          retention-days: 7
       - name: 保存报告、失败截图和构建身份
         if: always()
         uses: actions/upload-artifact@v4
