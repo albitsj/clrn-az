@@ -31,18 +31,29 @@ export async function withMitmproxy<T>(task: (proxy: Mitmproxy) => Promise<T>,
     prepare?: (directory: string, proxy: Mitmproxy) => Promise<void> } = {}): Promise<T> {
   const directory = await mkdtemp(path.join(tmpdir(), 'test-mitmproxy-'));
   const token = randomBytes(32).toString('hex');
+  const failures: unknown[] = [];
+  let result: T;
+  let proxyProcess: ReturnType<typeof startMitmdump> | undefined;
   try {
     const port = await unusedPort();
     const proxy = new Mitmproxy(port, token);
-    const proxyProcess = startMitmdump(port, directory, token, options.addonPath, options.environment);
-    try {
-      await proxyProcess.waitUntilReady(() => proxy.status());
-      await options.prepare?.(directory, proxy);
-      return await task(proxy);
-    } finally {
-      await proxyProcess.stop();
-    }
+    proxyProcess = startMitmdump(port, directory, token, options.addonPath, options.environment);
+    await proxyProcess.waitUntilReady(() => proxy.status());
+    await options.prepare?.(directory, proxy);
+    result = await task(proxy);
+  } catch (error) {
+    failures.push(error);
   } finally {
-    await rm(directory, { recursive: true, force: true });
+    try { await proxyProcess?.stop(); }
+    catch (error) { failures.push(error); }
+    try { await rm(directory, { recursive: true, force: true }); }
+    catch (error) { failures.push(error); }
   }
+  if (failures.length === 1) throw failures[0];
+  if (failures.length > 1) {
+    const details = failures.map(error => String(error)).join('\n');
+    throw new AggregateError(failures, `mitmproxy 会话失败；按发生顺序保留原始错误和清理错误。\n${details}`,
+      { cause: failures[0] });
+  }
+  return result!;
 }
