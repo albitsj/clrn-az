@@ -169,7 +169,9 @@ export async function gamePreGame(device: AndroidDevice, game: 'texas-holdem' | 
       await animateGamePanel(device, game, state, `drawer-menu-item-${state}`,
         { x: 110, y: 360, width: 480, height: 500 }, animationInfo, 'enter',
         game === 'zhajinhua' || (game === 'texas-holdem' && ['theme', 'buy_in'].includes(state))
-          ? 'videoFrames' : 'motionFrames', [], renewalReady);
+          ? 'videoFrames' : 'motionFrames', [], renewalReady,
+        game === 'texas-holdem' && state === 'renew'
+          ? ['texas-holdem-renew-enter-menu-closed-phase.png'] : []);
       await gameGone(device, 'drawer-menu-item-exit');
       await gameReady(device, ready);
       if (state === 'renew') {
