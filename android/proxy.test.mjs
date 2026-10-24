@@ -99,6 +99,7 @@ test('原始失败与两个清理失败全部保留，不能由最后一次 reve
     assert.ok(error instanceof AggregateError);
     assert.equal(error.cause, primary);
     assert.deepEqual(error.errors, [primary, restore, reverse]);
+    for (const failure of error.errors) assert.ok(error.message.includes(failure.message));
     return true;
   });
 });

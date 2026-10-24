@@ -120,7 +120,10 @@ export async function withAndroidProxy<T>(task: (proxy: Mitmproxy) => Promise<T>
   }
   if (failures.length === 1) throw failures[0];
   if (failures.length > 1) {
-    throw new AggregateError(failures, 'Android 代理会话失败；按发生顺序保留原始错误和清理错误。', { cause: failures[0] });
+    // Playwright 序列化 cause，但不保存 AggregateError.errors；消息也须列出全部失败。
+    const details = failures.map(error => String(error)).join('\n');
+    throw new AggregateError(failures, `Android 代理会话失败；按发生顺序保留原始错误和清理错误。\n${details}`,
+      { cause: failures[0] });
   }
   return result!;
 }
