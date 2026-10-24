@@ -160,9 +160,8 @@ def start():
     raise RuntimeError('Collector startup timed out')
 
 
-def stop():
-    diagnostics = collector()
-    diagnostics.sample('after-emulator-action')
+def stop_daemon(log=None):
+    """Terminate the collector independently of final probes and SDK restoration."""
     pidfile = directory() / 'collector.pid'
     if pidfile.exists():
         pid = int(pidfile.read_text())
@@ -174,12 +173,24 @@ def stop():
                 time.sleep(0.1)
             else:
                 os.killpg(pid, signal.SIGKILL)
-                diagnostics.logs['lifecycle'].write('collector shutdown timed out; killed process group')
+                if log is not None:
+                    best_effort(lambda: log.write('collector shutdown timed out; killed process group'))
         except ProcessLookupError:
-            diagnostics.logs['lifecycle'].write('collector already exited')
+            if log is not None:
+                best_effort(lambda: log.write('collector already exited'))
         pidfile.unlink(missing_ok=True)
-    from diagnostics_wrappers import restore
-    restore()
+
+
+def stop():
+    diagnostics = best_effort(collector)
+    log = diagnostics.logs['lifecycle'] if diagnostics else None
+    try:
+        if diagnostics:
+            best_effort(lambda: diagnostics.sample('after-emulator-action'), log)
+        best_effort(lambda: stop_daemon(log), log)
+    finally:
+        from diagnostics_wrappers import restore
+        best_effort(restore, log)
     return 0
 
 

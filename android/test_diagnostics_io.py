@@ -41,6 +41,8 @@ class DiagnosticIOTests(unittest.TestCase):
         redactor = Redactor({})
         for message, secret in [
             ('Authorization: Bearer unknown-bearer-secret', 'unknown-bearer-secret'),
+            ('{"authorization": "Basic dGVzdDpzZWNyZXQ="}', 'dGVzdDpzZWNyZXQ='),
+            ("{'proxy-authorization': 'Basic another-secret'}", 'another-secret'),
             ('{"password": "unknown-json-secret"}', 'unknown-json-secret'),
             ('https://example.test/?access_token=unknown-query-secret&safe=1', 'unknown-query-secret'),
             ('adb shell input text typed-private-value', 'typed-private-value'),
@@ -81,8 +83,7 @@ class DiagnosticIOTests(unittest.TestCase):
 
     def test_timeout_preserves_early_output_and_other_collector_can_run(self):
         started = time.monotonic()
-        code = capture([sys.executable, '-c',
-                        'import time; print("before disconnect", flush=True); time.sleep(30)'],
+        code = capture(['/bin/sh', '-c', 'echo "before disconnect"; sleep 30'],
                        self.log(), timeout=0.2)
         self.assertEqual(code, 124)
         self.assertLess(time.monotonic() - started, 5)

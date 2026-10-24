@@ -44,7 +44,7 @@ class Redactor:
             text = text.replace(value, '[REDACTED]')
         text = re.sub(r'(?i)(\b(?:input\s+(?:text|keyevent)|InputConnection|commitText|setText)\b).*',
                       r'\1 [REDACTED]', text)
-        text = re.sub(r'(?i)(\b(?:authorization|proxy-authorization)\s*[:=]\s*).*',
+        text = re.sub(r'''(?i)(\b(?:authorization|proxy-authorization)["']?\s*[:=]\s*).*''',
                       r'\1[REDACTED]', text)
         text = re.sub(r'(?i)\bBearer\s+[^\s"\']+', 'Bearer [REDACTED]', text)
         text = re.sub(r'(?i)(["\']?(?:password|passwd|token|access_token|refresh_token|api_key|secret|cookie|username|login|phone)["\']?\s*[:=]\s*)("[^"\n]*"|\x27[^\x27\n]*\x27|[^\s&,;}]+)',

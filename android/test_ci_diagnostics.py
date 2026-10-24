@@ -1,6 +1,7 @@
 """Regression coverage for lifecycle failures and reconnecting subprocess streams."""
 
 from pathlib import Path
+import signal
 import sys
 import tempfile
 import threading
@@ -8,7 +9,7 @@ import time
 import unittest
 from unittest.mock import patch
 
-from ci_diagnostics import Collector, run, stream
+from ci_diagnostics import Collector, run, stop, stream
 from diagnostics_io import BoundedLog, Redactor, capture
 
 
@@ -62,7 +63,7 @@ time.sleep(10)
 
     def test_hung_adb_probes_do_not_block_host_collectors(self):
         adb = self.directory / 'adb'
-        adb.write_text(f'#!{sys.executable}\nimport time\nprint("offline probe", flush=True)\ntime.sleep(30)\n')
+        adb.write_text('#!/bin/sh\necho "offline probe"\nsleep 30\n')
         adb.chmod(0o755)
         collector = Collector(self.directory, timeout=1)
         collector.adb = str(adb)
@@ -120,6 +121,40 @@ time.sleep(10)
             for status in [0, 23]:
                 with self.subTest(status=status):
                     self.assertEqual(run([sys.executable, '-c', f'raise SystemExit({status})']), status)
+
+    def test_stop_still_terminates_daemon_and_restores_sdk_when_final_sample_fails(self):
+        collector = Collector(self.directory)
+        pidfile = self.directory / 'collector.pid'
+        pidfile.write_text('12345')
+        with patch('ci_diagnostics.collector', return_value=collector), \
+                patch('ci_diagnostics.directory', return_value=self.directory), \
+                patch.object(collector, 'sample', side_effect=OSError('final sample unavailable')), \
+                patch('ci_diagnostics.os.kill') as kill, \
+                patch('diagnostics_wrappers.restore') as restore:
+            self.assertEqual(stop(), 0)
+        kill.assert_called_once_with(12345, signal.SIGTERM)
+        restore.assert_called_once_with()
+        self.assertFalse(pidfile.exists())
+        self.assertIn('final sample unavailable', self.contents('lifecycle'))
+
+    def test_stop_still_cleans_up_when_collector_cannot_be_constructed(self):
+        pidfile = self.directory / 'collector.pid'
+        pidfile.write_text('12345')
+        with patch('ci_diagnostics.collector', side_effect=OSError('diagnostics unavailable')), \
+                patch('ci_diagnostics.directory', return_value=self.directory), \
+                patch('ci_diagnostics.os.kill') as kill, \
+                patch('diagnostics_wrappers.restore') as restore:
+            self.assertEqual(stop(), 0)
+        kill.assert_called_once_with(12345, signal.SIGTERM)
+        restore.assert_called_once_with()
+        self.assertFalse(pidfile.exists())
+
+    def test_stop_restores_sdk_even_when_daemon_termination_fails(self):
+        with patch('ci_diagnostics.collector', side_effect=OSError('diagnostics unavailable')), \
+                patch('ci_diagnostics.stop_daemon', side_effect=OSError('cannot signal daemon')), \
+                patch('diagnostics_wrappers.restore') as restore:
+            self.assertEqual(stop(), 0)
+        restore.assert_called_once_with()
 
 
 if __name__ == '__main__':
