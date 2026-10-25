@@ -24,8 +24,8 @@ export async function recordNativeVideoFrames(name: string, region: AnimationReg
   mkdirSync(directory, { recursive: true });
   const remote = `/sdcard/clrn-visual-${process.pid}.mp4`;
   const video = path.join(directory, 'capture.mp4');
-  // 模拟器的全尺寸 H.264 编码有时只输出约 12 帧/秒，会完整错过 200ms 的退场。
-  const recorder = spawn('adb', ['-s', serial, 'shell', 'screenrecord', '--size', '360x640',
+  // 模拟器在 360×640 编码时也可能只输出约 13 帧/秒；缩小编码画面以提高短转场的实际采样率。
+  const recorder = spawn('adb', ['-s', serial, 'shell', 'screenrecord', '--size', '240x426',
     '--bit-rate', '4000000', '--time-limit', '5', remote], { stdio: ['ignore', 'ignore', 'pipe'] });
   let error = '';
   recorder.stderr.on('data', chunk => { error += String(chunk); });
