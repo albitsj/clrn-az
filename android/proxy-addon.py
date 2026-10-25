@@ -152,16 +152,16 @@ class AndroidVisualProxy:
         path = urlsplit(flow.request.path).path
         if flow.request.host == 'test-mitmproxy.invalid' and path == '/android/club-search':
             if flow.request.headers.get('X-E2E-Control-Token') != os.environ['MITMPROXY_CONTROL_TOKEN']:
-                flow.response = http.Response.make(403, b'Forbidden')
+                flow.response = http.Response.make(403, '无权访问'.encode())
                 return
             if flow.request.method == 'POST':
                 try:
                     self.club_search_fixture.configure(json.loads(flow.request.content)['active'])
                 except (ValueError, KeyError, TypeError):
-                    flow.response = http.Response.make(400, b'Invalid club search configuration')
+                    flow.response = http.Response.make(400, '俱乐部搜索配置无效'.encode())
                     return
             elif flow.request.method != 'GET':
-                flow.response = http.Response.make(405, b'Method not allowed')
+                flow.response = http.Response.make(405, '请求方法不受支持'.encode())
                 return
             flow.response = http.Response.make(200, json.dumps(self.club_search_fixture.status()).encode(),
                                                {'Content-Type': 'application/json'})

@@ -1,7 +1,7 @@
-/** 经专用模拟器代理验证俱乐部搜索命中结果，并保存原生截图证据。 */
+/** 经专用模拟器代理验证俱乐部搜索命中结果，并比较独立原生截图基准。 */
 import { expect, test } from '@playwright/test';
 import type { AndroidDevice } from 'playwright';
-import { launchApplication, waitForHall } from '../device';
+import { compareScreenshot, launchApplication, waitForHall } from '../device';
 import { dismissKeyboard } from '../keyboard';
 import { selectLanguage, signIn, tap } from '../navigation';
 import { withAndroidProxy } from '../proxy';
@@ -36,9 +36,8 @@ test('俱乐部搜索命中固定结果并显示原生卡片', async ({}, testIn
       expect(status.searchRequests, '原生界面应发出一次搜索请求').toBe(1);
       expect(status.detailsRequests, '原生界面应读取一次命中俱乐部资料').toBe(1);
       await dismissKeyboard(device);
-      await testInfo.attach('俱乐部搜索命中结果', {
-        body: await device.screenshot(), contentType: 'image/png',
-      });
+      const locale = process.env.ANDROID_LOCALE || 'en';
+      await compareScreenshot(device, `${locale}-signed-in-club-search-result`, testInfo);
     } finally {
       await device?.close();
     }
