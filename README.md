@@ -2,7 +2,7 @@
 
 来玩 Android Staging 原生回归测试，主分支为 `master`。测试从 [kevinanew/clrn Releases](https://github.com/kevinanew/clrn/releases) 下载 APK，应用构建继续由 `laiwan_react_native` 的 Woodpecker 流水线负责。
 
-- `android/`：全部原生用例、下载与校验工具、763 张正式截图基准。
+- `android/`：全部原生用例、下载与校验工具、766 张正式截图基准。
 - `visual/`、`e2e/`：从 CLRN 同步的场景定义、业务夹具及代理依赖；保留路径以减少迁移变化，不包含 H5 测试入口或网页截图基准。来源提交：`kevinanew/clrn@2777b8b`，后续变更在本仓库维护。
 - `scripts/`：检查工具、账号分区、staging 部署记录解析。
 - `deployments/staging.json`：发布后提交的部署身份，触发 master 上的安卓工作流。
