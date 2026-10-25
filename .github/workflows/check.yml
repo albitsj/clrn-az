@@ -22,10 +22,10 @@ jobs:
           python-version: '3.12'
       - run: npm ci
       - run: npm run check
-      - name: Python proxy unit tests
+      - name: Python 代理单元测试
         run: |
           python -m unittest discover -s android -p 'test_*.py'
           python -m pip install -r e2e/mitmproxy/requirements.txt
-          for directory in e2e/mitmproxy visual/cases/game-record/mitmproxy visual/cases/texas-holdem/mitmproxy visual/cases/zhajinhua/mitmproxy; do
+          for directory in e2e/mitmproxy visual/cases/club/mitmproxy visual/cases/game-record/mitmproxy visual/cases/texas-holdem/mitmproxy visual/cases/zhajinhua/mitmproxy; do
             python -m unittest discover -s "$directory" -p 'test_*.py'
           done
