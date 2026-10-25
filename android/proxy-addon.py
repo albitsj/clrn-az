@@ -11,6 +11,7 @@ import urllib.request
 from urllib.parse import urlsplit
 from mitmproxy import ctx, http
 from presentation import AccountPresentation
+from club_search_fixture import ClubSearchFixture
 from game_session import GameSession
 from launch_network import LaunchNetwork
 
@@ -19,6 +20,7 @@ class AndroidVisualProxy:
     def __init__(self):
         self.launch = LaunchNetwork()
         self.presentation = AccountPresentation()
+        self.club_search_fixture = ClubSearchFixture()
         self.records = None
         self.game = None
         self.game_session = None
@@ -148,6 +150,27 @@ class AndroidVisualProxy:
         if await self.launch.request(flow):
             return
         path = urlsplit(flow.request.path).path
+        if flow.request.host == 'test-mitmproxy.invalid' and path == '/android/club-search':
+            if flow.request.headers.get('X-E2E-Control-Token') != os.environ['MITMPROXY_CONTROL_TOKEN']:
+                flow.response = http.Response.make(403, b'Forbidden')
+                return
+            if flow.request.method == 'POST':
+                try:
+                    self.club_search_fixture.configure(json.loads(flow.request.content)['active'])
+                except (ValueError, KeyError, TypeError):
+                    flow.response = http.Response.make(400, b'Invalid club search configuration')
+                    return
+            elif flow.request.method != 'GET':
+                flow.response = http.Response.make(405, b'Method not allowed')
+                return
+            flow.response = http.Response.make(200, json.dumps(self.club_search_fixture.status()).encode(),
+                                               {'Content-Type': 'application/json'})
+            return
+        club_search_response = self.club_search_fixture.response_for(flow.request)
+        if club_search_response is not None:
+            flow.response = http.Response.make(200, json.dumps(club_search_response).encode(),
+                                               {'Content-Type': 'application/json'})
+            return
         if self.game and flow.request.host == 'test-mitmproxy.invalid' \
                 and path == '/android/auto-rebuy-hold':
             if flow.request.headers.get('X-E2E-Control-Token') != os.environ['MITMPROXY_CONTROL_TOKEN']:
