@@ -27,19 +27,31 @@ export async function captureAssetSequence(device: AndroidDevice, name: string, 
    * @param bytes - 原生截图 PNG。
    */
   const crop = (bytes: Buffer) => motionParts(bytes, [region]).regions[0];
-  const beforeScreen = await gameScreenshot(device);
-  const before = crop(beforeScreen);
+  let beforeScreen = await gameScreenshot(device);
+  let before = crop(beforeScreen);
   const implementation = (device as unknown as { _connection: { toImpl(device: AndroidDevice): {
     _send(method: string): Promise<NativeFrame[]> } } })._connection.toImpl(device);
-  const pending = implementation._send('motionFrames');
-  await setTimeout(300);
-  await trigger();
-  const screens = (await pending).map(frame => Buffer.from(frame.png, 'base64'));
-  const timeline = screens.map(crop);
-  expect(timeline.length).toBeGreaterThanOrEqual(10);
-  expect(samePixels(before, timeline[0]), `${name} 必须在采样开始后播放`).toBe(true);
-  const visible = timeline.map((frame, index) => ({ frame, index, distance: frameColorDistance(before, frame) }))
-    .filter(item => item.distance > 2);
+  let screens: Buffer[] = [];
+  let timeline: Buffer[] = [];
+  let visible: { frame: Buffer; index: number; distance: number }[] = [];
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const pending = implementation._send('motionFrames');
+    await setTimeout(300);
+    await trigger();
+    screens = (await pending).map(frame => Buffer.from(frame.png, 'base64'));
+    timeline = screens.map(crop);
+    expect(timeline.length).toBeGreaterThanOrEqual(10);
+    expect(samePixels(before, timeline[0]), `${name} 必须在采样开始后播放`).toBe(true);
+    visible = timeline.map((frame, index) => ({ frame, index, distance: frameColorDistance(before, frame) }))
+      .filter(item => item.distance > 2);
+    if (visible.length >= 2 || attempt) break;
+    // 消息到达后短时采样可能先于原生素材绘制；保留原画面，再重新触发同一效果。
+    await info.attach(`${name}-首次未显示`, { body: screens.at(-1)!, contentType: 'image/png' });
+    await setTimeout(2500);
+    beforeScreen = await gameScreenshot(device);
+    expect(samePixels(before, crop(beforeScreen)), `${name} 重新触发前须恢复静态画面`).toBe(true);
+    before = crop(beforeScreen);
+  }
   expect(visible.length, `${name} 必须在屏幕上实际出现`).toBeGreaterThanOrEqual(2);
   const peak = visible.reduce((best, item) => item.distance > best.distance ? item : best);
   const changed = visible.reduce((best, item) => frameColorDistance(peak.frame, item.frame)
