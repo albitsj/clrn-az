@@ -108,7 +108,23 @@ export async function waitForHall(device: AndroidDevice): Promise<void> {
   await device.fill({ res: 'staging-confirmation-input' }, 'CONFIRM');
   await dismissKeyboard(device);
   await device.tap({ res: 'confirm-button' });
-  await device.wait({ res: 'settings-tab' }, { timeout: 120_000 });
+  const deadline = Date.now() + 120_000;
+  let retries = 0;
+  while (Date.now() < deadline) {
+    try {
+      await device.wait({ res: 'settings-tab' }, { timeout: Math.min(5_000, deadline - Date.now()) });
+      return;
+    } catch (error) {
+      if (!/Timeout.*exceeded/i.test(String(error))) throw error;
+      const message = await device.info({ res: 'android:id/message' }).catch(() => undefined);
+      const retry = await device.info({ res: 'android:id/button1' }).catch(() => undefined);
+      if (!message?.text?.includes('ServerType: staging') || !message.text.includes('v1/status')
+        || retry?.text !== 'RETRY') continue;
+      if (++retries > 3) throw new Error('测试环境状态请求连续失败三次，应用仍未进入大厅。', { cause: error });
+      await device.tap({ res: 'android:id/button1' });
+    }
+  }
+  throw new Error('测试环境确认后两分钟内未进入大厅。');
 }
 
 /**

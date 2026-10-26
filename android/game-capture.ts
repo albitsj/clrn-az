@@ -2,7 +2,7 @@ import type { AndroidDevice } from 'playwright';
 import presentation from '../visual/fixtures/game-presentation.json';
 import type { TestInfo } from '@playwright/test';
 import { compareScreenshot } from './device';
-import { gameNodes, gameReady, gameMarker, gameScreenshot } from './game-controls';
+import { gameConnected, gameNodes, gameReady, gameMarker, gameScreenshot } from './game-controls';
 import { expect } from '@playwright/test';
 import type { ScreenshotBounds, ScreenshotMask } from './screenshot';
 import { foregroundPanels, visibleMasks, networkStatusMask, countdownMask } from './game-masks';
@@ -30,10 +30,13 @@ function pixelBounds(bounds: ScreenshotBounds): ScreenshotBounds {
  * @param expectedAlertMarker - 错误分支已断言内容后，允许截图的特定业务弹窗按钮。
  * @param inputMasks - 已根据真实输入框位移校准的光标区域。
  * @param triggerToast - 仅浮层提示可在准备背景遮罩后触发，不改变底层页面布局。
+ * @param reconnectRetry - 同一张截图已在真实重连结束后重新采集一次。
  */
 export async function captureGame(device: AndroidDevice, name: string, testInfo: TestInfo, transientMarker?: string,
-  expectedAlertMarker?: string, inputMasks: ScreenshotMask[] = [], triggerToast?: () => Promise<string | void>): Promise<void> {
+  expectedAlertMarker?: string, inputMasks: ScreenshotMask[] = [], triggerToast?: () => Promise<string | void>,
+  reconnectRetry = false): Promise<void> {
   if (triggerToast && transientMarker !== 'toastText1') throw new Error('提前准备遮罩仅用于不改变布局的短时文字提示。');
+  if (!expectedAlertMarker) await gameConnected(device, 1_000);
   if (expectedAlertMarker) await gameReady(device, expectedAlertMarker);
   let nodes = await gameNodes(device);
   if ((!transientMarker || transientMarker === 'level-up-title') && foregroundPanels(nodes).length) {
@@ -126,6 +129,13 @@ export async function captureGame(device: AndroidDevice, name: string, testInfo:
     expect((await gameMarker(device, transientMarker!))?.text,
       `${transientMarker} 必须在截图前后可见`).toBeTruthy();
   };
-  await compareScreenshot(device, name, testInfo, masks, transientMarker ? assertTransient : undefined,
-    transientMarker ? () => gameScreenshot(device) : undefined);
+  try {
+    await compareScreenshot(device, name, testInfo, masks, transientMarker ? assertTransient : undefined,
+      transientMarker ? () => gameScreenshot(device) : undefined);
+  } catch (error) {
+    if (reconnectRetry || transientMarker || triggerToast || expectedAlertMarker
+      || !(await gameNodes(device)).some(node => /Connecting\.\.\./.test(node.text || ''))) throw error;
+    await gameConnected(device, 2_000);
+    await captureGame(device, name, testInfo, transientMarker, expectedAlertMarker, inputMasks, triggerToast, true);
+  }
 }

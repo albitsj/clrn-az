@@ -4,7 +4,7 @@ import { setTimeout } from 'node:timers/promises';
 import { expect, type TestInfo } from '@playwright/test';
 import type { AndroidDevice } from 'playwright';
 import { frameColorDistance, framePaletteDistance } from './animation-transition';
-import { gameScreenshot } from './game-controls';
+import { gameConnected, gameScreenshot } from './game-controls';
 import { motionParts, samePixels } from './motion-regions';
 import type { ScreenshotBounds } from './screenshot';
 
@@ -27,19 +27,28 @@ export async function captureAssetSequence(device: AndroidDevice, name: string, 
    * @param bytes - 原生截图 PNG。
    */
   const crop = (bytes: Buffer) => motionParts(bytes, [region]).regions[0];
+  await gameConnected(device, 1_000);
   const beforeScreen = await gameScreenshot(device);
   const before = crop(beforeScreen);
   const implementation = (device as unknown as { _connection: { toImpl(device: AndroidDevice): {
     _send(method: string): Promise<NativeFrame[]> } } })._connection.toImpl(device);
-  const pending = implementation._send('motionFrames');
-  await setTimeout(300);
-  await trigger();
-  const screens = (await pending).map(frame => Buffer.from(frame.png, 'base64'));
-  const timeline = screens.map(crop);
-  expect(timeline.length).toBeGreaterThanOrEqual(10);
-  expect(samePixels(before, timeline[0]), `${name} 必须在采样开始后播放`).toBe(true);
-  const visible = timeline.map((frame, index) => ({ frame, index, distance: frameColorDistance(before, frame) }))
-    .filter(item => item.distance > 2);
+  let screens: Buffer[] = [];
+  let timeline: Buffer[] = [];
+  let visible: { frame: Buffer; index: number; distance: number }[] = [];
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const pending = implementation._send('motionFrames');
+    await setTimeout(300);
+    await trigger();
+    screens = (await pending).map(frame => Buffer.from(frame.png, 'base64'));
+    timeline = screens.map(crop);
+    expect(timeline.length).toBeGreaterThanOrEqual(10);
+    expect(samePixels(before, timeline[0]), `${name} 必须在采样开始后播放`).toBe(true);
+    visible = timeline.map((frame, index) => ({ frame, index, distance: frameColorDistance(before, frame) }))
+      .filter(item => item.distance > 2);
+    if (visible.length >= 2 || attempt) break;
+    await gameConnected(device, 2_000);
+    expect(samePixels(before, crop(await gameScreenshot(device))), `${name} 重试前画面必须恢复`).toBe(true);
+  }
   expect(visible.length, `${name} 必须在屏幕上实际出现`).toBeGreaterThanOrEqual(2);
   const peak = visible.reduce((best, item) => item.distance > best.distance ? item : best);
   const changed = visible.reduce((best, item) => frameColorDistance(peak.frame, item.frame)
