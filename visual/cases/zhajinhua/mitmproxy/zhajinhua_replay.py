@@ -54,7 +54,9 @@ class ZhajinhuaReplay:
         if 'id' in frame or not isinstance(result, dict) or result.get('type', 0) != 0:
             return False
         channel = result.get('channel')
-        return isinstance(channel, str) and re.fullmatch(
+        if not isinstance(channel, str):
+            return False
+        return channel == f'zhajinhua|{self.room_id}' or re.fullmatch(
             rf'zhajinhua>{self.room_id}#{UUID}', channel, re.I) is not None
 
     def websocket_message(self, flow):
@@ -114,7 +116,7 @@ class ZhajinhuaReplay:
                     for command_id in [command_id for command_id, target in pending.items() if target == channel]:
                         pending.pop(command_id)
             if self.room_id:
-                # 实际服务仍保持等待状态；丢弃其游戏推送，防止覆盖正在截图的固定对局。
+                # 实际服务仍保持等待状态；丢弃本房间公共及个人频道的游戏推送，防止覆盖固定对局。
                 kept = [frame for frame in frames if not self.is_replay_publication(frame)]
                 message.content = "\n".join(json.dumps(frame) for frame in kept).encode()
                 if not kept:
