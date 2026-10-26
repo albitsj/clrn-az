@@ -14,6 +14,8 @@ from presentation import AccountPresentation
 from club_search_fixture import ClubSearchFixture
 from game_session import GameSession
 from launch_network import LaunchNetwork
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'e2e/mitmproxy'))
+from response_overrides import is_staging
 
 
 class AndroidVisualProxy:
@@ -41,6 +43,12 @@ class AndroidVisualProxy:
                                 'created_at': '2026-01-01T00:00:00Z', 'admin_ids': [],
                                 'game_type': 'texas_holdem'} for index in (1, 2)]
         self.invitable = os.environ.get('ANDROID_INVITABLE') == 'true'
+        directory = Path(__file__).resolve().parents[1] / 'visual/cases/club/mitmproxy'
+        spec = importlib.util.spec_from_file_location('native_club_room_addon', directory / 'addon.py')
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        self.club_rooms = module.ClubRoomVisualProxy()
+        self.club_rooms_active = False
         self.auto_rebuy_hold = False
         self.auto_rebuy_requested = False
         self.auto_rebuy_release = asyncio.Event()
@@ -171,6 +179,32 @@ class AndroidVisualProxy:
             flow.response = http.Response.make(200, json.dumps(club_search_response).encode(),
                                                {'Content-Type': 'application/json'})
             return
+        if flow.request.host == 'test-mitmproxy.invalid' and path == '/native/club-rooms':
+            if flow.request.headers.get('X-E2E-Control-Token') != os.environ['MITMPROXY_CONTROL_TOKEN']:
+                flow.response = http.Response.make(403, b'Forbidden')
+                return
+            if flow.request.method == 'POST':
+                try:
+                    active = json.loads(flow.request.content).get('active')
+                except (ValueError, TypeError, AttributeError):
+                    active = None
+                if not isinstance(active, bool):
+                    flow.response = http.Response.make(400, b'Invalid club room state')
+                    return
+                self.club_rooms_active = active
+                self.club_rooms.club_room_requests = {}
+            flow.response = http.Response.make(200, json.dumps({
+                'active': self.club_rooms_active,
+                'requests': self.club_rooms.club_room_requests,
+            }).encode(), {'Content-Type': 'application/json'})
+            return
+        if self.club_rooms_active and is_staging(flow.request.host):
+            result = self.club_rooms.fixture(flow)
+            if result is not None:
+                self.club_rooms.club_room_requests[path] = self.club_rooms.club_room_requests.get(path, 0) + 1
+                flow.response = http.Response.make(200, json.dumps({'ok': True, 'result': result}).encode(),
+                    {'Content-Type': 'application/json'})
+                return
         if self.game and flow.request.host == 'test-mitmproxy.invalid' \
                 and path == '/android/auto-rebuy-hold':
             if flow.request.headers.get('X-E2E-Control-Token') != os.environ['MITMPROXY_CONTROL_TOKEN']:
