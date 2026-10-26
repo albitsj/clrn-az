@@ -8,11 +8,22 @@ import { visualNetworkRouter } from './network-routes';
 import { adb } from './device';
 
 /**
+ * 清除本轮反向转发；模拟器重连已清除监听时也视为完成。
+ * @param port - 本轮代理端口。
+ */
+function removeReverse(port: string): void {
+  try { adb('reverse', '--remove', `tcp:${port}`); }
+  catch (error) {
+    if (!String(error).includes(`listener 'tcp:${port}' not found`)) throw error;
+  }
+}
+
+/**
  * 在专用模拟器安装本轮 CA，并只把该模拟器的流量转入隔离代理。
  * @param directory - 本轮代理的临时配置目录。
  * @param server - 主机回环地址上的代理 URL。
  */
-async function configureProxy(directory: string, server: string): Promise<void> {
+async function configureProxy(directory: string, server: string): Promise<string | undefined> {
   if (adb('shell', 'getprop', 'ro.kernel.qemu').trim() !== '1') throw new Error('代理只能配置到专用模拟器。');
   try { adb('root'); }
   catch (error) {
@@ -28,8 +39,25 @@ async function configureProxy(directory: string, server: string): Promise<void> 
   adb('push', path.join(__dirname, 'trust-proxy.sh'), '/data/local/tmp/clrn-trust-proxy.sh');
   adb('shell', 'sh', '/data/local/tmp/clrn-trust-proxy.sh', `/data/local/tmp/${hash}.0`);
   const port = new URL(server).port;
-  // 模拟器的 10.0.2.2 映射主机回环地址；长连接不经过容易超时的 ADB 反向转发。
+  // 先从模拟器确认主机回环映射可达；不可达时改用本轮独占的反向转发。
+  try {
+    adb('shell', 'toybox', 'nc', '-z', '-w', '3', '10.0.2.2', port);
+  } catch {
+    console.log('ANDROID > 模拟器无法直连本轮代理，改用专用反向转发');
+    adb('reverse', `tcp:${port}`, `tcp:${port}`);
+    try { adb('shell', 'settings', 'put', 'global', 'http_proxy', `127.0.0.1:${port}`); }
+    catch (error) {
+      try { removeReverse(port); }
+      catch (cleanupError) {
+        throw new AggregateError([error, cleanupError], `代理设置与反向转发清理均失败：${String(error)}；${String(cleanupError)}`,
+          { cause: cleanupError });
+      }
+      throw error;
+    }
+    return port;
+  }
   adb('shell', 'settings', 'put', 'global', 'http_proxy', `10.0.2.2:${port}`);
+  return undefined;
 }
 
 /**
@@ -59,6 +87,7 @@ export async function withAndroidProxy<T>(task: (proxy: Mitmproxy) => Promise<T>
     }
   });
   let previousProxy: string | undefined;
+  let reversePort: string | undefined;
   const failures: unknown[] = [];
   let result: T;
   try {
@@ -85,7 +114,7 @@ export async function withAndroidProxy<T>(task: (proxy: Mitmproxy) => Promise<T>
        * @param proxy - 本轮代理连接。
        */
       prepare: async (directory, proxy) => {
-        await configureProxy(directory, proxy.server);
+        reversePort = await configureProxy(directory, proxy.server);
       },
     });
   } catch (error) {
@@ -96,6 +125,8 @@ export async function withAndroidProxy<T>(task: (proxy: Mitmproxy) => Promise<T>
         adb('shell', 'settings', 'put', 'global', 'http_proxy', previousProxy === 'null' ? ':0' : previousProxy);
       }
     } catch (error) { failures.push(error); }
+    try { if (reversePort) removeReverse(reversePort); }
+    catch (error) { failures.push(error); }
     if (server.listening) {
       await new Promise<void>(resolve => server.close(error => {
         if (error) failures.push(error);

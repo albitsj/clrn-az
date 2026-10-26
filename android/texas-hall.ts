@@ -1,7 +1,7 @@
 import { expect } from '@playwright/test';
 import { setTimeout } from 'node:timers/promises';
 import { REPLAY_PLAYER_IDS } from '../visual/cases/texas-holdem/replayData';
-import { gameGone, gameNodes, gameReady, gameScreenshot, gameTap, gameTextWithin } from './game-controls';
+import { gameGone, gameMarker, gameNodes, gameReady, gameScreenshot, gameTap, gameTextWithin } from './game-controls';
 import { closeGameMask } from './game-pregame';
 import { adb } from './device';
 import { dismissKeyboard } from './keyboard';
@@ -78,9 +78,10 @@ export async function texasHall(context: TexasContext): Promise<void> {
   await texasEvents(context, [{ event: 'settlement', players: [{ player_id: REPLAY_PLAYER_IDS[0], net: 180, prize: 180, stack: 1140 }] }]);
   await gameReady(device, 'bet-next-hand-button');
   await capture('prediction');
-  await texasEvents(context, [{ event: 'settlement_hand_prediction', result: { net: 10, currency_name: 'coin' } }]);
-  await gameReady(device, 'bet-next-hand-result-amount', '+10');
-  await capture('prediction_result');
+  await capture('prediction_result', [], async () => {
+    await texasEvents(context, [{ event: 'settlement_hand_prediction', result: { net: 10, currency_name: 'coin' } }]);
+    return '+10';
+  });
   await texasEvents(context, [{ event: 'new_game', game_id: 'visual-fixed-game', settings: { small_blind: 1, big_blind: 2, ante: 0 } }]);
   await gameGone(device, 'bet-next-hand-button');
   await restoreTexas(context);
@@ -89,7 +90,13 @@ export async function texasHall(context: TexasContext): Promise<void> {
     await gameTap(device, 'texas-holdem-operation-button-call');
     expect((await gameReady(device, 'level-up-title')).text).toContain('6');
     await capture('level_up');
-    await gameTap(device, 'level-up-close-button');
+    // 升级弹窗会自动消失；截图已验证后只在关闭按钮仍可见时点击。
+    const close = await gameMarker(device, 'level-up-close-button');
+    if (close) {
+      const { x, y, width, height } = close.bounds;
+      adb('shell', 'input', 'tap', String(Math.round(x + width / 2)), String(Math.round(y + height / 2)));
+    }
+    await gameGone(device, 'level-up-close-button');
   }
 }
 
@@ -133,13 +140,15 @@ export async function texasHallVariants(context: TexasContext): Promise<void> {
   await gameReady(device, 'bet-next-hand-has-bet-icon');
   await gameReady(device, 'bet-next-hand-placeholder');
   await capture('prediction_bet');
-  await texasEvents(context, [{ event: 'settlement_hand_prediction', result: { net: -10, currency_name: 'coin' } }]);
-  await gameReady(device, 'bet-next-hand-result-amount', '-10');
-  await capture('prediction_loss');
+  await capture('prediction_loss', [], async () => {
+    await texasEvents(context, [{ event: 'settlement_hand_prediction', result: { net: -10, currency_name: 'coin' } }]);
+    return '-10';
+  });
   await gameGone(device, 'bet-next-hand-result-amount');
-  await texasEvents(context, [{ event: 'settlement_hand_prediction', result: { net: 20, currency_name: 'diamond' } }]);
-  await gameReady(device, 'bet-next-hand-result-amount', '+20');
-  await capture('prediction_diamond');
+  await capture('prediction_diamond', [], async () => {
+    await texasEvents(context, [{ event: 'settlement_hand_prediction', result: { net: 20, currency_name: 'diamond' } }]);
+    return '+20';
+  });
   await texasEvents(context, [{ event: 'new_game', game_id: 'visual-fixed-game', settings: { small_blind: 1, big_blind: 2, ante: 0 } }]);
   await restoreTexas(context);
   await enableGameSetting(device, 'operation-time');

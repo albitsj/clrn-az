@@ -108,7 +108,24 @@ export async function waitForHall(device: AndroidDevice): Promise<void> {
   await device.fill({ res: 'staging-confirmation-input' }, 'CONFIRM');
   await dismissKeyboard(device);
   await device.tap({ res: 'confirm-button' });
-  await device.wait({ res: 'settings-tab' }, { timeout: 120_000 });
+  const deadline = Date.now() + 120_000;
+  let lastTimeout: unknown;
+  while (Date.now() < deadline) {
+    try {
+      await device.wait({ res: 'settings-tab' }, { timeout: Math.min(5_000, deadline - Date.now()) });
+      return;
+    } catch (error) {
+      if (!/Timeout.*exceeded/i.test(String(error))) throw error;
+      lastTimeout = error;
+      const message = await device.info({ res: 'android:id/message' }).catch(() => undefined);
+      const retry = await device.info({ res: 'android:id/button1' }).catch(() => undefined);
+      if (!message?.text?.includes('ServerType: staging') || !message.text.includes('v1/status')
+        || retry?.text !== 'RETRY') continue;
+      if (Date.now() >= deadline) break;
+      await device.tap({ res: 'android:id/button1' });
+    }
+  }
+  throw new Error('测试环境确认后两分钟内未进入大厅。', { cause: lastTimeout });
 }
 
 /**
