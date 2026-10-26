@@ -75,8 +75,9 @@ test('代理重试先有界等待指定模拟器连接，再读取旧设置，�
   });
   assert.equal(result, 'completed');
   assert.deepEqual(state.commands.slice(0, 2), ['wait-for-device', 'shell settings get global http_proxy']);
-  assert.equal(state.commands.at(-2), 'shell settings put global http_proxy :0');
-  assert.match(state.commands.at(-1), /^reverse --remove tcp:\d+$/);
+  assert.ok(state.commands.some(command => /^shell settings put global http_proxy 10\.0\.2\.2:\d+$/.test(command)));
+  assert.equal(state.commands.at(-1), 'shell settings put global http_proxy :0');
+  assert.ok(state.commands.every(command => !command.startsWith('reverse ')));
 });
 
 for (const failedCommand of ['wait-for-device', 'shell settings get global http_proxy']) {
@@ -89,44 +90,30 @@ for (const failedCommand of ['wait-for-device', 'shell settings get global http_
   });
 }
 
-test('原始失败与两个清理失败全部保留，不能由最后一次 reverse 错误覆盖', async context => {
-  const primary = new Error('adb install timed out');
-  const restore = new Error('proxy restore failed');
-  const reverse = new Error("protocol fault (couldn't read status)");
-  session(context, command => command === 'shell settings put global http_proxy :0' ? restore
-    : command.startsWith('reverse --remove') ? reverse : undefined);
+test('原始失败和代理设置恢复失败全部保留', async context => {
+  const primary = new Error('安装超时');
+  const restore = new Error('代理设置恢复失败');
+  session(context, command => command === 'shell settings put global http_proxy :0' ? restore : undefined);
   await assert.rejects(withAndroidProxy(async () => { throw primary; }), error => {
     assert.ok(error instanceof AggregateError);
     assert.equal(error.cause, primary);
-    assert.deepEqual(error.errors, [primary, restore, reverse]);
+    assert.deepEqual(error.errors, [primary, restore]);
     for (const failure of error.errors) assert.ok(error.message.includes(failure.message));
     return true;
   });
 });
 
 test('清理成功时保留原始错误对象，不重试或吞掉原生失败', async context => {
-  const failure = new Error('native screenshot failed');
+  const failure = new Error('原生截图失败');
   const state = session(context);
   let attempts = 0;
   await assert.rejects(withAndroidProxy(async () => { attempts++; throw failure; }), error => error === failure);
   assert.equal(attempts, 1);
-  assert.match(state.commands.at(-1), /^reverse --remove tcp:\d+$/);
+  assert.equal(state.commands.at(-1), 'shell settings put global http_proxy :0');
 });
 
-test('正文成功但清理连接失败仍然失败，不能误报视觉成功', async context => {
-  const failure = new Error("protocol fault (couldn't read status)");
-  session(context, command => command.startsWith('reverse --remove') ? failure : undefined);
-  await assert.rejects(withAndroidProxy(async () => 'completed'), error => error === failure);
-});
-
-test('允许本轮反向端口已经不存在', async context => {
-  session(context, command => command.startsWith('reverse --remove')
-    ? new Error(`listener '${command.split(' ').at(-1)}' not found`) : undefined);
-  assert.equal(await withAndroidProxy(async () => 'completed'), 'completed');
-});
-
-test('其他端口不存在不能当作本轮清理成功', async context => {
-  const failure = new Error("listener 'tcp:1' not found");
-  session(context, command => command.startsWith('reverse --remove') ? failure : undefined);
+test('正文成功但代理设置恢复失败仍然失败，不能误报视觉成功', async context => {
+  const failure = new Error('代理设置恢复失败');
+  session(context, command => command === 'shell settings put global http_proxy :0' ? failure : undefined);
   await assert.rejects(withAndroidProxy(async () => 'completed'), error => error === failure);
 });

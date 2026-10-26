@@ -28,19 +28,8 @@ async function configureProxy(directory: string, server: string): Promise<void> 
   adb('push', path.join(__dirname, 'trust-proxy.sh'), '/data/local/tmp/clrn-trust-proxy.sh');
   adb('shell', 'sh', '/data/local/tmp/clrn-trust-proxy.sh', `/data/local/tmp/${hash}.0`);
   const port = new URL(server).port;
-  adb('reverse', `tcp:${port}`, `tcp:${port}`);
-  adb('shell', 'settings', 'put', 'global', 'http_proxy', `127.0.0.1:${port}`);
-}
-
-/**
- * 删除本轮转发；adbd 重连后已被移除的端口等同于清理成功。
- * @param port - 本轮独占的代理端口。
- */
-function removeReverse(port: string): void {
-  try { adb('reverse', '--remove', `tcp:${port}`); }
-  catch (error) {
-    if (!String(error).includes(`listener 'tcp:${port}' not found`)) throw error;
-  }
+  // 模拟器的 10.0.2.2 映射主机回环地址；长连接不经过容易超时的 ADB 反向转发。
+  adb('shell', 'settings', 'put', 'global', 'http_proxy', `10.0.2.2:${port}`);
 }
 
 /**
@@ -70,7 +59,6 @@ export async function withAndroidProxy<T>(task: (proxy: Mitmproxy) => Promise<T>
     }
   });
   let previousProxy: string | undefined;
-  let proxyPort: string | undefined;
   const failures: unknown[] = [];
   let result: T;
   try {
@@ -97,7 +85,6 @@ export async function withAndroidProxy<T>(task: (proxy: Mitmproxy) => Promise<T>
        * @param proxy - 本轮代理连接。
        */
       prepare: async (directory, proxy) => {
-        proxyPort = new URL(proxy.server).port;
         await configureProxy(directory, proxy.server);
       },
     });
@@ -109,8 +96,6 @@ export async function withAndroidProxy<T>(task: (proxy: Mitmproxy) => Promise<T>
         adb('shell', 'settings', 'put', 'global', 'http_proxy', previousProxy === 'null' ? ':0' : previousProxy);
       }
     } catch (error) { failures.push(error); }
-    try { if (proxyPort) removeReverse(proxyPort); }
-    catch (error) { failures.push(error); }
     if (server.listening) {
       await new Promise<void>(resolve => server.close(error => {
         if (error) failures.push(error);
