@@ -6,7 +6,7 @@ import { gameConnected, gameNodes, gameReady, gameMarker, gameScreenshot } from 
 import { expect } from '@playwright/test';
 import type { ScreenshotBounds, ScreenshotMask } from './screenshot';
 import { foregroundPanels, visibleMasks, networkStatusMask, countdownMask } from './game-masks';
-import { captureToast } from './game-transient';
+import { capturePredictionResult, captureToast } from './game-transient';
 import { captureChallengeAnimation } from './game-animation';
 import { verifyLoopAnimation } from './loop-animation';
 import { captureMovingKeyframes } from './loop-keyframes';
@@ -29,13 +29,15 @@ function pixelBounds(bounds: ScreenshotBounds): ScreenshotBounds {
  * @param transientMarker - 仅用于会自动消失的提示，截图前后都必须实际存在。
  * @param expectedAlertMarker - 错误分支已断言内容后，允许截图的特定业务弹窗按钮。
  * @param inputMasks - 已根据真实输入框位移校准的光标区域。
- * @param triggerToast - 仅浮层提示可在准备背景遮罩后触发，不改变底层页面布局。
+ * @param triggerTransient - 背景遮罩准备完成后触发短时提示，并返回应出现的文字。
  * @param reconnectRetry - 同一张截图已在真实重连结束后重新采集一次。
  */
 export async function captureGame(device: AndroidDevice, name: string, testInfo: TestInfo, transientMarker?: string,
-  expectedAlertMarker?: string, inputMasks: ScreenshotMask[] = [], triggerToast?: () => Promise<string | void>,
+  expectedAlertMarker?: string, inputMasks: ScreenshotMask[] = [], triggerTransient?: () => Promise<string | void>,
   reconnectRetry = false): Promise<void> {
-  if (triggerToast && transientMarker !== 'toastText1') throw new Error('提前准备遮罩仅用于不改变布局的短时文字提示。');
+  if (triggerTransient && !['toastText1', 'bet-next-hand-result-amount'].includes(transientMarker || '')) {
+    throw new Error('提前准备遮罩仅用于已核对的短时提示。');
+  }
   if (!expectedAlertMarker) await gameConnected(device, 1_000);
   if (expectedAlertMarker) await gameReady(device, expectedAlertMarker);
   let nodes = await gameNodes(device);
@@ -119,9 +121,13 @@ export async function captureGame(device: AndroidDevice, name: string, testInfo:
     await verifyLoopAnimation(device, name, testInfo, regions, masks);
     if (name.startsWith('en-')) await captureMovingKeyframes(device, `${name}-countdown`, testInfo, regions);
   }
-  if (triggerToast) {
-    const expectedText = await triggerToast();
+  if (triggerTransient && transientMarker === 'toastText1') {
+    const expectedText = await triggerTransient();
     await captureToast(device, name, testInfo, masks, expectedText || undefined);
+    return;
+  }
+  if (triggerTransient && transientMarker === 'bet-next-hand-result-amount') {
+    await capturePredictionResult(device, name, testInfo, masks, triggerTransient);
     return;
   }
   /** 不允许把提示消失后的稳定页面当成提示截图。 */
@@ -133,9 +139,9 @@ export async function captureGame(device: AndroidDevice, name: string, testInfo:
     await compareScreenshot(device, name, testInfo, masks, transientMarker ? assertTransient : undefined,
       transientMarker ? () => gameScreenshot(device) : undefined);
   } catch (error) {
-    if (reconnectRetry || transientMarker || triggerToast || expectedAlertMarker
+    if (reconnectRetry || transientMarker || triggerTransient || expectedAlertMarker
       || !(await gameNodes(device)).some(node => /Connecting\.\.\./.test(node.text || ''))) throw error;
     await gameConnected(device, 2_000);
-    await captureGame(device, name, testInfo, transientMarker, expectedAlertMarker, inputMasks, triggerToast, true);
+    await captureGame(device, name, testInfo, transientMarker, expectedAlertMarker, inputMasks, triggerTransient, true);
   }
 }
