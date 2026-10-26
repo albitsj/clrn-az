@@ -12,6 +12,7 @@ from urllib.parse import urlsplit
 from mitmproxy import ctx, http
 from presentation import AccountPresentation
 from club_search_fixture import ClubSearchFixture
+from username_lookup import username_lookup_response
 from game_session import GameSession
 from launch_network import LaunchNetwork
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'e2e/mitmproxy'))
@@ -158,6 +159,12 @@ class AndroidVisualProxy:
         if await self.launch.request(flow):
             return
         path = urlsplit(flow.request.path).path
+        if self.game:
+            lookup = username_lookup_response(flow.request, os.environ.get('VISUAL_USERNAME'))
+            if lookup is not None:
+                flow.response = http.Response.make(200, json.dumps(lookup).encode(),
+                                                   {'Content-Type': 'application/json'})
+                return
         if flow.request.host == 'test-mitmproxy.invalid' and path == '/android/club-search':
             if flow.request.headers.get('X-E2E-Control-Token') != os.environ['MITMPROXY_CONTROL_TOKEN']:
                 flow.response = http.Response.make(403, '无权访问'.encode())
