@@ -6,7 +6,7 @@ import childProcess from 'node:child_process';
 const require = createRequire(import.meta.url);
 const { waitForHall, waitForStagingNotice } = require('./device.ts');
 
-test('启动后的真实状态接口网络错误只点击应用重试并等待进入大厅', async context => {
+test('启动后的状态接口连续四次网络错误仍在时限内重试并进入大厅', async context => {
   const serial = process.env.ANDROID_SERIAL;
   process.env.ANDROID_SERIAL = 'emulator-5554';
   context.after(() => {
@@ -21,13 +21,13 @@ test('启动后的真实状态接口网络错误只点击应用重试并等待�
   const taps = [];
   let hallChecks = 0;
   const device = {
-    /** 模拟确认框已出现，以及第一次大厅等待遇到真实网络错误。
+    /** 模拟确认框已出现，以及前四次大厅等待遇到真实网络错误。
      * @param selector - 原生控件标识。
      */
     wait: async selector => {
       if (selector.res === 'staging-confirmation-input') return;
       assert.equal(selector.res, 'settings-tab');
-      if (++hallChecks === 1) throw new Error('TimeoutError: androidDevice.wait: Timeout 5000ms exceeded.');
+      if (++hallChecks <= 4) throw new Error('TimeoutError: androidDevice.wait: Timeout 5000ms exceeded.');
     },
     /** 返回状态接口错误及应用自己的重试按钮。
      * @param selector - 原生控件标识。
@@ -49,8 +49,8 @@ test('启动后的真实状态接口网络错误只点击应用重试并等待�
     },
   };
   await waitForHall(device);
-  assert.deepEqual(taps, [{ res: 'confirm-button' }, { res: 'android:id/button1' }]);
-  assert.equal(hallChecks, 2);
+  assert.deepEqual(taps, [{ res: 'confirm-button' }, ...Array.from({ length: 4 }, () => ({ res: 'android:id/button1' }))]);
+  assert.equal(hallChecks, 5);
 });
 
 test('启动确认框被 Pixel Launcher ANR 遮挡时只关闭系统弹窗并继续等待', async context => {

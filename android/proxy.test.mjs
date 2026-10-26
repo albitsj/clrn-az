@@ -75,9 +75,39 @@ test('代理重试先有界等待指定模拟器连接，再读取旧设置，�
   });
   assert.equal(result, 'completed');
   assert.deepEqual(state.commands.slice(0, 2), ['wait-for-device', 'shell settings get global http_proxy']);
+  assert.ok(state.commands.some(command => /^shell toybox nc -z -w 3 10\.0\.2\.2 \d+$/.test(command)));
   assert.ok(state.commands.some(command => /^shell settings put global http_proxy 10\.0\.2\.2:\d+$/.test(command)));
   assert.equal(state.commands.at(-1), 'shell settings put global http_proxy :0');
   assert.ok(state.commands.every(command => !command.startsWith('reverse ')));
+});
+
+test('模拟器无法连接主机回环映射时使用专用反向转发并在结束后清理', async context => {
+  const state = session(context, command => command.startsWith('shell toybox nc ') ? new Error('代理端口不可达') : undefined);
+  assert.equal(await withAndroidProxy(async () => '已进入测试'), '已进入测试');
+  const probe = state.commands.find(command => command.startsWith('shell toybox nc '));
+  assert.ok(probe);
+  const port = probe.split(' ').at(-1);
+  const reverse = `reverse tcp:${port} tcp:${port}`;
+  const configure = `shell settings put global http_proxy 127.0.0.1:${port}`;
+  const restore = 'shell settings put global http_proxy :0';
+  const remove = `reverse --remove tcp:${port}`;
+  assert.ok(state.commands.includes(reverse));
+  assert.ok(state.commands.includes(configure));
+  assert.ok(state.commands.includes(restore));
+  assert.ok(state.commands.indexOf(reverse) < state.commands.indexOf(configure));
+  assert.ok(state.commands.indexOf(configure) < state.commands.indexOf(restore));
+  assert.ok(state.commands.indexOf(restore) < state.commands.indexOf(remove));
+  assert.equal(state.commands.at(-1), remove);
+});
+
+test('模拟器重连已清除反向转发时仍能完成代理恢复', async context => {
+  const state = session(context, command => {
+    if (command.startsWith('shell toybox nc ')) return new Error('代理端口不可达');
+    if (command.startsWith('reverse --remove ')) return new Error(`listener '${command.split(' ').at(-1)}' not found`);
+    return undefined;
+  });
+  assert.equal(await withAndroidProxy(async () => '已进入测试'), '已进入测试');
+  assert.ok(state.commands.some(command => command.startsWith('reverse --remove ')));
 });
 
 for (const failedCommand of ['wait-for-device', 'shell settings get global http_proxy']) {
