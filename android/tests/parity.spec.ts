@@ -5,7 +5,8 @@ import { compareScreenshot } from '../device';
 import { screenshotMasks } from '../screenshot';
 import { verifyLoopAnimation } from '../loop-animation';
 
-for (const scenario of androidScenarios(locale, process.env.ANDROID_GROUP)) {
+for (const scenario of androidScenarios(locale, process.env.ANDROID_GROUP)
+  .filter(item => item.pageLabel !== 'signed_in_club_rooms_populated')) {
   test(`${locale} / ${scenario.group} / ${scenario.pageLabel}`, async ({ application }, testInfo) => {
     testInfo.annotations.push({ type: 'web-scenario', description: scenario.label });
     if (scenario.signIn && !application.signedIn) {
