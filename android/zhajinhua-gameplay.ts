@@ -130,6 +130,10 @@ export async function zhajinhuaGameplay(device: AndroidDevice, proxy: Mitmproxy,
       'accurate-bet-popup-container', { x: 150, y: 400, width: 430, height: 480 }, animationInfo,
       accurateBetClock, 'videoFrames', ['zhajinhua-accurate-bet-exit-middle-contracted.png']);
     else await closeGameMask(device, 'accurate-bet-popup-container');
+    // 前面的录屏与截图会消耗本人操作时限；在比牌目标动画前重新发送真实操作状态。
+    if (animationInfo) await send(events([{ event: 'operating_player_status', status: {
+      player_id: self, remain_operating_seconds: 120, valid_bets: validBets(true),
+    } }]));
     await gameTap(device, 'zhajinhua-operation-button-battle');
     await expect.poll(async () => (await gameNodes(device)).filter(node => node.res === 'challenge_player_selector').length,
       { timeout: 30_000 }).toBe(4);
