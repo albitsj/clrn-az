@@ -4,7 +4,7 @@ import { setTimeout } from 'node:timers/promises';
 import { expect, type TestInfo } from '@playwright/test';
 import type { AndroidDevice } from 'playwright';
 import { frameColorDistance, framePaletteDistance } from './animation-transition';
-import { gameScreenshot } from './game-controls';
+import { gameConnected, gameScreenshot } from './game-controls';
 import { motionParts, samePixels } from './motion-regions';
 import type { ScreenshotBounds } from './screenshot';
 
@@ -27,6 +27,7 @@ export async function captureAssetSequence(device: AndroidDevice, name: string, 
    * @param bytes - 原生截图 PNG。
    */
   const crop = (bytes: Buffer) => motionParts(bytes, [region]).regions[0];
+  await gameConnected(device, 1_000);
   let beforeScreen = await gameScreenshot(device);
   let before = crop(beforeScreen);
   const implementation = (device as unknown as { _connection: { toImpl(device: AndroidDevice): {
@@ -48,6 +49,7 @@ export async function captureAssetSequence(device: AndroidDevice, name: string, 
     // 消息到达后短时采样可能先于原生素材绘制；保留原画面，再重新触发同一效果。
     await info.attach(`${name}-首次未显示`, { body: screens.at(-1)!, contentType: 'image/png' });
     await setTimeout(2500);
+    await gameConnected(device, 2_000);
     beforeScreen = await gameScreenshot(device);
     expect(samePixels(before, crop(beforeScreen)), `${name} 重新触发前须恢复静态画面`).toBe(true);
     before = crop(beforeScreen);
