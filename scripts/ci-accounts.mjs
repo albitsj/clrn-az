@@ -44,7 +44,7 @@ export function androidAccountMatrix(runId, selectedGroup = 'all', selectedLocal
       ['pregame-middle', 'signed_in_texas_pre_game_middle$'],
       ['pregame-second', 'signed_in_texas_(?:pre_game_second|optional_pre_game)$'],
       ['game-table', 'signed_in_texas_game_table$'],
-      ['game-effects', 'signed_in_texas_game_effects$'],
+      ['game-effects', 'signed_in_texas_game_(?:effects|profiles)$'],
       ['panels', 'signed_in_texas_(?:panels|panel_variants)$'],
       ['other', 'signed_in_texas_(?:hall|records_v2|controls|table_states|hall_variants)$'],
     ],

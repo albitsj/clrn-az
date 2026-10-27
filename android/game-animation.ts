@@ -30,6 +30,7 @@ export async function captureChallengeAnimation(device: AndroidDevice, name: str
   const moving = regions.map(() => false);
   const matchingFrames: Buffer[] = [];
   let previous: ReturnType<typeof motionParts> | undefined;
+  let stabilityReference: Buffer | undefined;
   let stableSince = Date.now();
   const started = Date.now();
   let best: { bytes: Buffer; original: Buffer; score: number } | undefined;
@@ -39,8 +40,9 @@ export async function captureChallengeAnimation(device: AndroidDevice, name: str
       const original = await device.screenshot();
       latest = maskScreenshot(original, masks);
       const parts = motionParts(latest, regions);
-      if (!previous || !parts.outside.equals(previous.outside)) {
+      if (!stabilityReference || !samePixels(parts.outside, stabilityReference)) {
         stableSince = Date.now();
+        stabilityReference = parts.outside;
         best = undefined;
       }
       parts.regions.forEach((part, index) => {

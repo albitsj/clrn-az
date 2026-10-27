@@ -24,10 +24,10 @@ export const texasScenarioLabels = ['signed_in_texas_pre_game', 'signed_in_texas
  * 显式分派全部 Web 德州场景；新增 Web 场景没有适配时必须失败。
  * @param label - 共用场景名。
  * @param context - 当前真实房间及原生操作上下文。
- * @param phase - 英文对局拆分后的执行部分。
+ * @param phase - 英文对局按牌桌、效果与资料拆分后的执行部分。
  */
 export async function runTexasScenario(label: string, context: TexasContext,
-  phase: 'all' | 'table' | 'effects' = 'all'): Promise<void> {
+  phase: 'all' | 'table' | 'effects' | 'profiles' = 'all'): Promise<void> {
   if (label === 'signed_in_texas_pre_game') {
     await gamePreGame(context.device, 'texas-holdem', context.capture);
   } else if (label === 'signed_in_texas_game') {
