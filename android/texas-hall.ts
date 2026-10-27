@@ -52,7 +52,8 @@ export async function texasHall(context: TexasContext): Promise<void> {
     { x: 320, y: 430, width: 340, height: 400 }, animationInfo, 'exit', 'videoFrames');
   await gameGone(device, 'auto-rebuy-popup');
   await animateGamePanel(device, 'texas-holdem', 'pair-play-report', 'report-pair-play-button',
-    { x: 200, y: 260, width: 440, height: 700 }, animationInfo);
+    { x: 200, y: 260, width: 440, height: 700 }, animationInfo, 'enter', 'motionFrames', [], undefined,
+    ['texas-holdem-pair-play-report-enter-early.png', 'texas-holdem-pair-play-report-enter-late.png']);
   await gameReady(device, 'report-pair-play-reason-input');
   expect((await gameNodes(device)).filter(node => node.res === 'select-player-button')).toHaveLength(4);
   await dismissKeyboard(device);
