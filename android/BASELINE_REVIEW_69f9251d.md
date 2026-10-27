@@ -2,11 +2,11 @@
 
 应用提交：[69f9251d3b5f2b93aa2d880d27abbeefe16ee645](https://github.com/kevinanew/laiwan_react_native/commit/69f9251d3b5f2b93aa2d880d27abbeefe16ee645)。发布版本：`android-staging-300001001-69f9251d3b5f`。
 
-候选来自仓库提交 `b30f30adc7722b90e16084f95ff4c41b6fd48e0e` 的[参考图任务 40523304048](https://github.com/albitsj/clrn-az/actions/runs/40523304048)，使用固定 Android API 35、x86_64、720×1280 模拟器。构建信息中的完整应用提交与部署记录一致。
+前两轮候选来自仓库提交 `b30f30adc7722b90e16084f95ff4c41b6fd48e0e` 的[参考图任务 40523304048](https://github.com/albitsj/clrn-az/actions/runs/40523304048)。第三轮英文牌桌候选来自提交 `4670fbf1251d234964073563d73a025440312ad5` 的[参考图任务 40551318429](https://github.com/albitsj/clrn-az/actions/runs/40551318429)，其目标用例 `en / texas / signed_in_texas_game_table` 一次通过且没有错误；其他分组没有匹配用例造成整个运行失败，不作为目标用例的通过证据。两轮参考任务均使用固定 Android API 35、x86_64、720×1280 模拟器，构建信息中的完整应用提交与部署记录一致。
 
-新版应用把德州快捷加注及操作按钮图片的 `resizeMode` 从 `center` 改为 `contain`，完整缩放图片后，圆形外缘与箭头图案出现预期像素变化。下表每张候选均逐图核对了原基准、候选原图及差异图，确认变化仅在这些按钮图片上；牌面、金额、文字、玩家、弹窗和布局符合对应状态。
+新版应用把德州快捷加注及操作按钮图片的 `resizeMode` 从 `center` 改为 `contain`，完整缩放图片后，圆形外缘与箭头图案出现预期像素变化。下表每张候选均逐图核对了原基准、候选原图及差异图，确认按钮图案变化符合应用改动；牌面、金额、文字、玩家、弹窗和布局符合对应状态。加注滑块终点还保留了本次真实拖动的量化结果 `514`（旧基准为 `522`），差异位于已有的终点数值比较区域，原有数值变化断言及报告中的完整标签继续保留，没有扩大遮罩或放宽阈值。
 
-已分两轮接收 77 张图片，包含 75 张完整页面和两张弹窗入场起点裁图；首轮为 59 张，本轮补充英文其他场景的 18 张。完整页面取自参考图报告中用于写入候选基准的同一稳定原生截图，或对应参考图压缩包；本轮 18 张直接取自英文其他场景参考图压缩包。图片均为原始采集结果，没有拼接或重绘。比较继续使用 `threshold: 0.1`、`maxDiffPixels: 0`。
+已分三轮接收 86 张图片，包含 81 张完整页面和五张动画起点或终点裁图；首轮为 59 张，第二轮补充英文其他场景的 18 张，第三轮补充英文牌桌的九张。完整页面取自参考图报告中用于写入候选基准的同一稳定原生截图，或对应参考图压缩包；第二轮 18 张及第三轮九张直接取自对应参考图压缩包。第三轮九张与通过报告中的附件逐字节一致，仅接收六张完整页面、加注滑块起止两张和操作按钮入场终点一张；录屏中途和倒计时相位的其他候选保留原基准。图片均为原始采集结果，没有拼接或重绘。比较继续使用 `threshold: 0.1`、`maxDiffPixels: 0`。
 
 ## 已通过的来源分组
 
@@ -18,6 +18,7 @@
 | 繁体中文德州其他场景 | 20 | [已通过](https://github.com/albitsj/clrn-az/actions/runs/40523304048/job/122257087353) |
 | 英文德州面板 | 5 | [已通过](https://github.com/albitsj/clrn-az/actions/runs/40523304048/job/122257087150) |
 | 英文德州其他场景 | 18 | [五个用例全部通过](https://github.com/albitsj/clrn-az/actions/runs/40523304048/job/122257087319) |
+| 英文德州牌桌 | 9 | [目标用例通过](https://github.com/albitsj/clrn-az/actions/runs/40551318429/job/122357471838) |
 
 简体中文德州大厅变体在参考图任务的第二次尝试中完整通过，采用该次通过结果的三张候选。
 
@@ -27,6 +28,15 @@
 
 | 图片 | 摘要 |
 | --- | --- |
+| [en-signed-in-texas-game-accurate-raise.png](snapshots/android-35-x86_64-720x1280-en/en-signed-in-texas-game-accurate-raise.png) | `e61411a702d13d61bff132a6bdffd3ebeafb0d800d6cb25124f7633f18851b6c` |
+| [en-signed-in-texas-game-flop.png](snapshots/android-35-x86_64-720x1280-en/en-signed-in-texas-game-flop.png) | `cae3fd6dbfb5e46ba5f7faa395613fac1fa8e3734218cb29ef3d4235669954c8` |
+| [en-signed-in-texas-game-preflop.png](snapshots/android-35-x86_64-720x1280-en/en-signed-in-texas-game-preflop.png) | `5014dd0dd37d6e2665c2fe00b7946dbdd547c84ecfe9e7b20b06b69d4a35d2cb` |
+| [en-signed-in-texas-game-raise.png](snapshots/android-35-x86_64-720x1280-en/en-signed-in-texas-game-raise.png) | `046208b65de36ec900e8dd7d6f86c19777b15e4342ff1f7aec64528d9ec5cd45` |
+| [en-signed-in-texas-game-river.png](snapshots/android-35-x86_64-720x1280-en/en-signed-in-texas-game-river.png) | `fcc1d03072703aece3dd93e05d39ba34f457c4016f1c3b8abecdfb1ac20b8df0` |
+| [en-signed-in-texas-game-turn.png](snapshots/android-35-x86_64-720x1280-en/en-signed-in-texas-game-turn.png) | `84f419c26b115781403c07e5863160bd5ec226c1ee000e0bee05afc4821a1cbe` |
+| [texas-operation-buttons-end.png](snapshots/android-35-x86_64-720x1280-en/texas-operation-buttons-end.png) | `a7ff917af265d9a31ac8f40f58bd7bf3188f05970ae0cdef074c5d815bb3d26b` |
+| [texas-raise-slider-end.png](snapshots/android-35-x86_64-720x1280-en/texas-raise-slider-end.png) | `e180f70bf2b681f09cda8196ce17d64b278a1e3220c9eaa6045bcbaf3f09573d` |
+| [texas-raise-slider-start.png](snapshots/android-35-x86_64-720x1280-en/texas-raise-slider-start.png) | `f8d422bfd291a7d2acd487c3a1e3798173ea3016cba57adb2738d0dfbbf894f0` |
 | [en-signed-in-texas-controls-accurate-raise-minimum-error.png](snapshots/android-35-x86_64-720x1280-en/en-signed-in-texas-controls-accurate-raise-minimum-error.png) | `5aeeb86d98ecfda9a282c021fe3cf51ec42509bd707816f59560809cef243515` |
 | [en-signed-in-texas-controls-accurate-raise-value.png](snapshots/android-35-x86_64-720x1280-en/en-signed-in-texas-controls-accurate-raise-value.png) | `c5a45bd39cd5796f8d386d71d8d57098df3c00d5aeca4dd3eaa66549e108393b` |
 | [en-signed-in-texas-controls-check.png](snapshots/android-35-x86_64-720x1280-en/en-signed-in-texas-controls-check.png) | `73b9fb1490c64df9d4bb504f74f270b696fb754e8e68a651fa74ac43bdf2d4c9` |
@@ -107,8 +117,10 @@
 
 ## 比较验证与尚待处理的场景
 
-[比较运行 40531424406](https://github.com/albitsj/clrn-az/actions/runs/40531424406) 使用提交 `0964366a4e82d21128c2eac10fdec7c3b8c6c938`，首轮 59 张基准对应的中文德州牌桌、中文其他场景和英文面板分组全部通过；英文德州特效与英文拼三张牌桌也通过。本轮补充的 18 张仍须在新提交上独立比较。
+[比较运行 40531424406](https://github.com/albitsj/clrn-az/actions/runs/40531424406) 使用提交 `0964366a4e82d21128c2eac10fdec7c3b8c6c938`，首轮 59 张基准对应的中文德州牌桌、中文其他场景和英文面板分组全部通过；英文德州特效与英文拼三张牌桌也通过。第二轮补充的 18 张随后在提交 `4670fbf1251d234964073563d73a025440312ad5` 的[比较运行 40541846623](https://github.com/albitsj/clrn-az/actions/runs/40541846623) 中通过，剩余失败为英文德州牌桌。
 
-英文其他场景的产物上轮下载返回 `HTTP 503: Egress is over the account limit`；本轮串行下载成功，逐图审查后仅接收表中新增的 18 张。其余内容匹配现有基准。
+英文其他场景的产物曾返回 `HTTP 503: Egress is over the account limit`；第二轮串行下载成功，逐图审查后仅接收表中的 18 张。其余内容匹配现有基准。
 
-英文德州牌桌在参考图任务 `40523304048` 中三次遇到持续重连，`gameConnected` 等待 120 秒超时，未接收该失败用例的任何图片。当前比较运行的失败集中在五张牌桌页面和加注滑块动画起点的旧按钮画面；需要该场景通过的参考候选后再逐图更新，不能以当前失败比较图直接替换基准。所有正式比较结论以提交后新的自动测试为准。
+英文德州牌桌在参考图任务 `40523304048` 中三次遇到持续重连，`gameConnected` 等待 120 秒超时，未接收该失败用例的任何图片。后续参考任务 `40540836834` 的筛选条件未包含牌桌，目标任务没有匹配用例，也未接收其图片。
+
+比较运行 `40541846623` 的失败集中在五张牌桌页面和加注滑块动画起点的旧按钮画面。第三轮改用确切参考任务 `40551318429` 中通过的目标用例，串行下载其报告及 `android-staging-reference-texas-en-game-table-40551318429`，逐图审查后接收上述九张；后续流程中尚未执行到的准确加注页面、滑块终点和操作按钮终点也核实存在相同按钮变化。安装包 SHA-256 为 `27618d750fc306b1a75d52d642b2d90f361501fd1b9998bc3cd65ca5874196f5`，与既有部署产物一致。第三轮九张仍须用新提交的完整比较运行验证，参考用例通过不能代替正式回归结论。
