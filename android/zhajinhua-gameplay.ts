@@ -130,6 +130,11 @@ export async function zhajinhuaGameplay(device: AndroidDevice, proxy: Mitmproxy,
       'accurate-bet-popup-container', { x: 150, y: 400, width: 430, height: 480 }, animationInfo,
       accurateBetClock, 'videoFrames', ['zhajinhua-accurate-bet-exit-middle-contracted.png']);
     else await closeGameMask(device, 'accurate-bet-popup-container');
+    if (animationInfo) {
+      // 原生录屏与关键帧采集可能耗尽上一轮操作时限；恢复相同牌桌后再检查比牌选择态。
+      await send(restoreTable(self, false, true));
+      await gameReady(device, 'zhajinhua-voice-button');
+    }
     await gameTap(device, 'zhajinhua-operation-button-battle');
     await expect.poll(async () => (await gameNodes(device)).filter(node => node.res === 'challenge_player_selector').length,
       { timeout: 30_000 }).toBe(4);

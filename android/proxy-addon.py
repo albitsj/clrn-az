@@ -7,7 +7,6 @@ import os
 import re
 import sys
 from pathlib import Path
-import urllib.request
 from urllib.parse import urlsplit
 from mitmproxy import ctx, http
 from presentation import AccountPresentation
@@ -15,6 +14,7 @@ from club_search_fixture import ClubSearchFixture
 from username_lookup import username_lookup_response
 from game_session import GameSession
 from launch_network import LaunchNetwork
+from fixture_bridge import fixture_response
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'e2e/mitmproxy'))
 from response_overrides import is_staging
 
@@ -345,12 +345,8 @@ class AndroidVisualProxy:
             return
         if flow.request.method == 'CONNECT':
             return
-        payload = json.dumps({'url': flow.request.pretty_url}).encode()
-        request = urllib.request.Request(os.environ['ANDROID_FIXTURE_URL'], data=payload,
-            headers={'Content-Type': 'application/json',
-                     'Authorization': os.environ['ANDROID_FIXTURE_TOKEN']})
-        with urllib.request.urlopen(request, timeout=10) as response:
-            result = json.load(response)
+        result = await fixture_response(flow.request.pretty_url, os.environ['ANDROID_FIXTURE_URL'],
+                                        os.environ['ANDROID_FIXTURE_TOKEN'])
         if result is None:
             return
         if result.get('aborted'):
