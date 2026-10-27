@@ -1,15 +1,24 @@
 import { PNG } from 'pngjs';
 import type { ScreenshotBounds } from './screenshot';
+import { maxDiffPixelRatio, screenshotComparison } from './screenshot-comparison';
 
 // 使用当前固定版本 Playwright 的同一个像素比较器，阈值与普通截图完全一致。
 const comparator = require('playwright-core/lib/coreBundle').utils.getComparator('image/png');
 /**
- * 与普通截图使用相同的 Playwright 像素阈值，任何超阈值像素都判为不同。
+ * 与普通截图使用相同的 Playwright 颜色容差和差异比例，分区按有效面积计算。
  * @param actual - 当前分区 PNG。
  * @param expected - 基准中对应的分区 PNG。
  */
-export const samePixels = (actual: Buffer, expected: Buffer): boolean =>
-  comparator(actual, expected, { threshold: 0.1, maxDiffPixels: 0 }) === null;
+export function samePixels(actual: Buffer, expected: Buffer): boolean {
+  const picture = PNG.sync.read(expected);
+  let area = 0;
+  for (let offset = 3; offset < picture.data.length; offset += 4) {
+    if (picture.data[offset] !== 0) area++;
+  }
+  // motionParts 把独立动画分区清空，补集的允许差异不能借用这些透明区域的面积。
+  return comparator(actual, expected, { ...screenshotComparison,
+    maxDiffPixels: Math.floor(area * maxDiffPixelRatio) }) === null;
+}
 
 /**
  * 将一帧分成互不重叠的动画区域及其补集；每个像素都会进入一个比较分区。

@@ -82,18 +82,19 @@ export async function launchApplication(options: { gameDriver?: boolean; enableS
 }
 
 /**
- * 等待真实测试环境确认框；只清除明确属于 Pixel Launcher 的系统 ANR。
+ * 等待真实测试环境确认框；只清除已确认会遮挡应用的系统进程无响应弹窗。
  * @param device - 专用模拟器连接。
  */
 export async function waitForStagingNotice(device: AndroidDevice): Promise<void> {
   for (let attempt = 0; ; attempt++) {
     try { await device.wait({ res: 'staging-confirmation-input' }, { timeout: 30_000 }); return; }
     catch (error) {
-      // CI 系统桌面偶发 ANR 会遮住应用；只关闭明确属于 Pixel Launcher 的弹窗。
-      const launcher = await device.info({ text: "Pixel Launcher isn't responding" }).catch(() => undefined);
+      // 专用模拟器的桌面或首次设置进程无响应时，只关闭已核对标题的系统弹窗。
+      const dialogTitle = (await device.info({ res: 'android:id/alertTitle' }).catch(() => undefined))?.text || '';
       if (attempt >= 2) throw error;
-      if (!launcher) continue;
-      console.log('ANDROID > 关闭 Pixel Launcher 系统桌面 ANR，重新等待应用启动');
+      if (!["Pixel Launcher isn't responding", "com.google.android.googlesdksetup isn't responding"]
+        .includes(dialogTitle)) continue;
+      console.log(`ANDROID > 关闭 ${dialogTitle} 系统进程无响应弹窗，重新等待应用启动`);
       await device.tap({ res: 'android:id/aerr_close' });
     }
   }

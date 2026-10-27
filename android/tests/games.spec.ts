@@ -31,8 +31,9 @@ for (const [suite, game] of [['texas', 'texas-holdem'], ['zhajinhua', 'zhajinhua
     .filter(scenario => scenario.viewport.label === 'mobile') : [];
   for (const scenario of scenarios) {
     const parts = locale !== 'en' ? ['all'] as const
-      : ['signed_in_texas_game', 'signed_in_zhajinhua_game'].includes(scenario.pageLabel)
-        ? ['table', 'effects'] as const
+      : scenario.pageLabel === 'signed_in_texas_game'
+        ? ['table', 'effects', 'profiles'] as const
+        : scenario.pageLabel === 'signed_in_zhajinhua_game' ? ['table', 'effects'] as const
         : scenario.pageLabel === 'signed_in_texas_pre_game' ? ['first', 'middle', 'second'] as const
           : scenario.pageLabel === 'signed_in_zhajinhua_pre_game' ? ['first', 'second'] as const
             : ['all'] as const;
@@ -43,8 +44,8 @@ for (const [suite, game] of [['texas', 'texas-holdem'], ['zhajinhua', 'zhajinhua
         : part === 'second' ? scenario.snapshotStates!.slice(7)
           : part === 'table' ? scenario.pageLabel === 'signed_in_texas_game'
             ? scenario.snapshotStates!.slice(0, 10) : scenario.snapshotStates!
-            : part === 'effects' ? scenario.pageLabel === 'signed_in_texas_game'
-              ? scenario.snapshotStates!.slice(10) : []
+            : part === 'effects' ? []
+              : part === 'profiles' ? scenario.snapshotStates!.slice(10)
               : scenario.snapshotStates!;
       const label = part === 'all' ? scenario.pageLabel : `${scenario.pageLabel}_${part}`;
       test(`${locale} / ${suite} / ${label}`, async ({ ownedRoom }, testInfo) => {
@@ -99,7 +100,7 @@ for (const [suite, game] of [['texas', 'texas-holdem'], ['zhajinhua', 'zhajinhua
             } else if (suite === 'texas') await runTexasScenario(scenario.pageLabel,
               { device, proxy, room: room!.roomId, self: account!.userId, capture,
               animationInfo: gameAnimation ? testInfo : undefined },
-            part === 'table' || part === 'effects' ? part : 'all');
+            part === 'table' || part === 'effects' || part === 'profiles' ? part : 'all');
             else if (scenario.pageLabel.endsWith('_pre_game')) await gamePreGame(device, game, capture,
             panelAnimation ? testInfo : undefined, part === 'first' || part === 'second' ? part : 'all');
             else await zhajinhuaGameplay(device, proxy, room!.roomId, account!.userId, capture,

@@ -53,49 +53,56 @@ test('启动后的状态接口连续四次网络错误仍在时限内重试并�
   assert.equal(hallChecks, 5);
 });
 
-test('启动确认框被 Pixel Launcher ANR 遮挡时只关闭系统弹窗并继续等待', async context => {
+test('启动确认框被已确认的系统进程无响应弹窗遮挡时只关闭该弹窗', async context => {
   const notices = [];
-  const taps = [];
-  let dismissed = false;
   context.mock.method(console, 'log', message => notices.push(message));
-  const device = {
-    /** 核对真实确认框查询，并模拟桌面弹窗遮挡。
-     * @param selector - 原生控件标识。
-     * @param options - 等待时限。
-     */
-    wait: async (selector, options) => {
-      assert.deepEqual(selector, { res: 'staging-confirmation-input' });
-      assert.deepEqual(options, { timeout: 30_000 });
-      if (!dismissed) throw new Error('confirmation hidden by launcher');
-    },
-    /** 返回明确的系统桌面 ANR。
-     * @param selector - 系统弹窗文本。
-     */
-    info: async selector => {
-      assert.deepEqual(selector, { text: "Pixel Launcher isn't responding" });
-      return { text: "Pixel Launcher isn't responding" };
-    },
-    /** 记录关闭系统弹窗。
-     * @param selector - 关闭按钮标识。
-     */
-    tap: async selector => {
-      taps.push(selector);
-      dismissed = true;
-    },
-  };
-  await waitForStagingNotice(device);
-  assert.deepEqual(taps, [{ res: 'android:id/aerr_close' }]);
-  assert.equal(notices.length, 1);
+  for (const title of ["Pixel Launcher isn't responding", "com.google.android.googlesdksetup isn't responding"]) {
+    const taps = [];
+    let dismissed = false;
+    const device = {
+      /** 核对真实确认框查询，并模拟系统弹窗遮挡。
+       * @param selector - 原生控件标识。
+       * @param options - 等待时限。
+       */
+      wait: async (selector, options) => {
+        assert.deepEqual(selector, { res: 'staging-confirmation-input' });
+        assert.deepEqual(options, { timeout: 30_000 });
+        if (!dismissed) throw new Error('系统弹窗遮挡确认框');
+      },
+      /** 返回已确认的系统进程无响应弹窗。
+       * @param selector - 系统弹窗标题控件。
+       */
+      info: async selector => {
+        assert.deepEqual(selector, { res: 'android:id/alertTitle' });
+        return { text: title };
+      },
+      /** 记录关闭系统弹窗。
+       * @param selector - 关闭按钮标识。
+       */
+      tap: async selector => {
+        taps.push(selector);
+        dismissed = true;
+      },
+    };
+    await waitForStagingNotice(device);
+    assert.deepEqual(taps, [{ res: 'android:id/aerr_close' }]);
+  }
+  assert.equal(notices.length, 2);
 });
 
-test('没有明确的 Pixel Launcher ANR 时保留应用启动失败且不关闭其他页面', async () => {
-  const failure = new Error('app did not show staging confirmation');
+test('没有已确认的系统进程无响应弹窗时保留启动失败且不关闭其他页面', async () => {
+  const failure = new Error('应用未显示预发布确认框');
   let attempts = 0;
   const device = {
     /** 模拟应用确认框未出现。 */
     wait: async () => { attempts++; throw failure; },
-    /** 确认没有系统桌面 ANR。 */
-    info: async () => undefined,
+    /** 应用自身无响应时不得按系统弹窗处理。
+     * @param selector - 系统弹窗标题控件。
+     */
+    info: async selector => {
+      assert.deepEqual(selector, { res: 'android:id/alertTitle' });
+      return { text: "com.ac.laiwanDev isn't responding" };
+    },
     /** 任何点击都说明误吞了应用故障。 */
     tap: async () => assert.fail('不得关闭其他页面'),
   };
@@ -103,15 +110,15 @@ test('没有明确的 Pixel Launcher ANR 时保留应用启动失败且不关闭
   assert.equal(attempts, 3);
 });
 
-test('Pixel Launcher ANR 持续出现时有界失败', async context => {
-  const failure = new Error('confirmation remains hidden');
+test('Pixel Launcher 无响应弹窗持续出现时有界失败', async context => {
+  const failure = new Error('预发布确认框仍被遮挡');
   let attempts = 0;
   let dismissed = 0;
   context.mock.method(console, 'log', () => {});
   const device = {
     /** 模拟确认框始终被遮挡。 */
     wait: async () => { attempts++; throw failure; },
-    /** 模拟系统桌面 ANR 始终存在。 */
+    /** 模拟系统桌面无响应弹窗始终存在。 */
     info: async () => ({ text: "Pixel Launcher isn't responding" }),
     /** 记录每次明确的系统弹窗关闭操作。 */
     tap: async () => { dismissed++; },

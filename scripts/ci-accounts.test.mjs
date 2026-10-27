@@ -126,7 +126,7 @@ test('安卓超时场景分片后独占账号，筛选保持槽位，牌桌优�
       'controls', 'table_states', 'panel_variants', 'hall_variants'],
     'texas/zh-Hant': ['pre_game', 'optional_pre_game', 'game', 'panels', 'hall', 'records_v2',
       'controls', 'table_states', 'panel_variants', 'hall_variants'],
-    'texas/en': ['pre_game_first', 'pre_game_middle', 'pre_game_second', 'optional_pre_game', 'game_table', 'game_effects',
+    'texas/en': ['pre_game_first', 'pre_game_middle', 'pre_game_second', 'optional_pre_game', 'game_table', 'game_effects', 'game_profiles',
       'panels', 'hall', 'records_v2',
       'controls', 'table_states', 'panel_variants', 'hall_variants'],
     'zhajinhua/en': ['pre_game_first', 'pre_game_second', 'game_table', 'game_effects'],

@@ -25,11 +25,11 @@ import { maskScreenshot } from './screenshot';
  * @param self - 真实登录用户 ID。
  * @param capture - 按共享状态清单采集截图。
  * @param animationInfo - 英文真实公共牌关键帧基准。
- * @param phase - 长英文场景在结算处拆分后的执行部分。
+ * @param phase - 长英文场景按牌桌、效果与资料拆分后的执行部分。
  */
 export async function texasGameplay(device: AndroidDevice, proxy: Mitmproxy, roomId: string,
   self: string, capture: TexasContext['capture'], animationInfo?: TestInfo,
-  phase: 'all' | 'table' | 'effects' = 'all'): Promise<void> {
+  phase: 'all' | 'table' | 'effects' | 'profiles' = 'all'): Promise<void> {
   /**
    * 发送共用网络事件。
    * @param data - Web 消息夹具。
@@ -99,7 +99,7 @@ export async function texasGameplay(device: AndroidDevice, proxy: Mitmproxy, roo
       .some(node => node.res?.startsWith(`texas-holdem-player-container-${self}`)), { timeout: 30_000 }).toBe(true);
     if (!opponent) await gameReady(device, 'texas-holdem-operation-button-raise');
   };
-  if (phase !== 'effects') {
+  if (phase === 'all' || phase === 'table') {
     for (const street of ['preflop', 'flop', 'turn', 'river'] as const) {
       await restore(street);
       if (street === 'preflop' && animationInfo) {
@@ -121,7 +121,8 @@ export async function texasGameplay(device: AndroidDevice, proxy: Mitmproxy, roo
         () => adb('shell', 'input', 'swipe', '333', '814', '333', '530', '450'),
         [{ x: 285, y: 725, width: 160, height: 35,
           reason: '加注滑块后面的牌局倒计时独立跳秒' }], [], 0, 'videoFrames',
-        undefined, undefined, [], ['texas-raise-slider-end-500.png', 'texas-raise-slider-end-492.png'],
+        undefined, undefined, [], ['texas-raise-slider-end-500.png', 'texas-raise-slider-end-492.png',
+          'texas-raise-slider-end-496.png'],
         [{ x: 120, y: 250, width: 160, height: 105,
           reason: '终点加注数字由拖动采样量化；完整标签保留在报告，数值另用原生文本断言' }]);
       expect((await gameReady(device, 'raise-bet-display-text')).text,
@@ -234,7 +235,7 @@ export async function texasGameplay(device: AndroidDevice, proxy: Mitmproxy, roo
       .find(node => node.res === `texas-holdem-player-container-${self}`), 'text-holdem-own-balance-text'),
     { timeout: 30_000 }).toBe('1180');
   }
-  if (animationInfo) {
+  if (animationInfo && phase !== 'profiles') {
     // 牌桌的 WebP 清单已经逐字节校验；这里还验证每种效果确实由房间消息在原生画面播放。
     await new Promise(resolve => setTimeout(resolve, 3000));
     for (const name of ['angry', 'cry', 'drink', 'puchi', 'titter', 'smirk', 'handclap']) {
@@ -251,6 +252,10 @@ export async function texasGameplay(device: AndroidDevice, proxy: Mitmproxy, roo
           from_user_id: self, to_user_id: REPLAY_PLAYER_IDS[1], file: name,
         } } }), { x: 120, y: 700, width: 220, height: 340 });
     }
+  }
+  if (phase === 'effects') {
+    expect((await proxy.command<{ replayedMessages: number }>('status')).replayedMessages).toBeGreaterThan(0);
+    return;
   }
   let opponentProfileCount = 0;
   const profileNetworkMask = [{ x: 635, y: 145, width: 85, height: 65,

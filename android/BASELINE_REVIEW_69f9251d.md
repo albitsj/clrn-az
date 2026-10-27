@@ -6,7 +6,7 @@
 
 新版应用把德州快捷加注及操作按钮图片的 `resizeMode` 从 `center` 改为 `contain`，完整缩放图片后，圆形外缘与箭头图案出现预期像素变化。下表每张候选均逐图核对了原基准、候选原图及差异图，确认按钮图案变化符合应用改动；牌面、金额、文字、玩家、弹窗和布局符合对应状态。加注滑块终点还保留了本次真实拖动的量化结果 `514`（旧基准为 `522`），差异位于已有的终点数值比较区域，原有数值变化断言及报告中的完整标签继续保留，没有扩大遮罩或放宽阈值。
 
-已分三轮接收 86 张图片，包含 81 张完整页面和五张动画起点或终点裁图；首轮为 59 张，第二轮补充英文其他场景的 18 张，第三轮补充英文牌桌的九张。完整页面取自参考图报告中用于写入候选基准的同一稳定原生截图，或对应参考图压缩包；第二轮 18 张及第三轮九张直接取自对应参考图压缩包。第三轮九张与通过报告中的附件逐字节一致，仅接收六张完整页面、加注滑块起止两张和操作按钮入场终点一张；录屏中途和倒计时相位的其他候选保留原基准。图片均为原始采集结果，没有拼接或重绘。比较继续使用 `threshold: 0.1`、`maxDiffPixels: 0`。
+此前分三轮接收 86 张图片，包含 81 张完整页面和五张动画起点或终点裁图；首轮为 59 张，第二轮补充英文其他场景的 18 张，第三轮补充英文牌桌的九张。完整页面取自参考图报告中用于写入候选基准的同一稳定原生截图，或对应参考图压缩包；第二轮 18 张及第三轮九张直接取自对应参考图压缩包。第三轮九张与通过报告中的附件逐字节一致，仅接收六张完整页面、加注滑块起止两张和操作按钮入场终点一张；录屏中途和倒计时相位的其他候选保留原基准。图片均为原始采集结果，没有拼接或重绘。前三轮审查时采用 `threshold: 0.1`、`maxDiffPixels: 0`；现已合入统一的 0.5% 规则，恢复情况及实际数值见文末复核记录。
 
 ## 已通过的来源分组
 
@@ -22,9 +22,9 @@
 
 简体中文德州大厅变体在参考图任务的第二次尝试中完整通过，采用该次通过结果的三张候选。
 
-## 逐图接收清单
+## 历史逐图接收清单
 
-路径相对于本目录，摘要为接收后 PNG 的 SHA-256。
+路径相对于本目录，摘要为当时接收的候选 PNG 的 SHA-256，用于追溯历史来源；恢复 master 原图后的当前内容以文末复核结果及指定 master 提交为准。
 
 | 图片 | 摘要 |
 | --- | --- |
@@ -124,3 +124,104 @@
 英文德州牌桌在参考图任务 `40523304048` 中三次遇到持续重连，`gameConnected` 等待 120 秒超时，未接收该失败用例的任何图片。后续参考任务 `40540836834` 的筛选条件未包含牌桌，目标任务没有匹配用例，也未接收其图片。
 
 比较运行 `40541846623` 的失败集中在五张牌桌页面和加注滑块动画起点的旧按钮画面。第三轮改用确切参考任务 `40551318429` 中通过的目标用例，串行下载其报告及 `android-staging-reference-texas-en-game-table-40551318429`，逐图审查后接收上述九张；后续流程中尚未执行到的准确加注页面、滑块终点和操作按钮终点也核实存在相同按钮变化。安装包 SHA-256 为 `27618d750fc306b1a75d52d642b2d90f361501fd1b9998bc3cd65ca5874196f5`，与既有部署产物一致。第三轮九张仍须用新提交的完整比较运行验证，参考用例通过不能代替正式回归结论。
+
+
+## 按百分之零点五复核并恢复原基准
+
+本轮在保留未提交 master 合并的基础上，将合并请求当前文件与 `origin/master` 提交 `ba2820656bb757bce45f183534ec800192933fb2` 逐项比较。仓库和实际加载的 Playwright 版本均为 `1.61.1`，使用 `playwright-core/lib/coreBundle` 的 `getComparator('image/png')`，颜色阈值保留 `threshold: 0.1`，最终判断采用 `android/screenshot-comparison.ts` 的 `maxDiffPixelRatio: 0.005`，并与 `android/motion-regions.ts` 的 `samePixels` 返回结果逐项交叉核对。
+
+相对 master 共 83 张原有 PNG 被替换：英文 29 张、简体中文 27 张、繁体中文 27 张。其中 81 张为 720×1280 完整页面，有效面积为 921600 像素，允许 4608 个差异；两张加注滑块裁图为 295×630，有效面积为 185850 像素，允许 929 个差异。有效面积沿用仓库实现，透明动画分区不计入补集面积；本次没有透明分区替换，未借用其他区域的面积。
+
+逐项结果：**恢复 83 张，超过 0.5% 而保留的替换为零张**。最高差异为 4376 / 921600，即约 0.474826389%。恢复直接复制该 master 提交中的原始 PNG 字节，没有生成、拼接、重绘或批准任何新候选。此前 86 张历史候选中的其余三张（两个提示弹窗起点及操作按钮入场终点）在合并后已经与 master 一致，无需重复恢复。原有三语言俱乐部搜索命中新图在 master 没有同名原图，属于此前已审查的新增业务覆盖，不在替换复核范围，本轮保持原有内容。
+
+`texas-raise-slider-end.png` 原图比较得到 2575 个差异像素；沿用 `android/texas-gameplay.ts` 既有终点数值比较区域（相对裁图坐标 x=120、y=250、width=160、height=105），在两张图上应用现有规则后为 789 / 185850，即约 0.424535916%，因此恢复 master 原图。数值遮罩及其理由保持原样，比较时仅在内存使用；报告中的完整标签和拖动改变数值的业务断言不变。不能使用未应用该已有规则的原始差异比例代替最终比较结论。
+
+差异数来自同版本 Playwright 比较器，保留其颜色容差与抗锯齿判定，不以文件大小或原始像素字节差异作结论。为读取精确计数，诊断调用暂以零允许差异取得比较器的像素计数；是否恢复始终由实际 0.005 配置及有效面积决定，仓库配置未作修改。下表百分比仅作展示，判定使用精确整数差异数与有效面积。
+
+| 图片（相对于本目录） | 原始差异像素 | 有效比较差异 / 面积 | 差异比例 | 允许差异 | 处理 |
+| --- | ---: | ---: | ---: | ---: | --- |
+| [en-signed-in-texas-controls-accurate-raise-minimum-error.png](snapshots/android-35-x86_64-720x1280-en/en-signed-in-texas-controls-accurate-raise-minimum-error.png) | 192 | 192 / 921600 | 0.020833333% | 4608 | 恢复 master 原图 |
+| [en-signed-in-texas-controls-accurate-raise-value.png](snapshots/android-35-x86_64-720x1280-en/en-signed-in-texas-controls-accurate-raise-value.png) | 218 | 218 / 921600 | 0.023654514% | 4608 | 恢复 master 原图 |
+| [en-signed-in-texas-controls-check.png](snapshots/android-35-x86_64-720x1280-en/en-signed-in-texas-controls-check.png) | 4319 | 4319 / 921600 | 0.468641493% | 4608 | 恢复 master 原图 |
+| [en-signed-in-texas-controls-raise-dragging.png](snapshots/android-35-x86_64-720x1280-en/en-signed-in-texas-controls-raise-dragging.png) | 2017 | 2017 / 921600 | 0.218858507% | 4608 | 恢复 master 原图 |
+| [en-signed-in-texas-controls-raise-maximum.png](snapshots/android-35-x86_64-720x1280-en/en-signed-in-texas-controls-raise-maximum.png) | 2017 | 2017 / 921600 | 0.218858507% | 4608 | 恢复 master 原图 |
+| [en-signed-in-texas-controls-shortcut-blinds.png](snapshots/android-35-x86_64-720x1280-en/en-signed-in-texas-controls-shortcut-blinds.png) | 4319 | 4319 / 921600 | 0.468641493% | 4608 | 恢复 master 原图 |
+| [en-signed-in-texas-controls-shortcut-disabled.png](snapshots/android-35-x86_64-720x1280-en/en-signed-in-texas-controls-shortcut-disabled.png) | 3804 | 3804 / 921600 | 0.412760417% | 4608 | 恢复 master 原图 |
+| [en-signed-in-texas-game-accurate-raise.png](snapshots/android-35-x86_64-720x1280-en/en-signed-in-texas-game-accurate-raise.png) | 218 | 218 / 921600 | 0.023654514% | 4608 | 恢复 master 原图 |
+| [en-signed-in-texas-game-flop.png](snapshots/android-35-x86_64-720x1280-en/en-signed-in-texas-game-flop.png) | 4319 | 4319 / 921600 | 0.468641493% | 4608 | 恢复 master 原图 |
+| [en-signed-in-texas-game-preflop.png](snapshots/android-35-x86_64-720x1280-en/en-signed-in-texas-game-preflop.png) | 4319 | 4319 / 921600 | 0.468641493% | 4608 | 恢复 master 原图 |
+| [en-signed-in-texas-game-raise.png](snapshots/android-35-x86_64-720x1280-en/en-signed-in-texas-game-raise.png) | 1870 | 1870 / 921600 | 0.202907986% | 4608 | 恢复 master 原图 |
+| [en-signed-in-texas-game-river.png](snapshots/android-35-x86_64-720x1280-en/en-signed-in-texas-game-river.png) | 4319 | 4319 / 921600 | 0.468641493% | 4608 | 恢复 master 原图 |
+| [en-signed-in-texas-game-turn.png](snapshots/android-35-x86_64-720x1280-en/en-signed-in-texas-game-turn.png) | 4319 | 4319 / 921600 | 0.468641493% | 4608 | 恢复 master 原图 |
+| [en-signed-in-texas-hall-variants-auto-rebuy-enabled.png](snapshots/android-35-x86_64-720x1280-en/en-signed-in-texas-hall-variants-auto-rebuy-enabled.png) | 315 | 315 / 921600 | 0.034179688% | 4608 | 恢复 master 原图 |
+| [en-signed-in-texas-hall-variants-delay-cooldown-alert.png](snapshots/android-35-x86_64-720x1280-en/en-signed-in-texas-hall-variants-delay-cooldown-alert.png) | 2350 | 2350 / 921600 | 0.254991319% | 4608 | 恢复 master 原图 |
+| [en-signed-in-texas-hall-variants-delay-cooldown.png](snapshots/android-35-x86_64-720x1280-en/en-signed-in-texas-hall-variants-delay-cooldown.png) | 4364 | 4364 / 921600 | 0.473524306% | 4608 | 恢复 master 原图 |
+| [en-signed-in-texas-panel-variants-chat-audio-history.png](snapshots/android-35-x86_64-720x1280-en/en-signed-in-texas-panel-variants-chat-audio-history.png) | 1894 | 1894 / 921600 | 0.205512153% | 4608 | 恢复 master 原图 |
+| [en-signed-in-texas-panel-variants-chat-barrage-off.png](snapshots/android-35-x86_64-720x1280-en/en-signed-in-texas-panel-variants-chat-barrage-off.png) | 1894 | 1894 / 921600 | 0.205512153% | 4608 | 恢复 master 原图 |
+| [en-signed-in-texas-panels-quit-confirm.png](snapshots/android-35-x86_64-720x1280-en/en-signed-in-texas-panels-quit-confirm.png) | 1759 | 1759 / 921600 | 0.190863715% | 4608 | 恢复 master 原图 |
+| [en-signed-in-texas-records-v2-actions.png](snapshots/android-35-x86_64-720x1280-en/en-signed-in-texas-records-v2-actions.png) | 45 | 45 / 921600 | 0.004882812% | 4608 | 恢复 master 原图 |
+| [en-signed-in-texas-records-v2-empty.png](snapshots/android-35-x86_64-720x1280-en/en-signed-in-texas-records-v2-empty.png) | 46 | 46 / 921600 | 0.004991319% | 4608 | 恢复 master 原图 |
+| [en-signed-in-texas-records-v2-settlement.png](snapshots/android-35-x86_64-720x1280-en/en-signed-in-texas-records-v2-settlement.png) | 46 | 46 / 921600 | 0.004991319% | 4608 | 恢复 master 原图 |
+| [en-signed-in-texas-table-states-full-table-multiple-pots.png](snapshots/android-35-x86_64-720x1280-en/en-signed-in-texas-table-states-full-table-multiple-pots.png) | 4228 | 4228 / 921600 | 0.458767361% | 4608 | 恢复 master 原图 |
+| [en-signed-in-texas-table-states-full-table.png](snapshots/android-35-x86_64-720x1280-en/en-signed-in-texas-table-states-full-table.png) | 4228 | 4228 / 921600 | 0.458767361% | 4608 | 恢复 master 原图 |
+| [en-signed-in-texas-table-states-guest-menu.png](snapshots/android-35-x86_64-720x1280-en/en-signed-in-texas-table-states-guest-menu.png) | 2869 | 2869 / 921600 | 0.311306424% | 4608 | 恢复 master 原图 |
+| [en-signed-in-texas-table-states-player-disconnected.png](snapshots/android-35-x86_64-720x1280-en/en-signed-in-texas-table-states-player-disconnected.png) | 4319 | 4319 / 921600 | 0.468641493% | 4608 | 恢复 master 原图 |
+| [en-signed-in-texas-table-states-reserved-seat.png](snapshots/android-35-x86_64-720x1280-en/en-signed-in-texas-table-states-reserved-seat.png) | 4319 | 4319 / 921600 | 0.468641493% | 4608 | 恢复 master 原图 |
+| [texas-raise-slider-end.png](snapshots/android-35-x86_64-720x1280-en/texas-raise-slider-end.png) | 2575 | 789 / 185850 | 0.424535916% | 929 | 恢复 master 原图 |
+| [texas-raise-slider-start.png](snapshots/android-35-x86_64-720x1280-en/texas-raise-slider-start.png) | 649 | 649 / 185850 | 0.349206349% | 929 | 恢复 master 原图 |
+| [zh-Hans-signed-in-texas-controls-accurate-raise-minimum-error.png](snapshots/android-35-x86_64-720x1280-zh-Hans/zh-Hans-signed-in-texas-controls-accurate-raise-minimum-error.png) | 190 | 190 / 921600 | 0.020616319% | 4608 | 恢复 master 原图 |
+| [zh-Hans-signed-in-texas-controls-accurate-raise-value.png](snapshots/android-35-x86_64-720x1280-zh-Hans/zh-Hans-signed-in-texas-controls-accurate-raise-value.png) | 216 | 216 / 921600 | 0.023437500% | 4608 | 恢复 master 原图 |
+| [zh-Hans-signed-in-texas-controls-check.png](snapshots/android-35-x86_64-720x1280-zh-Hans/zh-Hans-signed-in-texas-controls-check.png) | 4361 | 4361 / 921600 | 0.473198785% | 4608 | 恢复 master 原图 |
+| [zh-Hans-signed-in-texas-controls-raise-dragging.png](snapshots/android-35-x86_64-720x1280-zh-Hans/zh-Hans-signed-in-texas-controls-raise-dragging.png) | 2050 | 2050 / 921600 | 0.222439236% | 4608 | 恢复 master 原图 |
+| [zh-Hans-signed-in-texas-controls-raise-maximum.png](snapshots/android-35-x86_64-720x1280-zh-Hans/zh-Hans-signed-in-texas-controls-raise-maximum.png) | 2050 | 2050 / 921600 | 0.222439236% | 4608 | 恢复 master 原图 |
+| [zh-Hans-signed-in-texas-controls-shortcut-blinds.png](snapshots/android-35-x86_64-720x1280-zh-Hans/zh-Hans-signed-in-texas-controls-shortcut-blinds.png) | 4371 | 4371 / 921600 | 0.474283854% | 4608 | 恢复 master 原图 |
+| [zh-Hans-signed-in-texas-controls-shortcut-disabled.png](snapshots/android-35-x86_64-720x1280-zh-Hans/zh-Hans-signed-in-texas-controls-shortcut-disabled.png) | 3828 | 3828 / 921600 | 0.415364583% | 4608 | 恢复 master 原图 |
+| [zh-Hans-signed-in-texas-game-accurate-raise.png](snapshots/android-35-x86_64-720x1280-zh-Hans/zh-Hans-signed-in-texas-game-accurate-raise.png) | 216 | 216 / 921600 | 0.023437500% | 4608 | 恢复 master 原图 |
+| [zh-Hans-signed-in-texas-game-flop.png](snapshots/android-35-x86_64-720x1280-zh-Hans/zh-Hans-signed-in-texas-game-flop.png) | 4361 | 4361 / 921600 | 0.473198785% | 4608 | 恢复 master 原图 |
+| [zh-Hans-signed-in-texas-game-preflop.png](snapshots/android-35-x86_64-720x1280-zh-Hans/zh-Hans-signed-in-texas-game-preflop.png) | 4361 | 4361 / 921600 | 0.473198785% | 4608 | 恢复 master 原图 |
+| [zh-Hans-signed-in-texas-game-raise.png](snapshots/android-35-x86_64-720x1280-zh-Hans/zh-Hans-signed-in-texas-game-raise.png) | 1895 | 1895 / 921600 | 0.205620660% | 4608 | 恢复 master 原图 |
+| [zh-Hans-signed-in-texas-game-river.png](snapshots/android-35-x86_64-720x1280-zh-Hans/zh-Hans-signed-in-texas-game-river.png) | 4361 | 4361 / 921600 | 0.473198785% | 4608 | 恢复 master 原图 |
+| [zh-Hans-signed-in-texas-game-turn.png](snapshots/android-35-x86_64-720x1280-zh-Hans/zh-Hans-signed-in-texas-game-turn.png) | 4361 | 4361 / 921600 | 0.473198785% | 4608 | 恢复 master 原图 |
+| [zh-Hans-signed-in-texas-hall-variants-auto-rebuy-enabled.png](snapshots/android-35-x86_64-720x1280-zh-Hans/zh-Hans-signed-in-texas-hall-variants-auto-rebuy-enabled.png) | 313 | 313 / 921600 | 0.033962674% | 4608 | 恢复 master 原图 |
+| [zh-Hans-signed-in-texas-hall-variants-delay-cooldown-alert.png](snapshots/android-35-x86_64-720x1280-zh-Hans/zh-Hans-signed-in-texas-hall-variants-delay-cooldown-alert.png) | 3220 | 3220 / 921600 | 0.349392361% | 4608 | 恢复 master 原图 |
+| [zh-Hans-signed-in-texas-hall-variants-delay-cooldown.png](snapshots/android-35-x86_64-720x1280-zh-Hans/zh-Hans-signed-in-texas-hall-variants-delay-cooldown.png) | 4376 | 4376 / 921600 | 0.474826389% | 4608 | 恢复 master 原图 |
+| [zh-Hans-signed-in-texas-panel-variants-chat-audio-history.png](snapshots/android-35-x86_64-720x1280-zh-Hans/zh-Hans-signed-in-texas-panel-variants-chat-audio-history.png) | 1917 | 1917 / 921600 | 0.208007812% | 4608 | 恢复 master 原图 |
+| [zh-Hans-signed-in-texas-panel-variants-chat-barrage-off.png](snapshots/android-35-x86_64-720x1280-zh-Hans/zh-Hans-signed-in-texas-panel-variants-chat-barrage-off.png) | 1917 | 1917 / 921600 | 0.208007812% | 4608 | 恢复 master 原图 |
+| [zh-Hans-signed-in-texas-panels-quit-confirm.png](snapshots/android-35-x86_64-720x1280-zh-Hans/zh-Hans-signed-in-texas-panels-quit-confirm.png) | 1637 | 1637 / 921600 | 0.177625868% | 4608 | 恢复 master 原图 |
+| [zh-Hans-signed-in-texas-records-v2-actions.png](snapshots/android-35-x86_64-720x1280-zh-Hans/zh-Hans-signed-in-texas-records-v2-actions.png) | 45 | 45 / 921600 | 0.004882812% | 4608 | 恢复 master 原图 |
+| [zh-Hans-signed-in-texas-records-v2-empty.png](snapshots/android-35-x86_64-720x1280-zh-Hans/zh-Hans-signed-in-texas-records-v2-empty.png) | 46 | 46 / 921600 | 0.004991319% | 4608 | 恢复 master 原图 |
+| [zh-Hans-signed-in-texas-records-v2-settlement.png](snapshots/android-35-x86_64-720x1280-zh-Hans/zh-Hans-signed-in-texas-records-v2-settlement.png) | 46 | 46 / 921600 | 0.004991319% | 4608 | 恢复 master 原图 |
+| [zh-Hans-signed-in-texas-table-states-full-table-multiple-pots.png](snapshots/android-35-x86_64-720x1280-zh-Hans/zh-Hans-signed-in-texas-table-states-full-table-multiple-pots.png) | 4270 | 4270 / 921600 | 0.463324653% | 4608 | 恢复 master 原图 |
+| [zh-Hans-signed-in-texas-table-states-full-table.png](snapshots/android-35-x86_64-720x1280-zh-Hans/zh-Hans-signed-in-texas-table-states-full-table.png) | 4270 | 4270 / 921600 | 0.463324653% | 4608 | 恢复 master 原图 |
+| [zh-Hans-signed-in-texas-table-states-guest-menu.png](snapshots/android-35-x86_64-720x1280-zh-Hans/zh-Hans-signed-in-texas-table-states-guest-menu.png) | 2914 | 2914 / 921600 | 0.316189236% | 4608 | 恢复 master 原图 |
+| [zh-Hans-signed-in-texas-table-states-player-disconnected.png](snapshots/android-35-x86_64-720x1280-zh-Hans/zh-Hans-signed-in-texas-table-states-player-disconnected.png) | 4361 | 4361 / 921600 | 0.473198785% | 4608 | 恢复 master 原图 |
+| [zh-Hans-signed-in-texas-table-states-reserved-seat.png](snapshots/android-35-x86_64-720x1280-zh-Hans/zh-Hans-signed-in-texas-table-states-reserved-seat.png) | 4361 | 4361 / 921600 | 0.473198785% | 4608 | 恢复 master 原图 |
+| [zh-Hant-signed-in-texas-controls-accurate-raise-minimum-error.png](snapshots/android-35-x86_64-720x1280-zh-Hant/zh-Hant-signed-in-texas-controls-accurate-raise-minimum-error.png) | 189 | 189 / 921600 | 0.020507812% | 4608 | 恢复 master 原图 |
+| [zh-Hant-signed-in-texas-controls-accurate-raise-value.png](snapshots/android-35-x86_64-720x1280-zh-Hant/zh-Hant-signed-in-texas-controls-accurate-raise-value.png) | 215 | 215 / 921600 | 0.023328993% | 4608 | 恢复 master 原图 |
+| [zh-Hant-signed-in-texas-controls-check.png](snapshots/android-35-x86_64-720x1280-zh-Hant/zh-Hant-signed-in-texas-controls-check.png) | 4358 | 4358 / 921600 | 0.472873264% | 4608 | 恢复 master 原图 |
+| [zh-Hant-signed-in-texas-controls-raise-dragging.png](snapshots/android-35-x86_64-720x1280-zh-Hant/zh-Hant-signed-in-texas-controls-raise-dragging.png) | 2033 | 2033 / 921600 | 0.220594618% | 4608 | 恢复 master 原图 |
+| [zh-Hant-signed-in-texas-controls-raise-maximum.png](snapshots/android-35-x86_64-720x1280-zh-Hant/zh-Hant-signed-in-texas-controls-raise-maximum.png) | 2033 | 2033 / 921600 | 0.220594618% | 4608 | 恢复 master 原图 |
+| [zh-Hant-signed-in-texas-controls-shortcut-blinds.png](snapshots/android-35-x86_64-720x1280-zh-Hant/zh-Hant-signed-in-texas-controls-shortcut-blinds.png) | 4368 | 4368 / 921600 | 0.473958333% | 4608 | 恢复 master 原图 |
+| [zh-Hant-signed-in-texas-controls-shortcut-disabled.png](snapshots/android-35-x86_64-720x1280-zh-Hant/zh-Hant-signed-in-texas-controls-shortcut-disabled.png) | 3813 | 3813 / 921600 | 0.413736979% | 4608 | 恢复 master 原图 |
+| [zh-Hant-signed-in-texas-game-accurate-raise.png](snapshots/android-35-x86_64-720x1280-zh-Hant/zh-Hant-signed-in-texas-game-accurate-raise.png) | 215 | 215 / 921600 | 0.023328993% | 4608 | 恢复 master 原图 |
+| [zh-Hant-signed-in-texas-game-flop.png](snapshots/android-35-x86_64-720x1280-zh-Hant/zh-Hant-signed-in-texas-game-flop.png) | 4358 | 4358 / 921600 | 0.472873264% | 4608 | 恢复 master 原图 |
+| [zh-Hant-signed-in-texas-game-preflop.png](snapshots/android-35-x86_64-720x1280-zh-Hant/zh-Hant-signed-in-texas-game-preflop.png) | 4358 | 4358 / 921600 | 0.472873264% | 4608 | 恢复 master 原图 |
+| [zh-Hant-signed-in-texas-game-raise.png](snapshots/android-35-x86_64-720x1280-zh-Hant/zh-Hant-signed-in-texas-game-raise.png) | 1878 | 1878 / 921600 | 0.203776042% | 4608 | 恢复 master 原图 |
+| [zh-Hant-signed-in-texas-game-river.png](snapshots/android-35-x86_64-720x1280-zh-Hant/zh-Hant-signed-in-texas-game-river.png) | 4358 | 4358 / 921600 | 0.472873264% | 4608 | 恢复 master 原图 |
+| [zh-Hant-signed-in-texas-game-turn.png](snapshots/android-35-x86_64-720x1280-zh-Hant/zh-Hant-signed-in-texas-game-turn.png) | 4358 | 4358 / 921600 | 0.472873264% | 4608 | 恢复 master 原图 |
+| [zh-Hant-signed-in-texas-hall-variants-auto-rebuy-enabled.png](snapshots/android-35-x86_64-720x1280-zh-Hant/zh-Hant-signed-in-texas-hall-variants-auto-rebuy-enabled.png) | 312 | 312 / 921600 | 0.033854167% | 4608 | 恢复 master 原图 |
+| [zh-Hant-signed-in-texas-hall-variants-delay-cooldown-alert.png](snapshots/android-35-x86_64-720x1280-zh-Hant/zh-Hant-signed-in-texas-hall-variants-delay-cooldown-alert.png) | 3220 | 3220 / 921600 | 0.349392361% | 4608 | 恢复 master 原图 |
+| [zh-Hant-signed-in-texas-hall-variants-delay-cooldown.png](snapshots/android-35-x86_64-720x1280-zh-Hant/zh-Hant-signed-in-texas-hall-variants-delay-cooldown.png) | 4376 | 4376 / 921600 | 0.474826389% | 4608 | 恢复 master 原图 |
+| [zh-Hant-signed-in-texas-panel-variants-chat-audio-history.png](snapshots/android-35-x86_64-720x1280-zh-Hant/zh-Hant-signed-in-texas-panel-variants-chat-audio-history.png) | 1915 | 1915 / 921600 | 0.207790799% | 4608 | 恢复 master 原图 |
+| [zh-Hant-signed-in-texas-panel-variants-chat-barrage-off.png](snapshots/android-35-x86_64-720x1280-zh-Hant/zh-Hant-signed-in-texas-panel-variants-chat-barrage-off.png) | 1915 | 1915 / 921600 | 0.207790799% | 4608 | 恢复 master 原图 |
+| [zh-Hant-signed-in-texas-panels-quit-confirm.png](snapshots/android-35-x86_64-720x1280-zh-Hant/zh-Hant-signed-in-texas-panels-quit-confirm.png) | 1636 | 1636 / 921600 | 0.177517361% | 4608 | 恢复 master 原图 |
+| [zh-Hant-signed-in-texas-records-v2-actions.png](snapshots/android-35-x86_64-720x1280-zh-Hant/zh-Hant-signed-in-texas-records-v2-actions.png) | 45 | 45 / 921600 | 0.004882812% | 4608 | 恢复 master 原图 |
+| [zh-Hant-signed-in-texas-records-v2-empty.png](snapshots/android-35-x86_64-720x1280-zh-Hant/zh-Hant-signed-in-texas-records-v2-empty.png) | 46 | 46 / 921600 | 0.004991319% | 4608 | 恢复 master 原图 |
+| [zh-Hant-signed-in-texas-records-v2-settlement.png](snapshots/android-35-x86_64-720x1280-zh-Hant/zh-Hant-signed-in-texas-records-v2-settlement.png) | 46 | 46 / 921600 | 0.004991319% | 4608 | 恢复 master 原图 |
+| [zh-Hant-signed-in-texas-table-states-full-table-multiple-pots.png](snapshots/android-35-x86_64-720x1280-zh-Hant/zh-Hant-signed-in-texas-table-states-full-table-multiple-pots.png) | 4267 | 4267 / 921600 | 0.462999132% | 4608 | 恢复 master 原图 |
+| [zh-Hant-signed-in-texas-table-states-full-table.png](snapshots/android-35-x86_64-720x1280-zh-Hant/zh-Hant-signed-in-texas-table-states-full-table.png) | 4267 | 4267 / 921600 | 0.462999132% | 4608 | 恢复 master 原图 |
+| [zh-Hant-signed-in-texas-table-states-guest-menu.png](snapshots/android-35-x86_64-720x1280-zh-Hant/zh-Hant-signed-in-texas-table-states-guest-menu.png) | 2907 | 2907 / 921600 | 0.315429688% | 4608 | 恢复 master 原图 |
+| [zh-Hant-signed-in-texas-table-states-player-disconnected.png](snapshots/android-35-x86_64-720x1280-zh-Hant/zh-Hant-signed-in-texas-table-states-player-disconnected.png) | 4358 | 4358 / 921600 | 0.472873264% | 4608 | 恢复 master 原图 |
+| [zh-Hant-signed-in-texas-table-states-reserved-seat.png](snapshots/android-35-x86_64-720x1280-zh-Hant/zh-Hant-signed-in-texas-table-states-reserved-seat.png) | 4358 | 4358 / 921600 | 0.472873264% | 4608 | 恢复 master 原图 |
+
+本轮只恢复既有原图并补充复核记录，没有修改容差、遮罩、用例范围或业务代码。整图、稳定性、局部图及静态补集的一万有效像素边界核对均为 50 个差异通过、51 个失败；合并与恢复后的完整远端比较仍待脚本发布新提交后验证。
