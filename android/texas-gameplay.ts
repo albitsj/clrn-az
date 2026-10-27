@@ -99,7 +99,7 @@ export async function texasGameplay(device: AndroidDevice, proxy: Mitmproxy, roo
       .some(node => node.res?.startsWith(`texas-holdem-player-container-${self}`)), { timeout: 30_000 }).toBe(true);
     if (!opponent) await gameReady(device, 'texas-holdem-operation-button-raise');
   };
-  if (phase !== 'effects') {
+  if (phase === 'all' || phase === 'table') {
     for (const street of ['preflop', 'flop', 'turn', 'river'] as const) {
       await restore(street);
       if (street === 'preflop' && animationInfo) {
