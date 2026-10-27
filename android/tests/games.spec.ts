@@ -44,7 +44,7 @@ for (const [suite, game] of [['texas', 'texas-holdem'], ['zhajinhua', 'zhajinhua
         : part === 'second' ? scenario.snapshotStates!.slice(7)
           : part === 'table' ? scenario.pageLabel === 'signed_in_texas_game'
             ? scenario.snapshotStates!.slice(0, 10) : scenario.snapshotStates!
-            : part === 'effects' ? scenario.pageLabel === 'signed_in_texas_game' ? [] : scenario.snapshotStates!
+            : part === 'effects' ? []
               : part === 'profiles' ? scenario.snapshotStates!.slice(10)
               : scenario.snapshotStates!;
       const label = part === 'all' ? scenario.pageLabel : `${scenario.pageLabel}_${part}`;
