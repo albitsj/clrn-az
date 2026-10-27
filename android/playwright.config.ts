@@ -1,5 +1,6 @@
 import { defineConfig } from '@playwright/test';
 import path from 'node:path';
+import { screenshotComparison } from './screenshot-comparison';
 
 export default defineConfig({
   testDir: './tests',
@@ -21,6 +22,6 @@ export default defineConfig({
   timeout: 180_000,
   // 缺少基准属于失败，只有显式 reference 命令才能创建或替换基准。
   updateSnapshots: 'none',
-  expect: { toMatchSnapshot: { threshold: 0.1, maxDiffPixels: 0 } },
+  expect: { toMatchSnapshot: screenshotComparison },
   reporter: [['list'], ['html', { outputFolder: path.join(__dirname, 'playwright-report'), open: 'never' }]],
 });

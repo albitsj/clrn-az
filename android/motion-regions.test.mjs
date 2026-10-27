@@ -4,6 +4,8 @@ import { createRequire } from 'node:module';
 import { PNG } from 'pngjs';
 const require = createRequire(import.meta.url);
 const { motionParts, samePixels } = require('./motion-regions.ts');
+const configuration = require('./playwright.config.ts').default;
+const comparator = require('playwright-core/lib/coreBundle').utils.getComparator('image/png');
 const regions = [{ x: 0, y: 0, width: 4, height: 4 }, { x: 4, y: 0, width: 4, height: 4 }];
 
 /**
@@ -42,10 +44,57 @@ test('动画分区不能重叠或越界，完整帧尺寸变化仍导致失败',
   assert.equal(samePixels(frame(0, 255), PNG.sync.write(new PNG({ width: 9, height: 8 }))), false);
 });
 
-test('稳定和基准比较都容许单色阶绘制抖动，但一个真实变化像素也不能漏掉', () => {
+test('稳定和基准比较保留颜色容差，小分区的一个有效差异像素仍超过比例', () => {
   const expected = frame(80, 80, 80);
   assert.equal(samePixels(frame(81, 81, 81), expected), true);
   const changed = PNG.sync.read(expected);
   changed.data.fill(255, (4 * 8 + 4) * 4, (4 * 8 + 4) * 4 + 3);
   assert.equal(samePixels(PNG.sync.write(changed), expected), false);
+});
+
+/**
+ * 在白色截图内加入指定数量的黑色像素，避开抗锯齿和颜色容差边界。
+ * @param count - 有效差异像素数。
+ * @param width - 整张截图宽度。
+ */
+function changedPixels(count, width = 100) {
+  const picture = new PNG({ width, height: 100 });
+  picture.data.fill(255);
+  for (let index = 0; index < count; index++) {
+    const offset = ((50 + Math.floor(index / 10)) * width + 20 + index % 10) * 4;
+    picture.data.fill(0, offset, offset + 3);
+  }
+  return PNG.sync.write(picture);
+}
+
+test('整图最终比较与稳定性判断均允许百分之零点五，超过一个像素就失败', () => {
+  const expected = changedPixels(0);
+  for (const [count, passes] of [[50, true], [51, false]]) {
+    const actual = changedPixels(count);
+    assert.equal(comparator(actual, expected, configuration.expect.toMatchSnapshot) === null, passes,
+      `一万像素中有 ${count} 个有效差异时，最终比较须使用约定比例`);
+    assert.equal(samePixels(actual, expected), passes,
+      `一万像素中有 ${count} 个有效差异时，稳定性判断须与最终比较一致`);
+  }
+});
+
+test('局部图和动画之外的补集按各自一万像素计算，不借用其他分区面积', () => {
+  const region = [{ x: 100, y: 0, width: 100, height: 100 }];
+  const expected = motionParts(changedPixels(0, 200), region);
+  const left = [{ x: 0, y: 0, width: 100, height: 100 }];
+  const expectedCrop = motionParts(changedPixels(0, 200), left).regions[0];
+  for (const [count, passes] of [[50, true], [51, false]]) {
+    const actual = changedPixels(count, 200);
+    assert.equal(samePixels(motionParts(actual, left).regions[0], expectedCrop), passes,
+      '局部图以实际裁切面积核算差异');
+    assert.equal(samePixels(motionParts(actual, region).outside, expected.outside), passes,
+      '补集以排除独立动画分区后的面积核算差异');
+  }
+});
+
+test('差异比例不放行尺寸变化或无效基准', () => {
+  assert.equal(comparator(changedPixels(0, 101), changedPixels(0),
+    configuration.expect.toMatchSnapshot) === null, false, '尺寸不符必须失败');
+  assert.equal(samePixels(changedPixels(0, 101), changedPixels(0)), false, '稳定性比较也拒绝尺寸变化');
+  assert.throws(() => samePixels(changedPixels(0), Buffer.from('无效图片')), '无效基准不能视为匹配');
 });
