@@ -6,7 +6,6 @@ import { expect, type TestInfo } from '@playwright/test';
 import { dismissKeyboard } from './keyboard';
 import { maskScreenshot, type ScreenshotMask } from './screenshot';
 import { samePixels } from './motion-regions';
-import { expectScreenshot } from './snapshot-assertion';
 // @ts-expect-error 元数据验证模块也供纯 Node 下载入口使用。
 import { applicationId, packageName, readVerifiedBuild } from './release.mjs';
 
@@ -185,5 +184,5 @@ export async function compareScreenshot(device: AndroidDevice, name: string, tes
     await testInfo.attach(`${name}-matched-layout`, { body: matchingAlternate, contentType: 'text/plain' });
     return;
   }
-  await expectScreenshot(stable!, name, testInfo, masks);
+  expect.soft(stable!).toMatchSnapshot(`${name}.png`);
 }

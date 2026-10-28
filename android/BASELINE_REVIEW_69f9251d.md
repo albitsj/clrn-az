@@ -1,5 +1,7 @@
 # 德州操作按钮原生基准审查
 
+本文保留历史接收及恢复记录。合并请求 #29 的当前修订已撤回额外比较器，并逐图复用其中 36 张同构建基准；其当前内容、证据和原比较器验证结果见[本次修订记录](BASELINE_REVIEW_29_REVISION.md)。下文“恢复 master 原图”描述当时操作，不表示这些图片目前全部仍为旧图。
+
 应用提交：[69f9251d3b5f2b93aa2d880d27abbeefe16ee645](https://github.com/kevinanew/laiwan_react_native/commit/69f9251d3b5f2b93aa2d880d27abbeefe16ee645)。发布版本：`android-staging-300001001-69f9251d3b5f`。
 
 前两轮候选来自仓库提交 `b30f30adc7722b90e16084f95ff4c41b6fd48e0e` 的[参考图任务 40523304048](https://github.com/albitsj/clrn-az/actions/runs/40523304048)。第三轮英文牌桌候选来自提交 `4670fbf1251d234964073563d73a025440312ad5` 的[参考图任务 40551318429](https://github.com/albitsj/clrn-az/actions/runs/40551318429)，其目标用例 `en / texas / signed_in_texas_game_table` 一次通过且没有错误；其他分组没有匹配用例造成整个运行失败，不作为目标用例的通过证据。两轮参考任务均使用固定 Android API 35、x86_64、720×1280 模拟器，构建信息中的完整应用提交与部署记录一致。
