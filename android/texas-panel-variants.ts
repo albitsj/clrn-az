@@ -1,5 +1,4 @@
 import { expect } from '@playwright/test';
-import { REPLAY_PLAYER_IDS } from '../visual/cases/texas-holdem/replayData';
 import { gameConnected, gameGone, gameNodes, gameReady, gameTap } from './game-controls';
 import { closeGameMask } from './game-pregame';
 import { replay } from './game-replay';
@@ -12,7 +11,7 @@ import { enableGameSetting, restoreTexas, texasEvents, type TexasContext } from 
  * @param context - 当前真实房间、连接与共用顺序截图入口。
  */
 export async function texasPanelVariants(context: TexasContext): Promise<void> {
-  const { device, proxy, room, self, capture, animationInfo } = context;
+  const { device, proxy, room, capture, animationInfo } = context;
   const alertRegion = { x: 80, y: 525, width: 560, height: 265 };
   const alertMasks = [
     { x: 270, y: 720, width: 180, height: 28, reason: '错误弹窗下方的牌局倒计时独立跳秒' },
@@ -49,9 +48,7 @@ export async function texasPanelVariants(context: TexasContext): Promise<void> {
     await closeGameMask(device, 'buy-in-application-list');
   }
   await enableGameSetting(device, 'player-voice');
-  await replay(proxy, 'texas', room, { stream: 'room_message', payload: { action: 'audio', content: {
-    from_user_id: REPLAY_PLAYER_IDS[0], from_user_nickname: 'Player1', duration: 3, codec: 'mp3', content: '',
-  } } });
+  await replay(proxy, 'texas', room, { scene: 'audio' });
   await gameTap(device, 'texas-holdem-chat-button');
   await gameTap(device, '-in-game-chat-record-tab');
   await gameReady(device, 'in-game-chat-audio-message-0');
@@ -78,9 +75,9 @@ export async function texasPanelVariants(context: TexasContext): Promise<void> {
       () => adb('shell', 'input', 'tap', String(Math.round(cancel.bounds.x + cancel.bounds.width / 2)),
         String(Math.round(cancel.bounds.y + cancel.bounds.height / 2))), alertMasks, [], 0, 'videoFrames');
   } else await device.tap({ text: /^(取消|Cancel)$/ });
-  await restoreTexas(context, {}, 'flop', true);
+  await restoreTexas(context, 'standard', 'flop', true);
   await proxy.command('texas/ui', { rpcError: 'balance' });
-  await texasEvents(context, [{ event: 'settlement', players: [{ player_id: self, net: 180, prize: 180, stack: 1180 }] }]);
+  await texasEvents(context, 'hand-end');
   if (animationInfo) await captureNativeTransition(device, 'texas-alert-balance-enter', animationInfo,
     alertRegion, await press('texas-holdem-show-remain-community-card-button'), alertMasks, [], 0, 'videoFrames');
   else await gameTap(device, 'texas-holdem-show-remain-community-card-button');
@@ -90,7 +87,7 @@ export async function texasPanelVariants(context: TexasContext): Promise<void> {
     alertRegion, await press('common-alert-button-cancel'), alertMasks, [], 0, 'videoFrames');
   else await gameTap(device, 'common-alert-button-cancel');
   await proxy.command('texas/ui', { rpcError: 'auth' });
-  await texasEvents(context, [{ event: 'new_game', game_id: 'visual-fixed-game', settings: { small_blind: 1, big_blind: 2, ante: 0 } }]);
+  await texasEvents(context, 'new-game');
   await restoreTexas(context);
   await gameGone(device, 'texas-holdem-show-hand-card-button');
   await gameGone(device, 'texas-holdem-show-remain-community-card-button');

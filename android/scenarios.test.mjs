@@ -3,7 +3,6 @@ import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
 const { androidScenarios, nativeSelector, unavailablePages } = require('./scenarios.ts');
-const { visualNetworkRouter } = require('./network-routes.ts');
 
 test('原生选择器不忽略 Web 复杂 CSS，前后缀匹配保留字面字符', () => {
   assert.deepEqual(nativeSelector('[data-testid="password-input"] input'), { res: 'password-input' });
@@ -30,47 +29,11 @@ test('三种语言沿用相同的 Web 手机业务页面，渠道差异显式列
   }
 });
 
-test('原生传输复用 Web 的动态 URL、商品和国家夹具，真实认证继续透传', async () => {
-  const route = await visualNetworkRouter();
-  const origin = 'https://64.kr-seoul.api.staging.laiwan.shafayouxi.com';
-  assert.equal(await route(`${origin}/public/v10/user/login/username/password`), null);
-  assert.equal(await route(`${origin}/v10/club`), null);
-  assert.deepEqual(JSON.parse((await route(`${origin}/v10/club?user_id=example`)).body),
-    { ok: true, result: { clubs: [] } });
-  assert.equal(JSON.parse((await route(`${origin}/public/v10/profile/country`)).body).result.countryPhoneCode, '86');
-  assert.equal(JSON.parse((await route(`${origin}/v10/alipay_order/goods`)).body).result.length, 7);
-  assert.equal((await route('https://widget.freshchat.com/')).aborted, true);
-  const feedback = await route('https://feedback.userreport.com/visual-fixture/');
-  assert.equal(feedback.contentType, 'text/html; charset=utf-8');
-  assert.match(feedback.body, /<body[^>]*><\/body>/);
-});
-
-
-test('登录准备、普通页面、牌桌和战绩路由均不覆盖任何节点选线请求', async () => {
-  for (const options of [{}, { realPrivateRoom: true }, { recordFixtures: true }]) {
-    const route = await visualNetworkRouter(options);
-    for (const host of ['api.shafayouxi.org', '64.kr-seoul.api.staging.laiwan.shafayouxi.com',
-      '67.hk.api.staging.laiwan.shafayouxi.com', '68.kr.api.staging.laiwan.shafayouxi.com']) {
-      for (const endpoint of ['/public/v12/metadata/servers', '/public/v13/metadata/servers', '/node/v1/status']) {
-        assert.equal(await route(`https://${host}${endpoint}?probe=real`), null);
-      }
-    }
-  }
-});
-
 test('业务分组完整分割清单且没有重复或遗漏', () => {
   const combined = ['guest', 'account', 'social', 'rooms', 'wallet-help']
     .flatMap(group => androidScenarios('en', group).map(scenario => scenario.pageLabel));
   assert.deepEqual(combined.sort(), androidScenarios('en').map(scenario => scenario.pageLabel).sort());
   assert.throws(() => androidScenarios('en', 'typo'));
-});
-
-test('牌桌保留真实房屋接口，战绩代理的俱乐部数据不被通用夹具覆盖', async () => {
-  const route = await visualNetworkRouter({ realPrivateRoom: true, recordFixtures: true });
-  for (const path of ['/v10/house/user/self', '/v2/building/rooms', '/v10/club?user_id=self', '/v10/clubs']) {
-    assert.equal(await route(`https://api.shafayouxi.org${path}`), null);
-  }
-  assert.ok(await route('https://api.shafayouxi.org/v10/alipay_order/goods'));
 });
 
 test('动态区域遮罩保留区域外像素，拒绝掩盖整页', () => {
@@ -86,7 +49,6 @@ test('动态区域遮罩保留区域外像素，拒绝掩盖整页', () => {
   }
   assert.throws(() => maskScreenshot(bytes, [{ x: 0, y: 0, width: 100, height: 100, reason: '错误范围' }]), /12%/);
 });
-
 
 test('原生战绩与 Web 共用完整状态矩阵', () => {
   const { recordStates } = require('./record-states.ts');
@@ -105,7 +67,6 @@ test('原生德州覆盖完整 Web 手机场景清单，新增场景不能被静
   assert.deepEqual([...texasScenarioLabels].sort(), scenarios.map(scenario => scenario.pageLabel).sort());
   assert.equal(scenarios.reduce((total, scenario) => total + scenario.snapshotStates.length, 0), 95);
 });
-
 
 test('原生控件消失查询不把连接或驱动错误误认为成功', async () => {
   const { exists } = require('./native-state.ts');

@@ -148,6 +148,6 @@ for (const scenario of enabled ? buildScenarios({ VISUAL_LOCALES: locale, VISUAL
         await captureFailure(device, testInfo);
         throw error;
       } finally { await proxy.release(); await device.close(); }
-    }, true);
+    }, 'records');
   });
 }

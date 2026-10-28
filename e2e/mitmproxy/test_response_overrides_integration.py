@@ -1,4 +1,4 @@
-"""真实 mitmdump 与 Android 夹具桥接连接本地上游，验证多节点结果完整透传。"""
+"""真实 mitmdump 直接连接本地上游，验证多节点结果完整透传。"""
 
 from contextlib import contextmanager
 import gzip
@@ -118,30 +118,6 @@ def running(command, port, url, environment, method='GET', body=None):
                 process.wait(timeout=5)
 
 
-@contextmanager
-def native_fixtures():
-    """运行生产 visualNetworkRouter，经真实 HTTP 查询而非替换 fixture_response。"""
-    port = free_port()
-    source = """
-        import { createServer } from 'node:http';
-        import { visualNetworkRouter } from './android/network-routes.ts';
-        const route = await visualNetworkRouter();
-        createServer(async (request, response) => {
-            if (request.headers.authorization !== 'offline-fixture-token') {
-                response.writeHead(403).end(); return;
-            }
-            let body = '';
-            for await (const chunk of request) body += chunk;
-            response.setHeader('Content-Type', 'application/json');
-            response.end(JSON.stringify(await route(JSON.parse(body).url)));
-        }).listen(Number(process.env.FIXTURE_TEST_PORT), '127.0.0.1');
-    """
-    with running(['node', '--import', 'tsx', '--input-type=module', '-e', source], port, '/',
-                 {**os.environ, 'FIXTURE_TEST_PORT': str(port)}, 'POST',
-                 {'url': 'https://api.shafayouxi.org/node/v1/status'}):
-        yield f'http://127.0.0.1:{port}/'
-
-
 class LiveOverrideTests(unittest.TestCase):
     def test_all_addons_preserve_live_upstream_responses(self):
         upstream = ThreadingHTTPServer(('127.0.0.1', 0), Upstream)
@@ -155,14 +131,12 @@ class LiveOverrideTests(unittest.TestCase):
                           'visual/cases/game-record/mitmproxy/addon.py'):
                 with self.subTest(addon=addon):
                     self.check_addon(upstream.server_port, addon)
-            with native_fixtures() as fixture_url:
-                for game, records in (('', 'false'), ('texas-holdem', 'false'),
-                                      ('zhajinhua', 'false'), ('', 'true')):
-                    with self.subTest(native_game=game, records=records):
-                        self.check_addon(upstream.server_port, 'android/proxy-addon.py', {
-                            'ANDROID_GAME': game, 'ANDROID_RECORDS': records,
-                            'ANDROID_FIXTURE_URL': fixture_url, 'ANDROID_FIXTURE_TOKEN': 'offline-fixture-token',
-                        })
+            for game, records in (('', 'false'), ('texas-holdem', 'false'),
+                                  ('zhajinhua', 'false'), ('', 'true')):
+                with self.subTest(native_game=game, records=records):
+                    self.check_addon(upstream.server_port, 'android/proxy-addon.py', {
+                        'ANDROID_SCENE': game or ('records' if records == 'true' else 'pages'),
+                    })
         finally:
             upstream.shutdown()
             upstream.server_close()
@@ -172,8 +146,7 @@ class LiveOverrideTests(unittest.TestCase):
         port = free_port()
         executable = Path(sys.executable).with_name('mitmdump')
         environment = {**os.environ, 'MITMPROXY_CONTROL_TOKEN': 'offline-token',
-                       'ANDROID_GAME': '', 'ANDROID_RECORDS': 'false', 'ANDROID_MATCHING': 'false',
-                       'ANDROID_SLOT': 'false', 'ANDROID_SKELETON': 'false', 'ANDROID_INVITABLE': 'false',
+                       'ANDROID_SCENE': 'pages',
                        **(native or {})}
         with tempfile.TemporaryDirectory() as directory, running(
                 [str(executable), '--listen-host', '127.0.0.1', '--listen-port', str(port),
@@ -187,8 +160,18 @@ class LiveOverrideTests(unittest.TestCase):
                                        {'scenario': 'visual-stable'})[0], 200)
             self.assert_passthrough(port)
             if native is not None:
-                _, _, raw = fetch(port, 'http://api.shafayouxi.org/public/v10/profile/country')
-                self.assertEqual(json.loads(raw)['result']['countryPhoneCode'], '86', '业务夹具仍应生效')
+                for path, expected in (
+                        ('/public/v10/profile/country', {'countryPhoneCode': '86'}),
+                        ('/v2/room/disallow-rule/reminder', {'enable': False, 'message': ''}),
+                        ('/public/v1/hall_matching/available.json', {'available_url_version': ['v3']})):
+                    status, headers, raw = fetch(port, 'http://api.shafayouxi.org' + path)
+                    self.assertEqual(status, 200)
+                    self.assertEqual(headers['content-type'], 'application/json')
+                    self.assertEqual(json.loads(raw), {'ok': True, 'result': expected})
+                status, _, raw = fetch(port, 'http://api.shafayouxi.org/v10/alipay_order/goods')
+                self.assertEqual(status, 200)
+                self.assertEqual(len(json.loads(raw)['result']), 7)
+                self.assertEqual(fetch(port, 'http://api.shafayouxi.org/v10/alipay_order', 'POST', {})[0], 403)
 
     def assert_passthrough(self, port):
         urls = [f'http://api.shafayouxi.org{path}?{query}' for path in METADATA

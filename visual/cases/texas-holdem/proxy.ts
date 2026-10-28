@@ -19,10 +19,10 @@ export class TexasProxy {
   /**
    * 向当前德州房间推送固定回放消息。
    * @param roomId - 接收回放消息的房间 ID。
-   * @param data - 子进程输出的数据块。
+   * @param scene - Python 中登记的回放场景。
    */
-  replayTexas(roomId: string, data: unknown): Promise<ProxyStatus> {
-    return this.proxy.command('texas/replay', { roomId, data });
+  replayTexas(roomId: string, scene: unknown): Promise<ProxyStatus> {
+    return this.proxy.command('texas/replay', { roomId, scene });
   }
   /** 切换到固定的德州大厅数据场景。 */
   configureHallView(): Promise<ProxyStatus> {

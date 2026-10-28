@@ -9,12 +9,12 @@ import { gameNodes, gameNodesWithin, gameSemanticText } from './game-controls';
  * @param proxy - 本轮独占代理。
  * @param game - 共用的玩法代理名。
  * @param roomId - 本轮创建的房间。
- * @param data - Web 共用的网络事件夹具。
+ * @param scene - Python 中登记的命名场景及少量参数。
  */
-export async function replay(proxy: Mitmproxy, game: 'texas' | 'zhajinhua', roomId: string, data: unknown): Promise<void> {
+export async function replay(proxy: Mitmproxy, game: 'texas' | 'zhajinhua', roomId: string, scene: unknown): Promise<void> {
   expect((await gameSession(proxy)).room?.roomId, '回放只能发送到本轮新建的私人房').toBe(roomId);
   await expect(async () => {
-    await proxy.command(`${game}/replay`, { roomId, data });
+    await proxy.command(`${game}/replay`, { roomId, scene });
   }).toPass({ timeout: 30_000, intervals: [500] });
 }
 

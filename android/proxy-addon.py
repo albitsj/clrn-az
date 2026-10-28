@@ -1,4 +1,4 @@
-"""只在专用模拟器的代理边界复用 Web 响应，不改变 APK 或绕过应用初始化。"""
+"""只在专用模拟器的 Python 代理内生成必要业务响应，不改变 APK 或绕过应用初始化。"""
 
 import asyncio
 import importlib.util
@@ -15,13 +15,18 @@ from username_lookup import username_lookup_response
 from game_session import GameSession
 from launch_network import LaunchNetwork
 from network_selection import NetworkSelection
-from fixture_bridge import fixture_response
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'e2e/mitmproxy'))
 from response_overrides import is_staging
+from visual_fixtures import VisualFixtures
 
 
 class AndroidVisualProxy:
     def __init__(self):
+        scene = os.environ.get('ANDROID_SCENE', 'pages')
+        if scene not in ('pages', 'records', 'texas-holdem', 'zhajinhua', 'matching', 'slot', 'skeleton', 'invitable'):
+            raise ValueError('Unknown Android scene')
+        self.fixtures = VisualFixtures('game' if scene in ('texas-holdem', 'zhajinhua') else
+                                       'records' if scene == 'records' else 'pages')
         self.launch = LaunchNetwork()
         self.network_selection = NetworkSelection()
         self.presentation = AccountPresentation()
@@ -29,14 +34,14 @@ class AndroidVisualProxy:
         self.records = None
         self.game = None
         self.game_session = None
-        self.matching = os.environ.get('ANDROID_MATCHING') == 'true'
+        self.matching = scene == 'matching'
         self.matching_paths = {'/v1/hall_matching/join', '/v1/hall_matching/quit',
                                '/v1/hall_matching/keep_waiting'}
-        self.slot = os.environ.get('ANDROID_SLOT') == 'true'
+        self.slot = scene == 'slot'
         self.slot_currency = 'coin'
         self.slot_no_energy = False
         self.slot_spins = 0
-        self.skeleton = os.environ.get('ANDROID_SKELETON') == 'true'
+        self.skeleton = scene == 'skeleton'
         self.skeleton_hold = False
         self.skeleton_release = asyncio.Event()
         self.skeleton_loaded = 0
@@ -45,7 +50,7 @@ class AndroidVisualProxy:
                                 'owner_id': 'visual-owner', 'member_count': 5,
                                 'created_at': '2026-01-01T00:00:00Z', 'admin_ids': [],
                                 'game_type': 'texas_holdem'} for index in (1, 2)]
-        self.invitable = os.environ.get('ANDROID_INVITABLE') == 'true'
+        self.invitable = scene == 'invitable'
         directory = Path(__file__).resolve().parents[1] / 'visual/cases/club/mitmproxy'
         spec = importlib.util.spec_from_file_location('native_club_room_addon', directory / 'addon.py')
         module = importlib.util.module_from_spec(spec)
@@ -56,7 +61,7 @@ class AndroidVisualProxy:
         self.auto_rebuy_requested = False
         self.auto_rebuy_release = asyncio.Event()
         self.auto_rebuy_release.set()
-        game_type = os.environ.get('ANDROID_GAME')
+        game_type = scene
         if game_type in ('texas-holdem', 'zhajinhua'):
             directory = Path(__file__).resolve().parents[1] / 'visual/cases' / game_type / 'mitmproxy'
             sys.path.insert(0, str(directory))
@@ -66,7 +71,7 @@ class AndroidVisualProxy:
             self.game = module.TexasVisualProxy() if game_type == 'texas-holdem' else module.ZhajinhuaVisualProxy()
             self.game.scenario = 'visual-stable'
             self.game_session = GameSession('texas_holdem' if game_type == 'texas-holdem' else 'zhajinhua')
-        if os.environ.get('ANDROID_RECORDS') == 'true':
+        if scene == 'records':
             sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'visual/cases/game-record/mitmproxy'))
             from addon import GameRecordProxy
             self.records = GameRecordProxy()
@@ -105,6 +110,8 @@ class AndroidVisualProxy:
         self.network_selection.observe(flow, 'websocket-connected')
 
     def websocket_message(self, flow):
+        if not is_staging(flow.request.host):
+            return
         if self.slot and flow.websocket:
             message = flow.websocket.messages[-1]
             if message.from_client and message.is_text and not message.injected:
@@ -168,6 +175,10 @@ class AndroidVisualProxy:
         if await self.launch.request(flow):
             return
         path = urlsplit(flow.request.path).path
+        if flow.request.host != 'test-mitmproxy.invalid' and (
+                flow.request.method in ('OPTIONS', 'CONNECT') or not is_staging(flow.request.host)):
+            self.fixtures.request(flow)
+            return
         if flow.request.host == 'test-mitmproxy.invalid' and path == '/android/network-selection':
             if flow.request.headers.get('X-E2E-Control-Token') != os.environ['MITMPROXY_CONTROL_TOKEN']:
                 flow.response = http.Response.make(403, b'Forbidden')
@@ -361,18 +372,7 @@ class AndroidVisualProxy:
             else:
                 flow.response = http.Response.make(200, b'{"scenario":"visual-stable"}')
             return
-        if flow.request.method == 'CONNECT':
-            return
-        result = await fixture_response(flow.request.pretty_url, os.environ['ANDROID_FIXTURE_URL'],
-                                        os.environ['ANDROID_FIXTURE_TOKEN'])
-        if result is None:
-            return
-        if result.get('aborted'):
-            flow.kill()
-            return
-        flow.response = http.Response.make(result.get('status', 200),
-            result.get('body', '').encode(),
-            {'Content-Type': result.get('contentType', 'application/json')})
+        self.fixtures.request(flow)
 
     def slot_result(self, spin):
         energy = {'user_energy': {'total_energy': 0}, 'energy_factory': {

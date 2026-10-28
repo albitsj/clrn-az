@@ -57,7 +57,7 @@ class TexasVisualProxy:
                 elif self.scenario == 'visual-stable' and path == '/texas/view':
                     self.view.configure(body.get('mode'))
                 elif self.scenario == 'visual-stable' and path == '/texas/replay':
-                    self.texas.publish(body.get('roomId'), body.get('data'))
+                    self.texas.publish(body.get('roomId'), scene=body['scene'])
                 elif self.scenario == 'visual-stable' and path == '/texas/records':
                     self.records.configure(body.get('empty'))
                     if self.view.mode != 'record-v2':

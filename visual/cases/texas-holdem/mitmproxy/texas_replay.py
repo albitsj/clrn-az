@@ -23,8 +23,8 @@ class TexasReplay:
         self.room_id = self.created_room_id = room_id
         self.self_id = self_id
 
-    def publish(self, room_id, data):
-        if not isinstance(room_id, str) or not re.fullmatch(UUID, room_id, re.I) or not isinstance(data, dict):
+    def publish(self, room_id, data=None, *, scene=None):
+        if not isinstance(room_id, str) or not re.fullmatch(UUID, room_id, re.I) or (scene is None and not isinstance(data, dict)):
             raise ValueError("Invalid replay")
         if self.room_id and room_id != self.room_id:
             raise ValueError('Another room already owns this replay')
@@ -36,8 +36,12 @@ class TexasReplay:
         ]
         if not targets:
             raise ValueError("No subscribed Texas room")
+        self_id = targets[0][1].rsplit('#', 1)[-1]
+        if scene is not None:
+            from replay_scenes import replay_scene
+            data = replay_scene('texas', self_id, scene)
         self.room_id = room_id
-        self.self_id = targets[0][1].rsplit('#', 1)[-1]
+        self.self_id = self_id
         # Centrifuge v2 JSON 协议：无 id 的消息是服务端推送，type=0 表示 publication。
         for flow, channel in targets:
             payload = {"result": {"type": 0, "channel": channel, "data": {"data": data}}}

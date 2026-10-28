@@ -1,5 +1,4 @@
 import { expect } from '@playwright/test';
-import { events, REPLAY_PLAYER_IDS } from '../visual/cases/texas-holdem/replayData';
 import { flattenNodes, gameGone, gameNodes, gameReady, gameSemanticText, gameTap, gameTextWithin } from './game-controls';
 import { captureGameThemes, closeGameMask, gameMenu } from './game-pregame';
 import { gameCardNames, replay } from './game-replay';
@@ -18,7 +17,7 @@ import { captureMovingKeyframes } from './loop-keyframes';
  */
 export async function texasPanels(context: TexasContext): Promise<void> {
   const { device, proxy, room, self, capture, animationInfo } = context;
-  await restoreTexas(context, {}, 'flop', true);
+  await restoreTexas(context, 'standard', 'flop', true);
   await captureGameThemes(device, capture);
   await gameTap(device, 'game-settings-close-button');
   await gameGone(device, 'game-settings-popup-container');
@@ -67,10 +66,8 @@ export async function texasPanels(context: TexasContext): Promise<void> {
   await gameGone(device, 'review-board-close-button');
   if (animationInfo) await captureTransientTransition(device, 'texas-system-prompt', animationInfo,
     { x: 90, y: 60, width: 540, height: 190 },
-    () => replay(proxy, 'texas', room, events([{ event: 'check_community_card', player_id: REPLAY_PLAYER_IDS[0] }])));
-  await replay(proxy, 'texas', room, { stream: 'room_message', payload: { action: 'text', content: {
-    from_user_id: REPLAY_PLAYER_IDS[0], from_user_nickname: 'Player1', text: 'Good hand!',
-  } } });
+    () => replay(proxy, 'texas', room, { scene: 'system-prompt' }));
+  await replay(proxy, 'texas', room, { scene: 'text' });
   await gameReady(device, 'barrage_text', 'Player1: Good hand!');
   if (animationInfo) {
     const barrage = await gameReady(device, 'barrage_text', 'Player1: Good hand!');
@@ -114,10 +111,7 @@ export async function texasPanels(context: TexasContext): Promise<void> {
   const chat = (await gameReady(device, 'in-game-chat-mask')).bounds;
   adb('shell', 'input', 'tap', String(chat.x + 8), String(chat.y + 80));
   await gameGone(device, 'in-game-chat-container');
-  const application = { stream: 'buy_in', payload: { action: 'apply_buy_in', content: {
-    application_id: 'visual-application', user_id: REPLAY_PLAYER_IDS[1],
-    user_nickname: 'Player2', nickname: 'Player2', amount: 500,
-  } } };
+  const application = { scene: 'buy-in-review' };
   if (animationInfo) await captureNativeTransition(device, 'texas-holdem-buy-in-review-enter', animationInfo,
     { x: 70, y: 440, width: 580, height: 270 }, () => replay(proxy, 'texas', room, application));
   else await replay(proxy, 'texas', room, application);
@@ -134,13 +128,13 @@ export async function texasPanels(context: TexasContext): Promise<void> {
     const player = await ownPlayer();
     return Boolean(player && flattenNodes(player).some(node => node.res === 'texas-holdem-player-action-call'));
   };
-  await texasEvents(context, [{ event: 'new_game', game_id: 'visual-fixed-game', settings: { small_blind: 1, big_blind: 2, ante: 0 } }]);
+  await texasEvents(context, 'new-game');
   await expect.poll(ownCalled, { timeout: 30_000 }).toBe(false);
-  await restoreTexas(context, {}, 'flop', true);
+  await restoreTexas(context, 'standard', 'flop', true);
   await expect.poll(ownCalled, { timeout: 30_000 }).toBe(true);
   await expect.poll(async () => gameSemanticText(await ownPlayer(), 'text-holdem-own-balance-text'),
     { timeout: 30_000 }).toBe('1000');
-  await texasEvents(context, [{ event: 'settlement', players: [{ player_id: self, net: 180, prize: 180, stack: 1180 }] }]);
+  await texasEvents(context, 'hand-end');
   await expect.poll(async () => gameSemanticText(await ownPlayer(), 'text-holdem-own-balance-text'),
     { timeout: 30_000 }).toBe('1180');
   await gameReady(device, 'texas-holdem-show-hand-card-button');
@@ -153,11 +147,11 @@ export async function texasPanels(context: TexasContext): Promise<void> {
   await gameTap(device, 'view-community-close-button');
   await gameGone(device, 'view-community-cards-container');
   await gameTap(device, 'texas-holdem-show-hand-card-button');
-  await texasEvents(context, [{ event: 'publish_hole_card', player_id: self, public_hole_card: ['as', 'ad'] }]);
+  await texasEvents(context, 'show-cards');
   await gameReady(device, 'texas-holdem-player-hole-cards');
   await capture('show_cards');
-  await texasEvents(context, [{ event: 'new_game', game_id: 'visual-fixed-game', settings: { small_blind: 1, big_blind: 2, ante: 0 } }]);
-  await restoreTexas(context, {}, 'flop');
+  await texasEvents(context, 'new-game');
+  await restoreTexas(context, 'standard', 'flop');
   await gameMenu(device, 'exit', 'common-alert-button-quit');
   await capture('quit_confirm');
   await gameTap(device, 'common-alert-button-cancel');
