@@ -30,6 +30,12 @@ Web 另外有 5 个下载帮助场景。当前 Staging APK 的发布渠道为 `d
 
 网络代理直接调用 Web 的 `mockVisualNetworkDependencies`，复用商品、私人房、俱乐部等响应夹具；未匹配的请求继续访问真实服务。新增 `signed_in_club_rooms_populated` 场景仅在该用例中由 mitmproxy 返回一个俱乐部及两条牌局，沿用原有空态场景；三张原生基准来自 [reference 40212302471](https://github.com/albitsj/clrn-az/actions/runs/40212302471)，使用 `android-staging-300000901-c451f743aad6` 的固定 API 35、720×1280、x86_64 模拟器。三种语言用例均通过；逐图核对两条牌局、人数、等待状态、界面语言和完整画面，保留原空态基准；三语社交场景在 [比较运行 40220337781](https://github.com/albitsj/clrn-az/actions/runs/40220337781) 中均已通过。真实登录成功后，仅将本人昵称、展示用户名、注册日期和余额固定为 `visual/fixtures/account-presentation.json`，身份和令牌保持原值，失败响应不改成成功。普通页面测试不提交表单。牌桌组通过真实界面创建本轮专用私人房，复用 Web 的余额检查与清理；退出和失败时都解散该房间。仅测试账号余额不足时复用现有 testing 接口补钻，不执行真实充值。Web 和 Android 共用 `visual/fixtures/game-presentation.json` 中的展示房号；Android 仅覆盖本轮真实房间成功响应的 `options.house_number`，保留 UUID、房主、权限、房间状态及连接和清理请求。房号及复制图标完整参与截图比较。
 
+正常视觉与登录准备完整透传 v12 数组、v13 字典、所有候选节点的健康结果和 CORS 预检，包括错误状态、压缩及未知字段。Python 玩法/战绩代理和 TypeScript 夹具查询都不固定首尔 64、不伪造健康指标、不排除其他节点；应用按真实候选自主选线。`enableVisualFixtures` 仅启用业务夹具；房间回放随实际确认订阅的连接工作，换节点后仍只针对本轮房间。超时、断线和不可用响应仅在明确的异常用例中注入；品牌启动页仍只在控制接口显式开启期间暂缓健康 GET，释放后访问原服务器。
+
+真实选线可能使右下角节点编号同时显示两个节点。截图继续使用原有直接比较实现及共用的 0.5% 比例，不动态改写预期图。已逐图复用同构建的 36 张按钮基准，保留节点编号的原有遮罩；原图、真实样本、差异及审查结论见[合并请求 #29 基准修订记录](BASELINE_REVIEW_29_REVISION.md)。上轮比较器方案及撤回原因保留在[历史复核记录](NETWORK_SELECTION_REVIEW_40649166168.md)。
+
+`e2e/mitmproxy/test_response_overrides_integration.py` 用本地上游验证 64 指标 1065 或失效、67 正常、第三节点真实 503，以及 metadata 不包含 64 的情况；覆盖五个共享入口及 Android 普通/登录、德州、拼三张、战绩入口，Android 实际查询 TypeScript 路由服务。`test_native_network.py` 从 Android 入口验证换线回放的订阅确认和房间隔离，并核对启动暂缓边界。这些是离线代理回归，不代表 APK 在真实设备或模拟器上通过。完整验收仍须在当前部署记录固定的同一 APK 下运行 Android 德州视觉场景，报告会附带同轮 `build-info` 和 `network-selection`：最多保留最近 200 条 metadata 候选、真实健康状态/指标、连接错误及 WebSocket 所选主机，不保存令牌、请求正文或用户/房间身份；不能用原生用例收集或旧 CI 结果替代。
+
 固定环境为 Android API 35、720×1280、320 dpi、字体比例 1、英文系统。GitHub Actions 使用 Ubuntu 和 x86_64 Google APIs 模拟器。正式基准应在相同 CI 环境生成并人工检查；本机 ARM 模拟器适合验证操作流程，渲染差异不能直接当作应用回归。
 
 ## 测试开始前的金币准备
@@ -80,8 +86,8 @@ APK 与构建信息继续发布到 **kevinanew/clrn 的公开 Release**，下载
 
 ## 更新基准
 
-此前按零差异规则接收的 86 张德州操作按钮基准已按统一的 0.5% 规则逐项复核：相对 master 的 83 张替换均未超标，已恢复已审查的原图，其余三张与 master 一致。
-历史来源、逐图实际差异数和恢复结果见[审查与复核记录](BASELINE_REVIEW_69f9251d.md)。
+此前按零差异规则接收的 86 张德州操作按钮基准曾按统一的 0.5% 规则逐项复核，并恢复相对 master 未超标的 83 张原图，其余三张与 master 一致。恢复真实选线后，旧按钮差异与节点编号遮罩差异叠加，使其中 36 个状态超过现有门槛；本次逐图复用这 36 张历史已审查的同构建按钮基准，其余图片保持原样。
+历史来源与当时的恢复结果见[审查与复核记录](BASELINE_REVIEW_69f9251d.md)，当前选择与交叉验证见[合并请求 #29 基准修订记录](BASELINE_REVIEW_29_REVISION.md)。
 
 测试前统一准备 10000 金币后，三语德州本人资料图来自全部通过的
 [reference 38775872385](https://github.com/albitsj/clrn-az/actions/runs/38775872385)。
@@ -158,4 +164,4 @@ Android CI 在初始化前启动独立诊断采集器，持续保存 logcat、AD
 
 截图比例调整关联 [问题 #27](https://github.com/albitsj/clrn-az/issues/27)。按固定版本 Playwright 比较器复核本修复请求中原有的 76 张基准替换，73 张新旧图在 0.5% 范围内，已恢复 master 中经过审查的旧图；超过该比例的既有替换继续保留。动画运动幅度、真实中途相位、素材完整性、遮罩及业务断言保持原有检查范围。比较器边界测试覆盖一万有效像素中 50 个差异通过、51 个失败，整图、局部图、静态补集和稳定性判断均须遵守。
 
-本次十张中文失败截图来自[比较运行 40450523520](https://github.com/albitsj/clrn-az/actions/runs/40450523520)，应用固定为 `69f9251d3b5f2b93aa2d880d27abbeefe16ee645`、Release `android-staging-300001001-69f9251d3b5f`。应用[圆形按钮修复 #7066](https://github.com/kevinanew/laiwan_react_native/pull/7066)将图像模式由 `center` 改为 `contain`，引起已审查并获认可的圆环差异。按 0.5% 比较首次及重试共二十张实际图全部通过，无需接收新候选基准；完整模拟器回归仍以本修复提交的后续比较运行为准。
+此前十张中文失败截图来自[比较运行 40450523520](https://github.com/albitsj/clrn-az/actions/runs/40450523520)，应用固定为 `69f9251d3b5f2b93aa2d880d27abbeefe16ee645`、Release `android-staging-300001001-69f9251d3b5f`。应用[圆形按钮修复 #7066](https://github.com/kevinanew/laiwan_react_native/pull/7066)将图像模式由 `center` 改为 `contain`，引起已审查并获认可的圆环差异。当时按 0.5% 比较首次及重试共二十张实际图全部通过，因此保留旧图。恢复真实选线后的基准选择以[合并请求 #29 修订记录](BASELINE_REVIEW_29_REVISION.md)为准；完整模拟器回归仍需新提交的后续比较运行验证。

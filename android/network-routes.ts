@@ -7,6 +7,7 @@ export type MockResponse = { status: number; contentType?: string; body?: string
 
 /**
  * 把现有 Web 网络夹具注册为传输层无关的响应查询器，原生代理直接复用相同响应。
+ * 节点列表、健康响应和预检不注册夹具，保留真实上游供应用选线。
  * 原生端没有 localStorage；国家区号由共用的 country 接口响应提供。
  * @param options - 保留真实私人房接口，或将战绩交由共享代理。
  */

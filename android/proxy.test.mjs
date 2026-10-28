@@ -71,17 +71,17 @@ test('代理重试先有界等待指定模拟器连接，再读取旧设置，�
     });
     assert.equal(response.status, 200);
     assert.equal(JSON.parse((await response.json()).body).result.countryPhoneCode, '86');
-    for (const [host, expectedLoad] of [
-      ['64.kr-seoul.api.staging.laiwan.shafayouxi.com', 'normal'],
-      ['68.kr.api.staging.laiwan.shafayouxi.com', 'unavailable'],
+    for (const host of [
+      '64.kr-seoul.api.staging.laiwan.shafayouxi.com',
+      '67.hk.api.staging.laiwan.shafayouxi.com',
+      '68.kr.api.staging.laiwan.shafayouxi.com',
     ]) {
       const health = await fetch(environment.ANDROID_FIXTURE_URL, {
         method: 'POST', headers: { authorization: environment.ANDROID_FIXTURE_TOKEN },
         body: JSON.stringify({ url: `https://${host}/node/v1/status` }),
       });
       const fixture = await health.json();
-      assert.equal(fixture.status, 200, '健康检查不能触发应用的全局网络错误弹窗');
-      assert.equal(JSON.parse(fixture.body).server_load, expectedLoad, '仅选定节点应被判为可用');
+      assert.equal(fixture, null, '所有节点健康结果必须交由真实上游返回');
     }
     return 'completed';
   });

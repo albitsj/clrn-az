@@ -14,6 +14,7 @@ from club_search_fixture import ClubSearchFixture
 from username_lookup import username_lookup_response
 from game_session import GameSession
 from launch_network import LaunchNetwork
+from network_selection import NetworkSelection
 from fixture_bridge import fixture_response
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'e2e/mitmproxy'))
 from response_overrides import is_staging
@@ -22,6 +23,7 @@ from response_overrides import is_staging
 class AndroidVisualProxy:
     def __init__(self):
         self.launch = LaunchNetwork()
+        self.network_selection = NetworkSelection()
         self.presentation = AccountPresentation()
         self.club_search_fixture = ClubSearchFixture()
         self.records = None
@@ -71,6 +73,7 @@ class AndroidVisualProxy:
             self.records.scenario = 'visual-stable'
 
     def response(self, flow):
+        self.network_selection.observe(flow)
         if (not flow.response or flow.response.status_code != 200
                 or (flow.request.host != 'api.shafayouxi.org'
                     and not flow.request.host.endswith('.api.staging.laiwan.shafayouxi.com'))):
@@ -94,6 +97,12 @@ class AndroidVisualProxy:
             if self.presentation.user_id:
                 self.records.user_id = self.presentation.user_id
             self.records.response(flow)
+
+    def error(self, flow):
+        self.network_selection.observe(flow, 'error')
+
+    def websocket_start(self, flow):
+        self.network_selection.observe(flow, 'websocket-connected')
 
     def websocket_message(self, flow):
         if self.slot and flow.websocket:
@@ -159,6 +168,15 @@ class AndroidVisualProxy:
         if await self.launch.request(flow):
             return
         path = urlsplit(flow.request.path).path
+        if flow.request.host == 'test-mitmproxy.invalid' and path == '/android/network-selection':
+            if flow.request.headers.get('X-E2E-Control-Token') != os.environ['MITMPROXY_CONTROL_TOKEN']:
+                flow.response = http.Response.make(403, b'Forbidden')
+            elif flow.request.method != 'GET':
+                flow.response = http.Response.make(405, b'Method not allowed')
+            else:
+                flow.response = http.Response.make(200, json.dumps(self.network_selection.snapshot()).encode(),
+                                                   {'Content-Type': 'application/json'})
+            return
         if self.game:
             lookup = username_lookup_response(flow.request, os.environ.get('VISUAL_USERNAME'))
             if lookup is not None:
