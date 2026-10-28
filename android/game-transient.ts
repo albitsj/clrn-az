@@ -5,6 +5,7 @@ import type { NativeNode } from './game-controls';
 import { subtractPanel } from './game-masks';
 import { samePixels } from './motion-regions';
 import { maskScreenshot, type ScreenshotMask } from './screenshot';
+import { expectScreenshot } from './snapshot-assertion';
 
 type Frame = { before: NativeNode; after: NativeNode; panel: NativeNode | null; capturedAt: number; png: string };
 
@@ -42,6 +43,7 @@ async function captureTransient(device: AndroidDevice, name: string, testInfo: T
   let reference: Buffer | undefined;
   let stableSince = 0;
   let stable: Buffer | undefined;
+  let stableMasks: ScreenshotMask[] = [];
   for (const [index, frame] of frames.entries()) {
     expect(frame.before.text, '截图前提示必须可见').toBeTruthy();
     expect(frame.after.text, '截图后提示文字必须保持一致').toBe(frame.before.text);
@@ -63,11 +65,11 @@ async function captureTransient(device: AndroidDevice, name: string, testInfo: T
     if (!reference || !samePixels(current, reference)) {
       reference = current;
       stableSince = frame.capturedAt;
-    } else if (frame.capturedAt - stableSince >= 250) stable = current;
+    } else if (frame.capturedAt - stableSince >= 250) { stable = current; stableMasks = masks; }
   }
   expect(stable, '提示存在期间全部未遮罩像素必须连续稳定至少 250 毫秒').toBeDefined();
   await testInfo.attach(name, { body: stable!, contentType: 'image/png' });
-  expect.soft(stable!).toMatchSnapshot(`${name}.png`);
+  await expectScreenshot(stable!, name, testInfo, stableMasks);
 }
 
 /**
