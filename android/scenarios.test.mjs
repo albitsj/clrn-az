@@ -46,6 +46,18 @@ test('原生传输复用 Web 的动态 URL、商品和国家夹具，真实认�
 });
 
 
+test('登录准备、普通页面、牌桌和战绩路由均不覆盖任何节点选线请求', async () => {
+  for (const options of [{}, { realPrivateRoom: true }, { recordFixtures: true }]) {
+    const route = await visualNetworkRouter(options);
+    for (const host of ['api.shafayouxi.org', '64.kr-seoul.api.staging.laiwan.shafayouxi.com',
+      '67.hk.api.staging.laiwan.shafayouxi.com', '68.kr.api.staging.laiwan.shafayouxi.com']) {
+      for (const endpoint of ['/public/v12/metadata/servers', '/public/v13/metadata/servers', '/node/v1/status']) {
+        assert.equal(await route(`https://${host}${endpoint}?probe=real`), null);
+      }
+    }
+  }
+});
+
 test('业务分组完整分割清单且没有重复或遗漏', () => {
   const combined = ['guest', 'account', 'social', 'rooms', 'wallet-help']
     .flatMap(group => androidScenarios('en', group).map(scenario => scenario.pageLabel));

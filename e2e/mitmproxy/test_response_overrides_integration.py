@@ -1,5 +1,7 @@
-"""四个真实 mitmdump 入口连接本机上游，离线验证响应覆盖和插件加载。"""
+"""真实 mitmdump 与 Android 夹具桥接连接本地上游，验证多节点结果完整透传。"""
 
+from contextlib import contextmanager
+import gzip
 import http.client
 import json
 import os
@@ -13,36 +15,131 @@ import time
 import unittest
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlsplit
-from response_overrides import PROXY_HOST, METADATA_PATH
 
 ROOT = Path(__file__).resolve().parents[2]
+HOSTS = ('64.kr-seoul.api.staging.laiwan.shafayouxi.com',
+         '67.hk.api.staging.laiwan.shafayouxi.com', '68.kr.api.staging.laiwan.shafayouxi.com')
+METADATA = ('/public/v12/metadata/servers', '/public/v13/metadata/servers')
+METADATA_QUERIES = ('', 'without-64', 'failed', 'non-json', 'gzip', 'api-error', 'changed-contract', 'empty')
+
+
+def upstream_result(url, method):
+    """构造与客户端选线输入相同的响应，不在测试中重写应用的选线算法。"""
+    parsed = urlsplit(url)
+    headers = {'Content-Type': 'application/json', 'X-Upstream': 'real', 'ETag': 'original',
+               'Access-Control-Allow-Origin': 'https://app.test',
+               'Access-Control-Allow-Headers': 'authorization', 'Vary': 'Origin'}
+    if method == 'OPTIONS':
+        return 204, headers, b''
+    if parsed.path in METADATA:
+        servers = {host: f'address-{index}' for index, host in enumerate(HOSTS)}
+        if parsed.query == 'without-64':
+            servers.pop(HOSTS[0])
+        if '/v12/' in parsed.path:
+            servers = list(servers)
+        body = {'ok': True, 'new_envelope': 42, 'result': {'servers': servers, 'new_field': True}}
+    else:
+        body = {'backend_delay': 1065 if parsed.hostname == HOSTS[0] else 37,
+                'server_load': 'normal', 'new_health': True}
+    if parsed.query == 'api-error':
+        body = {'ok': False, 'error': 'auth'}
+    elif parsed.query == 'changed-contract':
+        body = {'ok': True, 'result': []}
+    elif parsed.query == 'empty':
+        body = {'ok': True, 'result': {'servers': {}}}
+    status = 503 if parsed.query == 'failed' or parsed.hostname == HOSTS[2] else 200
+    raw = b'<html>Bad Gateway</html>' if parsed.query == 'non-json' else json.dumps(body).encode()
+    if parsed.query == 'gzip':
+        raw = gzip.compress(raw, mtime=0)
+        headers['Content-Encoding'] = 'gzip'
+    return status, headers, raw
 
 
 class Upstream(BaseHTTPRequestHandler):
     def do_GET(self):
-        url = urlsplit(self.path)
-        if url.path == METADATA_PATH:
-            servers = {PROXY_HOST: 'real-address', 'other': 'another-address'}
-            if url.query == 'changed':
-                servers = {'new-node': 'new-address'}
-            body = {'ok': True, 'new_envelope': 42, 'result': {'servers': servers, 'new_field': True}}
-        else:
-            body = {'backend_delay': 37, 'server_load': 'normal', 'new_health': True}
-        status = 503 if url.query == 'failed' else 200
+        status, headers, raw = upstream_result(self.path, self.command)
         self.send_response(status)
-        self.send_header('Content-Type', 'application/json')
-        self.send_header('X-Upstream', 'real')
-        self.send_header('Access-Control-Allow-Origin', 'https://app.test')
+        for name, value in headers.items():
+            self.send_header(name, value)
+        self.send_header('Content-Length', str(len(raw)))
         self.end_headers()
-        self.wfile.write(json.dumps(body).encode())
+        self.wfile.write(raw)
 
-    def do_OPTIONS(self):
-        self.send_response(204)
-        self.send_header('X-Upstream', 'real-preflight')
-        self.end_headers()
+    do_OPTIONS = do_GET
 
     def log_message(self, *_args):
         pass
+
+
+def free_port():
+    with socket.socket() as probe:
+        probe.bind(('127.0.0.1', 0))
+        return probe.getsockname()[1]
+
+
+def fetch(port, url, method='GET', body=None):
+    client = http.client.HTTPConnection('127.0.0.1', port, timeout=5)
+    try:
+        client.request(method, url, None if body is None else json.dumps(body),
+                       {'X-E2E-Control-Token': 'offline-token', 'Content-Type': 'application/json',
+                        'Authorization': 'offline-fixture-token', 'Origin': 'https://app.test',
+                        'Access-Control-Request-Headers': 'authorization'})
+        response = client.getresponse()
+        return response.status, {key.lower(): value for key, value in response.getheaders()}, response.read()
+    finally:
+        client.close()
+
+
+@contextmanager
+def running(command, port, url, environment, method='GET', body=None):
+    """有界等待真实服务启动；失败时保留子进程日志，所有退出路径清理。"""
+    with tempfile.TemporaryFile() as logs:
+        process = subprocess.Popen(command, cwd=ROOT, env=environment, stdout=logs, stderr=logs)
+        try:
+            deadline = time.monotonic() + 15
+            while True:
+                try:
+                    status, _, _ = fetch(port, url, method, body)
+                    if status != 200:
+                        raise OSError(f'Startup returned {status}')
+                    break
+                except OSError:
+                    if process.poll() is not None or time.monotonic() >= deadline:
+                        logs.seek(0)
+                        raise AssertionError('Service startup failed: ' + logs.read().decode()[-4000:])
+                    time.sleep(0.1)
+            yield
+        finally:
+            process.terminate()
+            try:
+                process.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                process.kill()
+                process.wait(timeout=5)
+
+
+@contextmanager
+def native_fixtures():
+    """运行生产 visualNetworkRouter，经真实 HTTP 查询而非替换 fixture_response。"""
+    port = free_port()
+    source = """
+        import { createServer } from 'node:http';
+        import { visualNetworkRouter } from './android/network-routes.ts';
+        const route = await visualNetworkRouter();
+        createServer(async (request, response) => {
+            if (request.headers.authorization !== 'offline-fixture-token') {
+                response.writeHead(403).end(); return;
+            }
+            let body = '';
+            for await (const chunk of request) body += chunk;
+            response.setHeader('Content-Type', 'application/json');
+            response.end(JSON.stringify(await route(JSON.parse(body).url)));
+        }).listen(Number(process.env.FIXTURE_TEST_PORT), '127.0.0.1');
+    """
+    with running(['node', '--import', 'tsx', '--input-type=module', '-e', source], port, '/',
+                 {**os.environ, 'FIXTURE_TEST_PORT': str(port)}, 'POST',
+                 {'url': 'https://api.shafayouxi.org/node/v1/status'}):
+        yield f'http://127.0.0.1:{port}/'
 
 
 class LiveOverrideTests(unittest.TestCase):
@@ -52,76 +149,61 @@ class LiveOverrideTests(unittest.TestCase):
         worker.start()
         try:
             for addon in ('e2e/mitmproxy/network_faults.py',
+                          'visual/cases/club/mitmproxy/addon.py',
                           'visual/cases/texas-holdem/mitmproxy/addon.py',
                           'visual/cases/zhajinhua/mitmproxy/addon.py',
                           'visual/cases/game-record/mitmproxy/addon.py'):
                 with self.subTest(addon=addon):
                     self.check_addon(upstream.server_port, addon)
+            with native_fixtures() as fixture_url:
+                for game, records in (('', 'false'), ('texas-holdem', 'false'),
+                                      ('zhajinhua', 'false'), ('', 'true')):
+                    with self.subTest(native_game=game, records=records):
+                        self.check_addon(upstream.server_port, 'android/proxy-addon.py', {
+                            'ANDROID_GAME': game, 'ANDROID_RECORDS': records,
+                            'ANDROID_FIXTURE_URL': fixture_url, 'ANDROID_FIXTURE_TOKEN': 'offline-fixture-token',
+                        })
         finally:
             upstream.shutdown()
             upstream.server_close()
             worker.join(timeout=5)
 
-    def check_addon(self, upstream_port, addon):
-        with socket.socket() as probe:
-            probe.bind(('127.0.0.1', 0))
-            port = probe.getsockname()[1]
+    def check_addon(self, upstream_port, addon, native=None):
+        port = free_port()
         executable = Path(sys.executable).with_name('mitmdump')
-        with tempfile.TemporaryDirectory() as directory, tempfile.TemporaryFile() as logs:
-            process = subprocess.Popen([str(executable), '--listen-host', '127.0.0.1',
-                '--listen-port', str(port), '--mode', f'upstream:http://127.0.0.1:{upstream_port}',
-                '--set', f'confdir={directory}', '--set', 'connection_strategy=lazy',
-                '--set', 'flow_detail=0', '-s', str(ROOT / addon)],
-                env={**os.environ, 'MITMPROXY_CONTROL_TOKEN': 'offline-token'}, stdout=logs, stderr=logs)
-            try:
-                deadline = time.monotonic() + 15
-                while True:
-                    try:
-                        status, _, _ = self.fetch(port, 'http://test-mitmproxy.invalid/status')
-                        self.assertEqual(status, 200)
-                        break
-                    except OSError:
-                        if process.poll() is not None or time.monotonic() >= deadline:
-                            logs.seek(0)
-                            self.fail('mitmdump startup failed: ' + logs.read().decode()[-2000:])
-                        time.sleep(0.1)
-                self.fetch(port, 'http://test-mitmproxy.invalid/scenario', 'POST', {'scenario': 'visual-stable'})
-                metadata = 'http://api.shafayouxi.org' + METADATA_PATH
-                status, headers, body = self.fetch(port, metadata)
-                self.assertEqual(status, 200)
-                self.assertEqual(body, {'ok': True, 'new_envelope': 42, 'result': {
-                    'servers': {PROXY_HOST: 'real-address'}, 'new_field': True}})
-                self.assertEqual(headers['x-upstream'], 'real')
-                self.assertEqual(headers['access-control-allow-origin'], 'https://app.test')
-                self.assertEqual(self.fetch(port, metadata + '?failed')[0], 503)
-                self.assertEqual(self.fetch(port, metadata + '?changed')[2]['result']['servers'],
-                                 {'new-node': 'new-address'})
-                health = f'http://{PROXY_HOST}/node/v1/status'
-                self.assertEqual(self.fetch(port, health)[2], {
-                    'backend_delay': 37, 'server_load': 'normal', 'new_health': True})
-                self.assertEqual(self.fetch(port, health + '?failed')[0], 503)
-                for url in (metadata, health):
-                    status, headers, _ = self.fetch(port, url, 'OPTIONS')
-                    self.assertEqual(status, 204)
-                    self.assertEqual(headers['x-upstream'], 'real-preflight')
-            finally:
-                process.terminate()
-                try:
-                    process.wait(timeout=5)
-                except subprocess.TimeoutExpired:
-                    process.kill()
-                    process.wait(timeout=5)
+        environment = {**os.environ, 'MITMPROXY_CONTROL_TOKEN': 'offline-token',
+                       'ANDROID_GAME': '', 'ANDROID_RECORDS': 'false', 'ANDROID_MATCHING': 'false',
+                       'ANDROID_SLOT': 'false', 'ANDROID_SKELETON': 'false', 'ANDROID_INVITABLE': 'false',
+                       **(native or {})}
+        with tempfile.TemporaryDirectory() as directory, running(
+                [str(executable), '--listen-host', '127.0.0.1', '--listen-port', str(port),
+                 '--mode', f'upstream:http://127.0.0.1:{upstream_port}', '--set', f'confdir={directory}',
+                 '--set', 'connection_strategy=lazy', '--set', 'flow_detail=0', '-s', str(ROOT / addon)],
+                port, 'http://test-mitmproxy.invalid/status', environment):
+            # 登录准备（未启用业务场景）及正常视觉都不覆盖选线。
+            if native is None:
+                self.assert_passthrough(port)
+                self.assertEqual(fetch(port, 'http://test-mitmproxy.invalid/scenario', 'POST',
+                                       {'scenario': 'visual-stable'})[0], 200)
+            self.assert_passthrough(port)
+            if native is not None:
+                _, _, raw = fetch(port, 'http://api.shafayouxi.org/public/v10/profile/country')
+                self.assertEqual(json.loads(raw)['result']['countryPhoneCode'], '86', '业务夹具仍应生效')
 
-    def fetch(self, port, url, method='GET', body=None):
-        client = http.client.HTTPConnection('127.0.0.1', port, timeout=3)
-        try:
-            client.request(method, url, None if body is None else json.dumps(body),
-                           {'X-E2E-Control-Token': 'offline-token', 'Content-Type': 'application/json'})
-            response = client.getresponse()
-            raw = response.read()
-            return response.status, {key.lower(): value for key, value in response.getheaders()}, json.loads(raw) if raw else None
-        finally:
-            client.close()
+    def assert_passthrough(self, port):
+        urls = [f'http://api.shafayouxi.org{path}?{query}' for path in METADATA
+                for query in METADATA_QUERIES]
+        urls += [f'http://{host}/node/v1/status?{query}' for host in HOSTS
+                 for query in ('', 'failed', 'non-json', 'gzip')]
+        for url in urls:
+            for method in ('GET', 'OPTIONS'):
+                with self.subTest(url=url, method=method):
+                    status, headers, raw = fetch(port, url, method)
+                    expected_status, expected_headers, expected_raw = upstream_result(url, method)
+                    self.assertEqual(status, expected_status)
+                    self.assertEqual(raw, expected_raw, '必须保留所有候选、健康指标、错误和原始压缩字节')
+                    for key, value in expected_headers.items():
+                        self.assertEqual(headers[key.lower()], value)
 
 
 if __name__ == '__main__':

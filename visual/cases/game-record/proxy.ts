@@ -51,13 +51,13 @@ export class RecordProxy {
 
 export const test = base.extend<{ recordProxy: RecordProxy }>({
   /**
-   * 启动战绩专用代理并启用固定网络场景，案例结束后清理资源。
+   * 启动战绩专用代理并启用业务夹具，案例结束后清理资源。
    * @param fixtures - Playwright 注入的依赖，提供当前页面、上下文或已有代理。
    * @param use - 将准备好的 fixture 交给案例使用的回调。
    */
   recordProxy: async ({}, use) => {
     await withMitmproxy(async proxy => {
-      await proxy.stabilizeVisualNetwork();
+      await proxy.enableVisualFixtures();
       await use(new RecordProxy(proxy));
     }, { addonPath: path.resolve(__dirname, 'mitmproxy/addon.py') });
   },

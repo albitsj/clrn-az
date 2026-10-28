@@ -2,7 +2,7 @@ import { test as base, expect } from '@playwright/test';
 import { buildScenarios } from '../../visual/scenarios';
 import { deletePrivateGameRoom, type RoomSession } from '../../visual/cases/_shared/room';
 import { withAndroidProxy } from '../proxy';
-import { launchApplication, waitForHall } from '../device';
+import { artifacts, launchApplication, waitForHall } from '../device';
 import { selectLanguage, signIn } from '../navigation';
 import { captureFailure } from '../diagnostics';
 import { createGameRoom, gameSession } from '../game-room';
@@ -113,9 +113,17 @@ for (const [suite, game] of [['texas', 'texas-holdem'], ['zhajinhua', 'zhajinhua
             throw error;
           } finally {
             try {
-              // 即使创建按钮后的导航失败，也从本轮响应登记中找回房间并清理。
-              room ||= (await gameSession(proxy)).room;
-              ownedRoom.value ||= room;
+              try {
+                await testInfo.attach('network-selection', {
+                  body: JSON.stringify(await proxy.command('android/network-selection')),
+                  contentType: 'application/json',
+                });
+                await testInfo.attach('build-info', { path: `${artifacts}/build-info.json`, contentType: 'application/json' });
+              } finally {
+                // 即使创建按钮后的导航失败，也从本轮响应登记中找回房间并清理。
+                room ||= (await gameSession(proxy)).room;
+                ownedRoom.value ||= room;
+              }
             } finally { await device.close(); }
           }
         }, game);
