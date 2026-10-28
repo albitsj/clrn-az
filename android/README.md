@@ -72,6 +72,8 @@ ANDROID_SERIAL=emulator-5554 ANDROID_GROUP=guest ANDROID_LOCALE=en node scripts/
 
 下载器只读取当前提交的 `deployments/staging.json`，按其中的 `release_tag` 下载 `android-staging.apk`。下载后核对构建环境、应用标识、完整应用提交、架构、附件大小和 SHA-256；安装前再次校验部署记录与 APK，安装后检查版本。指定 Release 缺少附件会直接失败。每次报告附带 `build-info.json`，用于确认实际测试的应用提交。
 
+发布信息查询与附件下载遇到连接中断、域名解析失败、超时或 HTTP 408/500/502/503/504 时，分别等待 3、6、12、24、30 秒，最多尝试六次。两个附件串行下载，已完成的文件保留，失败附件重试时覆盖不完整文件；日志隐藏带签名的下载地址。认证、权限、附件缺失及最终完整性校验失败仍直接报错，不启动视觉测试。
+
 ## GitHub Actions
 
 工作流为 `Android Staging 视觉回归`，维护在 `albitsj/clrn-az` 的 `master`。应用仓库 master 完成 APK 上传及远端校验后，使用现有 Woodpecker 发布凭据向本仓库的 `deployments/staging.json` 提交记录：`environment`、`sha`、`deployed_at` 与 H5 协议一致，`release_tag` 锁定 APK。master 推送、PR、每日定时任务和手动任务都按当前检出提交的 JSON 下载标签，并核对 `build-info.json` 的完整应用提交。草稿 PR 只运行仓库检查，标记为可审查后再运行完整模拟器矩阵。
