@@ -1,0 +1,144 @@
+{
+  "showdown": {
+    "stream": "zhajinhua",
+    "queue": [
+      {
+        "event": "showdown",
+        "players": [
+          {
+            "player_id": "$self",
+            "hole_card": [
+              "as",
+              "ad",
+              "ac"
+            ],
+            "hand_strength": "three_of_a_kind",
+            "is_winner": true
+          },
+          {
+            "player_id": "00000000-0000-4000-8000-000000000001",
+            "hole_card": [
+              "kh",
+              "ks",
+              "qd"
+            ],
+            "hand_strength": "pair",
+            "is_winner": false
+          }
+        ]
+      }
+    ]
+  },
+  "settlement": {
+    "stream": "zhajinhua",
+    "queue": [
+      {
+        "event": "settlement",
+        "players": [
+          {
+            "player_id": "$self",
+            "net": 120,
+            "prize": 120,
+            "stack": 1120
+          },
+          {
+            "player_id": "00000000-0000-4000-8000-000000000001",
+            "net": -40,
+            "prize": 0,
+            "stack": 920
+          }
+        ]
+      }
+    ]
+  },
+  "see-cards": {
+    "stream": "zhajinhua",
+    "queue": [
+      {
+        "event": "see_hole_card",
+        "player_id": "$self"
+      },
+      {
+        "event": "obtain_hole_card",
+        "hole_card": [
+          "as",
+          "ad",
+          "ac"
+        ],
+        "hand_strength": "three_of_a_kind"
+      },
+      {
+        "event": "player_bets",
+        "valid_bets": {
+          "fold": {},
+          "call": {
+            "amount": 20
+          },
+          "challenge": {
+            "amount": 40
+          },
+          "raise": {
+            "minimum": 40,
+            "maximum": 200,
+            "step": 20
+          },
+          "all_in": {
+            "amount": 1000
+          }
+        }
+      }
+    ]
+  },
+  "raise": {
+    "stream": "zhajinhua",
+    "queue": [
+      {
+        "event": "raise",
+        "player_id": "$self",
+        "amount": 40,
+        "stack": 960
+      },
+      {
+        "event": "pot_update",
+        "pot_amount": 160
+      }
+    ]
+  },
+  "sticker": {
+    "stream": "room_message",
+    "payload": {
+      "action": "sticker",
+      "content": {
+        "from_user_id": "$self",
+        "to_user_id": "00000000-0000-4000-8000-000000000002",
+        "file": "$file"
+      }
+    }
+  },
+  "props": {
+    "stream": "room_message",
+    "payload": {
+      "action": "props",
+      "content": {
+        "from_user_id": "$self",
+        "to_user_id": "00000000-0000-4000-8000-000000000002",
+        "file": "$file"
+      }
+    }
+  },
+  "new-game": {
+    "stream": "zhajinhua",
+    "queue": [
+      {
+        "event": "new_game",
+        "game_id": "visual-feedback-zhajinhua-game",
+        "settings": {
+          "boot": 1,
+          "raise_times": 10,
+          "max_round": 20,
+          "pot_limit": 2000
+        }
+      }
+    ]
+  }
+}
