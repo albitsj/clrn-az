@@ -75,8 +75,9 @@ async function mockProxyMetadata(context: BrowserContext): Promise<void> {
 }
 
 /**
- * 固定代理节点健康检查。只有 VISUAL_PROXY_HOST 返回正常；其余本地候选节点明确
- * 返回不可用，保证启动测速与后台 metadata 刷新都不会随机选中已断连的节点。
+ * 固定代理节点健康检查。只有 VISUAL_PROXY_HOST 返回正常；其余本地候选节点以
+ * 成功的健康检查响应报告不可用，避免请求层把 503 显示为启动错误弹窗。
+ * 节点选择仍会拒绝 server_load 不为 normal 的候选节点。
  * @param context - 首次导航前配置的浏览器上下文。
  */
 async function mockProxyHealthChecks(context: BrowserContext): Promise<void> {
@@ -84,7 +85,7 @@ async function mockProxyHealthChecks(context: BrowserContext): Promise<void> {
     const hostname = new URL(route.request().url()).hostname;
     const selected = hostname === VISUAL_PROXY_HOST;
     return route.fulfill({
-      status: selected ? 200 : 503,
+      status: 200,
       contentType: 'application/json',
       body: JSON.stringify(
         selected

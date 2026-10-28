@@ -7,12 +7,14 @@ import os
 import re
 import sys
 from pathlib import Path
-import urllib.request
 from urllib.parse import urlsplit
 from mitmproxy import ctx, http
 from presentation import AccountPresentation
+from club_search_fixture import ClubSearchFixture
+from username_lookup import username_lookup_response
 from game_session import GameSession
 from launch_network import LaunchNetwork
+from fixture_bridge import fixture_response
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'e2e/mitmproxy'))
 from response_overrides import is_staging
 
@@ -21,6 +23,7 @@ class AndroidVisualProxy:
     def __init__(self):
         self.launch = LaunchNetwork()
         self.presentation = AccountPresentation()
+        self.club_search_fixture = ClubSearchFixture()
         self.records = None
         self.game = None
         self.game_session = None
@@ -156,6 +159,33 @@ class AndroidVisualProxy:
         if await self.launch.request(flow):
             return
         path = urlsplit(flow.request.path).path
+        if self.game:
+            lookup = username_lookup_response(flow.request, os.environ.get('VISUAL_USERNAME'))
+            if lookup is not None:
+                flow.response = http.Response.make(200, json.dumps(lookup).encode(),
+                                                   {'Content-Type': 'application/json'})
+                return
+        if flow.request.host == 'test-mitmproxy.invalid' and path == '/android/club-search':
+            if flow.request.headers.get('X-E2E-Control-Token') != os.environ['MITMPROXY_CONTROL_TOKEN']:
+                flow.response = http.Response.make(403, '无权访问'.encode())
+                return
+            if flow.request.method == 'POST':
+                try:
+                    self.club_search_fixture.configure(json.loads(flow.request.content)['active'])
+                except (ValueError, KeyError, TypeError):
+                    flow.response = http.Response.make(400, '俱乐部搜索配置无效'.encode())
+                    return
+            elif flow.request.method != 'GET':
+                flow.response = http.Response.make(405, '请求方法不受支持'.encode())
+                return
+            flow.response = http.Response.make(200, json.dumps(self.club_search_fixture.status()).encode(),
+                                               {'Content-Type': 'application/json'})
+            return
+        club_search_response = self.club_search_fixture.response_for(flow.request)
+        if club_search_response is not None:
+            flow.response = http.Response.make(200, json.dumps(club_search_response).encode(),
+                                               {'Content-Type': 'application/json'})
+            return
         if flow.request.host == 'test-mitmproxy.invalid' and path == '/native/club-rooms':
             if flow.request.headers.get('X-E2E-Control-Token') != os.environ['MITMPROXY_CONTROL_TOKEN']:
                 flow.response = http.Response.make(403, b'Forbidden')
@@ -315,12 +345,8 @@ class AndroidVisualProxy:
             return
         if flow.request.method == 'CONNECT':
             return
-        payload = json.dumps({'url': flow.request.pretty_url}).encode()
-        request = urllib.request.Request(os.environ['ANDROID_FIXTURE_URL'], data=payload,
-            headers={'Content-Type': 'application/json',
-                     'Authorization': os.environ['ANDROID_FIXTURE_TOKEN']})
-        with urllib.request.urlopen(request, timeout=10) as response:
-            result = json.load(response)
+        result = await fixture_response(flow.request.pretty_url, os.environ['ANDROID_FIXTURE_URL'],
+                                        os.environ['ANDROID_FIXTURE_TOKEN'])
         if result is None:
             return
         if result.get('aborted'):

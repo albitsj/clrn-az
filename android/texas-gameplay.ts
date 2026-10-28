@@ -288,7 +288,15 @@ export async function texasGameplay(device: AndroidDevice, proxy: Mitmproxy, roo
     await gameReady(device, 'PlayerStatisticComponent_Item_Value_0');
   };
   await profile(self);
-  await capture('own_profile');
+  for (let attempt = 0; attempt < 2; attempt++) {
+    await gameConnected(device, 2_000);
+    try { await capture('own_profile'); break; }
+    catch (error) {
+      // 只在真实重连遮罩打断稳定截图时重拍同一资料页，仍须通过原有像素比较。
+      const reconnecting = (await gameNodes(device)).some(node => /Connecting\.\.\./.test(node.text || ''));
+      if (attempt || !reconnecting || !String(error).includes('页面像素必须保持稳定')) throw error;
+    }
+  }
   await animateGamePanel(device, 'texas-holdem', 'own-profile', 'player-profile-popup-close',
     { x: 180, y: 90, width: 520, height: 500 }, animationInfo,
     'exit', 'videoFrames', ownProfileMasks,

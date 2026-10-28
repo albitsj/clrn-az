@@ -155,6 +155,24 @@ class ZhajinhuaReplayTests(unittest.TestCase):
         self.replay.websocket_message(self.socket)
         self.assertFalse(injected.dropped)
 
+    def test_固定对局隔离本房间两个游戏频道并保留其他消息(self):
+        with patch('zhajinhua_replay.ctx.master', create=True):
+            self.replay.publish(ROOM, {})
+        own_public = {'result': {'type': 0, 'channel': f'zhajinhua|{ROOM}'}}
+        own_personal = {'result': {'type': 0, 'channel': CHANNEL}}
+        other_public = {'result': {'type': 0, 'channel': f'zhajinhua|{OTHER}'}}
+        chat = {'result': {'type': 0, 'channel': f'room_message|{ROOM}'}}
+        reply = {'id': 12, 'result': {'data': {}}}
+        unsubscribe = {'result': {'type': 3, 'channel': f'zhajinhua|{ROOM}'}}
+        observed = message(self.socket, [own_public, other_public, own_personal, chat, reply, unsubscribe], False)
+        self.replay.websocket_message(self.socket)
+        self.assertEqual([json.loads(line) for line in observed.text.splitlines()],
+                         [other_public, chat, reply, unsubscribe])
+        self.replay.release()
+        restored = message(self.socket, [own_public], False)
+        self.replay.websocket_message(self.socket)
+        self.assertFalse(restored.dropped)
+
     def test_profiles_are_scoped_and_release_clears_fixtures(self):
         self.replay.room_id = ROOM
         self.replay.self_id = SELF

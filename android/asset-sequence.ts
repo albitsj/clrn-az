@@ -28,8 +28,8 @@ export async function captureAssetSequence(device: AndroidDevice, name: string, 
    */
   const crop = (bytes: Buffer) => motionParts(bytes, [region]).regions[0];
   await gameConnected(device, 1_000);
-  const beforeScreen = await gameScreenshot(device);
-  const before = crop(beforeScreen);
+  let beforeScreen = await gameScreenshot(device);
+  let before = crop(beforeScreen);
   const implementation = (device as unknown as { _connection: { toImpl(device: AndroidDevice): {
     _send(method: string): Promise<NativeFrame[]> } } })._connection.toImpl(device);
   let screens: Buffer[] = [];
@@ -46,8 +46,13 @@ export async function captureAssetSequence(device: AndroidDevice, name: string, 
     visible = timeline.map((frame, index) => ({ frame, index, distance: frameColorDistance(before, frame) }))
       .filter(item => item.distance > 2);
     if (visible.length >= 2 || attempt) break;
+    // 消息到达后短时采样可能先于原生素材绘制；保留原画面，再重新触发同一效果。
+    await info.attach(`${name}-首次未显示`, { body: screens.at(-1)!, contentType: 'image/png' });
+    await setTimeout(2500);
     await gameConnected(device, 2_000);
-    expect(samePixels(before, crop(await gameScreenshot(device))), `${name} 重试前画面必须恢复`).toBe(true);
+    beforeScreen = await gameScreenshot(device);
+    expect(samePixels(before, crop(beforeScreen)), `${name} 重新触发前须恢复静态画面`).toBe(true);
+    before = crop(beforeScreen);
   }
   expect(visible.length, `${name} 必须在屏幕上实际出现`).toBeGreaterThanOrEqual(2);
   const peak = visible.reduce((best, item) => item.distance > best.distance ? item : best);
