@@ -1,0 +1,14 @@
+[
+  {
+    "tool": "dependency-cruiser",
+    "rule": "no-circular",
+    "cycle": ["android/device.ts", "android/keyboard.ts"],
+    "reason": "现有设备初始化调用收起键盘，而键盘工具复用设备 adb；仅保留这两个模块的既有环，后续将 adb 下沉到独立设备传输模块。"
+  },
+  {
+    "tool": "dependency-cruiser",
+    "rule": "no-circular",
+    "cycle": ["android/caret-mask.ts", "android/screenshot.ts"],
+    "reason": "既有截图模块调用光标检测，光标检测反向引用截图类型；仅保留该类型环，后续将共用几何类型下沉，不改变像素比较或遮罩。"
+  }
+]

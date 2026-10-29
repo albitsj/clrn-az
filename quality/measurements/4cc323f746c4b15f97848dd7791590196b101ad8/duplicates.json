@@ -1,0 +1,1796 @@
+{
+  "duplicates": [
+    {
+      "firstFile": {
+        "end": 11,
+        "endLoc": {
+          "column": 7,
+          "line": 11,
+          "position": 383
+        },
+        "name": "android/asset-sequence.test.mjs",
+        "start": 2,
+        "startLoc": {
+          "column": 9,
+          "line": 2,
+          "position": 50
+        }
+      },
+      "format": "javascript",
+      "fragment": "import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';\nimport { createRequire } from 'node:module';\nimport { tmpdir } from 'node:os';\nimport path from 'node:path';\nimport test from 'node:test';\nimport { fileURLToPath } from 'node:url';\nimport { PNG } from 'pngjs';\n\nconst require = createRequire(import.meta.url);\nconst { captureAssetSequence } = require('./asset-sequence.ts');",
+      "isNew": true,
+      "lines": 10,
+      "secondFile": {
+        "end": 12,
+        "endLoc": {
+          "column": 7,
+          "line": 12,
+          "position": 442
+        },
+        "name": "android/screenshot-policy.test.mjs",
+        "start": 3,
+        "startLoc": {
+          "column": 20,
+          "line": 3,
+          "position": 109
+        }
+      },
+      "tokens": 63
+    },
+    {
+      "firstFile": {
+        "end": 103,
+        "endLoc": {
+          "column": 5,
+          "line": 103,
+          "position": 5157
+        },
+        "name": "android/game-pregame.ts",
+        "start": 98,
+        "startLoc": {
+          "column": 40,
+          "line": 98,
+          "position": 4895
+        }
+      },
+      "format": "typescript",
+      "fragment": "      try { await capture(state); return; }\n      catch (error) {\n        const reconnecting = (await gameNodes(device)).some(node => /Connecting\\.\\.\\./.test(node.text || ''));\n        if (attempt || !reconnecting || !String(error).includes('页面像素必须保持稳定')) throw error;\n      }\n    }",
+      "isNew": true,
+      "lines": 6,
+      "secondFile": {
+        "end": 273,
+        "endLoc": {
+          "column": 3,
+          "line": 273,
+          "position": 15900
+        },
+        "name": "android/texas-gameplay.ts",
+        "start": 267,
+        "startLoc": {
+          "column": 45,
+          "line": 267,
+          "position": 15536
+        }
+      },
+      "tokens": 57
+    },
+    {
+      "firstFile": {
+        "end": 168,
+        "endLoc": {
+          "column": 7,
+          "line": 168,
+          "position": 9185
+        },
+        "name": "android/game-pregame.ts",
+        "start": 163,
+        "startLoc": {
+          "column": 76,
+          "line": 163,
+          "position": 8843
+        }
+      },
+      "format": "typescript",
+      "fragment": "      const renewalReady = state === 'renew' && animationInfo ? async () => {\n        await expect.poll(async () => (await gameReady(device, 'renew-popup-remain-diamond')).text?.trim(),\n          { timeout: 45_000 }).toBe(presentation.balance);\n        await expect.poll(async () => Number((await gameReady(device, 'renew-popup-spend-diamond')).text?.trim()),\n          { timeout: 45_000 }).toBeGreaterThan(0);\n      } : undefined;",
+      "isNew": true,
+      "lines": 6,
+      "secondFile": {
+        "end": 183,
+        "endLoc": {
+          "column": 7,
+          "line": 183,
+          "position": 10212
+        },
+        "name": "android/game-pregame.ts",
+        "start": 177,
+        "startLoc": {
+          "column": 29,
+          "line": 177,
+          "position": 9759
+        }
+      },
+      "tokens": 81
+    },
+    {
+      "firstFile": {
+        "end": 41,
+        "endLoc": {
+          "column": 7,
+          "line": 41,
+          "position": 1788
+        },
+        "name": "android/loop-keyframes.ts",
+        "start": 36,
+        "startLoc": {
+          "column": 46,
+          "line": 36,
+          "position": 1506
+        }
+      },
+      "format": "typescript",
+      "fragment": "  regions: ScreenshotBounds[], maxAttempts = 1): Promise<void> {\n  requireEnglishAnimation();\n  expect(regions.length).toBeGreaterThan(0);\n  const implementation = (device as unknown as { _connection: { toImpl(device: AndroidDevice): {\n    _send(method: string): Promise<NativeFrame[]> } } })._connection.toImpl(device);\n  const timeline: NativeFrame[] = [];",
+      "isNew": true,
+      "lines": 6,
+      "secondFile": {
+        "end": 98,
+        "endLoc": {
+          "column": 7,
+          "line": 98,
+          "position": 5451
+        },
+        "name": "android/loop-keyframes.ts",
+        "start": 93,
+        "startLoc": {
+          "column": 46,
+          "line": 93,
+          "position": 5169
+        }
+      },
+      "tokens": 69
+    },
+    {
+      "firstFile": {
+        "end": 125,
+        "endLoc": {
+          "column": 30,
+          "line": 125,
+          "position": 6068
+        },
+        "name": "android/proxy-addon.py",
+        "start": 115,
+        "startLoc": {
+          "column": 21,
+          "line": 115,
+          "position": 5437
+        }
+      },
+      "format": "python",
+      "fragment": "        if self.slot and flow.websocket:\n            message = flow.websocket.messages[-1]\n            if message.from_client and message.is_text and not message.injected:\n                try:\n                    frames = [json.loads(line) for line in message.text.splitlines() if line]\n                except (ValueError, TypeError):\n                    frames = []\n                blocked = [frame for frame in frames if isinstance(frame, dict)\n                           and frame.get('method') == 9 and isinstance(frame.get('params'), dict)\n                           and isinstance(frame['params'].get('data'), dict)\n                           and re.fullmatch(r'/v2/slot_machine/user/[^/]+/(energy|spin)',",
+      "isNew": true,
+      "lines": 11,
+      "secondFile": {
+        "end": 155,
+        "endLoc": {
+          "column": 30,
+          "line": 155,
+          "position": 8015
+        },
+        "name": "android/proxy-addon.py",
+        "start": 145,
+        "startLoc": {
+          "column": 25,
+          "line": 145,
+          "position": 7384
+        }
+      },
+      "tokens": 118
+    },
+    {
+      "firstFile": {
+        "end": 133,
+        "endLoc": {
+          "column": 31,
+          "line": 133,
+          "position": 6557
+        },
+        "name": "android/proxy-addon.py",
+        "start": 126,
+        "startLoc": {
+          "column": 97,
+          "line": 126,
+          "position": 6225
+        }
+      },
+      "format": "python",
+      "fragment": "                                            str(frame['params']['data'].get('path'))) is not None]\n                if blocked:\n                    kept = [frame for frame in frames if frame not in blocked]\n                    if kept:\n                        message.content = '\\n'.join(json.dumps(frame) for frame in kept).encode()\n                    else:\n                        message.drop()\n                    replies = []",
+      "isNew": true,
+      "lines": 8,
+      "secondFile": {
+        "end": 162,
+        "endLoc": {
+          "column": 31,
+          "line": 162,
+          "position": 8406
+        },
+        "name": "android/proxy-addon.py",
+        "start": 155,
+        "startLoc": {
+          "column": 89,
+          "line": 155,
+          "position": 8074
+        }
+      },
+      "tokens": 54
+    },
+    {
+      "firstFile": {
+        "end": 251,
+        "endLoc": {
+          "column": 21,
+          "line": 251,
+          "position": 13640
+        },
+        "name": "android/proxy-addon.py",
+        "start": 245,
+        "startLoc": {
+          "column": 54,
+          "line": 245,
+          "position": 13313
+        }
+      },
+      "format": "python",
+      "fragment": "                and path == '/android/auto-rebuy-hold':\n            if flow.request.headers.get('X-E2E-Control-Token') != os.environ['MITMPROXY_CONTROL_TOKEN']:\n                flow.response = http.Response.make(403, b'Forbidden')\n                return\n            if flow.request.method == 'POST':\n                settings = json.loads(flow.request.content)\n                self.auto_rebuy_hold = settings.get('hold') is True",
+      "isNew": true,
+      "lines": 7,
+      "secondFile": {
+        "end": 292,
+        "endLoc": {
+          "column": 21,
+          "line": 292,
+          "position": 16552
+        },
+        "name": "android/proxy-addon.py",
+        "start": 286,
+        "startLoc": {
+          "column": 106,
+          "line": 286,
+          "position": 16225
+        }
+      },
+      "tokens": 61
+    },
+    {
+      "firstFile": {
+        "end": 103,
+        "endLoc": {
+          "column": 38,
+          "line": 103,
+          "position": 4925
+        },
+        "name": "android/proxy.ts",
+        "start": 96,
+        "startLoc": {
+          "column": 52,
+          "line": 96,
+          "position": 4581
+        }
+      },
+      "format": "typescript",
+      "fragment": "    try { if (reversePort) removeReverse(reversePort); }\n    catch (error) { failures.push(error); }\n  }\n  if (failures.length === 1) throw failures[0];\n  if (failures.length > 1) {\n    // Playwright 序列化 cause，但不保存 AggregateError.errors；消息也须列出全部失败。\n    const details = failures.map(error => String(error)).join('\\n');\n    throw new AggregateError(failures, `Android 代理会话失败；按发生顺序保留原始错误和清理错误。\\n${details}`,",
+      "isNew": true,
+      "lines": 8,
+      "secondFile": {
+        "end": 55,
+        "endLoc": {
+          "column": 38,
+          "line": 55,
+          "position": 2409
+        },
+        "name": "e2e/helpers/mitmproxy-session.ts",
+        "start": 49,
+        "startLoc": {
+          "column": 62,
+          "line": 49,
+          "position": 2172
+        }
+      },
+      "tokens": 66
+    },
+    {
+      "firstFile": {
+        "end": 137,
+        "endLoc": {
+          "column": 42,
+          "line": 137,
+          "position": 6672
+        },
+        "name": "android/test_ci_diagnostics.py",
+        "start": 131,
+        "startLoc": {
+          "column": 97,
+          "line": 131,
+          "position": 6358
+        }
+      },
+      "format": "python",
+      "fragment": "                patch.object(collector, 'sample', side_effect=OSError('final sample unavailable')), \\\n                patch('ci_diagnostics.os.kill') as kill, \\\n                patch('diagnostics_wrappers.restore') as restore:\n            self.assertEqual(stop(), 0)\n        kill.assert_called_once_with(12345, signal.SIGTERM)\n        restore.assert_called_once_with()\n        self.assertFalse(pidfile.exists())",
+      "isNew": true,
+      "lines": 7,
+      "secondFile": {
+        "end": 150,
+        "endLoc": {
+          "column": 42,
+          "line": 150,
+          "position": 7406
+        },
+        "name": "android/test_ci_diagnostics.py",
+        "start": 144,
+        "startLoc": {
+          "column": 77,
+          "line": 144,
+          "position": 7092
+        }
+      },
+      "tokens": 53
+    },
+    {
+      "firstFile": {
+        "end": 64,
+        "endLoc": {
+          "column": 27,
+          "line": 64,
+          "position": 3587
+        },
+        "name": "android/tests/animation-transitions.spec.ts",
+        "start": 57,
+        "startLoc": {
+          "column": 110,
+          "line": 57,
+          "position": 3312
+        }
+      },
+      "format": "typescript",
+      "fragment": "    || (process.env.ANDROID_LOCALE || 'en') !== 'en', '原生导航转场只在英文账号任务采集一次');\n  test.setTimeout(420_000);\n  await withAndroidProxy(async () => {\n    let device: AndroidDevice | undefined;\n    try {\n      device = await launchApplication({ gameDriver: true, enableSystemAnimations: true });\n      await waitForHall(device);\n      await signIn(device);",
+      "isNew": true,
+      "lines": 8,
+      "secondFile": {
+        "end": 135,
+        "endLoc": {
+          "column": 27,
+          "line": 135,
+          "position": 7786
+        },
+        "name": "android/tests/animation-transitions.spec.ts",
+        "start": 128,
+        "startLoc": {
+          "column": 104,
+          "line": 128,
+          "position": 7511
+        }
+      },
+      "tokens": 54
+    },
+    {
+      "firstFile": {
+        "end": 65,
+        "endLoc": {
+          "column": 11,
+          "line": 65,
+          "position": 3599
+        },
+        "name": "android/tests/animation-transitions.spec.ts",
+        "start": 57,
+        "startLoc": {
+          "column": 110,
+          "line": 57,
+          "position": 3312
+        }
+      },
+      "format": "typescript",
+      "fragment": "    || (process.env.ANDROID_LOCALE || 'en') !== 'en', '原生导航转场只在英文账号任务采集一次');\n  test.setTimeout(420_000);\n  await withAndroidProxy(async () => {\n    let device: AndroidDevice | undefined;\n    try {\n      device = await launchApplication({ gameDriver: true, enableSystemAnimations: true });\n      await waitForHall(device);\n      await signIn(device);\n      await tap(device, 'settings-tab');",
+      "isNew": true,
+      "lines": 9,
+      "secondFile": {
+        "end": 171,
+        "endLoc": {
+          "column": 11,
+          "line": 171,
+          "position": 9908
+        },
+        "name": "android/tests/animation-transitions.spec.ts",
+        "start": 163,
+        "startLoc": {
+          "column": 107,
+          "line": 163,
+          "position": 9621
+        }
+      },
+      "tokens": 55
+    },
+    {
+      "firstFile": {
+        "end": 65,
+        "endLoc": {
+          "column": 11,
+          "line": 65,
+          "position": 3599
+        },
+        "name": "android/tests/animation-transitions.spec.ts",
+        "start": 57,
+        "startLoc": {
+          "column": 110,
+          "line": 57,
+          "position": 3312
+        }
+      },
+      "format": "typescript",
+      "fragment": "    || (process.env.ANDROID_LOCALE || 'en') !== 'en', '原生导航转场只在英文账号任务采集一次');\n  test.setTimeout(420_000);\n  await withAndroidProxy(async () => {\n    let device: AndroidDevice | undefined;\n    try {\n      device = await launchApplication({ gameDriver: true, enableSystemAnimations: true });\n      await waitForHall(device);\n      await signIn(device);\n      await tap(device, 'settings-tab');",
+      "isNew": true,
+      "lines": 9,
+      "secondFile": {
+        "end": 207,
+        "endLoc": {
+          "column": 11,
+          "line": 207,
+          "position": 12039
+        },
+        "name": "android/tests/animation-transitions.spec.ts",
+        "start": 199,
+        "startLoc": {
+          "column": 107,
+          "line": 199,
+          "position": 11752
+        }
+      },
+      "tokens": 55
+    },
+    {
+      "firstFile": {
+        "end": 65,
+        "endLoc": {
+          "column": 23,
+          "line": 65,
+          "position": 3611
+        },
+        "name": "android/tests/animation-transitions.spec.ts",
+        "start": 57,
+        "startLoc": {
+          "column": 110,
+          "line": 57,
+          "position": 3312
+        }
+      },
+      "format": "typescript",
+      "fragment": "    || (process.env.ANDROID_LOCALE || 'en') !== 'en', '原生导航转场只在英文账号任务采集一次');\n  test.setTimeout(420_000);\n  await withAndroidProxy(async () => {\n    let device: AndroidDevice | undefined;\n    try {\n      device = await launchApplication({ gameDriver: true, enableSystemAnimations: true });\n      await waitForHall(device);\n      await signIn(device);\n      await tap(device, 'settings-tab');",
+      "isNew": true,
+      "lines": 9,
+      "secondFile": {
+        "end": 237,
+        "endLoc": {
+          "column": 23,
+          "line": 237,
+          "position": 13818
+        },
+        "name": "android/tests/animation-transitions.spec.ts",
+        "start": 228,
+        "startLoc": {
+          "column": 110,
+          "line": 228,
+          "position": 13425
+        }
+      },
+      "tokens": 59
+    },
+    {
+      "firstFile": {
+        "end": 120,
+        "endLoc": {
+          "column": 43,
+          "line": 120,
+          "position": 7078
+        },
+        "name": "android/tests/animation-transitions.spec.ts",
+        "start": 114,
+        "startLoc": {
+          "column": 63,
+          "line": 114,
+          "position": 6708
+        }
+      },
+      "format": "typescript",
+      "fragment": "      const cancel = await device.info({ res: 'cancel-button' });\n      expect(cancel.bounds.width).toBeGreaterThan(0);\n      /** 点击真实取消按钮，不直接卸载弹窗。 */\n      const pressCancel = () => adb('shell', 'input', 'tap',\n        String(Math.round(cancel.bounds.x + cancel.bounds.width / 2)),\n        String(Math.round(cancel.bounds.y + cancel.bounds.height / 2)));\n      await captureNativeTransition(device, 'search-confirmation-exit', testInfo, region,",
+      "isNew": true,
+      "lines": 7,
+      "secondFile": {
+        "end": 259,
+        "endLoc": {
+          "column": 43,
+          "line": 259,
+          "position": 15284
+        },
+        "name": "android/tests/animation-transitions.spec.ts",
+        "start": 253,
+        "startLoc": {
+          "column": 80,
+          "line": 253,
+          "position": 14899
+        }
+      },
+      "tokens": 80
+    },
+    {
+      "firstFile": {
+        "end": 18,
+        "endLoc": {
+          "column": 27,
+          "line": 18,
+          "position": 924
+        },
+        "name": "android/tests/club-skeleton-animation.spec.ts",
+        "start": 11,
+        "startLoc": {
+          "column": 113,
+          "line": 11,
+          "position": 646
+        }
+      },
+      "format": "typescript",
+      "fragment": "    || (process.env.ANDROID_LOCALE || 'en') !== 'en', '俱乐部骨架动画只在英文社交任务采集一次');\n  test.setTimeout(420_000);\n  await withAndroidProxy(async proxy => {\n    let device: AndroidDevice | undefined;\n    try {\n      device = await launchApplication({ gameDriver: true, enableSystemAnimations: true });\n      await waitForHall(device);\n      await signIn(device);",
+      "isNew": true,
+      "lines": 8,
+      "secondFile": {
+        "end": 24,
+        "endLoc": {
+          "column": 27,
+          "line": 24,
+          "position": 1282
+        },
+        "name": "android/tests/slot-animation.spec.ts",
+        "start": 17,
+        "startLoc": {
+          "column": 107,
+          "line": 17,
+          "position": 1004
+        }
+      },
+      "tokens": 53
+    },
+    {
+      "firstFile": {
+        "end": 7,
+        "endLoc": {
+          "column": 8,
+          "line": 7,
+          "position": 342
+        },
+        "name": "android/tests/launch-branding.spec.ts",
+        "start": 1,
+        "startLoc": {
+          "column": 0,
+          "line": 1,
+          "position": 0
+        }
+      },
+      "format": "typescript",
+      "fragment": "import { expect, test } from '@playwright/test';\nimport type { AndroidDevice } from 'playwright';\nimport { PNG } from 'pngjs';\nimport { adb, applicationId, artifacts, compareScreenshot, launchApplication, waitForHall } from '../device';\nimport { captureFailure } from '../diagnostics';\nimport { selectLanguage } from '../navigation';\nimport { dismissKeyboard } from '../keyboard';",
+      "isNew": true,
+      "lines": 7,
+      "secondFile": {
+        "end": 7,
+        "endLoc": {
+          "column": 8,
+          "line": 7,
+          "position": 342
+        },
+        "name": "android/tests/launch-pages.spec.ts",
+        "start": 1,
+        "startLoc": {
+          "column": 0,
+          "line": 1,
+          "position": 0
+        }
+      },
+      "tokens": 57
+    },
+    {
+      "firstFile": {
+        "end": 59,
+        "endLoc": {
+          "column": 47,
+          "line": 59,
+          "position": 3674
+        },
+        "name": "android/tests/launch-branding.spec.ts",
+        "start": 54,
+        "startLoc": {
+          "column": 28,
+          "line": 54,
+          "position": 3442
+        }
+      },
+      "format": "typescript",
+      "fragment": "        await assertBranding();\n        const picture = PNG.sync.read(bytes);\n        expect({ width: picture.width, height: picture.height }).toEqual({ width: 720, height: 1280 });\n        return bytes;\n      };\n      await compareScreenshot(device, `${locale}-launch-branding`, testInfo, [], undefined, fullScreen);",
+      "isNew": true,
+      "lines": 6,
+      "secondFile": {
+        "end": 35,
+        "endLoc": {
+          "column": 47,
+          "line": 35,
+          "position": 1887
+        },
+        "name": "android/tests/launch-pages.spec.ts",
+        "start": 30,
+        "startLoc": {
+          "column": 46,
+          "line": 30,
+          "position": 1655
+        }
+      },
+      "tokens": 57
+    },
+    {
+      "firstFile": {
+        "end": 201,
+        "endLoc": {
+          "column": 9,
+          "line": 201,
+          "position": 11867
+        },
+        "name": "android/texas-gameplay.ts",
+        "start": 196,
+        "startLoc": {
+          "column": 9,
+          "line": 196,
+          "position": 11506
+        }
+      },
+      "format": "typescript",
+      "fragment": "    else await send(settlement);\n    // 摊牌时余额被牌型标签替代；余额语义标记仍附在当前可见玩家容器内。\n    await expect.poll(async () => gameSemanticText((await gameNodes(device))\n      .find(node => node.res === `texas-holdem-player-container-${self}`), 'text-holdem-own-balance-text'),\n    { timeout: 30_000 }).toBe('1180');\n    await capture('settlement');",
+      "isNew": true,
+      "lines": 6,
+      "secondFile": {
+        "end": 215,
+        "endLoc": {
+          "column": 3,
+          "line": 215,
+          "position": 12558
+        },
+        "name": "android/texas-gameplay.ts",
+        "start": 211,
+        "startLoc": {
+          "column": 4,
+          "line": 211,
+          "position": 12307
+        }
+      },
+      "tokens": 53
+    },
+    {
+      "firstFile": {
+        "end": 225,
+        "endLoc": {
+          "column": 40,
+          "line": 225,
+          "position": 13207
+        },
+        "name": "android/texas-gameplay.ts",
+        "start": 220,
+        "startLoc": {
+          "column": 58,
+          "line": 220,
+          "position": 12942
+        }
+      },
+      "format": "typescript",
+      "fragment": "      await captureAssetSequence(device, `texas-sticker-${name}`, animationInfo,\n        { x: 220, y: 990, width: 180, height: 190 },\n        () => send({ scene: 'sticker', file: name }));\n    }\n    for (const name of ['tomato', 'tea', 'water', 'flower', 'heart', 'good', 'beer']) {\n      await captureAssetSequence(device, `texas-prop-${name}`, animationInfo,",
+      "isNew": true,
+      "lines": 6,
+      "secondFile": {
+        "end": 170,
+        "endLoc": {
+          "column": 40,
+          "line": 170,
+          "position": 10287
+        },
+        "name": "android/zhajinhua-gameplay.ts",
+        "start": 165,
+        "startLoc": {
+          "column": 62,
+          "line": 165,
+          "position": 10022
+        }
+      },
+      "tokens": 68
+    },
+    {
+      "firstFile": {
+        "end": 46,
+        "endLoc": {
+          "column": 3,
+          "line": 46,
+          "position": 2487
+        },
+        "name": "android/zhajinhua-gameplay.ts",
+        "start": 41,
+        "startLoc": {
+          "column": 23,
+          "line": 41,
+          "position": 2235
+        }
+      },
+      "format": "typescript",
+      "fragment": "    await send(showdown);\n    await send(settlement);\n    await expect.poll(async () => gameSemanticText((await gameNodes(device))\n      .find(node => node.res === `zhajinhua-player-container-${self}`), 'player_stack_text'),\n    { timeout: 30_000 }).toBe(`${self} 1120`);\n  } else {",
+      "isNew": true,
+      "lines": 6,
+      "secondFile": {
+        "end": 160,
+        "endLoc": {
+          "column": 9,
+          "line": 160,
+          "position": 9735
+        },
+        "name": "android/zhajinhua-gameplay.ts",
+        "start": 154,
+        "startLoc": {
+          "column": 28,
+          "line": 154,
+          "position": 9358
+        }
+      },
+      "tokens": 57
+    },
+    {
+      "firstFile": {
+        "end": 62,
+        "endLoc": {
+          "column": 5,
+          "line": 62,
+          "position": 2857
+        },
+        "name": "visual/cases/club/mitmproxy/addon.py",
+        "start": 53,
+        "startLoc": {
+          "column": 61,
+          "line": 53,
+          "position": 2456
+        }
+      },
+      "format": "python",
+      "fragment": "    flow.response = http.Response.make(200, json.dumps(result).encode(), {\n        'Content-Type': 'application/json',\n        'Access-Control-Allow-Origin': flow.request.headers.get('Origin', '*'),\n        'Access-Control-Allow-Credentials': 'true', 'Vary': 'Origin',\n        'Access-Control-Allow-Methods': 'GET, PUT, POST, DELETE, OPTIONS',\n        'Access-Control-Allow-Headers': flow.request.headers.get('Access-Control-Request-Headers', ''),\n    })\n\n\nclass ClubRoomVisualProxy:",
+      "isNew": true,
+      "lines": 10,
+      "secondFile": {
+        "end": 32,
+        "endLoc": {
+          "column": 5,
+          "line": 32,
+          "position": 1350
+        },
+        "name": "visual/cases/game-record/mitmproxy/addon.py",
+        "start": 23,
+        "startLoc": {
+          "column": 62,
+          "line": 23,
+          "position": 949
+        }
+      },
+      "tokens": 56
+    },
+    {
+      "firstFile": {
+        "end": 32,
+        "endLoc": {
+          "column": 5,
+          "line": 32,
+          "position": 1350
+        },
+        "name": "visual/cases/game-record/mitmproxy/addon.py",
+        "start": 23,
+        "startLoc": {
+          "column": 4,
+          "line": 23,
+          "position": 891
+        }
+      },
+      "format": "python",
+      "fragment": "    flow.response = http.Response.make(status, json.dumps(data).encode(), {\n        'Content-Type': 'application/json',\n        'Access-Control-Allow-Origin': flow.request.headers.get('Origin', '*'),\n        'Access-Control-Allow-Credentials': 'true', 'Vary': 'Origin',\n        'Access-Control-Allow-Methods': 'GET, PUT, POST, DELETE, OPTIONS',\n        'Access-Control-Allow-Headers': flow.request.headers.get('Access-Control-Request-Headers', ''),\n    })\n\n\nclass GameRecordProxy:",
+      "isNew": true,
+      "lines": 10,
+      "secondFile": {
+        "end": 32,
+        "endLoc": {
+          "column": 5,
+          "line": 32,
+          "position": 1232
+        },
+        "name": "visual/cases/texas-holdem/mitmproxy/addon.py",
+        "start": 23,
+        "startLoc": {
+          "column": 4,
+          "line": 23,
+          "position": 773
+        }
+      },
+      "tokens": 73
+    },
+    {
+      "firstFile": {
+        "end": 62,
+        "endLoc": {
+          "column": 25,
+          "line": 62,
+          "position": 2581
+        },
+        "name": "visual/cases/game-record/mitmproxy/addon.py",
+        "start": 54,
+        "startLoc": {
+          "column": 60,
+          "line": 54,
+          "position": 2227
+        }
+      },
+      "format": "python",
+      "fragment": "            respond(flow, {'error': 'Forbidden'}, 403, False)\n            return\n        path = urlsplit(flow.request.path).path\n        try:\n            if flow.request.method == 'POST':\n                body = json.loads(flow.request.content)\n                if path == '/scenario' and body.get('scenario') in (None, 'visual-stable'):\n                    self.scenario = body['scenario']\n                    self.user_id = None",
+      "isNew": true,
+      "lines": 9,
+      "secondFile": {
+        "end": 53,
+        "endLoc": {
+          "column": 25,
+          "line": 53,
+          "position": 2075
+        },
+        "name": "visual/cases/texas-holdem/mitmproxy/addon.py",
+        "start": 45,
+        "startLoc": {
+          "column": 53,
+          "line": 45,
+          "position": 1721
+        }
+      },
+      "tokens": 67
+    },
+    {
+      "firstFile": {
+        "end": 157,
+        "endLoc": {
+          "column": 13,
+          "line": 157,
+          "position": 9061
+        },
+        "name": "visual/cases/game-record/mitmproxy/test_addon.py",
+        "start": 152,
+        "startLoc": {
+          "column": 91,
+          "line": 152,
+          "position": 8768
+        }
+      },
+      "format": "python",
+      "fragment": "        request = await self.request('/v10/profile/users', 'PUT', {'users': [SELF, PLAYER]})\n        self.assertIsNone(request.response)\n        self.assertEqual(request.request.json()['users'], [SELF])\n        real = {'nickname': 'Real name', 'new_field': 42}\n        request.response = http.Response.make(200, json.dumps({'ok': True, 'result': {SELF: real}}).encode())\n        self.proxy.response(request)",
+      "isNew": true,
+      "lines": 6,
+      "secondFile": {
+        "end": 89,
+        "endLoc": {
+          "column": 13,
+          "line": 89,
+          "position": 4814
+        },
+        "name": "visual/cases/zhajinhua/mitmproxy/test_addon.py",
+        "start": 84,
+        "startLoc": {
+          "column": 34,
+          "line": 84,
+          "position": 4521
+        }
+      },
+      "tokens": 76
+    },
+    {
+      "firstFile": {
+        "end": 32,
+        "endLoc": {
+          "column": 5,
+          "line": 32,
+          "position": 1232
+        },
+        "name": "visual/cases/texas-holdem/mitmproxy/addon.py",
+        "start": 17,
+        "startLoc": {
+          "column": 92,
+          "line": 17,
+          "position": 676
+        }
+      },
+      "format": "python",
+      "fragment": "from response_overrides import is_staging, prepare_profiles, patch_profiles, patch_version  # noqa: E402\n\nCONTROL_HOST = 'test-mitmproxy.invalid'\n\n\ndef respond(flow, data, status=200):\n    flow.response = http.Response.make(status, json.dumps(data).encode(), {\n        'Content-Type': 'application/json',\n        'Access-Control-Allow-Origin': flow.request.headers.get('Origin', '*'),\n        'Access-Control-Allow-Credentials': 'true', 'Vary': 'Origin',\n        'Access-Control-Allow-Methods': 'GET, PUT, POST, DELETE, OPTIONS',\n        'Access-Control-Allow-Headers': flow.request.headers.get('Access-Control-Request-Headers', ''),\n    })\n\n\nclass TexasVisualProxy:",
+      "isNew": true,
+      "lines": 16,
+      "secondFile": {
+        "end": 29,
+        "endLoc": {
+          "column": 5,
+          "line": 29,
+          "position": 1089
+        },
+        "name": "visual/cases/zhajinhua/mitmproxy/addon.py",
+        "start": 14,
+        "startLoc": {
+          "column": 77,
+          "line": 14,
+          "position": 533
+        }
+      },
+      "tokens": 89
+    },
+    {
+      "firstFile": {
+        "end": 53,
+        "endLoc": {
+          "column": 25,
+          "line": 53,
+          "position": 2075
+        },
+        "name": "visual/cases/texas-holdem/mitmproxy/addon.py",
+        "start": 41,
+        "startLoc": {
+          "column": 26,
+          "line": 41,
+          "position": 1561
+        }
+      },
+      "format": "python",
+      "fragment": "        self.ui = UIStates()\n\n    def control(self, flow):\n        if flow.request.headers.get('X-E2E-Control-Token') != self.token:\n            respond(flow, {'error': 'Forbidden'}, 403)\n            return\n        path = urlsplit(flow.request.path).path\n        try:\n            if flow.request.method == 'POST':\n                body = json.loads(flow.request.content)\n                if path == '/scenario' and body.get('scenario') in (None, 'visual-stable'):\n                    self.scenario = body['scenario']\n                    self.texas.release()",
+      "isNew": true,
+      "lines": 13,
+      "secondFile": {
+        "end": 48,
+        "endLoc": {
+          "column": 25,
+          "line": 48,
+          "position": 1882
+        },
+        "name": "visual/cases/zhajinhua/mitmproxy/addon.py",
+        "start": 36,
+        "startLoc": {
+          "column": 37,
+          "line": 36,
+          "position": 1368
+        }
+      },
+      "tokens": 105
+    },
+    {
+      "firstFile": {
+        "end": 83,
+        "endLoc": {
+          "column": 37,
+          "line": 83,
+          "position": 3768
+        },
+        "name": "visual/cases/texas-holdem/mitmproxy/addon.py",
+        "start": 73,
+        "startLoc": {
+          "column": 16,
+          "line": 73,
+          "position": 3205
+        }
+      },
+      "format": "python",
+      "fragment": "                else:\n                    raise ValueError('Unknown command')\n            elif flow.request.method != 'GET' or path != '/status':\n                raise ValueError('Unknown command')\n        except (ValueError, KeyError, TypeError, AttributeError):\n            respond(flow, {'error': 'Invalid replay command'}, 400)\n            return\n        respond(flow, {\n            'scenario': self.scenario, 'interceptedRequests': 0,\n            'proxiedRequests': self.proxied_requests, 'stabilizedRequests': self.stabilized_requests,\n            'replayedMessages': self.texas.replayed_messages,",
+      "isNew": true,
+      "lines": 11,
+      "secondFile": {
+        "end": 69,
+        "endLoc": {
+          "column": 37,
+          "line": 69,
+          "position": 3192
+        },
+        "name": "visual/cases/zhajinhua/mitmproxy/addon.py",
+        "start": 59,
+        "startLoc": {
+          "column": 16,
+          "line": 59,
+          "position": 2629
+        }
+      },
+      "tokens": 82
+    },
+    {
+      "firstFile": {
+        "end": 119,
+        "endLoc": {
+          "column": 16,
+          "line": 119,
+          "position": 5506
+        },
+        "name": "visual/cases/texas-holdem/mitmproxy/addon.py",
+        "start": 112,
+        "startLoc": {
+          "column": 4,
+          "line": 112,
+          "position": 5233
+        }
+      },
+      "format": "python",
+      "fragment": "    def request(self, flow):\n        if flow.request.host == CONTROL_HOST:\n            self.control(flow)\n            return\n        self.proxied_requests += 1\n        if self.scenario != 'visual-stable' or not is_staging(flow.request.host):\n            return\n        if self.texas.room_id and prepare_profiles(flow, self.texas.self_id, TABLE_PLAYER_IDS):",
+      "isNew": true,
+      "lines": 8,
+      "secondFile": {
+        "end": 111,
+        "endLoc": {
+          "column": 16,
+          "line": 111,
+          "position": 5208
+        },
+        "name": "visual/cases/zhajinhua/mitmproxy/addon.py",
+        "start": 104,
+        "startLoc": {
+          "column": 4,
+          "line": 104,
+          "position": 4935
+        }
+      },
+      "tokens": 53
+    },
+    {
+      "firstFile": {
+        "end": 171,
+        "endLoc": {
+          "column": 10,
+          "line": 171,
+          "position": 7846
+        },
+        "name": "visual/cases/texas-holdem/mitmproxy/addon.py",
+        "start": 159,
+        "startLoc": {
+          "column": 36,
+          "line": 159,
+          "position": 7483
+        }
+      },
+      "format": "python",
+      "fragment": "                fixture = self.texas.http_fixture(path, flow.request.content)\n            except (ValueError, TypeError, AttributeError):\n                return\n            if fixture is None:\n                return\n            data, status = {'ok': True, 'result': fixture}, 200\n        else:\n            return\n        respond(flow, data, status)\n        self.stabilized_requests += 1\n\n\naddons = [TexasVisualProxy()]",
+      "isNew": true,
+      "lines": 13,
+      "secondFile": {
+        "end": 128,
+        "endLoc": {
+          "column": 10,
+          "line": 128,
+          "position": 5876
+        },
+        "name": "visual/cases/zhajinhua/mitmproxy/addon.py",
+        "start": 116,
+        "startLoc": {
+          "column": 37,
+          "line": 116,
+          "position": 5513
+        }
+      },
+      "tokens": 62
+    },
+    {
+      "firstFile": {
+        "end": 26,
+        "endLoc": {
+          "column": 11,
+          "line": 26,
+          "position": 980
+        },
+        "name": "visual/cases/texas-holdem/mitmproxy/test_texas_replay.py",
+        "start": 14,
+        "startLoc": {
+          "column": 0,
+          "line": 14,
+          "position": 435
+        }
+      },
+      "format": "python",
+      "fragment": "def flow(url, method='GET', body=b'', token=None):\n    result = http.HTTPFlow(\n        connection.Client(peername=('127.0.0.1', 12345), sockname=('127.0.0.1', 8080)),\n        connection.Server(address=('api.shafayouxi.org', 443)), live=True)\n    result.request = http.Request.make(method, url, body)\n    if token:\n        result.request.headers['X-E2E-Control-Token'] = token\n    return result\n\nROOM = '11111111-1111-4111-8111-111111111111'\nOTHER = '22222222-2222-4222-8222-222222222222'\nSELF = '33333333-3333-4333-8333-333333333333'\nCHANNEL = f'texas_holdem>{ROOM}#{SELF}'",
+      "isNew": true,
+      "lines": 13,
+      "secondFile": {
+        "end": 26,
+        "endLoc": {
+          "column": 11,
+          "line": 26,
+          "position": 975
+        },
+        "name": "visual/cases/zhajinhua/mitmproxy/test_zhajinhua_replay.py",
+        "start": 14,
+        "startLoc": {
+          "column": 0,
+          "line": 14,
+          "position": 430
+        }
+      },
+      "tokens": 106
+    },
+    {
+      "firstFile": {
+        "end": 42,
+        "endLoc": {
+          "column": 5,
+          "line": 42,
+          "position": 1499
+        },
+        "name": "visual/cases/texas-holdem/mitmproxy/test_texas_replay.py",
+        "start": 29,
+        "startLoc": {
+          "column": 0,
+          "line": 29,
+          "position": 1011
+        }
+      },
+      "format": "python",
+      "fragment": "def socket_flow():\n    result = flow('https://64.kr-seoul.api.staging.laiwan.shafayouxi.com/v2/centrifugo/connection/websocket')\n    result.websocket = websocket.WebSocketData()\n    return result\n\n\ndef message(result, frames, from_client=True, injected=False):\n    content = '\\n'.join(json.dumps(frame) for frame in frames).encode()\n    msg = websocket.WebSocketMessage(Opcode.TEXT, from_client, content, injected=injected)\n    result.websocket.messages.append(msg)\n    return msg\n\n\nclass TexasReplayTests(unittest.TestCase):",
+      "isNew": true,
+      "lines": 14,
+      "secondFile": {
+        "end": 42,
+        "endLoc": {
+          "column": 5,
+          "line": 42,
+          "position": 1491
+        },
+        "name": "visual/cases/zhajinhua/mitmproxy/test_zhajinhua_replay.py",
+        "start": 29,
+        "startLoc": {
+          "column": 0,
+          "line": 29,
+          "position": 1003
+        }
+      },
+      "tokens": 90
+    },
+    {
+      "firstFile": {
+        "end": 51,
+        "endLoc": {
+          "column": 7,
+          "line": 51,
+          "position": 1890
+        },
+        "name": "visual/cases/texas-holdem/mitmproxy/test_texas_replay.py",
+        "start": 44,
+        "startLoc": {
+          "column": 33,
+          "line": 44,
+          "position": 1591
+        }
+      },
+      "format": "python",
+      "fragment": "        self.replay = TexasReplay()\n        self.socket = socket_flow()\n        message(self.socket, [{'id': 1, 'method': 1, 'params': {'channel': CHANNEL}}])\n        self.replay.websocket_message(self.socket)\n        message(self.socket, [{'id': 1, 'result': {}}], False)\n        self.replay.websocket_message(self.socket)\n\n    def test_publish_waits_for_successful_subscription_ack(self):",
+      "isNew": true,
+      "lines": 8,
+      "secondFile": {
+        "end": 51,
+        "endLoc": {
+          "column": 7,
+          "line": 51,
+          "position": 1890
+        },
+        "name": "visual/cases/zhajinhua/mitmproxy/test_zhajinhua_replay.py",
+        "start": 44,
+        "startLoc": {
+          "column": 37,
+          "line": 44,
+          "position": 1591
+        }
+      },
+      "tokens": 77
+    },
+    {
+      "firstFile": {
+        "end": 61,
+        "endLoc": {
+          "column": 80,
+          "line": 61,
+          "position": 2567
+        },
+        "name": "visual/cases/texas-holdem/mitmproxy/test_texas_replay.py",
+        "start": 53,
+        "startLoc": {
+          "column": 109,
+          "line": 53,
+          "position": 2097
+        }
+      },
+      "format": "python",
+      "fragment": "        message(pending_socket, [{'id': 60, 'method': 1, 'params': {'channel': f'texas_holdem>{OTHER}#{SELF}'}}])\n        self.replay.websocket_message(pending_socket)\n        with self.assertRaises(ValueError):\n            self.replay.publish(OTHER, {})\n        message(pending_socket, [{'id': 99, 'result': {}}, {'id': 60, 'error': {'code': 103}}], False)\n        self.replay.websocket_message(pending_socket)\n        with self.assertRaises(ValueError):\n            self.replay.publish(OTHER, {})\n        message(pending_socket, [{'id': 61, 'method': 1, 'params': {'channel': f'texas_holdem>{OTHER}#{SELF}'}}])",
+      "isNew": true,
+      "lines": 9,
+      "secondFile": {
+        "end": 81,
+        "endLoc": {
+          "column": 80,
+          "line": 81,
+          "position": 3752
+        },
+        "name": "visual/cases/zhajinhua/mitmproxy/test_zhajinhua_replay.py",
+        "start": 73,
+        "startLoc": {
+          "column": 106,
+          "line": 73,
+          "position": 3282
+        }
+      },
+      "tokens": 111
+    },
+    {
+      "firstFile": {
+        "end": 92,
+        "endLoc": {
+          "column": 28,
+          "line": 92,
+          "position": 4329
+        },
+        "name": "visual/cases/texas-holdem/mitmproxy/test_texas_replay.py",
+        "start": 65,
+        "startLoc": {
+          "column": 44,
+          "line": 65,
+          "position": 2820
+        }
+      },
+      "format": "python",
+      "fragment": "        with patch('texas_replay.ctx.master', create=True) as master:\n            self.replay.publish(OTHER, {})\n            self.assertEqual(master.commands.call.call_args.args[1], pending_socket)\n\n    def test_server_unsubscribe_removes_confirmed_channel_and_preserves_frame(self):\n        unsubscribe = {'result': {'type': 3, 'channel': CHANNEL, 'data': {'code': 2500}}}\n        msg = message(self.socket, [unsubscribe], False)\n        self.replay.websocket_message(self.socket)\n        self.assertFalse(msg.dropped)\n        self.assertEqual(json.loads(msg.content), unsubscribe)\n        with self.assertRaises(ValueError):\n            self.replay.publish(ROOM, {})\n\n    def test_client_unsubscribe_cancels_pending_ack_and_socket_end_clears_pending(self):\n        message(self.socket, [{'id': 62, 'method': 1, 'params': {'channel': CHANNEL}},\n                              {'id': 63, 'method': 2, 'params': {'channel': CHANNEL}}])\n        self.replay.websocket_message(self.socket)\n        message(self.socket, [{'id': 62, 'result': {}}], False)\n        self.replay.websocket_message(self.socket)\n        with self.assertRaises(ValueError):\n            self.replay.publish(ROOM, {})\n        message(self.socket, [{'id': 64, 'method': 1, 'params': {'channel': CHANNEL}}])\n        self.replay.websocket_message(self.socket)\n        self.replay.websocket_end(self.socket)\n        self.assertNotIn(self.socket.id, self.replay.pending_subscriptions)\n\n    def test_publish_goes_to_browser_and_requires_matching_live_room(self):\n        payload = {'stream': 'texas_holdem', 'queue': [{'event': 'room_status'}]}",
+      "isNew": true,
+      "lines": 28,
+      "secondFile": {
+        "end": 112,
+        "endLoc": {
+          "column": 28,
+          "line": 112,
+          "position": 5515
+        },
+        "name": "visual/cases/zhajinhua/mitmproxy/test_zhajinhua_replay.py",
+        "start": 85,
+        "startLoc": {
+          "column": 48,
+          "line": 85,
+          "position": 4006
+        }
+      },
+      "tokens": 316
+    },
+    {
+      "firstFile": {
+        "end": 107,
+        "endLoc": {
+          "column": 7,
+          "line": 107,
+          "position": 5123
+        },
+        "name": "visual/cases/texas-holdem/mitmproxy/test_texas_replay.py",
+        "start": 93,
+        "startLoc": {
+          "column": 44,
+          "line": 93,
+          "position": 4427
+        }
+      },
+      "format": "python",
+      "fragment": "        with patch('texas_replay.ctx.master', create=True) as master:\n            self.replay.publish(ROOM, payload)\n            args = master.commands.call.call_args.args\n            self.assertEqual(args[:3], ('inject.websocket', self.socket, True))\n            decoded = json.loads(args[3])\n            self.assertEqual(decoded['result']['channel'], CHANNEL)\n            self.assertEqual(decoded['result']['data']['data'], payload)\n            self.assertEqual(args[4], True)\n            with self.assertRaises(ValueError):\n                self.replay.publish(OTHER, payload)\n            self.socket.websocket.timestamp_end = 123\n            with self.assertRaises(ValueError):\n                self.replay.publish(ROOM, payload)\n\n    def test_混合消息保留房间在线请求并隔离牌局操作(self):",
+      "isNew": true,
+      "lines": 15,
+      "secondFile": {
+        "end": 127,
+        "endLoc": {
+          "column": 7,
+          "line": 127,
+          "position": 6310
+        },
+        "name": "visual/cases/zhajinhua/mitmproxy/test_zhajinhua_replay.py",
+        "start": 113,
+        "startLoc": {
+          "column": 48,
+          "line": 113,
+          "position": 5614
+        }
+      },
+      "tokens": 148
+    },
+    {
+      "firstFile": {
+        "end": 142,
+        "endLoc": {
+          "column": 7,
+          "line": 142,
+          "position": 7113
+        },
+        "name": "visual/cases/texas-holdem/mitmproxy/test_texas_replay.py",
+        "start": 129,
+        "startLoc": {
+          "column": 63,
+          "line": 129,
+          "position": 6552
+        }
+      },
+      "format": "python",
+      "fragment": "            self.assertEqual(master.commands.call.call_count, 1)\n\n    def test_server_push_filter_preserves_rpc_and_injected_messages(self):\n        self.replay.room_id = ROOM\n        publication = {'result': {'channel': CHANNEL}}\n        reply = {'id': 10, 'result': {'data': {}}}\n        msg = message(self.socket, [publication, reply], False)\n        self.replay.websocket_message(self.socket)\n        self.assertEqual(json.loads(msg.content), reply)\n        injected = message(self.socket, [publication], False, True)\n        self.replay.websocket_message(self.socket)\n        self.assertFalse(injected.dropped)\n\n    def test_profiles_are_scoped_and_release_clears_fixtures(self):",
+      "isNew": true,
+      "lines": 14,
+      "secondFile": {
+        "end": 158,
+        "endLoc": {
+          "column": 7,
+          "line": 158,
+          "position": 7986
+        },
+        "name": "visual/cases/zhajinhua/mitmproxy/test_zhajinhua_replay.py",
+        "start": 145,
+        "startLoc": {
+          "column": 63,
+          "line": 145,
+          "position": 7425
+        }
+      },
+      "tokens": 117
+    },
+    {
+      "firstFile": {
+        "end": 170,
+        "endLoc": {
+          "column": 7,
+          "line": 170,
+          "position": 8663
+        },
+        "name": "visual/cases/texas-holdem/mitmproxy/test_texas_replay.py",
+        "start": 140,
+        "startLoc": {
+          "column": 33,
+          "line": 140,
+          "position": 7095
+        }
+      },
+      "format": "python",
+      "fragment": "        self.assertFalse(injected.dropped)\n\n    def test_profiles_are_scoped_and_release_clears_fixtures(self):\n        self.replay.room_id = ROOM\n        self.replay.self_id = SELF\n        self.assertIsNone(self.replay.http_fixture(f'/v10/profile/{OTHER}'))\n        profiles = self.replay.http_fixture('/v10/profile/users', json.dumps({'users': PLAYER_IDS}).encode())\n        self.assertEqual(profiles[PLAYER_IDS[0]]['nickname'], 'Player1')\n        self.replay.release()\n        self.assertIsNone(self.replay.http_fixture(f'/v10/profile/{PLAYER_IDS[0]}'))\n        self.assertIsNone(self.replay.self_id)\n\n    def test_push_filter_preserves_other_streams_unsubscribe_and_malformed_results(self):\n        self.replay.room_id = ROOM\n        unrelated = {'result': {'channel': f'chat>{ROOM}#{SELF}', 'type': 0}}\n        unsubscribe = {'result': {'channel': CHANNEL, 'type': 3}}\n        malformed = {'result': []}\n        msg = message(self.socket, [unrelated, unsubscribe, malformed], False)\n        self.replay.websocket_message(self.socket)\n        self.assertEqual([json.loads(line) for line in msg.text.splitlines()],\n                         [unrelated, unsubscribe, malformed])\n\n    def test_unsubscribe_and_closed_sockets_cannot_receive_replay(self):\n        message(self.socket, [{'id': 2, 'method': 2, 'params': {'channel': CHANNEL}}])\n        self.replay.websocket_message(self.socket)\n        with self.assertRaises(ValueError):\n            self.replay.publish(ROOM, {})\n        self.replay.websocket_end(self.socket)\n        self.assertNotIn(self.socket.id, self.replay.subscriptions)\n\n    def test_created_room_isolated_before_subscription_and_release_restores_traffic(self):",
+      "isNew": true,
+      "lines": 31,
+      "secondFile": {
+        "end": 204,
+        "endLoc": {
+          "column": 7,
+          "line": 204,
+          "position": 10659
+        },
+        "name": "visual/cases/zhajinhua/mitmproxy/test_zhajinhua_replay.py",
+        "start": 174,
+        "startLoc": {
+          "column": 33,
+          "line": 174,
+          "position": 9091
+        }
+      },
+      "tokens": 309
+    },
+    {
+      "firstFile": {
+        "end": 215,
+        "endLoc": {
+          "column": 90,
+          "line": 215,
+          "position": 11541
+        },
+        "name": "visual/cases/texas-holdem/mitmproxy/test_texas_replay.py",
+        "start": 209,
+        "startLoc": {
+          "column": 53,
+          "line": 209,
+          "position": 11255
+        }
+      },
+      "format": "python",
+      "fragment": "            'channel': f'texas_holdem>{OTHER}#{SELF}'}}])\n        self.replay.websocket_message(self.socket)\n        with self.assertRaises(ValueError):\n            self.replay.publish(OTHER, {})\n        self.assertEqual(self.replay.room_id, ROOM)\n\n    def test_rtc_responses_keep_chatroom_model_fields_and_do_not_target_other_rooms(self):",
+      "isNew": true,
+      "lines": 7,
+      "secondFile": {
+        "end": 238,
+        "endLoc": {
+          "column": 90,
+          "line": 238,
+          "position": 12689
+        },
+        "name": "visual/cases/zhajinhua/mitmproxy/test_zhajinhua_replay.py",
+        "start": 232,
+        "startLoc": {
+          "column": 50,
+          "line": 232,
+          "position": 12403
+        }
+      },
+      "tokens": 51
+    },
+    {
+      "firstFile": {
+        "end": 228,
+        "endLoc": {
+          "column": 19,
+          "line": 228,
+          "position": 12287
+        },
+        "name": "visual/cases/texas-holdem/mitmproxy/test_texas_replay.py",
+        "start": 216,
+        "startLoc": {
+          "column": 47,
+          "line": 216,
+          "position": 11589
+        }
+      },
+      "format": "python",
+      "fragment": "        self.replay.arm_created_room(ROOM, SELF)\n        for action in ('join', 'quit'):\n            frame = {'method': 9, 'params': {'data': {'path': f'/v1/chat_room/{ROOM}/{action}'}}}\n            self.assertTrue(self.replay.is_replay_rpc(frame))\n            result = self.replay.rpc_result(frame)['result']\n            self.assertEqual(result['users'], [SELF])\n            self.assertEqual(result['has_joined'], action == 'join')\n        frame['params']['data']['path'] = f'/v1/chat_room/{OTHER}/join'\n        self.assertFalse(self.replay.is_replay_rpc(frame))\n\n    def test_scenario_changes_release_replay_and_control_requires_token(self):\n        with patch.dict('os.environ', {'MITMPROXY_CONTROL_TOKEN': 'test-token'}):\n            addon = NetworkFaults()",
+      "isNew": true,
+      "lines": 13,
+      "secondFile": {
+        "end": 252,
+        "endLoc": {
+          "column": 19,
+          "line": 252,
+          "position": 13492
+        },
+        "name": "visual/cases/zhajinhua/mitmproxy/test_zhajinhua_replay.py",
+        "start": 240,
+        "startLoc": {
+          "column": 40,
+          "line": 240,
+          "position": 12794
+        }
+      },
+      "tokens": 131
+    },
+    {
+      "firstFile": {
+        "end": 35,
+        "endLoc": {
+          "column": 30,
+          "line": 35,
+          "position": 1371
+        },
+        "name": "visual/cases/texas-holdem/mitmproxy/texas_replay.py",
+        "start": 26,
+        "startLoc": {
+          "column": 4,
+          "line": 26,
+          "position": 799
+        }
+      },
+      "format": "python",
+      "fragment": "    def publish(self, room_id, data=None, *, scene=None):\n        if not isinstance(room_id, str) or not re.fullmatch(UUID, room_id, re.I) or (scene is None and not isinstance(data, dict)):\n            raise ValueError(\"Invalid replay\")\n        if self.room_id and room_id != self.room_id:\n            raise ValueError('Another room already owns this replay')\n        targets = [\n            (flow, channel) for flow, channels in self.subscriptions.values()\n            if flow.websocket.timestamp_end is None\n            for channel in channels\n            if re.fullmatch(rf\"texas_holdem>{room_id}#{UUID}\", channel, re.I)",
+      "isNew": true,
+      "lines": 10,
+      "secondFile": {
+        "end": 30,
+        "endLoc": {
+          "column": 30,
+          "line": 30,
+          "position": 1158
+        },
+        "name": "visual/cases/zhajinhua/mitmproxy/zhajinhua_replay.py",
+        "start": 21,
+        "startLoc": {
+          "column": 4,
+          "line": 21,
+          "position": 586
+        }
+      },
+      "tokens": 115
+    },
+    {
+      "firstFile": {
+        "end": 54,
+        "endLoc": {
+          "column": 13,
+          "line": 54,
+          "position": 2231
+        },
+        "name": "visual/cases/texas-holdem/mitmproxy/texas_replay.py",
+        "start": 42,
+        "startLoc": {
+          "column": 39,
+          "line": 42,
+          "position": 1681
+        }
+      },
+      "format": "python",
+      "fragment": "            data = replay_scene('texas', self_id, scene)\n        self.room_id = room_id\n        self.self_id = self_id\n        # Centrifuge v2 JSON 协议：无 id 的消息是服务端推送，type=0 表示 publication。\n        for flow, channel in targets:\n            payload = {\"result\": {\"type\": 0, \"channel\": channel, \"data\": {\"data\": data}}}\n            ctx.master.commands.call(\"inject.websocket\", flow, True, json.dumps(payload).encode(), True)\n            self.replayed_messages += 1\n\n    def release(self):\n        self.room_id = None\n        self.self_id = None\n        self.created_room_id = None",
+      "isNew": true,
+      "lines": 13,
+      "secondFile": {
+        "end": 49,
+        "endLoc": {
+          "column": 13,
+          "line": 49,
+          "position": 2023
+        },
+        "name": "visual/cases/zhajinhua/mitmproxy/zhajinhua_replay.py",
+        "start": 37,
+        "startLoc": {
+          "column": 43,
+          "line": 37,
+          "position": 1473
+        }
+      },
+      "tokens": 97
+    },
+    {
+      "firstFile": {
+        "end": 62,
+        "endLoc": {
+          "column": 14,
+          "line": 62,
+          "position": 2533
+        },
+        "name": "visual/cases/texas-holdem/mitmproxy/texas_replay.py",
+        "start": 57,
+        "startLoc": {
+          "column": 4,
+          "line": 57,
+          "position": 2289
+        }
+      },
+      "format": "python",
+      "fragment": "    def is_replay_publication(self, frame):\n        result = frame.get('result')\n        if 'id' in frame or not isinstance(result, dict) or result.get('type', 0) != 0:\n            return False\n        channel = result.get('channel')\n        return isinstance(channel, str) and re.fullmatch(",
+      "isNew": true,
+      "lines": 6,
+      "secondFile": {
+        "end": 61,
+        "endLoc": {
+          "column": 10,
+          "line": 61,
+          "position": 2557
+        },
+        "name": "visual/cases/zhajinhua/mitmproxy/zhajinhua_replay.py",
+        "start": 56,
+        "startLoc": {
+          "column": 4,
+          "line": 56,
+          "position": 2317
+        }
+      },
+      "tokens": 51
+    },
+    {
+      "firstFile": {
+        "end": 89,
+        "endLoc": {
+          "column": 47,
+          "line": 89,
+          "position": 3982
+        },
+        "name": "visual/cases/texas-holdem/mitmproxy/texas_replay.py",
+        "start": 63,
+        "startLoc": {
+          "column": 50,
+          "line": 63,
+          "position": 2627
+        }
+      },
+      "format": "python",
+      "fragment": "            rf'texas_holdem>{self.room_id}#{UUID}', channel, re.I) is not None\n\n    def websocket_message(self, flow):\n        message = flow.websocket.messages[-1]\n        if not message.is_text or message.injected:\n            return\n        try:\n            frames = [json.loads(line) for line in message.text.splitlines() if line]\n        except (ValueError, TypeError):\n            return\n        if not all(isinstance(frame, dict) for frame in frames):\n            return\n        if message.from_client:\n            channels = self.subscriptions.setdefault(flow.id, (flow, set()))[1]\n            pending = self.pending_subscriptions.setdefault(flow.id, {})\n            for frame in frames:\n                params = frame.get(\"params\") or {}\n                if not isinstance(params, dict):\n                    continue\n                if (frame.get(\"method\") == 1 and isinstance(frame.get('id'), int)\n                        and frame['id'] > 0 and isinstance(params.get(\"channel\"), str)):\n                    pending[frame['id']] = params['channel']\n                if frame.get(\"method\") == 2 and isinstance(params.get('channel'), str):\n                    channel = params.get('channel')\n                    channels.discard(channel)\n                    for command_id in [command_id for command_id, target in pending.items() if target == channel]:\n                        pending.pop(command_id)",
+      "isNew": true,
+      "lines": 27,
+      "secondFile": {
+        "end": 90,
+        "endLoc": {
+          "column": 47,
+          "line": 90,
+          "position": 4086
+        },
+        "name": "visual/cases/zhajinhua/mitmproxy/zhajinhua_replay.py",
+        "start": 64,
+        "startLoc": {
+          "column": 47,
+          "line": 64,
+          "position": 2731
+        }
+      },
+      "tokens": 279
+    },
+    {
+      "firstFile": {
+        "end": 122,
+        "endLoc": {
+          "column": 28,
+          "line": 122,
+          "position": 6101
+        },
+        "name": "visual/cases/texas-holdem/mitmproxy/texas_replay.py",
+        "start": 95,
+        "startLoc": {
+          "column": 16,
+          "line": 95,
+          "position": 4421
+        }
+      },
+      "format": "python",
+      "fragment": "                kept = [frame for frame in frames if frame not in blocked]\n                message.content = \"\\n\".join(json.dumps(frame) for frame in kept).encode()\n                if not kept:\n                    message.drop()\n                replies = [{\"id\": frame[\"id\"], \"result\": {\"data\": self.rpc_result(frame)}}\n                           for frame in blocked if \"id\" in frame]\n                if replies:\n                    ctx.master.commands.call(\"inject.websocket\", flow, True,\n                                             \"\\n\".join(json.dumps(reply) for reply in replies).encode(), True)\n        else:\n            channels = self.subscriptions.setdefault(flow.id, (flow, set()))[1]\n            pending = self.pending_subscriptions.setdefault(flow.id, {})\n            for frame in frames:\n                command_id = frame.get('id') if isinstance(frame.get('id'), int) else None\n                if command_id in pending:\n                    channel = pending.pop(command_id)\n                    if 'error' not in frame and isinstance(frame.get('result'), dict):\n                        channels.add(channel)\n                    else:\n                        channels.discard(channel)\n                result = frame.get('result')\n                if ('id' not in frame and isinstance(result, dict) and result.get('type') == 3\n                        and isinstance(result.get('channel'), str)):\n                    channel = result.get('channel')\n                    channels.discard(channel)\n                    for command_id in [command_id for command_id, target in pending.items() if target == channel]:\n                        pending.pop(command_id)\n            if self.room_id:",
+      "isNew": true,
+      "lines": 28,
+      "secondFile": {
+        "end": 122,
+        "endLoc": {
+          "column": 28,
+          "line": 122,
+          "position": 6064
+        },
+        "name": "visual/cases/zhajinhua/mitmproxy/zhajinhua_replay.py",
+        "start": 95,
+        "startLoc": {
+          "column": 16,
+          "line": 95,
+          "position": 4384
+        }
+      },
+      "tokens": 322
+    },
+    {
+      "firstFile": {
+        "end": 139,
+        "endLoc": {
+          "column": 24,
+          "line": 139,
+          "position": 6923
+        },
+        "name": "visual/cases/texas-holdem/mitmproxy/texas_replay.py",
+        "start": 124,
+        "startLoc": {
+          "column": 16,
+          "line": 124,
+          "position": 6239
+        }
+      },
+      "format": "python",
+      "fragment": "                kept = [frame for frame in frames if not self.is_replay_publication(frame)]\n                message.content = \"\\n\".join(json.dumps(frame) for frame in kept).encode()\n                if not kept:\n                    message.drop()\n\n    def websocket_end(self, flow):\n        self.subscriptions.pop(flow.id, None)\n        self.pending_subscriptions.pop(flow.id, None)\n\n    def is_replay_rpc(self, frame):\n        if frame.get(\"method\") != 9:\n            return False\n        params = frame.get(\"params\") or {}\n        data = params.get(\"data\") if isinstance(params, dict) else None\n        if not isinstance(data, dict) or not isinstance(data.get('path'), str):\n            return False",
+      "isNew": true,
+      "lines": 16,
+      "secondFile": {
+        "end": 139,
+        "endLoc": {
+          "column": 24,
+          "line": 139,
+          "position": 6901
+        },
+        "name": "visual/cases/zhajinhua/mitmproxy/zhajinhua_replay.py",
+        "start": 124,
+        "startLoc": {
+          "column": 16,
+          "line": 124,
+          "position": 6217
+        }
+      },
+      "tokens": 154
+    },
+    {
+      "firstFile": {
+        "end": 183,
+        "endLoc": {
+          "column": 21,
+          "line": 183,
+          "position": 9319
+        },
+        "name": "visual/cases/texas-holdem/mitmproxy/texas_replay.py",
+        "start": 176,
+        "startLoc": {
+          "column": 64,
+          "line": 176,
+          "position": 9023
+        }
+      },
+      "format": "python",
+      "fragment": "                f\"Player{TABLE_PLAYER_IDS.index(player_id) + 1}\", \"avatar_path\": \"\", \"gender\": \"male\",\n                \"bio\": \"TestPlayer\", \"user_level\": {\"App:coin\": {\"level\": 5, \"progress\": 0.5}},\n                \"last_used_nickname\": \"\"}\n\n    def http_fixture(self, path, body=b\"\"):\n        if not self.room_id:\n            return None\n        identifiers = TABLE_PLAYER_IDS",
+      "isNew": true,
+      "lines": 8,
+      "secondFile": {
+        "end": 167,
+        "endLoc": {
+          "column": 21,
+          "line": 167,
+          "position": 8303
+        },
+        "name": "visual/cases/zhajinhua/mitmproxy/zhajinhua_replay.py",
+        "start": 160,
+        "startLoc": {
+          "column": 58,
+          "line": 160,
+          "position": 8007
+        }
+      },
+      "tokens": 56
+    },
+    {
+      "firstFile": {
+        "end": 195,
+        "endLoc": {
+          "column": 37,
+          "line": 195,
+          "position": 9991
+        },
+        "name": "visual/cases/texas-holdem/mitmproxy/texas_replay.py",
+        "start": 184,
+        "startLoc": {
+          "column": 8,
+          "line": 184,
+          "position": 9345
+        }
+      },
+      "format": "python",
+      "fragment": "        if path == '/v10/profile/users':\n            requested = json.loads(body).get('users', [])\n            if requested and all(identifier in identifiers for identifier in requested):\n                return {identifier: self.profile(identifier) for identifier in requested}\n            return None\n        player_id = next((identifier for identifier in identifiers if identifier in path), None)\n        if not player_id:\n            return None\n        if re.fullmatch(rf\"/v10/profile/{UUID}\", path):\n            return self.profile(player_id)\n        if re.fullmatch(rf\"/v10/wallet/{UUID}/currency/coin\", path):\n            return {\"balance\": 12345}",
+      "isNew": true,
+      "lines": 12,
+      "secondFile": {
+        "end": 179,
+        "endLoc": {
+          "column": 37,
+          "line": 179,
+          "position": 8969
+        },
+        "name": "visual/cases/zhajinhua/mitmproxy/zhajinhua_replay.py",
+        "start": 168,
+        "startLoc": {
+          "column": 8,
+          "line": 168,
+          "position": 8323
+        }
+      },
+      "tokens": 112
+    }
+  ],
+  "statistics": {
+    "detectionDate": "2026-10-29T09:39:03.087Z",
+    "formats": {
+      "javascript": {
+        "clones": 1,
+        "duplicatedLines": 9,
+        "duplicatedTokens": 63,
+        "lines": 3141,
+        "newClones": 1,
+        "newDuplicatedLines": 9,
+        "percentage": 0.28653295128939826,
+        "percentageTokens": 0.21012607564538724,
+        "sources": 41,
+        "tokens": 29982
+      },
+      "python": {
+        "clones": 31,
+        "duplicatedLines": 370,
+        "duplicatedTokens": 3591,
+        "lines": 5614,
+        "newClones": 31,
+        "newDuplicatedLines": 370,
+        "percentage": 6.590666191663698,
+        "percentageTokens": 7.203321832624569,
+        "sources": 49,
+        "tokens": 49852
+      },
+      "typescript": {
+        "clones": 15,
+        "duplicatedLines": 92,
+        "duplicatedTokens": 921,
+        "lines": 7533,
+        "newClones": 15,
+        "newDuplicatedLines": 92,
+        "percentage": 1.2212929775653791,
+        "percentageTokens": 1.4492753623188406,
+        "sources": 80,
+        "tokens": 63549
+      }
+    },
+    "total": {
+      "clones": 47,
+      "duplicatedLines": 471,
+      "duplicatedTokens": 4575,
+      "lines": 16288,
+      "newClones": 47,
+      "newDuplicatedLines": 471,
+      "percentage": 2.8916994106090375,
+      "percentageTokens": 3.190754831465376,
+      "sources": 170,
+      "tokens": 143383
+    }
+  }
+}

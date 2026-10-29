@@ -16,6 +16,10 @@ python3 -m unittest discover -s android -p 'test_*.py'
 npx playwright test --config android/playwright.config.ts --list
 ```
 
+`npm run check` 同时执行复杂度、架构与新增重复门禁；工具版本、实测结果、历史迁移清单和负例验证见
+[静态质量门禁](quality/README.md)。本地检查只读，不启动设备或访问业务接口；原生用例收集不代表设备运行通过。
+pre-commit 配置由 #25 维护，直接复用此入口，本 issue 不安装或改写 Git hook。
+
 运行真实 APK、更新截图与 CI 配置见 [Android 测试说明](android/README.md)。本地执行需独立测试账号；已有本机池可通过 `CLRN_TEST_ACCOUNT_POOL` 指向同一文件并用 `node scripts/with-test-account.mjs -- node android/run-visual.mjs` 获取本机锁。禁止借用 CI 账号。
 
 Actions 只需 `CLRN_CI_TEST_ACCOUNTS_V2`（安卓新 70 个账号）和 `TESTING_API_TOKEN`。APK 仍存放在 CLRN，两个测试仓库都由 `deployments/staging.json` 的提交触发，不配置 `CLRN_AZ_DISPATCH_TOKEN`。

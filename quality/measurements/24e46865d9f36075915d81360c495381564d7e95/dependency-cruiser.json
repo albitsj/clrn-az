@@ -1,0 +1,18 @@
+[
+  {
+    "tool": "dependency-cruiser",
+    "rule": "no-circular",
+    "cycle": [
+      "android/caret-mask.ts",
+      "android/screenshot.ts"
+    ]
+  },
+  {
+    "tool": "dependency-cruiser",
+    "rule": "no-circular",
+    "cycle": [
+      "android/device.ts",
+      "android/keyboard.ts"
+    ]
+  }
+]
