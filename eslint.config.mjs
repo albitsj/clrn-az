@@ -4,68 +4,9 @@ import tsdoc from 'eslint-plugin-tsdoc';
 import tseslint from 'typescript-eslint';
 import globals from 'globals';
 
-// 检查成员访问也能阻止取出方法后使用别名；解构访问由 ObjectPattern 选择器覆盖。
-const networkRouting = [
-  {
-    selector: 'MemberExpression[computed=false][property.name=/^(route|fulfill|routeFromHAR|routeWebSocket)$/], MemberExpression[computed=true][property.value=/^(route|fulfill|routeFromHAR|routeWebSocket)$/], ObjectPattern > Property[key.name=/^(route|fulfill|routeFromHAR|routeWebSocket)$/], ObjectPattern > Property[key.value=/^(route|fulfill|routeFromHAR|routeWebSocket)$/]',
-    message: '普通测试禁止新增 TypeScript 网络响应伪造；通过代理控制接口使用共享夹具。',
-  },
-];
+import { unwrap, stringKey, propertyName, syntaxContext } from './scripts/network-syntax.mjs';
 
-// 透明包装不改变值；只归一化语法，不推断运行时别名或动态键。
-const transparentNodes = new Set(['ChainExpression', 'TSAsExpression', 'TSTypeAssertion',
-  'TSNonNullExpression', 'TSSatisfiesExpression', 'TSInstantiationExpression']);
-const globalObjects = new Set(['globalThis', 'window', 'self', 'global']);
 const routingMethods = new Set(['route', 'fulfill', 'routeFromHAR', 'routeWebSocket']);
-
-/**
- * 去掉不会改变目标值的语法包装。
- * @param node - ESTree 表达式节点。
- */
-function unwrap(node) {
-  while (node && transparentNodes.has(node.type)) node = node.expression;
-  return node;
-}
-
-/**
- * 读取静态字符串键，拒绝动态表达式。
- * @param node - 键表达式。
- */
-function stringKey(node) {
-  const key = unwrap(node);
-  if (key?.type === 'Literal' && typeof key.value === 'string') return key.value;
-  if (key?.type === 'TemplateLiteral' && key.expressions.length === 0) return key.quasis[0].value.cooked;
-  return undefined;
-}
-
-/**
- * 统一点访问、字符串与无表达式模板计算属性。
- * @param node - 成员或对象属性节点。
- */
-function propertyName(node) {
-  const key = node.property ?? node.key;
-  return !node.computed && key?.type === 'Identifier' ? key.name : stringKey(key);
-}
-
-/**
- * 判断直接全局对象，排除业务对象上的同名成员。
- * @param node - 目标表达式。
- */
-function isGlobalObject(node) {
-  const target = unwrap(node);
-  return target?.type === 'Identifier' && globalObjects.has(target.name);
-}
-
-/**
- * 识别直接内建名称及全局对象上的内建名称。
- * @param node - 构造器或命名空间表达式。
- * @param name - 要识别的内建名称。
- */
-function isBuiltin(node, name) {
-  const target = unwrap(node);
-  if (target?.type === 'Identifier') return target.name === name;
-  return target?.type === 'MemberExpression' && isGlobalObject(target.object) && propertyName(target) === name;
-}
 
 /**
  * 检查直接属性对象，不递归扫描业务数据。
@@ -81,34 +22,52 @@ function hasFetchProperty(argument) {
  * 判断调用是否用静态属性 API 替换 fetch，保留原有属性 API 边界。
  * @param call - 已解析的调用节点。
  * @param member - 去除包装的被调用成员。
+ * @param syntax - 词法来源及纯数据检查。
  */
-function replacesFetch(call, member) {
+function replacesFetch(call, member, syntax) {
+  if (syntax.pureUpdate(call)) return false;
   const method = propertyName(member);
-  const objectAPI = isBuiltin(member.object, 'Object');
-  const reflectAPI = isBuiltin(member.object, 'Reflect');
+  const objectAPI = syntax.origin(member.object) === 'Object';
+  const reflectAPI = syntax.origin(member.object) === 'Reflect';
   if ((objectAPI || reflectAPI) && method === 'defineProperty'
-    || reflectAPI && method === 'set' && isGlobalObject(call.arguments[0])) return stringKey(call.arguments[1]) === 'fetch';
+    || reflectAPI && method === 'set' && syntax.origin(call.arguments[0]) === 'global') return stringKey(call.arguments[1]) === 'fetch';
   if (!objectAPI || !['assign', 'defineProperties'].includes(method)) return false;
   return call.arguments.slice(1).some(hasFetchProperty);
 }
 
-// 独立于离线 Response 例外；沿用旧选择器的路由边界，统一静态键和透明包装。
+// 独立于离线 Response 例外；保留路由禁止语义，仅豁免可证明的纯数据。
 const networkRoutingSyntax = {
   meta: {
     type: 'problem', schema: [],
-    messages: { forbidden: networkRouting[0].message },
+    messages: { forbidden: '普通测试禁止新增 TypeScript 网络响应伪造；通过代理控制接口使用共享夹具。' },
   },
   /**
    * 检查路由成员读取和静态解构，不执行源码或追踪动态别名。
    * @param context - ESLint 规则上下文。
    */
   create(context) {
+    const syntax = syntaxContext(context);
     /**
      * 报告已知路由方法的静态访问。
      * @param node - 成员或解构属性节点。
      */
     function check(node) {
-      if (routingMethods.has(propertyName(node))) context.report({ node, messageId: 'forbidden' });
+      if (routingMethods.has(propertyName(node)) && !syntax.pureData(routingSource(node))) context.report({ node, messageId: 'forbidden' });
+    }
+    /**
+     * 找出嵌套模式的根来源；未知参数仍受路由禁令约束。
+     * @param node - 路由成员或模式属性。
+     */
+    function routingSource(node) {
+      if (node.type === 'MemberExpression') return node.object;
+      let pattern = node.parent;
+      while (['Property', 'AssignmentPattern'].includes(pattern.parent?.type)) {
+        pattern = pattern.parent.type === 'Property' ? pattern.parent.parent : pattern.parent;
+      }
+      const parent = pattern.parent;
+      if (parent?.type === 'VariableDeclarator') return parent.init;
+      if (parent?.type === 'AssignmentExpression') return parent.right;
+      return undefined;
     }
     return { MemberExpression: check, 'ObjectPattern > Property': check };
   },
@@ -125,6 +84,7 @@ const networkResponses = {
    * @param context - ESLint 规则上下文。
    */
   create(context) {
+    const syntax = syntaxContext(context);
     /**
      * 报告当前独立违规入口。
      * @param node - 违规节点。
@@ -138,10 +98,22 @@ const networkResponses = {
      * @param source - 直接来源表达式。
      */
     function checkResponsePattern(pattern, source) {
+      checkPattern(pattern, syntax.origin(source));
+    }
+    /**
+     * 沿静态解构键递归传播明确来源。
+     * @param pattern - 当前嵌套模式。
+     * @param origin - 当前来源分类。
+     */
+    function checkPattern(pattern, origin) {
       const target = unwrap(pattern);
-      if (target?.type !== 'ObjectPattern' || !isBuiltin(source, 'Response')) return;
+      if (target?.type === 'AssignmentPattern') return checkPattern(target.left, origin);
+      if (target?.type !== 'ObjectPattern') return;
       for (const property of target.properties) {
-        if (property.type === 'Property' && propertyName(property) === 'json') report(property);
+        if (property.type !== 'Property') continue;
+        const key = propertyName(property);
+        if (origin === 'Response' && key === 'json') report(property);
+        checkPattern(property.value, syntax.childOrigin(origin, key));
       }
     }
     return {
@@ -164,14 +136,14 @@ const networkResponses = {
        * @param node - 成员访问节点。
        */
       MemberExpression(node) {
-        if (isBuiltin(node.object, 'Response') && propertyName(node) === 'json') report(node);
+        if (syntax.origin(node.object) === 'Response' && propertyName(node) === 'json') report(node);
       },
       /**
        * 识别直接及全局限定的 Response 构造器。
        * @param node - 构造表达式。
        */
       NewExpression(node) {
-        if (isBuiltin(node.callee, 'Response')) report(node);
+        if (syntax.origin(node.callee) === 'Response') report(node);
       },
       /**
        * 保留原有 fetch 成员赋值限制，并统一计算属性和透明包装。
@@ -179,7 +151,8 @@ const networkResponses = {
        */
       AssignmentExpression(node) {
         const target = unwrap(node.left);
-        if (target?.type === 'MemberExpression' && propertyName(target) === 'fetch') report(node);
+        if (target?.type === 'MemberExpression' && propertyName(target) === 'fetch'
+          && !(syntax.pureData(target.object) && syntax.pureData(node.right))) report(node);
         checkResponsePattern(node.left, node.right);
       },
       /**
@@ -190,7 +163,7 @@ const networkResponses = {
         const member = unwrap(node.callee);
         if (member?.type !== 'MemberExpression') return;
         if (propertyName(member) === 'method' && stringKey(node.arguments[1]) === 'fetch'
-          || replacesFetch(node, member)) report(node);
+          || replacesFetch(node, member, syntax)) report(node);
       },
     };
   },
@@ -235,7 +208,6 @@ export default [
     plugins: { '@typescript-eslint': tseslint.plugin,
       quality: { rules: { 'no-network-responses': networkResponses, 'no-network-routing': networkRoutingSyntax } } },
     rules: {
-      'no-restricted-syntax': ['error', ...networkRouting],
       'quality/no-network-routing': 'error',
       'quality/no-network-responses': 'error',
       // TypeScript 编译器检查类型名称；使用识别类型引用的未使用变量规则。

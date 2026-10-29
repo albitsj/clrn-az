@@ -158,3 +158,46 @@ JSON 夹具和图片属于数据；带函数的场景及 Python 响应实现仍�
 应用部署记录仍是 `69f9251d3b5f2b93aa2d880d27abbeefe16ee645`，发布版本 `android-staging-300001001-69f9251d3b5f`。已读取 [原英文德州牌桌日志](https://github.com/albitsj/clrn-az/actions/runs/40832908665/job/123311104831)，确认相同应用提交、版本和安装包指纹 `27618d750fc306b1a75d52d642b2d90f361501fd1b9998bc3cd65ca5874196f5`。本轮不改变应用部署，不新增截图候选；图片删除、动画简化及视觉断言完整继承最新主分支，不额外修改图片、容差、重试或遮罩。
 
 工具规则参考：[ESLint complexity](https://eslint.org/docs/latest/rules/complexity)、[max-depth](https://eslint.org/docs/latest/rules/max-depth)、[Ruff C901](https://docs.astral.sh/ruff/rules/complex-structure/)、[dependency-cruiser 17.3.9](https://github.com/sverweij/dependency-cruiser/tree/v17.3.9)、[jscpd 5.1.2 基线文档](https://github.com/kucherenko/jscpd/blob/v5.1.2/docs/ci-and-hooks.md)。
+
+### 嵌套来源与纯数据误报修复（2026-10-30）
+
+本轮实施起点为 `aa6ce0fedc5f6d0731ee3b78495f26eade8a4a71`，工作树干净；
+宿主已抓取的 `origin/master` 仍为 `a11c646d9b4de63895c85fb01225ca9f33dd76cf`，
+没有 MERGE_HEAD 或冲突。已读取仓库 README、质量说明、三份工作流、恢复的 needs-repair
+记录及 `pr37-aa6ce-nested-data-preimplementation-and-finding.json`。仓库中没有
+AGENTS.md、AGENTS.txt、DEVELOPMENT.md 或 `.codegraph/`，未套用外部工具仓库规则。
+
+修改前用生产配置、`allowInlineConfig: false` 在 Android、visual、e2e 三类普通路径复现：
+嵌套 `const { Response: { json: reply } } = globalThis` 零诊断；读取纯数据 `settings.route`
+产生两条误报；`Object.assign(settings, { fetch: "updated" })` 产生一条误报。
+以上仅解析内存源码，没有执行网络伪造。三个完整探针加入原真实 TypeScript strict/noEmit
+验证，原 Reflect、模板路由和直接 Response 解构探针继续保留。
+
+`network-syntax.mjs` 统一静态键、透明包装和 ESLint 词法绑定查询；明确的全局来源沿成员和
+嵌套模式递归传播。局部同名数据绑定不视为内建网络入口。纯数据证明只接受字面量、数组、
+无 getter/函数的对象及无重赋值的初始化绑定；检查直接写入和现有属性 API 的载荷。
+未知参数、函数、getter、调用返回值和逃逸给未知调用的对象不能获得纯数据例外。
+不执行函数或 getter，不宣称证明任意运行时别名、原型修改或动态执行安全。
+
+将已证明误报的 `no-restricted-syntax` 盲路由选择器等价迁移至独立的
+`quality/no-network-routing` 上下文规则，仅对可证明纯数据免报；原真实网络负例全部保留。
+`room.test.ts` 仍只关闭 Response 规则，路由规则独立生效。新增矩阵使用真实 route、fulfill、
+routeFromHAR、routeWebSocket、fetch、json 字段，覆盖读取、可选链、计算键、嵌套解构、
+数据更新、局部同名绑定和带函数的负例。默认值不能把未知实参或嵌套来源证明为纯数据。
+阈值、依赖版本、固定 4cc323f 初始债务、历史测量、工作流、应用和截图均未修改。
+
+复测命令：
+
+```sh
+node --test scripts/quality.test.mjs scripts/quality-routing.test.mjs
+npm run check
+```
+
+本轮完整质量测试实际为 26 项、24 项通过、2 项失败：历史重测和 C901 测试受 uv 缓存
+写权限限制，后者未收到 JSON。网络相关定向矩阵 17 项通过，包含真实 TypeScript 探针。
+ESLint（42 项旧债务）、架构（2 个旧环）、重复门禁（无新增）、400 行检查、类型检查及
+原生用例收集实际通过；收集不代表真实设备运行通过。
+完整 `npm run check` 在 Ruff 初始化 `/Users/kevina/.cache/uv` 时因权限停止，未计为通过。
+另行启动的 `npm test` 在 75 秒仍无最终汇总后被有界终止，也未计为通过；不据此推断根因。
+本轮未运行 Python 六目录、重新安装依赖、读取新 CI 附件或运行真实设备。
+仍须宿主运行全部固定检查，并按发布后的当前提交收集 CI 日志、身份、附件及独立验收证据。

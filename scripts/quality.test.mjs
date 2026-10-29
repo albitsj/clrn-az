@@ -145,6 +145,9 @@ async function assertResponseGate(sources) {
 
 test('needs-repair 原始反例通过 TypeScript 检查后，独立生产规则均报错', async () => {
   const probes = [
+    ['const { Response: { json: reply } } = globalThis; const fabricated = reply.call(Response, { fake: true }); void fabricated;', 1],
+    ['const settings = { route: "business" }; const label = settings.route; console.log(label);', 0],
+    ['const settings = { fetch: "data" }; Object.assign(settings, { fetch: "updated" }); console.log(settings);', 0],
     ['Reflect.set(globalThis, "fetch", /** fake reply */ async () => globalThis.Response.json({ fake: true }));', 2],
     ['const { ["json"]: reply } = globalThis.Response; const fabricated = reply.call(Response, { fake: true }); void fabricated;', 1],
     ['declare const page: import("@playwright/test").Page; void (/** 伪造网络响应。 */ async () => { await page[`route`]("**/*", /** 返回伪造响应。\n * @param route - 路由控制器。\n */ async route => { await route[`fulfill`]({status:200,body:"fake"}); }); })();', 2],
@@ -171,7 +174,7 @@ test('needs-repair 原始反例通过 TypeScript 检查后，独立生产规则�
       assert.equal((await diagnostics(source, networkRules, filePath)).length, count, filePath);
     }
   }
-  for (const [probe] of probes.slice(0, 2)) {
+  for (const [probe] of probes.filter(([, count]) => count < 2)) {
     assert.deepEqual(await diagnostics(probe, networkRules, 'visual/cases/_shared/room.test.ts'), []);
   }
 });
