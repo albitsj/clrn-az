@@ -1,7 +1,7 @@
 import { expect, type TestInfo } from '@playwright/test';
 import type { AndroidDevice } from 'playwright';
 import type { Mitmproxy } from '../e2e/helpers/mitmproxy-client';
-import { events, PLAYER_IDS, restoreTable, validBets } from '../visual/cases/zhajinhua/replayData';
+import { PLAYER_IDS, restoreTable } from '../e2e/helpers/zhajinhua-scenes';
 import { gameReady, gameGone, gameTap, gameNodes, gameSemanticText } from './game-controls';
 import { replay, gameCardNames } from './game-replay';
 import { closeAnimatedGameMask, closeGameMask } from './game-pregame';
@@ -13,7 +13,7 @@ import { captureAssetSequence } from './asset-sequence';
 import type { ScreenshotMask } from './screenshot';
 
 /**
- * 直接使用 Web 八个牌局状态的网络事件，真实点击原生操作按钮。
+ * 选择 Python 八个牌局状态，真实点击原生操作按钮。
  * @param device - 专用模拟器连接。
  * @param proxy - 本轮独占代理。
  * @param roomId - 本轮创建的房间。
@@ -27,20 +27,14 @@ export async function zhajinhuaGameplay(device: AndroidDevice, proxy: Mitmproxy,
   phase: 'all' | 'table' | 'effects' = 'all'): Promise<void> {
   /**
    * 发送共用回放事件。
-   * @param data - Web 共用的网络事件。
+   * @param data - Python 命名场景。
    */
   const send = (data: unknown) => replay(proxy, 'zhajinhua', roomId, data);
-  const showdown = events([{ event: 'showdown', players: [
-    { player_id: self, hole_card: ['as', 'ad', 'ac'], hand_strength: 'three_of_a_kind', is_winner: true },
-    { player_id: PLAYER_IDS[0], hole_card: ['kh', 'ks', 'qd'], hand_strength: 'pair', is_winner: false },
-  ] }]);
-  const settlement = events([{ event: 'settlement', players: [
-    { player_id: self, net: 120, prize: 120, stack: 1120 },
-    { player_id: PLAYER_IDS[0], net: -40, prize: 0, stack: 920 },
-  ] }]);
+  const showdown = { scene: 'showdown' };
+  const settlement = { scene: 'settlement' };
   if (phase === 'effects') {
     // 反馈动画独立建房；用真实房间消息恢复结算牌桌，保持贴纸和升级前的可见背景。
-    await send(restoreTable(self, true, true));
+    await send(restoreTable(true, true));
     await expect.poll(async () => (await gameNodes(device))
       .filter(node => node.res?.startsWith('zhajinhua-player-container-')).length,
     { timeout: 30_000 }).toBe(5);
@@ -51,14 +45,14 @@ export async function zhajinhuaGameplay(device: AndroidDevice, proxy: Mitmproxy,
     { timeout: 30_000 }).toBe(`${self} 1120`);
   } else {
     if (animationInfo) await captureNativeTransition(device, 'zhajinhua-deal-cards', animationInfo,
-      { x: 360, y: 1054, width: 148, height: 102 }, () => send(restoreTable(self)),
+      { x: 360, y: 1054, width: 148, height: 102 }, () => send(restoreTable()),
       [], [], 0, 'videoFrames');
-    else await send(restoreTable(self));
+    else await send(restoreTable());
     await expect.poll(async () => (await gameNodes(device))
       .filter(node => node.res?.startsWith('zhajinhua-player-container-')).length, { timeout: 30_000 }).toBe(5);
     await expect.poll(async () => (await gameNodes(device)).filter(node => node.res === 'player_card').length,
       { timeout: 30_000 }).toBe(15);
-    await send(events([restoreTable(self).queue[0]]));
+    await send({ scene: 'room-status' });
     await gameGone(device, 'player_tips_text');
     await gameReady(device, 'zhajinhua-operation-button-call');
     await gameReady(device, 'zhajinhua-see-hand-card-button');
@@ -68,11 +62,7 @@ export async function zhajinhuaGameplay(device: AndroidDevice, proxy: Mitmproxy,
       await captureMovingKeyframes(device, 'zhajinhua-operation-countdown', animationInfo, [timer!.bounds]);
     }
     await capture('blind_cards');
-    const seeCards = events([
-      { event: 'see_hole_card', player_id: self },
-      { event: 'obtain_hole_card', hole_card: ['as', 'ad', 'ac'], hand_strength: 'three_of_a_kind' },
-      { event: 'player_bets', valid_bets: validBets(true) },
-    ]);
+    const seeCards = { scene: 'see-cards' };
     if (animationInfo) {
       const see = await gameReady(device, 'zhajinhua-see-hand-card-button');
       /** 点击真实看牌按钮并通过原生牌局消息翻开本人三张牌。 */
@@ -92,8 +82,7 @@ export async function zhajinhuaGameplay(device: AndroidDevice, proxy: Mitmproxy,
     await gameGone(device, 'zhajinhua-see-hand-card-button');
     await capture('seen_cards', [{ x: 260, y: 1075, width: 35, height: 40,
       reason: '看牌后玩家头像下的独立操作秒数仍在跳动' }]);
-    const raise = events([{ event: 'raise', player_id: self, amount: 40, stack: 960 },
-      { event: 'pot_update', pot_amount: 160 }]);
+    const raise = { scene: 'raise' };
     if (animationInfo) {
       const button = await gameReady(device, 'zhajinhua-shortcut-raise-first');
       /** 通过真实按钮和回放消息触发加注筹码动画。 */
@@ -115,9 +104,9 @@ export async function zhajinhuaGameplay(device: AndroidDevice, proxy: Mitmproxy,
     await capture('quick_raise');
     if (animationInfo) await captureNativeTransition(device, 'zhajinhua-operation-buttons', animationInfo,
       // 下方三张手牌独立重绘；只比较操作按钮及文字。
-      { x: 100, y: 865, width: 520, height: 180 }, () => send(restoreTable(self, false, true)),
+      { x: 100, y: 865, width: 520, height: 180 }, () => send(restoreTable(false, true)),
       [], [], 400, 'videoFrames');
-    else await send(restoreTable(self, false, true));
+    else await send(restoreTable(false, true));
     await gameReady(device, 'zhajinhua-operation-accurate-bet-button');
     const accurateBetClock = [{ x: 350, y: 725, width: 90, height: 40,
       reason: '独立运行的玩家操作倒计时，不属于精确加注弹窗' }];
@@ -132,7 +121,7 @@ export async function zhajinhuaGameplay(device: AndroidDevice, proxy: Mitmproxy,
     else await closeGameMask(device, 'accurate-bet-popup-container');
     if (animationInfo) {
       // 原生录屏与关键帧采集可能耗尽上一轮操作时限；恢复相同牌桌后再检查比牌选择态。
-      await send(restoreTable(self, false, true));
+      await send(restoreTable(false, true));
       await gameReady(device, 'zhajinhua-voice-button');
     }
     await gameTap(device, 'zhajinhua-operation-button-battle');
@@ -148,7 +137,7 @@ export async function zhajinhuaGameplay(device: AndroidDevice, proxy: Mitmproxy,
     await capture('challenge_select');
     await gameTap(device, 'zhajinhua-cancel-challenge-choosing');
     await gameTap(device, 'zhajinhua-shortcut-raise-first');
-    await send(restoreTable(self, true, true));
+    await send(restoreTable(true, true));
     await gameReady(device, `zhajinhua-player-container-${PLAYER_IDS[0]}-operating`);
     await gameGone(device, 'zhajinhua-operation-button-call');
     await capture('opponent_turn');
@@ -175,22 +164,17 @@ export async function zhajinhuaGameplay(device: AndroidDevice, proxy: Mitmproxy,
     for (const name of ['angry', 'cry', 'drink', 'puchi', 'titter', 'smirk', 'handclap']) {
       await captureAssetSequence(device, `zhajinhua-sticker-${name}`, animationInfo,
         { x: 220, y: 990, width: 180, height: 190 },
-        () => send({ stream: 'room_message', payload: { action: 'sticker', content: {
-          from_user_id: self, to_user_id: PLAYER_IDS[1], file: name,
-        } } }));
+        () => send({ scene: 'sticker', file: name }));
     }
     for (const name of ['tomato', 'tea', 'water', 'flower', 'heart', 'good', 'beer']) {
       await captureAssetSequence(device, `zhajinhua-prop-${name}`, animationInfo,
         { x: 0, y: 460, width: 180, height: 230 },
-        () => send({ stream: 'room_message', payload: { action: 'props', content: {
-          from_user_id: self, to_user_id: PLAYER_IDS[1], file: name,
-        } } }), { x: 120, y: 700, width: 220, height: 340 });
+        () => send({ scene: 'props', file: name }), { x: 120, y: 700, width: 220, height: 340 });
     }
     // 新牌局清除胜利皇冠，再通过当前房间的真实操作响应触发独立的拼三张升级动画。
-    await send(events([{ event: 'new_game', game_id: 'visual-feedback-zhajinhua-game',
-      settings: { boot: 1, raise_times: 10, max_round: 20, pot_limit: 2000 } }]));
-    await send(restoreTable(self));
-    await send(events([restoreTable(self).queue[0]]));
+    await send({ scene: 'new-game' });
+    await send(restoreTable());
+    await send({ scene: 'room-status' });
     await gameReady(device, 'zhajinhua-operation-button-call');
     await proxy.command('zhajinhua/operation-reward', { roomId, enabled: true });
     try {

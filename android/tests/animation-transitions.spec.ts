@@ -155,7 +155,7 @@ test('hall matching spinner animates while the real waiting dialog is visible', 
       await tap(device, 'quick-start-room-cancel');
       await waitAbsent(device, { res: 'game-matching-loading-view' });
     } finally { await device?.close(); }
-  }, false, true);
+  }, 'matching');
 });
 
 test('club more menu fades into and out of the Android screen', async ({}, testInfo) => {
@@ -258,5 +258,5 @@ test('private room invite sheet slides into and out of the Android screen', asyn
         String(Math.round(cancel.bounds.y + cancel.bounds.height / 2)));
       await captureNativeTransition(device, 'invite-friends-exit', testInfo, region, pressCancel);
     } finally { await device?.close(); }
-  }, false, false, false, false, true);
+  }, 'invitable');
 });

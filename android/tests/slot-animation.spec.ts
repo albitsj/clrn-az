@@ -115,5 +115,5 @@ test('all three native slot reels and reward types animate from real spin respon
       expect(final.spins, '能量不足由第四次旋转请求触发').toBe(4);
       await waitAbsent(device, { res: 'slot-machine-view' });
     } finally { await device?.close(); }
-  }, false, false, true);
+  }, 'slot');
 });

@@ -4,6 +4,7 @@ import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
+import { fileURLToPath } from 'node:url';
 import { PNG } from 'pngjs';
 
 const require = createRequire(import.meta.url);
@@ -64,7 +65,7 @@ test('登记的飞行位置锚点缺失必须失败，不能因主图匹配而�
     /** 仅模拟一个已登记的真实锚点文件丢失。
      * @param file - 基准名。
      */
-    snapshotPath: file => new URL(file === missing ? `missing/${file}` : file, snapshots).pathname };
+    snapshotPath: file => fileURLToPath(new URL(file === missing ? `missing/${file}` : file, snapshots)) };
   await assert.rejects(captureAssetSequence(deviceFor(frames), name, info,
     { x: 0, y: 0, width: body[0].width, height: body[0].height }, async () => {},
     { x: body[0].width, y: 0, width: flight[0].width, height: flight[0].height }),

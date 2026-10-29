@@ -1,7 +1,7 @@
 import { expect, type TestInfo } from '@playwright/test';
 import type { AndroidDevice } from 'playwright';
 import type { Mitmproxy } from '../e2e/helpers/mitmproxy-client';
-import { events, restoreTable, type Street, type TableOptions } from '../visual/cases/texas-holdem/replayData';
+import { restoreTable, type Street, type TableOptions } from '../e2e/helpers/game-scenes';
 import { gameGone, gameNodes, gameReady, gameTap, type NativeNode } from './game-controls';
 import { gameCardNames, replay } from './game-replay';
 import { adb } from './device';
@@ -15,26 +15,26 @@ export type TexasContext = {
 };
 
 /**
- * 复用 Web 消息夹具恢复牌局，等待五个真实牌面容器完成更新。
+ * 复用 Python 命名场景恢复牌局，等待五个真实牌面容器完成更新。
  * @param context - 当前真实房间及原生连接。
- * @param options - Web 共用的牌桌人数、底池与操作配置。
+ * @param options - Python 中登记的牌桌布局和操作分支。
  * @param street - 要恢复的回合。
  * @param opponent - 是否轮到对手操作。
  */
-export async function restoreTexas(context: TexasContext, options: TableOptions = {}, street: Street = 'river', opponent = false): Promise<void> {
-  await replay(context.proxy, 'texas', context.room, restoreTable(context.self, street, opponent, options));
+export async function restoreTexas(context: TexasContext, options: TableOptions = 'standard', street: Street = 'river', opponent = false): Promise<void> {
+  await replay(context.proxy, 'texas', context.room, restoreTable(street, opponent, options));
   const count = { preflop: 0, flop: 3, turn: 4, river: 5 }[street];
   await gameCardNames(context.device, 'community_card', 'community_card_name_text',
     ['ah', 'kd', '7c', '2s', 'qs'].map((card, index) => index < count ? card : 'back'));
 }
 
 /**
- * 将 Web 共用的事件队列发送到本轮真实房间。
+ * 选择本轮真实房间的 Python 消息场景。
  * @param context - 当前真实房间及原生连接。
- * @param queue - 真实游戏协议事件。
+ * @param scene - Python 中登记的回放场景。
  */
-export async function texasEvents(context: TexasContext, queue: Record<string, unknown>[]): Promise<void> {
-  await replay(context.proxy, 'texas', context.room, events(queue));
+export async function texasEvents(context: TexasContext, scene: string): Promise<void> {
+  await replay(context.proxy, 'texas', context.room, { scene });
 }
 
 /**

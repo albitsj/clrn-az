@@ -9,7 +9,7 @@ const { withAndroidProxy } = require('./proxy.ts');
 const { MitmdumpProcess } = require('../e2e/helpers/mitmproxy-process.ts');
 
 /**
- * 运行真实代理会话与本机夹具服务，仅替换外部 Android 命令和代理子进程。
+ * 运行真实代理会话，仅替换外部 Android 命令和代理子进程。
  * @param context - 当前测试隔离的 mock 管理器。
  * @param failCommand - 可选的故障命令判断。
  */
@@ -55,34 +55,18 @@ function session(context, failCommand = () => undefined) {
   context.after(() => {
     if (originalSerial === undefined) delete process.env.ANDROID_SERIAL;
     else process.env.ANDROID_SERIAL = originalSerial;
-    assert.ok(servers.length > 0);
-    assert.ok(servers.every(server => !server.listening), '任何退出路径都应关闭夹具服务');
+    assert.equal(servers.length, 0, '不应启动 TypeScript HTTP 夹具服务');
   });
   return { commands, /** 返回代理真实收到的本轮夹具连接信息。 */ environment: () => fixtureEnvironment };
 }
 
-test('代理重试先有界等待指定模拟器连接，再读取旧设置，并保留真实夹具路由', async context => {
+test('代理重试先有界等待指定模拟器连接，再读取旧设置，且不启动响应服务', async context => {
   const state = session(context);
   const result = await withAndroidProxy(async () => {
     const environment = state.environment();
-    const response = await fetch(environment.ANDROID_FIXTURE_URL, {
-      method: 'POST', headers: { authorization: environment.ANDROID_FIXTURE_TOKEN },
-      body: JSON.stringify({ url: 'https://api.shafayouxi.org/public/v10/profile/country' }),
-    });
-    assert.equal(response.status, 200);
-    assert.equal(JSON.parse((await response.json()).body).result.countryPhoneCode, '86');
-    for (const host of [
-      '64.kr-seoul.api.staging.laiwan.shafayouxi.com',
-      '67.hk.api.staging.laiwan.shafayouxi.com',
-      '68.kr.api.staging.laiwan.shafayouxi.com',
-    ]) {
-      const health = await fetch(environment.ANDROID_FIXTURE_URL, {
-        method: 'POST', headers: { authorization: environment.ANDROID_FIXTURE_TOKEN },
-        body: JSON.stringify({ url: `https://${host}/node/v1/status` }),
-      });
-      const fixture = await health.json();
-      assert.equal(fixture, null, '所有节点健康结果必须交由真实上游返回');
-    }
+    assert.equal(environment.ANDROID_FIXTURE_URL, undefined);
+    assert.equal(environment.ANDROID_FIXTURE_TOKEN, undefined);
+    assert.equal(environment.ANDROID_SCENE, 'pages');
     return 'completed';
   });
   assert.equal(result, 'completed');
@@ -123,7 +107,7 @@ test('模拟器重连已清除反向转发时仍能完成代理恢复', async co
 });
 
 for (const failedCommand of ['wait-for-device', 'shell settings get global http_proxy']) {
-  test(`${failedCommand} 失败关闭夹具服务，不执行测试或写入未知的旧代理设置`, async context => {
+  test(`${failedCommand} 失败清理会话，不执行测试或写入未知的旧代理设置`, async context => {
     const failure = new Error('adb: device offline');
     const state = session(context, command => command === failedCommand ? failure : undefined);
     await assert.rejects(withAndroidProxy(async () => assert.fail('不应启动原生场景')), error => error === failure);

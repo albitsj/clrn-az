@@ -1,5 +1,5 @@
 import { expect } from '@playwright/test';
-import { REPLAY_PLAYER_IDS } from '../visual/cases/texas-holdem/replayData';
+import { REPLAY_PLAYER_IDS } from '../e2e/helpers/game-scenes';
 import { flattenNodes, gameGone, gameNodes, gameReady, gameTap, gameSemanticText } from './game-controls';
 import { closeGameMask } from './game-pregame';
 import { adb } from './device';
@@ -11,36 +11,34 @@ import { gameTapText, restoreTexas, texasEvents, type TexasContext } from './tex
  */
 export async function texasControlVariants(context: TexasContext): Promise<void> {
   const { device, capture } = context;
-  const bets = { fold: {}, check: {}, raise: { minimum: 40, maximum: 1000 }, all_in: { amount: 1000 } };
-  await restoreTexas(context, { validBets: bets });
+  await restoreTexas(context, 'check');
   await gameReady(device, 'texas-holdem-operation-button-check');
   await capture('check');
-  await restoreTexas(context, { validBets: { fold: {}, all_in: { amount: 15 } } });
+  await restoreTexas(context, 'all-in-only');
   await gameReady(device, 'texas-holdem-operation-button-all_in');
   await gameGone(device, 'texas-holdem-operation-button-call');
   await capture('all_in_only');
-  await restoreTexas(context, { validBets: { fold: {}, call: { amount: 15 }, all_in: { amount: 15 } } });
+  await restoreTexas(context, 'all-in-call');
   await gameReady(device, 'texas-holdem-operation-button-all_in');
   await gameReady(device, 'texas-holdem-operation-button-call');
   await capture('all_in_call');
-  await restoreTexas(context, { pots: [3], validBets: bets });
+  await restoreTexas(context, 'shortcut-blinds');
   await gameReady(device, 'texas-holdem-shortcut-raise-button-double_big_blind');
   expect((await gameNodes(device)).filter(node => node.res?.startsWith('texas-holdem-shortcut-raise-button-')
     && !node.res.endsWith('group'))).toHaveLength(4);
   await capture('shortcut_blinds');
-  await restoreTexas(context, { validBets: { fold: {}, call: { amount: 20 },
-    raise: { minimum: 40, maximum: 50 }, all_in: { amount: 50 } } });
+  await restoreTexas(context, 'shortcut-disabled');
   expect((await gameReady(device, 'texas-holdem-shortcut-raise-button-half_pot')).enabled).toBe(false);
   await capture('shortcut_disabled');
   // 直接恢复对手回合，避免本人异步开始计时与紧随其后的 switch_player 相互覆盖。
-  await restoreTexas(context, {}, 'river', true);
+  await restoreTexas(context, 'standard', 'river', true);
   await gameReady(device, `texas-holdem-player-container-${REPLAY_PLAYER_IDS[0]}-operating`);
   await expect.poll(async () => {
     const self = (await gameNodes(device)).find(node => node.res === `texas-holdem-player-container-${context.self}`);
     return self && gameSemanticText(self, 'texas-holdem-bet-amount-text') === '20'
       && flattenNodes(self).some(node => node.res === 'texas-holdem-player-action-call');
   }, { timeout: 30_000 }).toBe(true);
-  await texasEvents(context, [{ event: 'switch_player', player_id: REPLAY_PLAYER_IDS[0], valid_bets: { call: { amount: 20 } } }]);
+  await texasEvents(context, 'opponent-turn');
   await gameGone(device, 'texas-holdem-operation-button-raise');
   await expect.poll(async () => (await gameNodes(device)).some(node => /看或弃|看或棄|Check\/Fold/.test(node.text || ''))).toBe(true);
   await capture('auto_buttons');

@@ -28,13 +28,13 @@ Web 另外有 5 个下载帮助场景。当前 Staging APK 的发布渠道为 `d
 
 战绩直接复用 Web 的完整状态清单：旧版 32 个、新版 30 个状态，三种语言，共 186 张截图。覆盖加载、空列表、列表底部、分数选择汇总、侧滑删除、详情输赢展开、结算、回放入口、分页和故障恢复。与基础场景及冒烟图合计 403 张正式基准。德州完整 95 个状态、拼三张完整 26 个状态已接入同一份 Web 清单，涵盖操作控件、边池、旁观、聊天举报、带入审核、牌谱、主题、语音面板、大厅和故障恢复；三语合计 766 张截图，由 256 个测试用例执行。全部基准均来自固定 x86_64 CI 环境并经过审查；回归结果以对应提交的 compare 运行及 PR 检查为准。
 
-网络代理直接调用 Web 的 `mockVisualNetworkDependencies`，复用商品、私人房、俱乐部等响应夹具；未匹配的请求继续访问真实服务。新增 `signed_in_club_rooms_populated` 场景仅在该用例中由 mitmproxy 返回一个俱乐部及两条牌局，沿用原有空态场景；三张原生基准来自 [reference 40212302471](https://github.com/albitsj/clrn-az/actions/runs/40212302471)，使用 `android-staging-300000901-c451f743aad6` 的固定 API 35、720×1280、x86_64 模拟器。三种语言用例均通过；逐图核对两条牌局、人数、等待状态、界面语言和完整画面，保留原空态基准；三语社交场景在 [比较运行 40220337781](https://github.com/albitsj/clrn-az/actions/runs/40220337781) 中均已通过。真实登录成功后，仅将本人昵称、展示用户名、注册日期和余额固定为 `visual/fixtures/account-presentation.json`，身份和令牌保持原值，失败响应不改成成功。普通页面测试不提交表单。牌桌组通过真实界面创建本轮专用私人房，复用 Web 的余额检查与清理；退出和失败时都解散该房间。仅测试账号余额不足时复用现有 testing 接口补钻，不执行真实充值。Web 和 Android 共用 `visual/fixtures/game-presentation.json` 中的展示房号；Android 仅覆盖本轮真实房间成功响应的 `options.house_number`，保留 UUID、房主、权限、房间状态及连接和清理请求。房号及复制图标完整参与截图比较。
+网络代理直接在 Python addon 内读取商品、私人房、俱乐部等必要夹具；TypeScript 仅选择命名场景，不启动响应服务。未匹配的请求继续访问真实服务。逐项保留/迁移决定、接口范围及本轮验证限制见[网络夹具清单](../docs/network-fixtures.md)。新增 `signed_in_club_rooms_populated` 场景仅在该用例中由 mitmproxy 返回一个俱乐部及两条牌局，沿用原有空态场景；三张原生基准来自 [reference 40212302471](https://github.com/albitsj/clrn-az/actions/runs/40212302471)，使用 `android-staging-300000901-c451f743aad6` 的固定 API 35、720×1280、x86_64 模拟器。三种语言用例均通过；逐图核对两条牌局、人数、等待状态、界面语言和完整画面，保留原空态基准；三语社交场景在 [比较运行 40220337781](https://github.com/albitsj/clrn-az/actions/runs/40220337781) 中均已通过。真实登录成功后，仅将本人昵称、展示用户名、注册日期和余额固定为 `visual/fixtures/account-presentation.json`，身份和令牌保持原值，失败响应不改成成功。普通页面测试不提交表单。牌桌组通过真实界面创建本轮专用私人房，复用 Web 的余额检查与清理；退出和失败时都解散该房间。仅测试账号余额不足时复用现有 testing 接口补钻，不执行真实充值。Web 和 Android 共用 `visual/fixtures/game-presentation.json` 中的展示房号；Android 仅覆盖本轮真实房间成功响应的 `options.house_number`，保留 UUID、房主、权限、房间状态及连接和清理请求。房号及复制图标完整参与截图比较。
 
-正常视觉与登录准备完整透传 v12 数组、v13 字典、所有候选节点的健康结果和 CORS 预检，包括错误状态、压缩及未知字段。Python 玩法/战绩代理和 TypeScript 夹具查询都不固定首尔 64、不伪造健康指标、不排除其他节点；应用按真实候选自主选线。`enableVisualFixtures` 仅启用业务夹具；房间回放随实际确认订阅的连接工作，换节点后仍只针对本轮房间。超时、断线和不可用响应仅在明确的异常用例中注入；品牌启动页仍只在控制接口显式开启期间暂缓健康 GET，释放后访问原服务器。
+正常视觉与登录准备完整透传 v12 数组、v13 字典、所有候选节点的健康结果和 CORS 预检，包括错误状态、压缩及未知字段。Python 玩法/战绩代理和公共夹具都不固定首尔 64、不伪造健康指标、不排除其他节点；应用按真实候选自主选线。`enableVisualFixtures` 仅启用业务夹具；房间回放随实际确认订阅的连接工作，换节点后仍只针对本轮房间。超时、断线和不可用响应仅在明确的异常用例中注入；品牌启动页仍只在控制接口显式开启期间暂缓健康 GET，释放后访问原服务器。
 
 真实选线可能使右下角节点编号同时显示两个节点。截图继续使用原有直接比较实现及共用的 0.5% 比例，不动态改写预期图。已逐图复用同构建的 36 张按钮基准，保留节点编号的原有遮罩；原图、真实样本、差异及审查结论见[合并请求 #29 基准修订记录](BASELINE_REVIEW_29_REVISION.md)。上轮比较器方案及撤回原因保留在[历史复核记录](NETWORK_SELECTION_REVIEW_40649166168.md)。
 
-`e2e/mitmproxy/test_response_overrides_integration.py` 用本地上游验证 64 指标 1065 或失效、67 正常、第三节点真实 503，以及 metadata 不包含 64 的情况；覆盖五个共享入口及 Android 普通/登录、德州、拼三张、战绩入口，Android 实际查询 TypeScript 路由服务。`test_native_network.py` 从 Android 入口验证换线回放的订阅确认和房间隔离，并核对启动暂缓边界。这些是离线代理回归，不代表 APK 在真实设备或模拟器上通过。完整验收仍须在当前部署记录固定的同一 APK 下运行 Android 德州视觉场景，报告会附带同轮 `build-info` 和 `network-selection`：最多保留最近 200 条 metadata 候选、真实健康状态/指标、连接错误及 WebSocket 所选主机，不保存令牌、请求正文或用户/房间身份；不能用原生用例收集或旧 CI 结果替代。
+`e2e/mitmproxy/test_response_overrides_integration.py` 用本地上游验证 64 指标 1065 或失效、67 正常、第三节点真实 503，以及 metadata 不包含 64 的情况；覆盖五个共享入口及 Android 普通/登录、德州、拼三张、战绩入口，Android 直接运行 Python 夹具，不依赖 TypeScript 响应服务。`test_native_network.py` 从 Android 入口验证换线回放的订阅确认和房间隔离，并核对启动暂缓边界。这些是离线代理回归，不代表 APK 在真实设备或模拟器上通过。完整验收仍须在当前部署记录固定的同一 APK 下运行 Android 德州视觉场景，报告会附带同轮 `build-info` 和 `network-selection`：最多保留最近 200 条 metadata 候选、真实健康状态/指标、连接错误及 WebSocket 所选主机，不保存令牌、请求正文或用户/房间身份；不能用原生用例收集或旧 CI 结果替代。
 
 固定环境为 Android API 35、720×1280、320 dpi、字体比例 1、英文系统。GitHub Actions 使用 Ubuntu 和 x86_64 Google APIs 模拟器。正式基准应在相同 CI 环境生成并人工检查；本机 ARM 模拟器适合验证操作流程，渲染差异不能直接当作应用回归。
 
@@ -71,6 +71,8 @@ ANDROID_SERIAL=emulator-5554 ANDROID_GROUP=guest ANDROID_LOCALE=en node scripts/
 ```
 
 下载器只读取当前提交的 `deployments/staging.json`，按其中的 `release_tag` 下载 `android-staging.apk`。下载后核对构建环境、应用标识、完整应用提交、架构、附件大小和 SHA-256；安装前再次校验部署记录与 APK，安装后检查版本。指定 Release 缺少附件会直接失败。每次报告附带 `build-info.json`，用于确认实际测试的应用提交。
+
+发布信息查询与附件下载遇到连接中断、域名解析失败、超时或 HTTP 408/500/502/503/504 时，分别等待 3、6、12、24、30 秒，最多尝试六次。两个附件串行下载，已完成的文件保留，失败附件重试时覆盖不完整文件；日志隐藏带签名的下载地址。认证、权限、附件缺失及最终完整性校验失败仍直接报错，不启动视觉测试。
 
 ## GitHub Actions
 
@@ -127,9 +129,9 @@ ANDROID_SERIAL=emulator-5554 ANDROID_VISUAL_MODE=reference node scripts/with-tes
 
 `ANDROID_GROUP` 支持 `guest`、`account`、`social`、`rooms`、`wallet-help`、`records`、`texas`、`zhajinhua` 和 `all`；`ANDROID_LOCALE` 支持 `en`、`zh-Hans`、`zh-Hant`。Actions 默认全组、全语言，也可用 `filter` 缩小调试范围。compare 每组出现三次失败即停止该组，reference 则继续遍历独立场景，报告中的未执行用例不计为通过。
 
-代理仅绑定主机回环地址，控制接口和夹具服务使用每轮随机令牌。只对显式选定的专用模拟器安装临时 CA 和配置代理，结束时还原代理设置；此环境不应拿来运行个人应用。
+代理仅绑定主机回环地址，控制接口使用每轮随机令牌。只对显式选定的专用模拟器安装临时 CA 和配置代理，结束时还原代理设置；此环境不应拿来运行个人应用。
 
-每轮代理会话先等待指定模拟器连接（最多 120 秒），再读取旧代理设置，避免框架重试早于 adbd 重连。持续离线仍失败，不重放失败的原生命令。启动、设置读取或正文失败都会关闭夹具服务；恢复设置及删除反向端口分别尝试，原始错误与清理错误按发生顺序一并报告，清理失败不能变成成功。
+每轮代理会话先等待指定模拟器连接（最多 120 秒），再读取旧代理设置，避免框架重试早于 adbd 重连。持续离线仍失败，不重放失败的原生命令。启动、设置读取或正文失败都会清理本轮代理进程和证书；恢复设置及删除反向端口分别尝试，原始错误与清理错误按发生顺序一并报告，清理失败不能变成成功。
 
 Android CI 在初始化前启动独立诊断采集器，持续保存 logcat、ADB daemon 日志和模拟器标准输出，同时每 10 秒采集设备连接、进程、主机内存、磁盘和负载。设备探测各自最多等待 5 秒，单项失败会记录退出码或超时原因，其他采集继续；logcat 断连后重新订阅，测试清空设备日志不会删除已保存的主机日志。模拟器启动前安装临时 SDK 包装器，在 `adb emu kill` 前完成最终采集，测试退出码与模拟器清理退出码分别记录；任务结束后恢复 SDK 可执行文件。测试、代理退出和临时证书清理的错误也分别保留。
 
