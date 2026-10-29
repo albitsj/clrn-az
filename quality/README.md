@@ -67,6 +67,84 @@ TypeScript 的 route、fulfill、routeFromHAR、routeWebSocket 成员访问、Re
 node --test --test-name-pattern='属性 API|语法级|注释|房间适配器' scripts/quality.test.mjs
 ```
 
+### Reflect 与全局 Response 漏检回归
+
+在 `d9aab377bcd18c287dd90c07e411ae270d58efb3` 的生产配置下重新复现了
+`Reflect.set(globalThis, "fetch", /** fake reply */ async () => globalThis.Response.json({ fake: true }));`：
+Android、visual、e2e 三种普通路径均为零错误、零警告。
+拆开后的 fetch 替换与全局 Response.json 也各自零诊断，不能用此前的 CI 成功替代该反例。
+
+上一轮由配置内的 `quality/no-network-responses` AST 规则统一识别 Response 构造、json 成员、
+fetch 赋值及属性 API；当时路由限制继续使用原有规则。新增 Reflect.set 全局 fetch 检查，保留
+Object.assign/defineProperty/defineProperties、Reflect.defineProperty 和 mock.method 的既有边界。
+globalThis/window/self/global 上的 Response 与直接 Response 一致；方法自身和属性键支持
+点访问、字符串字面量、无表达式模板及 TypeScript 的 as、类型断言、非空断言、satisfies、
+实例化表达式和可选链包装。每个入口独立报告，不能靠另一条已禁写法掩盖漏检。
+不推断运行时别名、动态模板键、间接属性对象或动态执行；这些仍需审阅。
+room.test.ts 的精确离线例外及其路由限制、工具版本、阈值、固定初始债务和两套历史测量保持不变。
+
+复测命令（只解析内存源码，不执行伪响应）：
+
+```sh
+node --test --test-name-pattern='needs-repair|语法级|注释|属性 API|Response 入口' scripts/quality.test.mjs
+```
+
+上一轮该命令 8 项通过，包括原始完整反例的真实 TypeScript 类型检查、两个独立负例族的普通路径
+矩阵、字符串/业务数据/相似命名正例及精确适配器例外。ESLint、dependency-cruiser、jscpd、
+类型检查、400 行检查和原生用例收集已实际通过；收集不代表真实设备通过。
+完整 `npm run check` 在 Ruff 因用户缓存写权限不足而停止；改用独立临时缓存和工具目录后，
+锁定 Ruff 下载又因 PyPI DNS 不可达失败，未降低版本或跳过检查。
+另外执行的完整 `npm test` 出现本地端口相关失败，未取得完整汇总后中止；单独定位
+`android/proxy.test.mjs` 的 8 项中有 6 项失败，错误均源自 `listen EPERM 127.0.0.1`，保留未通过状态。
+Python 六目录共运行 118 项：Android 的 `test_hung_adb_probes_do_not_block_host_collectors`
+出现已有 #38 所记录的 `offline probe` 丢失断言失败；e2e 本地服务集成测试因沙箱禁止绑定端口报错；
+其余四目录 64 项通过。失败保持未通过状态，未重试掩盖、修改无关实现或更新截图基准。
+宿主仍须执行全部固定检查，并核对新提交的 CI 及附件；本轮尚未读取这些新附件或运行真实设备。
+
+### 静态路由与 Response 解构漏检回归（2026-10-30）
+
+本轮 HEAD 为 `d9aab377bcd18c287dd90c07e411ae270d58efb3`，`origin/master` 为登记比较基线
+`a11c646d9b4de63895c85fb01225ca9f33dd76cf`，无合并冲突或进行中的合并。
+原有三处暂存修改与宿主登记树 `e6c0aea66390534d791e9f859cc13a298047fc28` 一致并保留，
+未修改项目索引、HEAD、分支、Git 配置或历史。仓库内不存在 AGENTS.md、AGENTS.txt、
+DEVELOPMENT.md 或 `.codegraph/`；已核对 README、质量说明及三份现有工作流。
+
+实际读取恢复的 needs-repair 记录和宿主的路由/解构探针记录后，在修改前使用生产配置、
+`allowInlineConfig: false` 及锁定 ESLint 重新解析了以下内存源码，未执行伪响应：
+
+- 真实 Playwright Page 类型的 `page[\`route\`](..., async route => route[\`fulfill\`](...))`：
+  Android、visual、e2e 普通路径均零错误、零警告。
+- `const { ["json"]: reply } = globalThis.Response;` 后调用 `reply.call(Response, ...)`：
+  同样三路径零错误、零警告。
+- 原 Reflect.set 加全局 Response.json 反例：三路径均已有两处响应规则错误，保留该修复。
+
+新增独立 `quality/no-network-routing` 规则复用静态键和透明包装归一化，覆盖 route、fulfill、
+routeFromHAR、routeWebSocket 的调用、成员读取、别名提取及静态解构；原 no-restricted-syntax
+路由守护继续启用。Response 规则补齐直接声明、赋值和默认参数中来源明确的 json 解构。
+`room.test.ts` 仍只允许离线 fetch/Response；新增路由规则在该精确路径同样必须报错。
+不追踪任意运行时别名或动态执行，不修改阈值、固定初始债务、历史测量、工作流、应用或截图。
+
+复测命令：
+
+```sh
+node --test --test-name-pattern='needs-repair|语法级|注释|属性 API|Response 入口|房间适配器|路由' scripts/quality.test.mjs scripts/quality-routing.test.mjs
+node --test scripts/quality.test.mjs scripts/quality-routing.test.mjs
+```
+
+第一条实际 12 项通过；三个完整原始反例均经过真实 TypeScript 类型检查。独立路由负例覆盖
+普通路径矩阵及精确适配器，Response 解构矩阵覆盖直接与四种全局对象来源、静态字符串/模板键、
+透明包装及合法适配器例外，正例包含文案、业务数据和相似命名。
+第二条共 21 项，19 项通过，历史重测和 C901 两项因 uv 缓存权限失败，未计为通过。
+`npm run lint:js`、`lint:lines`、`lint:architecture`、`lint:duplicates`、`typecheck`、
+`test:android:collect` 均退出 0；仍为 42 项精确 ESLint 债务、2 个旧环、47 对旧重复，无新增。
+
+完整 `npm run check` 在 Ruff 初始化宿主 uv 缓存时因权限退出 1；单独 ShellCheck 和工作流检查
+也因同一缓存权限失败。另行启动的完整 `npm test` 60 秒未完成而中止，没有最终汇总，不能视作通过。
+Python 六目录共执行 118 项：Android 31 项中仍有 #38 已记录的 `offline probe` 丢失断言失败；
+e2e 23 项中本地上游集成用例因绑定端口权限失败；其余四目录 64 项通过。未重试掩盖失败。
+本轮未重新安装依赖、读取新 CI 附件或运行设备；宿主须重新执行全部固定检查，并按修复后的提交
+收集必要 CI 日志、身份与附件及独立验收证据。原生用例收集不代表真实设备运行通过。
+
 JSON 夹具和图片属于数据；带函数的场景及 Python 响应实现仍接受扫描。依赖、虚拟环境、设备产物及测试报告等生成目录维持原有明确排除。ESLint 行内禁用和 Ruff noqa 不能绕过统一入口。
 
 ## 工作流与验证证据

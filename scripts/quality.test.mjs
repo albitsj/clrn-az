@@ -5,12 +5,14 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import test from 'node:test';
 import { ESLint } from 'eslint';
+import ts from 'typescript';
 import { assertInitialFindings, assertOnlyShrinks, compareFindings, historicalFindings } from './lint-ratchet.mjs';
 import { intersectBaselines, runJscpd } from './lint-duplicates.mjs';
 import { initialRevision } from './quality-history.mjs';
 import { repository } from './source-files.mjs';
 
 const eslint = new ESLint({ cwd: repository, allowInlineConfig: false });
+const networkRules = ['no-restricted-syntax', 'quality/no-network-responses', 'quality/no-network-routing'];
 
 test('首次迁移逐项对照固定主分支的真实测量，拒绝同位置恶化和虚构旧环', () => {
   const original = JSON.parse(readFileSync(join(repository, 'quality/measurements', initialRevision, 'eslint.json'), 'utf8'));
@@ -45,7 +47,8 @@ test('首次接入拒绝把旧主分支提交作为自动测试比较基准', ()
  */
 async function diagnostics(source, rule, filePath = 'android/tests/quality-probe.ts') {
   const [result] = await eslint.lintText(source, { filePath });
-  return result.messages.filter(message => message.ruleId === rule);
+  assert.ok(!result.messages.some(message => message.fatal), JSON.stringify(result.messages));
+  return result.messages.filter(message => [rule].flat().includes(message.ruleId));
 }
 
 test('真实 ESLint 阈值：复杂度 10、深度 3；行内禁用不能绕过', async () => {
@@ -69,17 +72,17 @@ test('语法级响应伪造规则覆盖普通、可选、计算属性、别名�
     'globalThis["fetch"] = async () => fakeResponse;',
     'context.mock.method(globalThis, "fetch", async () => Response.json({ ok: true }));',
   ]) {
-    assert.ok((await diagnostics(source, 'no-restricted-syntax')).length > 0, source);
+    assert.ok((await diagnostics(source, networkRules)).length > 0, source);
   }
 });
 
 test('注释、文案、URL 和真正请求不误报；例外只适用于登记的适配器单元测试', async () => {
   const real = '// page.route("fake", callback)\nconst text = "route.fulfill"; await fetch("https://example.invalid/route/fulfill"); signal.abort();';
-  assert.deepEqual(await diagnostics(real, 'no-restricted-syntax'), []);
+  assert.deepEqual(await diagnostics(real, networkRules), []);
   const response = 'const response = new Response("unit"); Response.json({ ok: true });';
-  assert.deepEqual(await diagnostics(response, 'no-restricted-syntax', 'visual/cases/_shared/room.test.ts'), []);
-  assert.ok((await diagnostics(response, 'no-restricted-syntax', 'visual/cases/_shared/other.test.ts')).length > 0);
-  assert.ok((await diagnostics('page.route("**/*", handler);', 'no-restricted-syntax', 'visual/cases/_shared/room.test.ts')).length > 0);
+  assert.deepEqual(await diagnostics(response, networkRules, 'visual/cases/_shared/room.test.ts'), []);
+  assert.ok((await diagnostics(response, networkRules, 'visual/cases/_shared/other.test.ts')).length > 0);
+  assert.ok((await diagnostics('page.route("**/*", handler);', networkRules, 'visual/cases/_shared/room.test.ts')).length > 0);
 });
 
 test('属性 API 替换 fetch 和计算属性 Response.json 分别失败，精确适配器例外保留', async () => {
@@ -102,11 +105,11 @@ test('属性 API 替换 fetch 和计算属性 Response.json 分别失败，精�
   for (const filePath of ['android/tests/quality-probe.spec.ts', 'visual/cases/quality-probe.spec.ts',
     'e2e/tests/quality-probe.spec.ts', 'visual/cases/_shared/other.test.ts']) {
     for (const source of sources) {
-      assert.ok((await diagnostics(source, 'no-restricted-syntax', filePath)).length > 0, `${filePath}: ${source}`);
+      assert.ok((await diagnostics(source, networkRules, filePath)).length > 0, `${filePath}: ${source}`);
     }
   }
   for (const source of sources) {
-    assert.deepEqual(await diagnostics(source, 'no-restricted-syntax', 'visual/cases/_shared/room.test.ts'), [], source);
+    assert.deepEqual(await diagnostics(source, networkRules, 'visual/cases/_shared/room.test.ts'), [], source);
   }
 });
 
@@ -121,7 +124,134 @@ test('属性 API 的普通数据操作及字符串不会触发网络伪造规则
     await fetch("https://example.invalid/json");
     const payload = { fetch: "data", json: "text" };
   `;
-  assert.deepEqual(await diagnostics(source, 'no-restricted-syntax'), []);
+  assert.deepEqual(await diagnostics(source, networkRules), []);
+});
+
+/**
+ * 在普通路径矩阵和精确离线适配器路径上验证独立入口。
+ * @param sources - 每个片段只含一个待禁止入口，不执行源码。
+ */
+async function assertResponseGate(sources) {
+  for (const source of sources) {
+    for (const filePath of ['android/tests/quality-probe.spec.ts', 'visual/cases/quality-probe.spec.ts',
+      'e2e/tests/quality-probe.spec.ts', 'visual/cases/_shared/other.test.ts', 'visual/cases/_shared/room.test.mts']) {
+      const messages = await diagnostics(source, 'quality/no-network-responses', filePath);
+      assert.equal(messages.length, 1, `${filePath}: ${source}`);
+      assert.equal(messages[0].severity, 2);
+    }
+    assert.deepEqual(await diagnostics(source, networkRules, 'visual/cases/_shared/room.test.ts'), [], source);
+  }
+}
+
+test('needs-repair 原始反例通过 TypeScript 检查后，独立生产规则均报错', async () => {
+  const probes = [
+    ['Reflect.set(globalThis, "fetch", /** fake reply */ async () => globalThis.Response.json({ fake: true }));', 2],
+    ['const { ["json"]: reply } = globalThis.Response; const fabricated = reply.call(Response, { fake: true }); void fabricated;', 1],
+    ['declare const page: import("@playwright/test").Page; void (/** 伪造网络响应。 */ async () => { await page[`route`]("**/*", /** 返回伪造响应。\n * @param route - 路由控制器。\n */ async route => { await route[`fulfill`]({status:200,body:"fake"}); }); })();', 2],
+  ];
+  let source;
+  const file = join(repository, 'android/tests/quality-compiled-probe.ts');
+  const options = { strict: true, noEmit: true, skipLibCheck: true, types: ['node'],
+    target: ts.ScriptTarget.ESNext, module: ts.ModuleKind.NodeNext, moduleResolution: ts.ModuleResolutionKind.NodeNext };
+  const host = ts.createCompilerHost(options);
+  const readSource = host.getSourceFile.bind(host);
+  /**
+   * 仅将探针源码放入内存，其余类型库仍由真实编译器读取。
+   * @param name - 编译器请求的文件名。
+   * @param languageVersion - 编译器解析选项。
+   * @param rest - 传给原始宿主的其他读取选项。
+   */
+  host.getSourceFile = (name, languageVersion, ...rest) => name === file
+    ? ts.createSourceFile(name, source, languageVersion, true) : readSource(name, languageVersion, ...rest);
+  for (const [probe, count] of probes) {
+    source = probe;
+    assert.deepEqual(ts.getPreEmitDiagnostics(ts.createProgram([file], options, host)), []);
+    for (const filePath of ['android/tests/quality-probe.spec.ts', 'visual/cases/quality-probe.spec.ts',
+      'e2e/tests/quality-probe.spec.ts', 'visual/cases/_shared/room.test.tsx']) {
+      assert.equal((await diagnostics(source, networkRules, filePath)).length, count, filePath);
+    }
+  }
+  for (const [probe] of probes.slice(0, 2)) {
+    assert.deepEqual(await diagnostics(probe, networkRules, 'visual/cases/_shared/room.test.ts'), []);
+  }
+});
+
+test('静态属性 API 族独立阻止 fetch 替换：点访问、固定计算键、全局对象和透明包装', async () => {
+  const sources = [];
+  for (const target of ['globalThis', 'window', 'self', 'global']) {
+    for (const method of ['Reflect.set', 'Reflect["set"]', 'Reflect[`set`]',
+      'Object.defineProperty', 'Object["defineProperty"]', 'Object[`defineProperty`]',
+      'Reflect.defineProperty', 'Reflect["defineProperty"]', 'Reflect[`defineProperty`]']) {
+      for (const key of ['"fetch"', '`fetch`', '(("fetch" as const)!)', '("fetch" satisfies string)']) {
+        sources.push(`${method}((${target} as typeof ${target}), ${key}, ${method.includes('set') ? 'fetch' : '{ value: fetch }'});`);
+      }
+    }
+    for (const method of ['assign', 'defineProperties']) {
+      for (const access of [`.${method}`, `["${method}"]`, `[\`${method}\`]`]) {
+        sources.push(`(Object${access})!(${target}, ({ [(\`fetch\` satisfies string)]: ${method === 'assign' ? 'fetch' : '{ value: fetch }'} } as const));`);
+      }
+    }
+    sources.push(`(${target} as typeof ${target})[("fetch" as const)!] = fetch;`);
+    sources.push(`globalThis.Reflect[\`set\`](${target}, \`fetch\`, fetch);`);
+    sources.push(`(Object.assign<typeof ${target}, { fetch: typeof fetch }>)(${target}, { fetch });`);
+  }
+  sources.push('(Reflect as typeof Reflect)[("set" as const)]!(globalThis!, (`fetch` as const), fetch);');
+  sources.push('(<typeof Reflect>Reflect)[`set`](globalThis, `fetch`, fetch);');
+  sources.push('Reflect?.[`set`]?.(globalThis, `fetch`, fetch);');
+  sources.push('Object.assign(client, { fetch: fakeFetch });');
+  sources.push('Object.defineProperty(client, "fetch", { value: fakeFetch });');
+  sources.push('Object.defineProperties(client, { fetch: { value: fakeFetch } });');
+  sources.push('Reflect.defineProperty(client, "fetch", { value: fakeFetch });');
+  sources.push('client.fetch = fakeFetch;');
+  sources.push('context.mock[`method`](globalThis, (`fetch` as const), fakeFetch);');
+  await assertResponseGate(sources);
+});
+
+test('Response 入口独立失败：全局限定、固定计算键和透明包装，不依赖 fetch 替换', async () => {
+  const sources = [];
+  for (const root of ['', 'globalThis', 'window', 'self', 'global']) {
+    const constructors = root ? [root + '.Response', `${root}["Response"]`, `${root}[\`Response\`]`,
+      `(${root} as typeof ${root})[("Response" as const)!]`] : ['Response'];
+    for (const constructor of constructors) {
+      sources.push(`new (${constructor})("fake");`);
+      for (const key of ['json', '"json"', '["json"]', '[`json`]', '[("json" as const)!]', '[(`json` satisfies string)]']) {
+        sources.push(`const { ${key}: reply } = (${constructor} as typeof Response)!; void reply;`);
+        sources.push(`let reply; ({ ${key}: reply } = (${constructor} satisfies typeof Response));`);
+        sources.push(`function probe({ ${key}: reply } = ${constructor}) { return reply; }`);
+      }
+      for (const key of ['.json', '["json"]', '[`json`]', '[("json" as const)!]', '[(`json` satisfies string)]']) {
+        sources.push(`(${constructor} as typeof Response)${key}({ fake: true });`);
+        sources.push(`const reply = (${constructor})!${key}; void reply;`);
+      }
+    }
+  }
+  sources.push('globalThis?.["Response"]?.[`json`]?.({ fake: true });');
+  sources.push('(<typeof Response>globalThis.Response)[`json`]({ fake: true });');
+  await assertResponseGate(sources);
+});
+
+test('属性 API 业务数据、相似名称、动态键和文案不会误报，例外继续禁止路由伪造', async () => {
+  const source = `
+    // Reflect.set(globalThis, "fetch", fakeFetch); globalThis.Response.json({ fake: true });
+    const text = 'globalThis.Response.json';
+    const payload = { fetch: "business data", Response: { json: "data" } };
+    Object.assign(settings, payload, { label: "fetch" });
+    Object.defineProperties(settings, { label: { value: "fetch" } });
+    Reflect.set(settings, "fetch", "data"); settings.label = "fetch";
+    Object.assign(globalThis, { payload: { fetch: "data" } });
+    Reflect[\`set\`](globalThis, \`prefetch\`, "data");
+    Reflect.set(globalThis, key, fetch); Reflect[method](globalThis, "fetch", fetch);
+    Reflect.set(globalThis, \`fetch\${suffix}\`, fetch);
+    Reflector.set(globalThis, "fetch", fetch); MyObject.assign(globalThis, { fetch });
+    business.Response.json(payload); globalThis.MyResponse.json(payload);
+    Response[method](payload); Response[\`json\${suffix}\`](payload); CustomResponse.json(payload);
+    Object.assign(globalThis, { [key]: fetch });
+    await fetch("https://example.invalid/json");
+  `;
+  for (const filePath of ['android/tests/quality-probe.spec.ts', 'visual/cases/quality-probe.spec.ts', 'e2e/tests/quality-probe.spec.ts']) {
+    assert.deepEqual(await diagnostics(source, networkRules, filePath), [], filePath);
+  }
+  assert.ok((await diagnostics('page.route("**/*", handler);', networkRules, 'visual/cases/_shared/room.test.ts')).length > 0);
 });
 
 test('Ruff C901 读取真实配置，复杂度 11 即失败，noqa 无法隐瞒', () => {
@@ -237,5 +367,5 @@ test('jscpd 报告旧重复，新增副本失败，删除后的指纹允许量�
 
 test('已登记的真实房间适配器单元测试没有响应伪造误报', async () => {
   const filePath = 'visual/cases/_shared/room.test.ts';
-  assert.deepEqual(await diagnostics(readFileSync(join(repository, filePath), 'utf8'), 'no-restricted-syntax', filePath), []);
+  assert.deepEqual(await diagnostics(readFileSync(join(repository, filePath), 'utf8'), networkRules, filePath), []);
 });
