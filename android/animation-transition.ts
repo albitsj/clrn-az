@@ -86,12 +86,12 @@ export function assertReviewedVideoMiddle(before: Buffer, after: Buffer,
     const actual = videoThumbnail(frame);
     return references.map(reference => {
       if (progress < reference.start / 4 || remaining < reference.end / 4) return Infinity;
-      // A shifted phase must not leave columns at the start state where reviewed motion persists.
+      // 参考与终点的共同变化须持续覆盖，移动图层在不同位置的变化不能混为持续背景。
       if (!preservesVideoColumns(endpoints, reference.thumbnail, actual)) return Infinity;
       const distance = alignedVideoDistance(actual, reference.thumbnail);
       if (distance > 46) return Infinity;
-      // A better mirrored or lateral match is evidence of misplaced content, never an accepted phase.
-      if (misplacedVideoFrame(actual, reference.thumbnail, distance)) return Infinity;
+      // 镜像与横向调整仅用于错位反证；首尾不增加可接受的中途参考。
+      if (misplacedVideoFrame(actual, reference.thumbnail, distance, endpoints)) return Infinity;
       // A global flash may have the same colours and mean distance as a sliding panel.
       if (localMotionDistance(before, frame) < Math.max(2.5, reference.localMotion * 0.15)) return Infinity;
       return distance;

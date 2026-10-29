@@ -2,26 +2,57 @@ import { PNG } from 'pngjs';
 
 export type VideoThumbnail = { pixels: Uint8Array; width: number; height: number };
 
-/** Keep horizontal position and visual detail while making video comparisons inexpensive.
- * @param png - Recorded frame or reviewed phase.
+type AreaSample = { index: number; weight: number };
+
+/** 按真实重叠面积分配源像素，非整数缩小比例的边缘像素也不能整体归入某一格。
+ * @param source - 原始轴长度。
+ * @param target - 缩略图轴长度。
+ */
+function areaSamples(source: number, target: number): AreaSample[][] {
+  return Array.from({ length: target }, (_, index) => {
+    const start = index * source / target, end = (index + 1) * source / target;
+    return Array.from({ length: Math.ceil(end) - Math.floor(start) }, (_, offset) => {
+      const position = Math.floor(start) + offset;
+      return { index: position, weight: Math.min(end, position + 1) - Math.max(start, position) };
+    });
+  });
+}
+
+/** 积分一个缩略像素覆盖的原图颜色，避免细边缘因抽样点位置而突然放大或消失。
+ * @param source - 原始截图。
+ * @param rows - 纵向覆盖的原图像素与权重。
+ * @param columns - 横向覆盖的原图像素与权重。
+ */
+function areaPixel(source: PNG, rows: AreaSample[], columns: AreaSample[]): number[] {
+  const color = [0, 0, 0];
+  let area = 0;
+  for (const row of rows) for (const column of columns) {
+    const weight = row.weight * column.weight;
+    const from = (row.index * source.width + column.index) * 4;
+    area += weight;
+    for (let channel = 0; channel < 3; channel++) color[channel] += source.data[from + channel] * weight;
+  }
+  return color.map(value => Math.round(value / area));
+}
+
+/** 按面积平均缩小画面，保留横向位置，避免单点采样放大编码边缘的混叠。
+ * @param png - 录屏帧或已审查相位。
  */
 export function videoThumbnail(png: Buffer): VideoThumbnail {
   const source = PNG.sync.read(png);
   const width = Math.min(60, source.width);
   const height = Math.max(1, Math.round(source.height * width / source.width));
+  const columns = areaSamples(source.width, width), rows = areaSamples(source.height, height);
   const pixels = new Uint8Array(width * height * 3);
   for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) {
-    const from = (Math.floor((y + 0.5) * source.height / height) * source.width
-      + Math.floor((x + 0.5) * source.width / width)) * 4;
-    const to = (y * width + x) * 3;
-    for (let channel = 0; channel < 3; channel++) pixels[to + channel] = source.data[from + channel];
+    pixels.set(areaPixel(source, rows[y], columns[x]), (y * width + x) * 3);
   }
   return { pixels, width, height };
 }
 
-/** Preserve horizontal coverage of motion, including dimmed backdrop outside a scaling panel.
- * @param before - Exact start thumbnail.
- * @param frame - Recorded frame or reviewed phase thumbnail.
+/** 计算每列相对起点的运动幅度，保留缩放面板外围的背景变暗。
+ * @param before - 原生起点缩略图。
+ * @param frame - 录屏帧或已审查相位的缩略图。
  */
 function videoColumnMotion(before: VideoThumbnail, frame: VideoThumbnail): number[] {
   if (before.width !== frame.width || before.height !== frame.height) throw new Error('动画帧尺寸变化');
@@ -36,19 +67,23 @@ function videoColumnMotion(before: VideoThumbnail, frame: VideoThumbnail): numbe
   return columns.map(value => value / (height * 3));
 }
 
-/** Require persistent changes to cover the same columns, even at a later scale/opacity.
- * @param endpoints - Start and end thumbnails, never additional accepted middle phases.
- * @param reference - Reviewed middle thumbnail.
- * @param actual - Recorded middle thumbnail.
+/** 仅约束同一像素在参考和终点中共同发生的同向变化，避免把移动内容误当作持续覆盖。
+ * @param endpoints - 原生首尾缩略图，只用于位置诊断，不作为中途参考。
+ * @param reference - 已审查中途相位。
+ * @param actual - 实际录屏中途相位。
  */
 export function preservesVideoColumns(endpoints: VideoThumbnail[], reference: VideoThumbnail,
   actual: VideoThumbnail): boolean {
-  const [before, after] = endpoints;
-  const endMotion = videoColumnMotion(before, after);
-  const reviewedMotion = videoColumnMotion(before, reference);
-  // Reuse the existing one-quarter phase bound locally; unchanged margins impose no constraint.
-  return videoColumnMotion(before, actual)
-    .every((value, x) => value >= Math.min(reviewedMotion[x], endMotion[x]) / 4);
+  const [before, after] = endpoints, { width, height } = before;
+  const persistent = new Array<number>(width).fill(0);
+  for (let index = 0; index < before.pixels.length; index++) {
+    const reviewed = reference.pixels[index] - before.pixels[index];
+    const final = after.pixels[index] - before.pixels[index];
+    if (reviewed * final > 0) persistent[Math.floor(index / 3) % width]
+      += Math.min(Math.abs(reviewed), Math.abs(final)) / (height * 3);
+  }
+  // 沿用四分之一相位边界；在不同纵向位置发生的变化不能相互证明持续覆盖。
+  return videoColumnMotion(before, actual).every((value, x) => value >= persistent[x] / 4);
 }
 
 /** Align a reviewed vertical slide phase without allowing horizontal displacement.
@@ -88,15 +123,21 @@ function transposedThumbnail(frame: VideoThumbnail): VideoThumbnail {
   return { pixels, width: height, height: width };
 }
 
-/** Reject content that matches better after mirroring or lateral displacement.
- * @param actual - Recorded phase thumbnail.
- * @param reference - Reviewed phase thumbnail.
- * @param distance - Original vertical-only match distance.
+/** 镜像仍直接拒绝；横向错位需同时得到中途参考与最近端点的支持，避免误拒合法缩放。
+ * @param actual - 实际录屏相位。
+ * @param reference - 已审查中途相位。
+ * @param distance - 原有纵向对齐距离。
+ * @param endpoints - 原生首尾，仅作错位反证，不参与中途相位的接受距离。
  */
-export function misplacedVideoFrame(actual: VideoThumbnail, reference: VideoThumbnail, distance: number): boolean {
+export function misplacedVideoFrame(actual: VideoThumbnail, reference: VideoThumbnail,
+  distance: number, endpoints: VideoThumbnail[]): boolean {
   const inverted = alignedVideoDistance(actual, mirroredThumbnail(reference));
   const horizontal = alignedVideoDistance(transposedThumbnail(actual), transposedThumbnail(reference));
-  return Math.min(inverted, horizontal) + 6 < distance;
+  if (inverted + 6 < distance) return true;
+  if (horizontal + 6 >= distance) return false;
+  const nearest = endpoints.map(frame => ({ frame, distance: alignedVideoDistance(actual, frame) }))
+    .sort((left, right) => left.distance - right.distance)[0];
+  return alignedVideoDistance(transposedThumbnail(actual), transposedThumbnail(nearest.frame)) + 6 < nearest.distance;
 }
 
 /** Mirror only the reviewed phase to detect inverted content at the same video timing.
