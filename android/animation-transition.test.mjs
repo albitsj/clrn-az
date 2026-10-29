@@ -9,6 +9,7 @@ import { PNG } from 'pngjs';
 const require = createRequire(import.meta.url);
 const { assertReviewedVideoMiddle, captureNativeTransition, middleCandidates } =
   require('./animation-transition.ts');
+const { gamePanelSamplingMethod } = require('./game-panel-animation.ts');
 const snapshots = fileURLToPath(new URL('./snapshots/android-35-x86_64-720x1280-en/', import.meta.url));
 const name = 'club-more-enter';
 const start = readFileSync(`${snapshots}${name}-start.png`);
@@ -29,7 +30,8 @@ async function compare(frames, scene = { name, start, end, width, height }) {
      */
     _send: async method => method === 'screen'
       ? (screens++ === 0 ? scene.start : scene.end).toString('base64')
-      : frames.map((png, index) => ({ capturedAt: index * 100, png: png.toString('base64') })),
+      : frames.map((png, index) => ({ capturedAt: scene.timestamps?.[index] ?? index * 100,
+        png: png.toString('base64') })),
   }) } };
   const info = { /** 测试无需保留附件。 */ attach: async () => {}, config: { updateSnapshots: 'none' },
     /** 映射到已审查的本地基准。
@@ -68,6 +70,111 @@ test('真实后期弹窗相位仍能通过非录屏视觉回归', async () => {
   await compare([sceneStart, late, sceneEnd], { name: sceneName,
     start: sceneStart, end: sceneEnd, width: size.width, height: size.height });
 });
+
+// 历史报告的完整 20 帧及设备时间戳，夹具图片仅是原始输入，不能作为正式基准。
+const fixtureRoot = new URL('./fixtures/buy-in-applications/', import.meta.url);
+const historical = JSON.parse(readFileSync(new URL('timelines.json', fixtureRoot), 'utf8'));
+const buyInName = historical.name;
+const buyInStart = readFileSync(`${snapshots}${buyInName}-start.png`);
+const buyInEnd = readFileSync(`${snapshots}${buyInName}-end.png`);
+const buyInSize = PNG.sync.read(buyInStart);
+const buyInScene = { name: buyInName, start: buyInStart, end: buyInEnd,
+  width: buyInSize.width, height: buyInSize.height };
+
+/** 读取原始帧，复用字节相同的既有基准，避免重复保存。
+ * @param file - 数据清单中的帧路径。
+ */
+function historicalFrame(file) {
+  return readFileSync(file.startsWith('snapshots/')
+    ? `${snapshots}${file.slice('snapshots/'.length)}` : new URL(file, fixtureRoot));
+}
+
+test('带入审核入场预先选择连续录屏，其他面板和退场沿用指定方式', () => {
+  assert.equal(gamePanelSamplingMethod('texas-holdem', 'buy-in-applications', 'enter', 'motionFrames'), 'videoFrames');
+  assert.equal(gamePanelSamplingMethod('texas-holdem', 'buy-in-applications', 'exit', 'motionFrames'), 'motionFrames');
+  assert.equal(gamePanelSamplingMethod('texas-holdem', 'leaderboard', 'enter', 'motionFrames'), 'motionFrames');
+  assert.equal(gamePanelSamplingMethod('zhajinhua', 'buy-in-applications', 'enter', 'videoFrames'), 'videoFrames');
+});
+
+for (const record of historical.records) {
+  test(`带入审核 ${record.phase} retry${record.retry} 完整原始轨迹重放`, async () => {
+    assert.equal(record.frames.length, 20);
+    const frames = record.frames.map(([, file]) => historicalFrame(file));
+    const scene = { ...buyInScene, timestamps: record.frames.map(([time]) => time) };
+    if (record.originalStatus === 'failed') {
+      // 保留首败的可复现反证；仅有早期参考时仍须原样失败。
+      await assert.rejects(compare(frames, scene), /36\.50041134751773/);
+      // 只替换设备采集输入，执行生产录屏路径；仍仅使用原有早期主图。
+      await compareRecordedVideo(buyInName, frames);
+    } else await compare(frames, scene);
+  });
+}
+
+/** 按像素改变亮度，制造闪屏或模拟轻微编码色差，保留原始夹具。
+ * @param frame - 本次测试的输入帧。
+ * @param amount - 每个颜色通道的偏移。
+ */
+function shiftedBrightness(frame, amount) {
+  const image = PNG.sync.read(frame);
+  for (let offset = 0; offset < image.data.length; offset += 4) {
+    for (let channel = 0; channel < 3; channel++) {
+      image.data[offset + channel] = Math.max(0, Math.min(255, image.data[offset + channel] + amount));
+    }
+  }
+  return PNG.sync.write(image);
+}
+
+for (const brightness of [-40, 20, 255]) {
+  test(`带入审核录屏路径拒绝 ${brightness} 亮度闪屏`, async () => {
+    await assert.rejects(compareRecordedVideo(buyInName,
+      [buyInStart, shiftedBrightness(buyInStart, brightness), buyInEnd]),
+      /动画中途帧的实际画面须接近已审查轨迹/);
+  });
+}
+
+test('带入审核录屏路径拒绝静止画面', async () => {
+  await assert.rejects(compareRecordedVideo(buyInName, Array(20).fill(buyInStart)), /录屏结束时动画必须完成/);
+});
+
+test('带入审核录屏路径拒绝直接跳到终点', async () => {
+  await assert.rejects(compareRecordedVideo(buyInName, [buyInStart, buyInStart, buyInEnd]),
+    /必须采到起点和终点之间的真实动画帧/);
+});
+
+/** 在原起点画布上平移真实相位，保留未覆盖的背景，越界像素直接丢弃。
+ * @param background - 同场景的原生起点截图。
+ * @param frame - 要制造错位的真实相位。
+ * @param shift - 横向平移像素，负数向左。
+ */
+function horizontallyShifted(background, frame, shift) {
+  const source = PNG.sync.read(frame), target = PNG.sync.read(background);
+  const fromX = Math.max(0, -shift), toX = Math.max(0, shift);
+  PNG.bitblt(source, target, fromX, 0, source.width - Math.abs(shift), source.height, toX, 0);
+  return PNG.sync.write(target);
+}
+
+const buyInLate = historicalFrame('37480e9d3170212a835eff1b67bea4f342b8e4611f104cf1142bb421af082095.png');
+
+for (const noise of [0, 1]) for (const phase of ['early', 'late']) for (const shift of [-80, -40, 40, 80]) {
+  test(`带入审核 ${phase} 相位横移 ${shift} 像素、编码色差 ${noise} 必须拒绝`, async () => {
+    const reference = readFileSync(`${snapshots}${buyInName}-middle.png`);
+    const frame = phase === 'early' ? reference : buyInLate;
+    const displaced = shiftedBrightness(horizontallyShifted(buyInStart, frame, shift), noise);
+    const timeline = [buyInStart, displaced, buyInEnd];
+    // 同时锁定宿主直接探针与完整生产录屏路径，不能由其他场景的负例代替。
+    assert.throws(() => assertReviewedVideoMiddle(buyInStart, buyInEnd,
+      middleCandidates(buyInStart, buyInEnd, timeline, 'videoFrames'), [reference]),
+    /动画中途帧的实际画面须接近已审查轨迹/);
+    await assert.rejects(compareRecordedVideo(buyInName, timeline),
+      /动画中途帧的实际画面须接近已审查轨迹/);
+  });
+}
+
+for (const noise of [-1, 0, 1]) {
+  test(`带入审核真实晚期相位、编码色差 ${noise} 仍通过完整录屏路径`, async () => {
+    await compareRecordedVideo(buyInName, [buyInStart, shiftedBrightness(buyInLate, noise), buyInEnd]);
+  });
+}
 
 test('已审查的早期菜单相位按自身运动幅度通过视觉回归', async () => {
   const sceneName = 'texas-holdem-drawer-menu-enter';

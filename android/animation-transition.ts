@@ -9,7 +9,8 @@ import { gameScreenshot } from './game-controls';
 import { motionParts, samePixels } from './motion-regions';
 import { maskScreenshot, type ScreenshotBounds, type ScreenshotMask } from './screenshot';
 import { recordNativeVideoFrames, type AnimationRegion } from './video-frames';
-import { alignedVideoDistance, localMotionDistance, mirroredThumbnail, videoThumbnail } from './video-motion';
+import { alignedVideoDistance, localMotionDistance,
+  misplacedVideoFrame, preservesVideoColumns, videoThumbnail } from './video-motion';
 
 type NativeFrame = { capturedAt: number; png: string };
 
@@ -77,21 +78,20 @@ export function assertReviewedVideoMiddle(before: Buffer, after: Buffer,
   candidates: { frame: Buffer; progress: number; remaining: number }[], anchors: Buffer[]): void {
   expect(candidates.length, '必须采到起点和终点之间的真实动画帧').toBeGreaterThan(0);
   const total = frameColorDistance(before, after);
-  const references = anchors.map(anchor => {
-    const thumbnail = videoThumbnail(anchor);
-    return { start: frameColorDistance(before, anchor) / total,
-      end: frameColorDistance(after, anchor) / total,
-      thumbnail, inverted: mirroredThumbnail(thumbnail), localMotion: localMotionDistance(before, anchor) };
-  });
+  const endpoints = [videoThumbnail(before), videoThumbnail(after)];
+  const references = anchors.map(anchor => ({ start: frameColorDistance(before, anchor) / total,
+    end: frameColorDistance(after, anchor) / total,
+    thumbnail: videoThumbnail(anchor), localMotion: localMotionDistance(before, anchor) }));
   const distances = candidates.flatMap(({ frame, progress, remaining }) => {
     const actual = videoThumbnail(frame);
     return references.map(reference => {
       if (progress < reference.start / 4 || remaining < reference.end / 4) return Infinity;
+      // 参考与终点的共同变化须持续覆盖，移动图层在不同位置的变化不能混为持续背景。
+      if (!preservesVideoColumns(endpoints, reference.thumbnail, actual)) return Infinity;
       const distance = alignedVideoDistance(actual, reference.thumbnail);
       if (distance > 46) return Infinity;
-      // A vertically shifted phase can be valid; a mirrored or misplaced drawing cannot.
-      const inverted = alignedVideoDistance(actual, reference.inverted);
-      if (inverted + 6 < distance) return Infinity;
+      // 镜像与横向调整仅用于错位反证；首尾不增加可接受的中途参考。
+      if (misplacedVideoFrame(actual, reference.thumbnail, distance, endpoints)) return Infinity;
       // A global flash may have the same colours and mean distance as a sliding panel.
       if (localMotionDistance(before, frame) < Math.max(2.5, reference.localMotion * 0.15)) return Infinity;
       return distance;
