@@ -1,0 +1,8 @@
+{
+  "minLines": 5,
+  "minTokens": 50,
+  "mode": "mild",
+  "format": ["javascript", "typescript", "python"],
+  "ignore": ["**/node_modules/**", "**/.venv/**", "**/snapshots/**", "**/artifacts/**", "**/test-results/**", "**/playwright-report/**", "**/blob-report/**", "**/.ttyctl/**"],
+  "reporters": ["console"]
+}
