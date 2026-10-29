@@ -139,6 +139,31 @@ test('带入审核录屏路径拒绝直接跳到终点', async () => {
     /必须采到起点和终点之间的真实动画帧/);
 });
 
+/** 在原起点画布上平移真实相位，保留未覆盖的背景，越界像素直接丢弃。
+ * @param background - 同场景的原生起点截图。
+ * @param frame - 要制造错位的真实相位。
+ * @param shift - 横向平移像素，负数向左。
+ */
+function horizontallyShifted(background, frame, shift) {
+  const source = PNG.sync.read(frame), target = PNG.sync.read(background);
+  const fromX = Math.max(0, -shift), toX = Math.max(0, shift);
+  PNG.bitblt(source, target, fromX, 0, source.width - Math.abs(shift), source.height, toX, 0);
+  return PNG.sync.write(target);
+}
+
+for (const shift of [-80, -40, 40, 80]) {
+  test(`带入审核真实中途相位横移 ${shift} 像素必须拒绝`, async () => {
+    const reference = readFileSync(`${snapshots}${buyInName}-middle.png`);
+    const timeline = [buyInStart, horizontallyShifted(buyInStart, reference, shift), buyInEnd];
+    // 同时锁定宿主直接探针与完整生产录屏路径，不能由其他场景的负例代替。
+    assert.throws(() => assertReviewedVideoMiddle(buyInStart, buyInEnd,
+      middleCandidates(buyInStart, buyInEnd, timeline, 'videoFrames'), [reference]),
+    /动画中途帧的实际画面须接近已审查轨迹/);
+    await assert.rejects(compareRecordedVideo(buyInName, timeline),
+      /动画中途帧的实际画面须接近已审查轨迹/);
+  });
+}
+
 test('已审查的早期菜单相位按自身运动幅度通过视觉回归', async () => {
   const sceneName = 'texas-holdem-drawer-menu-enter';
   const sceneStart = readFileSync(`${snapshots}${sceneName}-start.png`);

@@ -9,7 +9,8 @@ import { gameScreenshot } from './game-controls';
 import { motionParts, samePixels } from './motion-regions';
 import { maskScreenshot, type ScreenshotBounds, type ScreenshotMask } from './screenshot';
 import { recordNativeVideoFrames, type AnimationRegion } from './video-frames';
-import { alignedVideoDistance, localMotionDistance, mirroredThumbnail, videoThumbnail } from './video-motion';
+import { alignedVideoDistance, localMotionDistance,
+  misplacedVideoFrame, videoThumbnail } from './video-motion';
 
 type NativeFrame = { capturedAt: number; png: string };
 
@@ -81,7 +82,7 @@ export function assertReviewedVideoMiddle(before: Buffer, after: Buffer,
     const thumbnail = videoThumbnail(anchor);
     return { start: frameColorDistance(before, anchor) / total,
       end: frameColorDistance(after, anchor) / total,
-      thumbnail, inverted: mirroredThumbnail(thumbnail), localMotion: localMotionDistance(before, anchor) };
+      thumbnail, localMotion: localMotionDistance(before, anchor) };
   });
   const distances = candidates.flatMap(({ frame, progress, remaining }) => {
     const actual = videoThumbnail(frame);
@@ -89,9 +90,8 @@ export function assertReviewedVideoMiddle(before: Buffer, after: Buffer,
       if (progress < reference.start / 4 || remaining < reference.end / 4) return Infinity;
       const distance = alignedVideoDistance(actual, reference.thumbnail);
       if (distance > 46) return Infinity;
-      // A vertically shifted phase can be valid; a mirrored or misplaced drawing cannot.
-      const inverted = alignedVideoDistance(actual, reference.inverted);
-      if (inverted + 6 < distance) return Infinity;
+      // A better mirrored or lateral match is evidence of misplaced content, never an accepted phase.
+      if (misplacedVideoFrame(actual, reference.thumbnail, distance)) return Infinity;
       // A global flash may have the same colours and mean distance as a sliding panel.
       if (localMotionDistance(before, frame) < Math.max(2.5, reference.localMotion * 0.15)) return Infinity;
       return distance;

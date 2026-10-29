@@ -43,6 +43,30 @@ export function alignedVideoDistance(actual: VideoThumbnail, reference: VideoThu
   return best;
 }
 
+/** Transpose coordinates so the existing slide metric can diagnose horizontal displacement.
+ * @param frame - Recorded or reviewed thumbnail.
+ */
+function transposedThumbnail(frame: VideoThumbnail): VideoThumbnail {
+  const { width, height } = frame;
+  const pixels = new Uint8Array(frame.pixels.length);
+  for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) {
+    const from = (y * width + x) * 3;
+    pixels.set(frame.pixels.subarray(from, from + 3), (x * height + y) * 3);
+  }
+  return { pixels, width: height, height: width };
+}
+
+/** Reject content that matches better after mirroring or lateral displacement.
+ * @param actual - Recorded phase thumbnail.
+ * @param reference - Reviewed phase thumbnail.
+ * @param distance - Original vertical-only match distance.
+ */
+export function misplacedVideoFrame(actual: VideoThumbnail, reference: VideoThumbnail, distance: number): boolean {
+  const inverted = alignedVideoDistance(actual, mirroredThumbnail(reference));
+  const horizontal = alignedVideoDistance(transposedThumbnail(actual), transposedThumbnail(reference));
+  return Math.min(inverted, horizontal) + 6 < distance;
+}
+
 /** Mirror only the reviewed phase to detect inverted content at the same video timing.
  * @param reference - Reviewed phase thumbnail.
  */
