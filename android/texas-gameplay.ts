@@ -121,8 +121,7 @@ export async function texasGameplay(device: AndroidDevice, proxy: Mitmproxy, roo
         () => adb('shell', 'input', 'swipe', '333', '814', '333', '530', '450'),
         [{ x: 285, y: 725, width: 160, height: 35,
           reason: '加注滑块后面的牌局倒计时独立跳秒' }], [], 0, 'videoFrames',
-        undefined, undefined, [], ['texas-raise-slider-end-500.png', 'texas-raise-slider-end-492.png',
-          'texas-raise-slider-end-496.png'],
+        undefined, undefined, [],
         [{ x: 120, y: 250, width: 160, height: 105,
           reason: '终点加注数字由拖动采样量化；完整标签保留在报告，数值另用原生文本断言' }]);
       expect((await gameReady(device, 'raise-bet-display-text')).text,
