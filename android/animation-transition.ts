@@ -114,7 +114,6 @@ export function assertReviewedVideoMiddle(before: Buffer, after: Buffer,
  * @param inspectFrames - 对同一组原生帧中的独立子动画追加视觉断言。
  * @param afterReady - 需要异步业务数据的面板在终点截图前等待语义就绪。
  * @param videoPhaseAnchors - 独立绘制层可在不同顺序呈现的额外已审查录屏相位。
- * @param endPhaseAnchors - 手势落点离散化造成的已审查终点画面。
  * @param endCompareMasks - 终点独立数值区域；原始终点仍保留在报告中供审查。
  * @param startPhaseAnchors - 系统启动器布局不同但均已审查的起点画面。
  * @param startCompareMasks - 仅用于比较触发前桌面帧的系统动态图标区域；坐标相对截图裁切范围。
@@ -126,7 +125,7 @@ export async function captureNativeTransition(device: AndroidDevice, name: strin
   samplingMethod: 'motionFrames' | 'launchFrames' | 'videoFrames' = 'motionFrames',
   inspectFrames?: (frames: Buffer[], testInfo: TestInfo) => Promise<void>,
   afterReady?: () => Promise<void>, videoPhaseAnchors: string[] = [],
-  endPhaseAnchors: string[] = [], endCompareMasks: ScreenshotMask[] = [],
+  endCompareMasks: ScreenshotMask[] = [],
   startPhaseAnchors: string[] = [], startCompareMasks: ScreenshotMask[] = [],
   videoRecorder: typeof recordNativeVideoFrames = recordNativeVideoFrames): Promise<void> {
   requireEnglishAnimation();
@@ -227,9 +226,8 @@ export async function captureNativeTransition(device: AndroidDevice, name: strin
     expect([`${name}-start.png`, ...startPhaseAnchors]
       .some(file => samePixels(maskScreenshot(before, startCompareMasks),
         maskScreenshot(readFileSync(testInfo.snapshotPath(file)), startCompareMasks))), '动画起点视觉回归').toBe(true);
-    expect([`${name}-end.png`, ...endPhaseAnchors]
-      .some(file => samePixels(maskScreenshot(after, endCompareMasks),
-        maskScreenshot(readFileSync(testInfo.snapshotPath(file)), endCompareMasks))),
+    expect(samePixels(maskScreenshot(after, endCompareMasks),
+      maskScreenshot(readFileSync(testInfo.snapshotPath(`${name}-end.png`)), endCompareMasks)),
     '动画终点视觉回归').toBe(true);
     const reference = readFileSync(testInfo.snapshotPath(`${name}-middle.png`));
     // 原生截图可能落在已审查中途相位的两侧，但靠近起止帧的无关闪屏不能冒充转场。
