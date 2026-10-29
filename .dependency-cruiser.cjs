@@ -27,6 +27,11 @@ module.exports = {
     exclude: { path: '(^|/)(node_modules|\\.venv|snapshots|test-results|playwright-report|blob-report|artifacts|\\.ttyctl)/' },
     tsConfig: { fileName: 'tsconfig.json' },
     tsPreCompilationDeps: true,
-    enhancedResolveOptions: { extensions: ['.js', '.mjs', '.cjs', '.ts', '.tsx', '.json'] },
+    enhancedResolveOptions: {
+      extensions: ['.js', '.mjs', '.cjs', '.ts', '.tsx', '.json'],
+      // 现代包可能只有 exports、没有 main；同时遵守未导出子路径的封装边界。
+      exportsFields: ['exports'],
+      conditionNames: ['import', 'require', 'node', 'default', 'types'],
+    },
   },
 };

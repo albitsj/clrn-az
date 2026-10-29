@@ -37,5 +37,5 @@ test('every native club placeholder pulses while detail response is pending', as
       await proxy.command('android/skeleton', { hold: false }).catch(() => {});
       await device?.close();
     }
-  }, false, false, false, true);
+  }, 'skeleton');
 });

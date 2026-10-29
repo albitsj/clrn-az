@@ -41,7 +41,7 @@ class ZhajinhuaAddonTests(unittest.TestCase):
         self.assertIsNone(self.addon.replay.room_id)
 
     def test_replay_requires_created_room_and_authorized_control(self):
-        payload = {'roomId': ROOM, 'data': {'stream': 'zhajinhua', 'queue': []}}
+        payload = {'roomId': ROOM, 'scene': {'scene': 'table'}}
         self.assertEqual(self.control('/zhajinhua/replay', payload).response.status_code, 400)
         self.creation()
         self.assertEqual(self.control('/zhajinhua/replay', payload, None).response.status_code, 403)
@@ -49,7 +49,7 @@ class ZhajinhuaAddonTests(unittest.TestCase):
             self.assertEqual(self.control('/zhajinhua/replay', dict(payload, roomId=OTHER)).response.status_code, 400)
             publish.assert_not_called()
             self.assertEqual(self.control('/zhajinhua/replay', payload).response.status_code, 200)
-            publish.assert_called_once_with(ROOM, payload['data'])
+            publish.assert_called_once_with(ROOM, scene=payload['scene'])
         self.assertEqual(self.control('/texas/replay', payload).response.status_code, 400)
         self.control('/zhajinhua/release', {})
         self.assertIsNone(self.addon.created_room_id)

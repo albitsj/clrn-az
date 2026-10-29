@@ -1,16 +1,24 @@
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { repository } from './source-files.mjs';
 
-export const initialRevision = 'd9ebf4d232a2511f9f486eb3985334acb52cdacd';
+// 首次接入以宿主登记并合入的最新 master 为准，不使用旧修复分支的测量快照。
+export const initialRevision = '24e46865d9f36075915d81360c495381564d7e95';
 
 /** 返回本地 HEAD 或 CI 提供的变更前提交，拒绝缺失历史时退化为只报告。 */
 export function previousRevision() {
   const revision = process.env.QUALITY_BASE_REV || 'HEAD';
   if (revision !== 'HEAD' && !/^[a-f0-9]{40}$/.test(revision)) throw new Error('QUALITY_BASE_REV 必须是完整提交 SHA。');
   execFileSync('git', ['cat-file', '-e', `${revision}^{commit}`], { cwd: repository });
+  // 宿主保留首次接入 master 的合并状态时，HEAD 仍是旧修复分支；首次测量对照登记 master。
+  // 仅识别这一固定 MERGE_HEAD；合并完成后及未来其他合并仍对照 HEAD 清单，不能扩容。
+  if (!process.env.QUALITY_BASE_REV) {
+    const mergePath = execFileSync('git', ['rev-parse', '--git-path', 'MERGE_HEAD'], { cwd: repository, encoding: 'utf8' }).trim();
+    const mergeFile = resolve(repository, mergePath);
+    if (existsSync(mergeFile) && readFileSync(mergeFile, 'utf8').trim() === initialRevision) return initialRevision;
+  }
   return revision;
 }
 

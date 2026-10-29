@@ -50,7 +50,7 @@ class ZhajinhuaVisualProxy:
                 elif self.scenario == 'visual-stable' and path == '/zhajinhua/replay':
                     if not self.created_room_id or body.get('roomId') != self.created_room_id:
                         raise ValueError('Replay requires this test room')
-                    self.replay.publish(body['roomId'], body.get('data'))
+                    self.replay.publish(body['roomId'], scene=body['scene'])
                 elif self.scenario == 'visual-stable' and path == '/zhajinhua/operation-reward':
                     self.replay.set_operation_reward(body.get('roomId'), body.get('enabled'))
                 elif path == '/zhajinhua/release':

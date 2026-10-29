@@ -1,10 +1,7 @@
-import { createServer } from 'node:http';
-import { randomBytes } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 import type { Mitmproxy } from '../e2e/helpers/mitmproxy-client';
 import { withMitmproxy } from '../e2e/helpers/mitmproxy-session';
-import { visualNetworkRouter } from './network-routes';
 import { adb } from './device';
 
 /**
@@ -61,53 +58,24 @@ async function configureProxy(directory: string, server: string): Promise<string
 }
 
 /**
- * 复用 Web 网络夹具和代理生命周期；真实认证与未声明的接口仍访问 staging。
+ * 启动 Python 网络夹具和代理生命周期；真实认证与未声明的接口仍访问 staging。
  * @param task - 在已准备的模拟器网络环境内运行测试。
- * @param records - 战绩开关或要复用的 Web 玩法代理。
- * @param matching - 隔离大厅匹配队列，只返回等待状态。
- * @param slot - 隔离本轮账号的老虎机旋转和奖励。
- * @param skeleton - 暂缓俱乐部详情响应，保留真实列表占位动画。
- * @param invitable - 在私人房详情夹具中显示等待中的邀请入口。
+ * @param scene - 本轮 Python 场景；互斥选择页面、玩法、战绩或专项动画。
  */
 export async function withAndroidProxy<T>(task: (proxy: Mitmproxy) => Promise<T>,
-  records: boolean | 'texas-holdem' | 'zhajinhua' = false, matching = false, slot = false,
-  skeleton = false, invitable = false): Promise<T> {
-  const route = await visualNetworkRouter({ realPrivateRoom: typeof records === 'string', recordFixtures: records === true });
-  const token = randomBytes(32).toString('hex');
-  const server = createServer(async (request, response) => {
-    if (request.headers.authorization !== token) { response.writeHead(403).end(); return; }
-    try {
-      let body = '';
-      for await (const chunk of request) body += chunk;
-      const { url } = JSON.parse(body);
-      response.setHeader('Content-Type', 'application/json');
-      response.end(JSON.stringify(await route(url)));
-    } catch {
-      response.writeHead(500).end('Invalid fixture request');
-    }
-  });
+  scene: 'pages' | 'records' | 'texas-holdem' | 'zhajinhua' | 'matching' | 'slot' | 'skeleton' | 'invitable' = 'pages'): Promise<T> {
   let previousProxy: string | undefined;
   let reversePort: string | undefined;
   const failures: unknown[] = [];
   let result: T;
   try {
-    await new Promise<void>((resolve, reject) => {
-      server.once('error', reject);
-      server.listen(0, '127.0.0.1', resolve);
-    });
-    const address = server.address();
-    if (!address || typeof address === 'string') throw new Error('夹具服务启动失败。');
     // 上一轮连接失败后，框架重试可能早于 adbd 重连；只等待连接，不重放失败的原生命令。
     // adb() 仍限定专用模拟器并保留 120 秒上限，持续离线必须失败。
     adb('wait-for-device');
     previousProxy = adb('shell', 'settings', 'get', 'global', 'http_proxy').trim();
     result = await withMitmproxy(task, {
       addonPath: path.join(__dirname, 'proxy-addon.py'),
-      environment: { ...process.env, ANDROID_RECORDS: String(records === true),
-        ANDROID_GAME: typeof records === 'string' ? records : '', ANDROID_MATCHING: String(matching),
-        ANDROID_SLOT: String(slot), ANDROID_SKELETON: String(skeleton), ANDROID_INVITABLE: String(invitable),
-        ANDROID_FIXTURE_TOKEN: token,
-        ANDROID_FIXTURE_URL: `http://127.0.0.1:${address.port}/` },
+      environment: { ...process.env, ANDROID_SCENE: scene },
       /**
        * 将本轮临时证书和端口配置到专用模拟器。
        * @param directory - 代理临时目录。
@@ -127,12 +95,6 @@ export async function withAndroidProxy<T>(task: (proxy: Mitmproxy) => Promise<T>
     } catch (error) { failures.push(error); }
     try { if (reversePort) removeReverse(reversePort); }
     catch (error) { failures.push(error); }
-    if (server.listening) {
-      await new Promise<void>(resolve => server.close(error => {
-        if (error) failures.push(error);
-        resolve();
-      }));
-    }
   }
   if (failures.length === 1) throw failures[0];
   if (failures.length > 1) {

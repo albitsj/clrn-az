@@ -132,6 +132,25 @@ test('dependency-cruiser 拒绝循环、界面越层与反向依赖，代理适�
   assert.match(cruise(directory).stdout, /response-no-ui/);
 });
 
+test('dependency-cruiser 解析仅有 exports 的包，同时拒绝未导出和不存在的依赖', context => {
+  const directory = temporaryProject(context);
+  putSource(directory, 'visual/entry.ts', 'export const value = 1;');
+  putSource(directory, 'node_modules/exports-only/package.json', JSON.stringify({
+    name: 'exports-only', type: 'module', exports: { '.': { node: { import: './entry.js' } } },
+  }));
+  putSource(directory, 'node_modules/exports-only/entry.js', 'export const value = 1;');
+  putSource(directory, 'node_modules/exports-only/private.js', 'export const secret = 2;');
+  putSource(directory, 'android/probe.mjs', 'import { value } from "exports-only"; console.log(value);');
+  const resolved = cruise(directory);
+  assert.equal(resolved.status, 0, resolved.stdout + resolved.stderr);
+  for (const dependency of ['exports-only/private.js', 'missing-package']) {
+    putSource(directory, 'android/probe.mjs', `import value from "${dependency}"; console.log(value);`);
+    const unresolved = cruise(directory);
+    assert.notEqual(unresolved.status, 0, unresolved.stderr);
+    assert.match(unresolved.stdout, /no-unresolved/);
+  }
+});
+
 test('jscpd 报告旧重复，新增副本失败，删除后的指纹允许量不会回涨', context => {
   const directory = temporaryProject(context);
   const source = Array.from({ length: 12 }, (_, i) => `export const duplicateValue${i} = calculate(${i}, "probe-${i}");`).join('\n') + '\n';
@@ -152,4 +171,3 @@ test('已登记的真实房间适配器单元测试没有响应伪造误报', as
   const filePath = 'visual/cases/_shared/room.test.ts';
   assert.deepEqual(await diagnostics(readFileSync(join(repository, filePath), 'utf8'), 'no-restricted-syntax', filePath), []);
 });
-

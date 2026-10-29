@@ -1,6 +1,5 @@
 import { expect } from '@playwright/test';
 import { setTimeout } from 'node:timers/promises';
-import { REPLAY_PLAYER_IDS } from '../visual/cases/texas-holdem/replayData';
 import { gameGone, gameMarker, gameNodes, gameReady, gameScreenshot, gameTap, gameTextWithin } from './game-controls';
 import { closeGameMask } from './game-pregame';
 import { adb } from './device';
@@ -16,8 +15,8 @@ import { captureMovingKeyframes } from './loop-keyframes';
  * @param context - 大厅展示夹具下保持真实私人房观察者连接的上下文。
  */
 export async function texasHall(context: TexasContext): Promise<void> {
-  const { device, proxy, self, capture, animationInfo } = context;
-  await restoreTexas(context, {}, 'flop', true);
+  const { device, proxy, capture, animationInfo } = context;
+  await restoreTexas(context, 'standard', 'flop', true);
   await gameReady(device, 'auto-rebuy-button');
   await gameReady(device, 'report-pair-play-button');
   await capture('hall_table');
@@ -67,8 +66,7 @@ export async function texasHall(context: TexasContext): Promise<void> {
       await expect.poll(async () => (await gameReady(device, 'personal-leader-board-nickname')).text,
         { timeout: 30_000 }).toMatch(/\S/);
     });
-  await texasEvents(context, [{ event: 'player_statistics', player_id: self,
-    history_buy_in_amount: 1000, played_game_count: 10, settlement_net_amount: 180 }]);
+  await texasEvents(context, 'personal-statistics');
   await gameReady(device, 'personal-leader-board-record-container');
   await expect.poll(async () => (await gameReady(device, 'personal-leader-board-round')).text,
     { timeout: 30_000 }).toMatch(/(?:^|\s)10$/);
@@ -76,14 +74,14 @@ export async function texasHall(context: TexasContext): Promise<void> {
   await animateGamePanel(device, 'texas-holdem', 'personal-leaderboard', 'personal-leader-board-close-button',
     { x: 200, y: 200, width: 400, height: 900 }, animationInfo, 'exit');
   await gameGone(device, 'personal-leader-board-close-button');
-  await texasEvents(context, [{ event: 'settlement', players: [{ player_id: REPLAY_PLAYER_IDS[0], net: 180, prize: 180, stack: 1140 }] }]);
+  await texasEvents(context, 'prediction-ready');
   await gameReady(device, 'bet-next-hand-button');
   await capture('prediction');
   await capture('prediction_result', [], async () => {
-    await texasEvents(context, [{ event: 'settlement_hand_prediction', result: { net: 10, currency_name: 'coin' } }]);
+    await texasEvents(context, 'prediction-win');
     return '+10';
   });
-  await texasEvents(context, [{ event: 'new_game', game_id: 'visual-fixed-game', settings: { small_blind: 1, big_blind: 2, ante: 0 } }]);
+  await texasEvents(context, 'new-game');
   await gameGone(device, 'bet-next-hand-button');
   await restoreTexas(context);
   if (animationInfo) await captureTimedLevelUp(device, 'texas-holdem', 'texas-holdem-operation-button-call', animationInfo);
@@ -136,21 +134,21 @@ export async function texasHallVariants(context: TexasContext): Promise<void> {
   await capture('pair_play_selected', [translateCaret(caret!, input.bounds)]);
   await gameTap(device, 'report-pair-play-close-button');
   await gameGone(device, 'report-pair-play-reason-input');
-  await texasEvents(context, [{ event: 'settlement', players: [{ player_id: REPLAY_PLAYER_IDS[0], net: 180, prize: 180, stack: 1140 }] }]);
+  await texasEvents(context, 'prediction-ready');
   await gameTap(device, 'bet-next-hand-button');
   await gameReady(device, 'bet-next-hand-has-bet-icon');
   await gameReady(device, 'bet-next-hand-placeholder');
   await capture('prediction_bet');
   await capture('prediction_loss', [], async () => {
-    await texasEvents(context, [{ event: 'settlement_hand_prediction', result: { net: -10, currency_name: 'coin' } }]);
+    await texasEvents(context, 'prediction-loss');
     return '-10';
   });
   await gameGone(device, 'bet-next-hand-result-amount');
   await capture('prediction_diamond', [], async () => {
-    await texasEvents(context, [{ event: 'settlement_hand_prediction', result: { net: 20, currency_name: 'diamond' } }]);
+    await texasEvents(context, 'prediction-diamond');
     return '+20';
   });
-  await texasEvents(context, [{ event: 'new_game', game_id: 'visual-fixed-game', settings: { small_blind: 1, big_blind: 2, ante: 0 } }]);
+  await texasEvents(context, 'new-game');
   await restoreTexas(context);
   await enableGameSetting(device, 'operation-time');
   await gameTap(device, 'texas-holdem-delay-operation-button');
