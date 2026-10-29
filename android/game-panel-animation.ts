@@ -5,6 +5,21 @@ import { gameConnected, gameReady, gameTap } from './game-controls';
 import { captureNativeTransition, captureTimedPrompt } from './animation-transition';
 import type { ScreenshotBounds, ScreenshotMask } from './screenshot';
 
+type SamplingMethod = 'motionFrames' | 'launchFrames' | 'videoFrames';
+
+/** 在采集前固定短弹窗的采样方式，不根据实际图或比较结果切换。
+ * @param game - 本轮玩法。
+ * @param name - 动效面板名称。
+ * @param phase - 入场或退场。
+ * @param requested - 其他面板沿用调用方指定的方式。
+ */
+export function gamePanelSamplingMethod(game: 'texas-holdem' | 'zhajinhua', name: string,
+  phase: 'enter' | 'exit', requested: SamplingMethod): SamplingMethod {
+  // 带入审核的短缩放/淡入可能落在两次 UiAutomation 截图之间，固定走现有连续录屏。
+  return game === 'texas-holdem' && name === 'buy-in-applications' && phase === 'enter'
+    ? 'videoFrames' : requested;
+}
+
 /**
  * 在原生牌桌的实际入口点击期间采样面板动效；其他语言复用静态页面截图。
  * @param device - 已安装采样驱动的测试模拟器。
@@ -21,7 +36,7 @@ import type { ScreenshotBounds, ScreenshotMask } from './screenshot';
  */
 export async function animateGamePanel(device: AndroidDevice, game: 'texas-holdem' | 'zhajinhua', name: string,
   button: string, region: ScreenshotBounds, testInfo?: TestInfo, phase: 'enter' | 'exit' = 'enter',
-  samplingMethod: 'motionFrames' | 'launchFrames' | 'videoFrames' = game === 'zhajinhua'
+  samplingMethod: SamplingMethod = game === 'zhajinhua'
     ? 'videoFrames' : 'motionFrames',
   masks: ScreenshotMask[] = [], afterReady?: () => Promise<void>,
   videoPhaseAnchors: string[] = []): Promise<void> {
@@ -33,7 +48,7 @@ export async function animateGamePanel(device: AndroidDevice, game: 'texas-holde
     String(Math.round(bounds.x + bounds.width / 2)),
     String(Math.round(bounds.y + bounds.height / 2)));
   await captureNativeTransition(device, `${game}-${name}-${phase}`, testInfo, region, press,
-    masks, [], 0, samplingMethod, undefined, afterReady, videoPhaseAnchors);
+    masks, [], 0, gamePanelSamplingMethod(game, name, phase, samplingMethod), undefined, afterReady, videoPhaseAnchors);
 }
 
 /**
