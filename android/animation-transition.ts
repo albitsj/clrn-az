@@ -10,7 +10,7 @@ import { motionParts, samePixels } from './motion-regions';
 import { maskScreenshot, type ScreenshotBounds, type ScreenshotMask } from './screenshot';
 import { recordNativeVideoFrames, type AnimationRegion } from './video-frames';
 import { alignedVideoDistance, localMotionDistance,
-  misplacedVideoFrame, videoThumbnail } from './video-motion';
+  misplacedVideoFrame, preservesVideoColumns, videoThumbnail } from './video-motion';
 
 type NativeFrame = { capturedAt: number; png: string };
 
@@ -78,16 +78,16 @@ export function assertReviewedVideoMiddle(before: Buffer, after: Buffer,
   candidates: { frame: Buffer; progress: number; remaining: number }[], anchors: Buffer[]): void {
   expect(candidates.length, '必须采到起点和终点之间的真实动画帧').toBeGreaterThan(0);
   const total = frameColorDistance(before, after);
-  const references = anchors.map(anchor => {
-    const thumbnail = videoThumbnail(anchor);
-    return { start: frameColorDistance(before, anchor) / total,
-      end: frameColorDistance(after, anchor) / total,
-      thumbnail, localMotion: localMotionDistance(before, anchor) };
-  });
+  const endpoints = [videoThumbnail(before), videoThumbnail(after)];
+  const references = anchors.map(anchor => ({ start: frameColorDistance(before, anchor) / total,
+    end: frameColorDistance(after, anchor) / total,
+    thumbnail: videoThumbnail(anchor), localMotion: localMotionDistance(before, anchor) }));
   const distances = candidates.flatMap(({ frame, progress, remaining }) => {
     const actual = videoThumbnail(frame);
     return references.map(reference => {
       if (progress < reference.start / 4 || remaining < reference.end / 4) return Infinity;
+      // A shifted phase must not leave columns at the start state where reviewed motion persists.
+      if (!preservesVideoColumns(endpoints, reference.thumbnail, actual)) return Infinity;
       const distance = alignedVideoDistance(actual, reference.thumbnail);
       if (distance > 46) return Infinity;
       // A better mirrored or lateral match is evidence of misplaced content, never an accepted phase.

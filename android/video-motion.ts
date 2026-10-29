@@ -19,6 +19,38 @@ export function videoThumbnail(png: Buffer): VideoThumbnail {
   return { pixels, width, height };
 }
 
+/** Preserve horizontal coverage of motion, including dimmed backdrop outside a scaling panel.
+ * @param before - Exact start thumbnail.
+ * @param frame - Recorded frame or reviewed phase thumbnail.
+ */
+function videoColumnMotion(before: VideoThumbnail, frame: VideoThumbnail): number[] {
+  if (before.width !== frame.width || before.height !== frame.height) throw new Error('动画帧尺寸变化');
+  const { width, height } = before;
+  const columns = new Array<number>(width).fill(0);
+  for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) {
+    const offset = (y * width + x) * 3;
+    for (let channel = 0; channel < 3; channel++) {
+      columns[x] += Math.abs(before.pixels[offset + channel] - frame.pixels[offset + channel]);
+    }
+  }
+  return columns.map(value => value / (height * 3));
+}
+
+/** Require persistent changes to cover the same columns, even at a later scale/opacity.
+ * @param endpoints - Start and end thumbnails, never additional accepted middle phases.
+ * @param reference - Reviewed middle thumbnail.
+ * @param actual - Recorded middle thumbnail.
+ */
+export function preservesVideoColumns(endpoints: VideoThumbnail[], reference: VideoThumbnail,
+  actual: VideoThumbnail): boolean {
+  const [before, after] = endpoints;
+  const endMotion = videoColumnMotion(before, after);
+  const reviewedMotion = videoColumnMotion(before, reference);
+  // Reuse the existing one-quarter phase bound locally; unchanged margins impose no constraint.
+  return videoColumnMotion(before, actual)
+    .every((value, x) => value >= Math.min(reviewedMotion[x], endMotion[x]) / 4);
+}
+
 /** Align a reviewed vertical slide phase without allowing horizontal displacement.
  * @param actual - Recorded phase thumbnail.
  * @param reference - Reviewed phase thumbnail.

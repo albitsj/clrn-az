@@ -110,11 +110,12 @@ for (const record of historical.records) {
   });
 }
 
-/** 按像素制造整体亮度故障，仍保留真实首尾以验证中途断言。
+/** 按像素改变亮度，制造闪屏或模拟轻微编码色差，保留原始夹具。
+ * @param frame - 本次测试的输入帧。
  * @param amount - 每个颜色通道的偏移。
  */
-function buyInFlash(amount) {
-  const image = PNG.sync.read(buyInStart);
+function shiftedBrightness(frame, amount) {
+  const image = PNG.sync.read(frame);
   for (let offset = 0; offset < image.data.length; offset += 4) {
     for (let channel = 0; channel < 3; channel++) {
       image.data[offset + channel] = Math.max(0, Math.min(255, image.data[offset + channel] + amount));
@@ -125,7 +126,8 @@ function buyInFlash(amount) {
 
 for (const brightness of [-40, 20, 255]) {
   test(`带入审核录屏路径拒绝 ${brightness} 亮度闪屏`, async () => {
-    await assert.rejects(compareRecordedVideo(buyInName, [buyInStart, buyInFlash(brightness), buyInEnd]),
+    await assert.rejects(compareRecordedVideo(buyInName,
+      [buyInStart, shiftedBrightness(buyInStart, brightness), buyInEnd]),
       /动画中途帧的实际画面须接近已审查轨迹/);
   });
 }
@@ -151,16 +153,26 @@ function horizontallyShifted(background, frame, shift) {
   return PNG.sync.write(target);
 }
 
-for (const shift of [-80, -40, 40, 80]) {
-  test(`带入审核真实中途相位横移 ${shift} 像素必须拒绝`, async () => {
+const buyInLate = historicalFrame('37480e9d3170212a835eff1b67bea4f342b8e4611f104cf1142bb421af082095.png');
+
+for (const noise of [0, 1]) for (const phase of ['early', 'late']) for (const shift of [-80, -40, 40, 80]) {
+  test(`带入审核 ${phase} 相位横移 ${shift} 像素、编码色差 ${noise} 必须拒绝`, async () => {
     const reference = readFileSync(`${snapshots}${buyInName}-middle.png`);
-    const timeline = [buyInStart, horizontallyShifted(buyInStart, reference, shift), buyInEnd];
+    const frame = phase === 'early' ? reference : buyInLate;
+    const displaced = shiftedBrightness(horizontallyShifted(buyInStart, frame, shift), noise);
+    const timeline = [buyInStart, displaced, buyInEnd];
     // 同时锁定宿主直接探针与完整生产录屏路径，不能由其他场景的负例代替。
     assert.throws(() => assertReviewedVideoMiddle(buyInStart, buyInEnd,
       middleCandidates(buyInStart, buyInEnd, timeline, 'videoFrames'), [reference]),
     /动画中途帧的实际画面须接近已审查轨迹/);
     await assert.rejects(compareRecordedVideo(buyInName, timeline),
       /动画中途帧的实际画面须接近已审查轨迹/);
+  });
+}
+
+for (const noise of [-1, 0, 1]) {
+  test(`带入审核真实晚期相位、编码色差 ${noise} 仍通过完整录屏路径`, async () => {
+    await compareRecordedVideo(buyInName, [buyInStart, shiftedBrightness(buyInLate, noise), buyInEnd]);
   });
 }
 
