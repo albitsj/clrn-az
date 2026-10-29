@@ -1,63 +1,62 @@
 # 复杂度与架构门禁（#30）
 
-统一入口是 `npm run check`，现有 CI 的 Repository checks 继续使用该入口，原有 ESLint 文档规则、类型检查、Shell/工作流检查、400 行辅助检查、原生用例收集、Node 和 Python 单元测试全部保留。检查不启动设备，不访问业务接口，不修改项目源码、索引、Git 配置或历史。临时扫描快照及报告只写系统临时目录并自动删除。
+统一入口是 `npm run check`。保留 ESLint 文档规则、Ruff、ShellCheck、工作流检查、400 行辅助检查、类型检查、原生用例收集和全部本机单元测试。Python 代理单元测试继续由原有工作流执行；不跳过用例，不修改应用仓库。原生用例收集不会启动设备。
 
-本次核对的目标仓库没有 AGENTS.md、AGENTS.txt、DEVELOPMENT.md 或 .codegraph/；已阅读根 README、android/README.md 与三个现有工作流。未套用宿主工具仓库的规范。本轮固定登记 master 是 `24e46865d9f36075915d81360c495381564d7e95`；开始时 HEAD 为 `f683519ae80e8a0a5fa685df3ddbdeb346f7c022`，MERGE_HEAD 为登记 master，没有未解决冲突。保留宿主已有合并及索引，不提交或更改历史；#25 的 hook 安装不在本次范围。
+## 固定来源与历史测量
 
-## 阈值、覆盖与测量
+本轮先确认本地目录、分支 `albitsj-clrn-az-pr-35`、干净现场及原提交 `4b669e8a92b594840f906e46f2512bebb14371ea`，再核对原仓库源分支 `issue-repair/30` 和目标分支 `master`。抓取后执行 `git merge --no-commit --no-ff origin/master`，无冲突，保留未提交的合并状态。真实合并父提交分别为原提交和最新主分支 `4cc323f746c4b15f97848dd7791590196b101ad8`。
 
-| 工具 | 固定版本 | 最终规则 | 首次本地测量 |
-| --- | --- | --- | --- |
-| ESLint | 10.12.0 | complexity 10（classic）；max-depth 3 | 登记 master：35 处复杂度超限、11 处嵌套超限；本轮修复后 34/11 |
-| ESLint 语法选择器 | 同上 | TypeScript 响应伪造入口 | 登记 master：0 处；旧 networkMocks.ts 已由 master 移除 |
-| Ruff | 0.15.12 | C901，max-complexity 10 | 登记 master 及当前：12 个超限函数 |
-| dependency-cruiser | 17.3.9 | 循环、界面越层、响应层反向依赖、无法解析的导入 | 原生工具扫描：2 个旧环；无越层或未解析导入 |
-| jscpd | 5.1.2 | mild；至少 50 tokens 且 5 行；新增 clone 数为 0 | 登记 master：47 对重复、47 个指纹；当前无新增 |
+首次门禁现在固定对照 [最新主分支 4cc323f](https://github.com/albitsj/clrn-az/commit/4cc323f746c4b15f97848dd7791590196b101ad8)，不能继续把 [旧主分支 24e4686](https://github.com/albitsj/clrn-az/commit/24e46865d9f36075915d81360c495381564d7e95) 当作最新版本。旧实现、当时验证限制和尝试记录保存在 [历史记录](history/24e4686.md)，旧迁移清单保存在 `measurements/24e46865d9f36075915d81360c495381564d7e95/accepted-lint.json`。
 
-版本写入 package.json/package-lock.json 和 Ruff 命令。当前已安装 npm 工具的版本由 `npm ls --depth=0` 核对；Ruff 测量使用缓存中的 0.15.12 可执行文件。完整安装与统一检查仍由宿主执行固定命令，不将局部工具通过等同于完整检查通过。
+两个提交均用同一组锁定工具和规则独立归档扫描，报告保存在各自完整提交编号对应的 `measurements/` 目录。`source.json` 记录确切来源、工具版本及规则文件指纹；`eslint.json`、`ruff.json` 和 `dependency-cruiser.json` 保存全部诊断；`duplicates.json` 保存每对重复的路径、范围、片段和统计；`fingerprints.json` 保存原生重复指纹。报告包含原始工具字段及诊断，不是当前自动测试通过证明。
 
-保留建议的 10/3，而不是提高全局上限来让旧代码通过；现存超限都进入精确清单。行数仅是已有辅助检查，不据此判断代码是否有用。可复现命令（Node 24+、uv；先 `npm ci`）：
+| 工具 | 规则与固定版本 | 旧主分支 24e4686 | 最新主分支 4cc323f | 合并后迁移清单 |
+| --- | --- | --- | --- | --- |
+| ESLint 10.12.0 | complexity 10，max-depth 3 | 35 处复杂度、11 处嵌套 | 34 处复杂度、9 处嵌套 | 33 处复杂度、9 处嵌套 |
+| ESLint 语法规则 | TypeScript 响应伪造入口 | 0 | 0 | 0 |
+| Ruff 0.15.12 | C901，复杂度 10 | 12 | 12 | 12 |
+| dependency-cruiser 17.3.9 | 循环、越层、反向依赖、未解析导入 | 2 个旧环 | 2 个旧环 | 2 个旧环 |
+| jscpd 5.1.2 | mild，至少 50 个词法单元且 5 行，新增重复为 0 | 47 对 | 47 对 | 无新增 |
+
+两个主分支还各有一项 `preserve-caught-error` 诊断，未进入豁免清单。原合并请求的下载器修复已消除该问题及下载器复杂度超限，全部保留。此次只更新最新主分支已有诊断的位置与实测值，并删除已失效条目，不能登记本合并请求的新问题。
+
+独立复测命令（先运行 `npm ci`，使用 Node 24 和 uv）：
 
 ```sh
+node scripts/measure-quality.mjs 4cc323f746c4b15f97848dd7791590196b101ad8 /tmp/clrn-quality-master
 node scripts/lint-ratchet.mjs eslint --report
 node scripts/lint-ratchet.mjs ruff --report
 node scripts/lint-ratchet.mjs dependency-cruiser --report
-npm run lint:duplicates -- --report
+node scripts/lint-duplicates.mjs --report
 npm run check
 ```
 
-前三条输出含规则、位置/环路径的 JSON。最后一条报告命令输出固定基线的完整 jscpd JSON，列出每一对旧重复的文件、范围及统计；它是报告模式，不能代替 `npm run lint:duplicates` 的失败门禁。本轮已取得 dependency-cruiser 与 jscpd 的原生测量；CI 会保存完整报告，不能将历史测量当作新提交的 CI 结果。
+测量命令只输出报告，不提供接受迁移项的入口。历史源码从固定提交只读归档到临时目录，当前规则从仓库载入，依赖使用锁定安装版本；结束后删除临时快照。macOS 的临时目录别名在诊断路径中归一化，报告不保存宿主绝对路径。
 
-## 分层与伪造入口
+## 首次登记及后续只减
 
-- 普通原生、视觉及集成测试，以及场景、辅助函数均在 ESLint/Ruff/依赖/重复扫描范围内，不宽泛排除测试目录。
-- 界面操作层只使用 `android/proxy.ts` 和 `e2e/helpers/` 等代理控制 API。禁止直接导入 `networkMocks.ts`、`network-routes.ts` 或 mitmproxy 响应实现；代理控制层也不能反向依赖原生界面代码。`android/proxy.ts` 是现有桥接层；master 已删除 `network-routes.ts` 与 `networkMocks.ts`，规则仍防止这些路径重新被界面导入。`android/scenarios.test.mjs` 离线核对适配器响应和节点透传，是精确登记的合法单元测试调用者。
-- TypeScript 的 route、fulfill、routeFromHAR、routeWebSocket 成员访问，以及 Response 构造、Response.json、fetch 替换受到语法级检查；覆盖可选链、字符串计算属性、方法别名及解构，不扫描注释、URL 或普通字符串。master 已删除 networkMocks.ts 的 25 处旧访问，本轮同步移除其失效清单，不豁免整个文件。动态计算方法名及任意自定义 Mock 库仍需代码审阅，静态语法检查不是任意程序行为分析。
-- `visual/cases/_shared/room.test.ts` 是唯一 TypeScript fetch/Response 例外：它离线验证房间清理适配器的 DELETE 地址、凭据、错误传播。该文件仍禁止路由伪造，并受复杂度、架构和重复检查约束。其他 `.test.ts` 不继承这个例外。现有 `.mjs` 代理单元测试可以隔离进程/传输，但仍受其他门禁约束。
-- JSON 夹具和截图是数据；不把它们算作源码重复。带函数的 TypeScript 场景及 mitmproxy/data.py 仍检查。node_modules、.venv、截图、设备产物、测试报告和 .ttyctl 是生成物，按明确目录排除。
+`initialRevision` 固定为上述最新主分支。`QUALITY_BASE_REV` 使用合并请求的目标提交或推送前提交；首次接入时该比较提交必须等于固定主分支。每个工具会再次独立扫描固定主分支，逐项核对规则、位置、诊断值、源码指纹或完整依赖环，不能仅凭同一行源码或文件存在登记遗留问题。已修复的诊断不能残留在清单。
 
-## 历史迁移清单与单调缩减
+本地无 `QUALITY_BASE_REV` 时通常对照 `HEAD`。仅在本次首次合并尚未提交、且 `MERGE_HEAD` 精确等于固定主分支时，对照该主分支。合并提交形成后及未来合并均不使用这一例外。变更前提交一旦已有迁移清单，逐项比较包含原因的完整条目，拒绝新增、改写或重复，只允许删除。规则与排除项不得通过普通基线更新降低。
 
-`legacy-lint.json` 记录每个旧项的工具、规则、文件、起止位置、实际超限值/消息、源码 SHA-256 和迁移原因。只接受 complexity、max-depth、C901 和已存在的伪造访问，其他原有 ESLint/Ruff 诊断不允许进入该清单。源码或超限数发生变化将重新失败；消失的诊断也失败，要求同时删除对应旧项。不要重生成清单来接受新问题。
+重复门禁以初始主分支和变更前提交的原生指纹及次数交集作为允许量，阻止新增片段和新增相同副本。已删除的重复不能恢复允许量，其他地方的减少不能抵扣新增。基线只在临时目录生成，不使用会更改工作目录注册信息的 `--baseline-from-ref`。
 
-`legacy-cycles.json` 单独记录两条具体的旧环与迁移原因。dependency-cruiser 仍扫描这些文件，新增环、扩大旧环、越层依赖或未解析导入全部失败；旧环消失时删除对应项。本轮只登记旧耦合，不为了指标移动设备或截图实现。
+## 分层与网络夹具
 
-首次接入基线固定为登记 master `24e46865d9f36075915d81360c495381564d7e95`，清单只登记该提交实际已有的违规；旧修复分支测量不再代表最新主分支。已删除的源码条目被移除，master 中发生迁移的条目按其真实位置及超限值重新测量，不从当前工作区接受新债务。下载器复杂度由 12 降至 10，并保留全部原有脱敏断言，因此不登记该项。
+普通原生、视觉、集成测试、场景和辅助函数均受门禁约束。界面层通过 `android/proxy.ts` 和 `e2e/helpers/` 使用代理控制接口，不直接导入响应实现。精确保留原有适配器调用者例外，不扩大测试目录豁免。两个既有依赖环的具体路径和迁移原因保存在 `legacy-cycles.json`。
 
-CI 使用完整 Git 历史，并通过 QUALITY_BASE_REV 指定 PR base SHA 或 push 前 SHA；本地默认对照 HEAD。仅在宿主保留的首次合并中、MERGE_HEAD 精确等于上述固定 master 时，本地对照登记 master；合并完成或未来其他合并不使用此例外。迁移清单与变更前提交逐项比较，仅可删除，不可改写或增加。首次引入 lint 清单时还校验每个源码指纹确实来自固定 Git 基线。改动引起位置移动时，也须处理对应旧债务，不能自动扩大清单。ESLint 行内禁用和 Ruff noqa 不能绕过统一入口；规则、阈值、语法选择器、例外及排除配置的变化必须作为门禁策略变更审查。
+TypeScript 的 route、fulfill、routeFromHAR、routeWebSocket 成员访问、Response 构造、Response.json 和 fetch 替换使用语法检查，涵盖可选链、字符串计算属性、别名和解构；普通注释、链接及字符串不会误报。`visual/cases/_shared/room.test.ts` 仅获原有 fetch/Response 单元测试例外，仍禁止路由伪造并受其他门禁约束。动态方法名及自定义伪造库仍需代码审阅。
 
-重复代码复用 jscpd 原生的源码片段指纹与出现次数。每次只读展开固定初始基线及变更前提交，用同一配置测量，原生指纹清单取次数交集，再检查当前源码。初始报告中的每对旧重复是迁移项，原因是保留既有场景/协议回归覆盖，按业务修改逐步归并，避免本轮机械重构。新增片段或新增相同副本都会失败；已从前一提交移除的指纹不能再恢复允许量，减少其他重复也不能抵扣新增。基线只在临时目录生成，不提供写回当前源码的“接受全部重复”命令。没有调用 jscpd 会修改 Git 工作树注册的 `--baseline-from-ref`。
+JSON 夹具和图片属于数据；带函数的场景及 Python 响应实现仍接受扫描。依赖、虚拟环境、设备产物及测试报告等生成目录维持原有明确排除。ESLint 行内禁用和 Ruff noqa 不能绕过统一入口。
 
-## 回归与验证状态
+## 工作流与验证证据
 
-`scripts/quality.test.mjs` 使用真实配置和临时源码负例验证复杂度 11、嵌套 4、C901、循环/越层/反向依赖、伪造调用和新增重复；同时验证精确单元测试例外、字符串不误报、迁移只减以及重复副本次数。测试由原有 `npm test` 自动发现，不在项目内留下负例。
+工作流继续使用完整 Git 历史和原有完整检查，新增归档初始测量、实际 `QUALITY_BASE_REV`、本轮提交及父提交，以便核对首次来源与真实集成身份。每轮四种工具的报告、依赖版本和仓库身份继续上传，成功失败均保留，保存 14 天。
 
-CI 在执行门禁前保存四种工具的测量 JSON、依赖版本及当前仓库完整 SHA，并在成功或失败后上传 `quality-reports-<run_id>-<attempt>` 附件，保留 14 天。完整旧重复报告来自固定基线，当前重复门禁结果见同轮检查日志；没有将报告模式作为门禁入口。
+`scripts/quality.test.mjs` 保留复杂度、嵌套、Python 复杂度、语法夹具、依赖分层、导出解析和重复代码负例，补充拒绝旧主分支、同位置恶化、虚构旧环及独立测量可重现验证。全部测试使用真实生产规则，不修改阈值。
 
-本轮已通过 ESLint/精确历史清单、dependency-cruiser/精确历史清单、jscpd 新增重复门禁、类型检查、原生用例收集、130 个文件的行数检查，以及使用缓存固定版本二进制的 ShellCheck/工作流检查。缓存 Ruff 0.15.12 的真实 JSON 与清单比对为 12 项、无新增或失效项，复杂度 11 的真实负例也被 C901 拦截（noqa 未能绕过）；统一入口中的 uvx 在沙箱中不能写宿主缓存/工具目录，临时缓存离线解析也无法完成，完整 `npm run check` 仍未通过，交由宿主重跑，不关闭或跳过检查。
+本轮现场及实际执行结果见 [验证记录](validation-35.md)。原提交的 [仓库检查日志](https://github.com/albitsj/clrn-az/actions/runs/40832908727/job/123310960271) 记录比较基准仍为旧主分支，140 项单元测试通过；不能据此认定此次集成通过。本轮最终结果必须由脚本提交上传后，在新提交的全部必要自动测试中确认。
 
-本轮全量 `npm test` 实际执行 140 项：125 通过、15 失败、0 跳过。14 项失败来自回环监听 EPERM（含受该错误影响的清理断言），1 项来自 Ruff 测试中 uvx 无法输出诊断 JSON；质量回归单独运行 9 项、8 通过，唯一失败也是 uvx 环境限制。保留这些未通过状态，由宿主在允许安装工具和监听本地端口的环境重新执行。
-
-新增导出解析回归使用真实 dependency-cruiser 配置：只有 exports、没有 main 的包能解析；未导出子路径及不存在的包仍触发 no-unresolved。原有循环、越层、反向依赖及新增重复负例均保留。下载器全部 15 项既有测试通过，未改变原始日志样本或继承测试的字节与断言。原生收集只是静态收集，没有启动设备，不能宣称真实设备运行通过；没有更新截图或视觉批准记录。当前提交的 CI、设备结果及最终固定检查以宿主验证为准。
+应用部署记录仍是 `69f9251d3b5f2b93aa2d880d27abbeefe16ee645`，发布版本 `android-staging-300001001-69f9251d3b5f`。已读取 [原英文德州牌桌日志](https://github.com/albitsj/clrn-az/actions/runs/40832908665/job/123311104831)，确认相同应用提交、版本和安装包指纹 `27618d750fc306b1a75d52d642b2d90f361501fd1b9998bc3cd65ca5874196f5`。本轮不改变应用部署，不新增截图候选；图片删除、动画简化及视觉断言完整继承最新主分支，不额外修改图片、容差、重试或遮罩。
 
 工具规则参考：[ESLint complexity](https://eslint.org/docs/latest/rules/complexity)、[max-depth](https://eslint.org/docs/latest/rules/max-depth)、[Ruff C901](https://docs.astral.sh/ruff/rules/complex-structure/)、[dependency-cruiser 17.3.9](https://github.com/sverweij/dependency-cruiser/tree/v17.3.9)、[jscpd 5.1.2 基线文档](https://github.com/kucherenko/jscpd/blob/v5.1.2/docs/ci-and-hooks.md)。

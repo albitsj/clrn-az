@@ -181,7 +181,7 @@ async function compareRecordedVideo(sceneName, timeline, dynamicRegion = false) 
   await captureNativeTransition(device, sceneName, info,
     dynamicRegion ? resolveRegion : region,
     /** 模拟真实入口，边界必须等此操作之后才能读取。 */ () => { triggered = true; },
-    [], [], 0, 'videoFrames', undefined, undefined, [], [], [], [], [],
+    [], [], 0, 'videoFrames', undefined, undefined, [], [], [], [],
     /** 模拟录屏完成后的延迟解码；只替换外部录屏接口，仍执行完整首尾及中途像素比较。
      * @param _name - 转场名称。
      * @param recordedRegion - 固定边界或延迟读取边界的回调。

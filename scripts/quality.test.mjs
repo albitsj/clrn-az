@@ -5,11 +5,37 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import test from 'node:test';
 import { ESLint } from 'eslint';
-import { assertOnlyShrinks, compareFindings } from './lint-ratchet.mjs';
+import { assertInitialFindings, assertOnlyShrinks, compareFindings, historicalFindings } from './lint-ratchet.mjs';
 import { intersectBaselines, runJscpd } from './lint-duplicates.mjs';
+import { initialRevision } from './quality-history.mjs';
 import { repository } from './source-files.mjs';
 
 const eslint = new ESLint({ cwd: repository, allowInlineConfig: false });
+
+test('首次迁移逐项对照固定主分支的真实测量，拒绝同位置恶化和虚构旧环', () => {
+  const original = JSON.parse(readFileSync(join(repository, 'quality/measurements', initialRevision, 'eslint.json'), 'utf8'));
+  const known = original.find(entry => entry.rule === 'complexity');
+  assert.doesNotThrow(() => assertInitialFindings([{ ...known, reason: '固定主分支已有违规' }], original));
+  assert.throws(() => assertInitialFindings([{ ...known, message: '复杂度进一步增大' }], original), /不在固定主分支/);
+  const cycles = JSON.parse(readFileSync(join(repository, 'quality/measurements', initialRevision, 'dependency-cruiser.json'), 'utf8'));
+  const invented = { ...cycles[0], cycle: ['android/device.ts', 'android/screenshot.ts'] };
+  assert.throws(() => assertInitialFindings([invented], cycles), /不在固定主分支/);
+});
+
+test('独立扫描固定主分支可重现归档报告，路径不依赖临时目录别名', async () => {
+  for (const tool of ['eslint', 'ruff', 'dependency-cruiser']) {
+    const saved = JSON.parse(readFileSync(join(repository, 'quality/measurements', initialRevision, `${tool}.json`), 'utf8'));
+    assert.deepEqual(await historicalFindings(tool, initialRevision), saved, `固定主分支的 ${tool} 测量必须可重现`);
+  }
+});
+
+test('首次接入拒绝把旧主分支提交作为自动测试比较基准', () => {
+  const result = spawnSync(process.execPath, ['scripts/lint-ratchet.mjs', 'eslint'], {
+    cwd: repository, encoding: 'utf8', env: { ...process.env, QUALITY_BASE_REV: '24e46865d9f36075915d81360c495381564d7e95' },
+  });
+  assert.notEqual(result.status, 0, result.stdout + result.stderr);
+  assert.match(result.stderr, /首次门禁必须对照固定的最新主分支/);
+});
 
 /**
  * 用生产 ESLint 配置检查临时 TypeScript 内容，返回指定规则的诊断。

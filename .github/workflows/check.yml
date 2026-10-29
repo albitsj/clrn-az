@@ -24,6 +24,14 @@ jobs:
         with:
           python-version: '3.12'
       - run: npm ci
+      - name: 保存初始基线来源与比较身份
+        env:
+          QUALITY_BASE_REV: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/quality-reports"
+          printf '%s\n' "$QUALITY_BASE_REV" > "$RUNNER_TEMP/quality-reports/comparison-base.txt"
+          git show -s --format='%H%n%P' HEAD > "$RUNNER_TEMP/quality-reports/merge-parents.txt"
+          cp -R quality/measurements "$RUNNER_TEMP/quality-reports/initial-measurements"
       - name: 保存本轮静态测量
         run: |
           mkdir -p "$RUNNER_TEMP/quality-reports"

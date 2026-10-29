@@ -35,7 +35,7 @@ export function runJscpd(cwd, output, args) {
  * @param directory - 临时目录。
  * @param name - 报告名称。
  */
-function historicalClones(revision, directory, name) {
+export function historicalClones(revision, directory, name) {
   const snapshot = sourceSnapshot(revision, directory);
   const baseline = join(directory, `${name}.json`);
   runJscpd(snapshot, join(directory, name), ['--baseline', baseline, '--update-baseline']);

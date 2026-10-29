@@ -1,5 +1,5 @@
 import { requireEnglishAnimation } from './animation-locale';
-import { existsSync, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { setTimeout } from 'node:timers/promises';
 import { expect, type TestInfo } from '@playwright/test';
 import type { AndroidDevice } from 'playwright';
@@ -9,6 +9,16 @@ import { motionParts, samePixels } from './motion-regions';
 import type { ScreenshotBounds } from './screenshot';
 
 type NativeFrame = { capturedAt: number; png: string };
+
+// 只登记仍需独立位置锚点的真实飞行相位；目录中出现其他文件不能改变比较结果。
+// 审查与删减依据见 SCREENSHOT_SIMPLIFICATION_32.md。
+const flightPhaseAnchors: Record<string, string[]> = {
+  'texas-prop-tea-flight-changed.png': ['texas-prop-tea-flight-changed-alternate.png'],
+  'texas-prop-tea-flight-peak.png': ['texas-prop-tea-flight-peak-alternate.png'],
+  'zhajinhua-prop-tea-flight-peak.png': [
+    'zhajinhua-prop-tea-flight-peak-alternate.png', 'zhajinhua-prop-tea-flight-peak-alternate-2.png',
+  ],
+};
 
 /**
  * 真实房间消息触发的短 WebP 效果：记录静态背景和两张不同的播放关键帧。
@@ -67,13 +77,11 @@ export async function captureAssetSequence(device: AndroidDevice, name: string, 
     await info.attach(file, { body: frame, contentType: 'image/png' });
     if (info.config.updateSnapshots === 'all') expect(frame).toMatchSnapshot(file);
     else {
-      const references = [readFileSync(info.snapshotPath(file))];
-      const alternate = info.snapshotPath(`${name}-${phase}-alternate.png`);
-      if (phase !== 'start' && existsSync(alternate)) references.push(readFileSync(alternate));
+      const reference = readFileSync(info.snapshotPath(file));
       // 飞行道具在接收者身上经过的时刻可变；颜色构成锁定素材，下面的飞行区域另锁定位置。
       const compare = flightRegion && phase !== 'start' ? framePaletteDistance : frameColorDistance;
       expect(Math.min(...(phase === 'start' ? [before] : visible.map(item => item.frame))
-        .flatMap(candidate => references.map(reference => compare(candidate, reference)))),
+        .map(candidate => compare(candidate, reference))),
       `${name} ${phase} 视觉回归`)
         .toBeLessThanOrEqual(15);
     }
@@ -101,11 +109,8 @@ export async function captureAssetSequence(device: AndroidDevice, name: string, 
       await info.attach(file, { body: frame, contentType: 'image/png' });
       if (info.config.updateSnapshots === 'all') expect(frame).toMatchSnapshot(file);
       else {
-        const references = [readFileSync(info.snapshotPath(file))];
-        const alternate = info.snapshotPath(`${name}-flight-${phase}-alternate.png`);
-        if (phase !== 'start' && existsSync(alternate)) references.push(readFileSync(alternate));
-        const secondAlternate = info.snapshotPath(`${name}-flight-${phase}-alternate-2.png`);
-        if (phase !== 'start' && existsSync(secondAlternate)) references.push(readFileSync(secondAlternate));
+        const references = [file, ...(flightPhaseAnchors[file] || [])]
+          .map(anchor => readFileSync(info.snapshotPath(anchor)));
         expect(Math.min(...(phase === 'start' ? [flightStart] : moving.map(item => item.frame))
           .flatMap(candidate => references.map(reference => frameColorDistance(candidate, reference)))),
         `${name} 飞行 ${phase} 视觉回归`)
