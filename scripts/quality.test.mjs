@@ -82,6 +82,48 @@ test('注释、文案、URL 和真正请求不误报；例外只适用于登记�
   assert.ok((await diagnostics('page.route("**/*", handler);', 'no-restricted-syntax', 'visual/cases/_shared/room.test.ts')).length > 0);
 });
 
+test('属性 API 替换 fetch 和计算属性 Response.json 分别失败，精确适配器例外保留', async () => {
+  const sources = [
+    'Object.assign(globalThis, { fetch: fakeFetch });',
+    'Object["assign"](window, { ["fetch"]: fakeFetch });',
+    'Object.assign?.(self, { fetch: fakeFetch });',
+    'Object.defineProperty(globalThis, "fetch", { value: fakeFetch });',
+    'Object["defineProperty"](window, "fetch", { value: fakeFetch });',
+    'Reflect.defineProperty(globalThis, "fetch", { value: fakeFetch });',
+    'Reflect["defineProperty"](self, "fetch", { get: getFakeFetch });',
+    'Object.defineProperties(globalThis, { fetch: { value: fakeFetch } });',
+    'Object["defineProperties"](global, { ["fetch"]: { get: getFakeFetch } });',
+    'Response["json"]({ fake: true });',
+    'Response?.["json"]({ fake: true });',
+    'const reply = Response["json"]; reply({ fake: true });',
+    'Object.assign(globalThis, { fetch: /** 返回伪造响应。 */ async () => Response["json"]({ fake: true }) });',
+    'Object.defineProperty(globalThis, "fetch", { value: /** 返回伪造响应。 */ async () => Response["json"]({ fake: true }) });',
+  ];
+  for (const filePath of ['android/tests/quality-probe.spec.ts', 'visual/cases/quality-probe.spec.ts',
+    'e2e/tests/quality-probe.spec.ts', 'visual/cases/_shared/other.test.ts']) {
+    for (const source of sources) {
+      assert.ok((await diagnostics(source, 'no-restricted-syntax', filePath)).length > 0, `${filePath}: ${source}`);
+    }
+  }
+  for (const source of sources) {
+    assert.deepEqual(await diagnostics(source, 'no-restricted-syntax', 'visual/cases/_shared/room.test.ts'), [], source);
+  }
+});
+
+test('属性 API 的普通数据操作及字符串不会触发网络伪造规则', async () => {
+  const source = `
+    Object.assign(settings, { label: "fetch", text: 'Response["json"]', payload: { fetch: "data" } });
+    Object.defineProperty(settings, "label", { value: "fetch" });
+    Object.defineProperties(settings, { label: { value: "fetch" } });
+    Reflect.defineProperty(settings, "label", { value: "fetch" });
+    Object.assign(settings, { [fetch]: "dynamic data" });
+    Object[assign](settings, { fetch: "dynamic method" });
+    await fetch("https://example.invalid/json");
+    const payload = { fetch: "data", json: "text" };
+  `;
+  assert.deepEqual(await diagnostics(source, 'no-restricted-syntax'), []);
+});
+
 test('Ruff C901 读取真实配置，复杂度 11 即失败，noqa 无法隐瞒', () => {
   const branches = Array.from({ length: 10 }, (_, i) => `    if n == ${i}:\n        return ${i}`).join('\n');
   const result = spawnSync('uvx', ['--from', 'ruff==0.15.12', 'ruff', 'check', '--no-cache', '--ignore-noqa',

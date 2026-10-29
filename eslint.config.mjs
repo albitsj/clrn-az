@@ -12,6 +12,19 @@ const networkRouting = [
   },
 ];
 
+// 各入口独立检查：即使伪 fetch 返回已有对象，或 Response.json 被取出作别名，也必须报告。
+const networkResponses = [
+  {
+    selector: 'NewExpression[callee.name="Response"], MemberExpression[object.name="Response"]:matches([computed=false][property.name="json"], [computed=true][property.value="json"]), CallExpression[callee.property.name="method"][arguments.1.value="fetch"], AssignmentExpression[left.type="MemberExpression"][left.property.name="fetch"], AssignmentExpression[left.type="MemberExpression"][left.property.value="fetch"]',
+    message: '普通测试禁止伪造 fetch 响应；适配器单元测试例外必须精确登记。',
+  },
+  {
+    // 只匹配调用参数中的直接属性，不把注释、文案或嵌套业务数据当作 fetch 替换。
+    selector: 'CallExpression[callee.object.name="Object"]:matches([callee.computed=false][callee.property.name=/^(assign|defineProperties)$/], [callee.computed=true][callee.property.value=/^(assign|defineProperties)$/]) > ObjectExpression.arguments > Property:matches([computed=false][key.name="fetch"], [key.value="fetch"]), CallExpression[callee.object.name=/^(Object|Reflect)$/]:matches([callee.computed=false][callee.property.name="defineProperty"], [callee.computed=true][callee.property.value="defineProperty"])[arguments.1.value="fetch"]',
+    message: '普通测试禁止通过属性 API 替换 fetch；适配器单元测试例外必须精确登记。',
+  },
+];
+
 export default [
   { ignores: ['**/node_modules/**', '**/.venv/**', '**/test-results/**', '**/playwright-report/**', '**/blob-report/**', '.ttyctl/**', '**/snapshots/**'] },
   {
@@ -52,10 +65,7 @@ export default [
     rules: {
       'no-restricted-syntax': ['error',
         ...networkRouting,
-        {
-          selector: 'NewExpression[callee.name="Response"], CallExpression[callee.object.name="Response"][callee.property.name="json"], CallExpression[callee.property.name="method"][arguments.1.value="fetch"], AssignmentExpression[left.type="MemberExpression"][left.property.name="fetch"], AssignmentExpression[left.type="MemberExpression"][left.property.value="fetch"]',
-          message: '普通测试禁止伪造 fetch 响应；适配器单元测试例外必须精确登记。',
-        },
+        ...networkResponses,
       ],
       // TypeScript 编译器检查类型名称；使用识别类型引用的未使用变量规则。
       'no-undef': 'off',

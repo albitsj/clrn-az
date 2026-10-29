@@ -47,6 +47,26 @@ npm run check
 
 TypeScript 的 route、fulfill、routeFromHAR、routeWebSocket 成员访问、Response 构造、Response.json 和 fetch 替换使用语法检查，涵盖可选链、字符串计算属性、别名和解构；普通注释、链接及字符串不会误报。`visual/cases/_shared/room.test.ts` 仅获原有 fetch/Response 单元测试例外，仍禁止路由伪造并受其他门禁约束。动态方法名及自定义伪造库仍需代码审阅。
 
+### 属性 API 漏检回归
+
+在登记基线 `a11c646d9b4de63895c85fb01225ca9f33dd76cf` 的规则下，已独立复现
+`Object.assign(globalThis, { fetch: /** 返回伪造响应。 */ async () => Response["json"]({ fake: true }) });`
+及等价 `Object.defineProperty` 写法在 Android、visual、e2e 普通测试路径均为零错误、零警告。
+原有工具接入和历史 CI 成功没有覆盖该缺陷。
+
+规则补充检查 `Object.assign`、`Object.defineProperty`、`Object.defineProperties` 和
+`Reflect.defineProperty` 中显式替换 `fetch` 的语法，以及 `Response["json"]` 的成员访问。
+属性 API 与 Response 入口分别用负例验证，防止一个错误掩盖另一个漏检；同时检查可选调用、
+字符串计算属性、取出 Response 方法后的别名、普通数据操作和精确适配器例外。
+这些是静态语法检查，不执行伪响应代码；动态键、间接传入的属性对象和 API 自身的别名仍需审阅。
+初始来源、阈值、迁移清单和历史测量保持原值。
+
+可复现的定向命令（生产配置，锁定 ESLint 10.12.0）：
+
+```sh
+node --test --test-name-pattern='属性 API|语法级|注释|房间适配器' scripts/quality.test.mjs
+```
+
 JSON 夹具和图片属于数据；带函数的场景及 Python 响应实现仍接受扫描。依赖、虚拟环境、设备产物及测试报告等生成目录维持原有明确排除。ESLint 行内禁用和 Ruff noqa 不能绕过统一入口。
 
 ## 工作流与验证证据
