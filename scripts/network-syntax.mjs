@@ -2,6 +2,55 @@
 const transparentNodes = new Set(['ChainExpression', 'TSAsExpression', 'TSTypeAssertion',
   'TSNonNullExpression', 'TSSatisfiesExpression', 'TSInstantiationExpression']);
 const globalObjects = new Set(['globalThis', 'window', 'self', 'global']);
+const unknown = Symbol('unknown data');
+
+/**
+ * 只遍历真正的写入槽位，跳过属性键、默认值和成员对象中的读取。
+ * @param pattern - 赋值目标或循环左侧。
+ * @param visit - 对每个实际目标执行检查。
+ */
+export function writeTargets(pattern, visit) {
+  const target = unwrap(pattern);
+  switch (target?.type) {
+    case 'ObjectPattern':
+      target.properties.forEach(property => writeTargets(property.value ?? property.argument, visit));
+      break;
+    case 'ArrayPattern':
+      for (const item of target.elements) writeTargets(item, visit);
+      break;
+    case 'RestElement': writeTargets(target.argument, visit); break;
+    case 'AssignmentPattern': writeTargets(target.left, visit); break;
+    case 'MemberExpression':
+    case 'Identifier': visit(target); break;
+  }
+}
+
+/**
+ * 仅读取分析器自己建立的数据容器，不访问源码对象或原型。
+ * @param value - 静态数据。
+ * @param key - 静态键。
+ */
+function dataProperty(value, key) {
+  if (key === undefined) return unknown;
+  if (value instanceof Map) {
+    if (value.has(key)) return value.get(key);
+    return key in Object.prototype ? unknown : undefined;
+  }
+  if (Array.isArray(value)) {
+    if (Object.hasOwn(value, key)) return value[key];
+    return key in Array.prototype ? unknown : undefined;
+  }
+  return unknown;
+}
+
+/**
+ * 数据键额外支持数组下标；网络入口的字符串键策略保持不变。
+ * @param node - 成员或模式属性。
+ */
+function dataKey(node) {
+  const key = unwrap(node.property ?? node.key);
+  return key?.type === 'Literal' && typeof key.value === 'number' ? String(key.value) : propertyName(node);
+}
 
 /**
  * 去掉不改变值的 TypeScript 和可选链包装。
@@ -43,6 +92,19 @@ function referenceTarget(node) {
     else break;
   }
   return node;
+}
+
+/**
+ * 从一个实际目标向上定位写入，不能把计算键或默认值中的读取当成写入。
+ * @param node - 最外层成员目标。
+ */
+function writeOwner(node) {
+  const parent = node.parent;
+  if (!parent) return undefined;
+  if (parent.type === 'Property' && parent.value === node) return writeOwner(parent.parent);
+  if (['ArrayPattern', 'RestElement'].includes(parent.type)) return writeOwner(parent);
+  if (parent.type === 'AssignmentPattern' && parent.left === node) return writeOwner(parent);
+  return parent.left === node ? parent : undefined;
 }
 
 /**
@@ -92,12 +154,65 @@ export function syntaxContext(context) {
    */
   function dataBinding(node, seen) {
     const variable = binding(node);
-    if (!variable || seen.has(variable) || variable.defs.length !== 1) return false;
+    if (!variable || seen.has(variable) || variable.defs.length !== 1) return unknown;
     const definition = variable.defs[0];
-    if (definition.type !== 'Variable' || definition.node.id.type !== 'Identifier') return false;
-    if (variable.references.some(ref => ref.isWrite() && !ref.init)) return false;
+    if (definition.type !== 'Variable') return unknown;
+    if (variable.references.some(ref => ref.isWrite() && !ref.init)) return unknown;
     const next = new Set([...seen, variable]);
-    return pureData(definition.node.init, next) && variable.references.every(ref => safeReference(ref, next));
+    if (!variable.references.every(ref => safeReference(ref, next))) return unknown;
+    const source = dataValue(definition.node.init, next);
+    let result = unknown;
+    project(definition.node.id, source, next, (target, value) => {
+      if (target.name === node.name) result = value;
+    });
+    return result;
+  }
+  /**
+   * 投影确定的数据来源；未知来源的默认值仍然未知。
+   * @param pattern - 声明模式。
+   * @param value - 当前静态来源。
+   * @param seen - 已访问的绑定。
+   * @param visit - 接收叶子绑定及来源。
+   */
+  function project(pattern, value, seen, visit) {
+    const target = unwrap(pattern);
+    if (!target) return;
+    if (target?.type === 'AssignmentPattern') {
+      return project(target.left, value === undefined ? dataValue(target.right, seen) : value, seen, visit);
+    }
+    visit(target, value);
+    if (target?.type === 'ObjectPattern') projectObject(target, value, seen, visit);
+    if (target?.type === 'ArrayPattern') projectArray(target, value, seen, visit);
+  }
+  /**
+   * 对象剩余属性只保留未被静态键取走的自有数据。
+   * @param pattern - 对象模式。
+   * @param value - 静态来源。
+   * @param seen - 已访问绑定。
+   * @param visit - 叶子回调。
+   */
+  function projectObject(pattern, value, seen, visit) {
+    const keys = pattern.properties.filter(property => property.type === 'Property').map(dataKey);
+    const remainder = value instanceof Map && !keys.includes(undefined)
+      ? new Map([...value].filter(([key]) => !keys.includes(key))) : unknown;
+    for (const property of pattern.properties) {
+      if (property.type === 'RestElement') project(property.argument, remainder, seen, visit);
+      else project(property.value, dataProperty(value, dataKey(property)), seen, visit);
+    }
+  }
+  /**
+   * 数组空位和越界元素为 undefined，只有已知数组可以投影剩余元素。
+   * @param pattern - 数组模式。
+   * @param value - 静态来源。
+   * @param seen - 已访问绑定。
+   * @param visit - 叶子回调。
+   */
+  function projectArray(pattern, value, seen, visit) {
+    pattern.elements.forEach((item, index) => {
+      if (item?.type === 'RestElement') {
+        project(item.argument, Array.isArray(value) ? value.slice(index) : unknown, seen, visit);
+      } else project(item, dataProperty(value, String(index)), seen, visit);
+    });
   }
   /**
    * 写入只有纯数据时仍是数据；函数和 getter 永不求值或豁免。
@@ -108,13 +223,40 @@ export function syntaxContext(context) {
     const node = referenceTarget(reference.identifier);
     const parent = node.parent;
     if (!parent) return true;
-    if (parent.type === 'AssignmentExpression') return parent.left !== node || pureData(parent.right, seen);
+    const owner = writeOwner(node);
+    if (owner?.type === 'AssignmentExpression') return pureWrite(owner.left, owner.right, seen);
+    if (['ForOfStatement', 'ForInStatement'].includes(owner?.type)) return false;
     if (parent.type === 'UpdateExpression') return false;
+    if (parent.type === 'VariableDeclarator' && parent.init === node) return safeAliases(parent.id, seen);
+    return safeCall(node, seen);
+  }
+  /**
+   * 传入未知调用即发生逃逸，只保留已知输出及纯数据属性 API。
+   * @param node - 引用及其成员链。
+   * @param seen - 已访问绑定。
+   */
+  function safeCall(node, seen) {
+    const parent = node.parent;
     if (parent.type !== 'CallExpression' || !parent.arguments.includes(node)) return true;
     const member = unwrap(parent.callee);
     if (member?.type !== 'MemberExpression') return false;
     if (origin(member.object) === 'console') return true;
     return dataMutation(parent, member, seen);
+  }
+  /**
+   * 声明投影形成共享引用；不允许通过新绑定把数据传入未知调用或改成函数。
+   * @param pattern - 新绑定模式。
+   * @param seen - 已检查的词法绑定。
+   */
+  function safeAliases(pattern, seen) {
+    let safe = true;
+    writeTargets(pattern, target => {
+      const variable = binding(target);
+      if (!variable || seen.has(variable)) return;
+      const next = new Set([...seen, variable]);
+      safe &&= variable.references.every(ref => safeReference(ref, next));
+    });
+    return safe;
   }
   /**
    * 只识别现有属性 API 的纯数据载荷，不执行该 API。
@@ -133,37 +275,63 @@ export function syntaxContext(context) {
    * @param seen - 已访问绑定。
    */
   function pureData(node, seen = new Set()) {
+    return dataValue(node, seen) !== unknown;
+  }
+  /**
+   * 有界解析 JSON 原语、容器和声明来源；不执行调用、getter 或工厂。
+   * @param node - 数据表达式。
+   * @param seen - 已访问绑定。
+   */
+  function dataValue(node, seen) {
     const value = unwrap(node);
-    if (!value) return false;
-    if (value.type === 'Literal') return !value.regex;
-    if (value.type === 'TemplateLiteral') return value.expressions.length === 0;
-    if (value.type === 'Identifier') return dataBinding(value, seen);
-    if (value.type === 'ArrayExpression') return value.elements.every(item => pureData(item, seen));
-    if (value.type === 'ObjectExpression') return value.properties.every(property =>
-      property.type === 'Property' && property.kind === 'init' && !property.method
-        && propertyName(property) !== undefined && pureData(property.value, seen));
-    if (value.type === 'MemberExpression') return pureData(value.object, seen)
-      && pureData(ownValue(value), seen);
-    return false;
+    if (!value) return unknown;
+    switch (value.type) {
+      case 'Literal':
+      case 'TemplateLiteral':
+      case 'UnaryExpression': return primitiveValue(value);
+      case 'Identifier': return dataBinding(value, seen);
+      case 'ArrayExpression': return arrayValue(value, seen);
+      case 'ObjectExpression': return objectValue(value, seen);
+      case 'MemberExpression': return dataProperty(dataValue(value.object, seen), dataKey(value));
+      default: return unknown;
+    }
   }
   /**
-   * 只读取对象字面量自身的数据属性；不将原型链成员视为数据。
-   * @param node - 已证明目标为纯数据的成员表达式。
+   * 读取静态原语；正负号只作用于数值字面量，不调用强制转换。
+   * @param node - 字面量、模板或一元表达式。
    */
-  function ownValue(node) {
-    const object = dataObject(node.object);
-    if (object?.type !== 'ObjectExpression') return undefined;
-    return object.properties.findLast(property => propertyName(property) === propertyName(node))?.value;
+  function primitiveValue(node) {
+    if (node.type === 'Literal') return node.regex ? unknown : node.value;
+    if (node.type === 'TemplateLiteral') return stringKey(node) ?? unknown;
+    const argument = unwrap(node.argument);
+    if (argument?.type !== 'Literal' || typeof argument.value !== 'number') return unknown;
+    if (node.operator === '-') return -argument.value;
+    return node.operator === '+' ? argument.value : unknown;
   }
   /**
-   * 解析纯数据初始化器中的直接静态成员，不执行源码。
-   * @param node - 已证明为纯数据的表达式。
+   * 仅处理静态数组，不调用迭代器或展开未知来源。
+   * @param node - 数组字面量。
+   * @param seen - 已访问绑定。
    */
-  function dataObject(node) {
-    const target = unwrap(node);
-    if (target?.type === 'Identifier') return dataObject(binding(target)?.defs[0]?.node.init);
-    if (target?.type === 'MemberExpression') return dataObject(ownValue(target));
-    return target;
+  function arrayValue(node, seen) {
+    const values = node.elements.map(item => item === null ? undefined : dataValue(item, seen));
+    return values.includes(unknown) ? unknown : values;
+  }
+  /**
+   * 整个对象必须由自有数据属性组成；函数或 getter 使来源变为未知。
+   * @param node - 对象字面量。
+   * @param seen - 已访问绑定。
+   */
+  function objectValue(node, seen) {
+    const values = new Map();
+    for (const property of node.properties) {
+      if (property.type !== 'Property' || property.kind !== 'init' || property.method) return unknown;
+      const key = dataKey(property);
+      const value = dataValue(property.value, seen);
+      if (key === undefined || key === '__proto__' || value === unknown) return unknown;
+      values.set(key, value);
+    }
+    return values;
   }
   /**
    * 判断属性 API 是否同时具有纯数据目标和载荷。
@@ -172,5 +340,32 @@ export function syntaxContext(context) {
   function pureUpdate(call) {
     return call.arguments.every(argument => pureData(argument));
   }
-  return { origin, childOrigin, pureData, pureUpdate };
+  /**
+   * 赋值载荷按模式投影，防止未知默认值或函数默认值冒充纯数据写入。
+   * @param pattern - 实际目标模式。
+   * @param source - 直接右值。
+   * @param seen - 已访问绑定。
+   */
+  function pureWrite(pattern, source, seen = new Set()) {
+    let safe = true;
+    project(pattern, dataValue(source, seen), seen, (_target, value) => { safe &&= value !== unknown; });
+    return safe;
+  }
+  /**
+   * 路由解构使用所在模式的实际投影，不能用纯数据根掩盖函数默认值。
+   * @param pattern - 完整声明或赋值模式。
+   * @param source - 静态根来源。
+   * @param wanted - 被检查的路由属性，默认值按实际选中的分支投影。
+   */
+  function purePattern(pattern, source, wanted) {
+    let projected = unknown;
+    const seen = new Set();
+    const valueTarget = unwrap(wanted.value);
+    const selected = valueTarget?.type === 'AssignmentPattern' ? unwrap(valueTarget.left) : valueTarget;
+    project(pattern, dataValue(source, seen), seen, (target, value) => {
+      if (target === selected) projected = value;
+    });
+    return projected !== unknown;
+  }
+  return { origin, childOrigin, pureData, pureUpdate, pureWrite, purePattern };
 }

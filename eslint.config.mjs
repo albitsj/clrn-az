@@ -4,7 +4,7 @@ import tsdoc from 'eslint-plugin-tsdoc';
 import tseslint from 'typescript-eslint';
 import globals from 'globals';
 
-import { unwrap, stringKey, propertyName, syntaxContext } from './scripts/network-syntax.mjs';
+import { unwrap, stringKey, propertyName, syntaxContext, writeTargets } from './scripts/network-syntax.mjs';
 
 const routingMethods = new Set(['route', 'fulfill', 'routeFromHAR', 'routeWebSocket']);
 
@@ -52,22 +52,22 @@ const networkRoutingSyntax = {
      * @param node - 成员或解构属性节点。
      */
     function check(node) {
-      if (routingMethods.has(propertyName(node)) && !syntax.pureData(routingSource(node))) context.report({ node, messageId: 'forbidden' });
+      if (routingMethods.has(propertyName(node)) && !pureRoutingSource(node)) context.report({ node, messageId: 'forbidden' });
     }
     /**
      * 找出嵌套模式的根来源；未知参数仍受路由禁令约束。
      * @param node - 路由成员或模式属性。
      */
-    function routingSource(node) {
-      if (node.type === 'MemberExpression') return node.object;
+    function pureRoutingSource(node) {
+      if (node.type === 'MemberExpression') return syntax.pureData(node.object);
       let pattern = node.parent;
-      while (['Property', 'AssignmentPattern'].includes(pattern.parent?.type)) {
+      while (['Property', 'AssignmentPattern', 'ArrayPattern', 'RestElement'].includes(pattern.parent?.type)) {
         pattern = pattern.parent.type === 'Property' ? pattern.parent.parent : pattern.parent;
       }
       const parent = pattern.parent;
-      if (parent?.type === 'VariableDeclarator') return parent.init;
-      if (parent?.type === 'AssignmentExpression') return parent.right;
-      return undefined;
+      if (parent?.type === 'VariableDeclarator') return syntax.purePattern(pattern, parent.init, node);
+      if (parent?.type === 'AssignmentExpression') return syntax.purePattern(pattern, parent.right, node);
+      return false;
     }
     return { MemberExpression: check, 'ObjectPattern > Property': check };
   },
@@ -116,7 +116,27 @@ const networkResponses = {
         checkPattern(property.value, syntax.childOrigin(origin, key));
       }
     }
+    /**
+     * 对嵌套模式和循环统一检查实际写入目标；不扫描键或默认值中的读取。
+     * @param pattern - 赋值左侧。
+     * @param source - 直接赋值载荷；循环来源保持未知。
+     */
+    function checkWrites(pattern, source) {
+      writeTargets(pattern, target => {
+        if (target.type === 'MemberExpression' && propertyName(target) === 'fetch'
+          && !(syntax.pureData(target.object) && syntax.pureWrite(pattern, source))) report(target);
+      });
+    }
+    /**
+     * 循环中的左侧同样会替换网络入口，右侧并非直接写入值。
+     * @param node - for-in 或 for-of 节点。
+     */
+    function checkLoop(node) {
+      checkWrites(node.left);
+    }
     return {
+      ForOfStatement: checkLoop,
+      ForInStatement: checkLoop,
       /**
        * 覆盖直接声明解构，包括静态计算键及方法重命名。
        * @param node - 变量声明节点。
@@ -150,9 +170,7 @@ const networkResponses = {
        * @param node - 赋值表达式。
        */
       AssignmentExpression(node) {
-        const target = unwrap(node.left);
-        if (target?.type === 'MemberExpression' && propertyName(target) === 'fetch'
-          && !(syntax.pureData(target.object) && syntax.pureData(node.right))) report(node);
+        checkWrites(node.left, node.right);
         checkResponsePattern(node.left, node.right);
       },
       /**
