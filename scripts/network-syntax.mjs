@@ -3,6 +3,8 @@ const transparentNodes = new Set(['ChainExpression', 'TSAsExpression', 'TSTypeAs
   'TSNonNullExpression', 'TSSatisfiesExpression', 'TSInstantiationExpression']);
 const globalObjects = new Set(['globalThis', 'window', 'self', 'global']);
 const unknown = Symbol('unknown data');
+// 仍只含数据，但发生变更后不能继续使用初始化时的属性值或字段存在性。
+const mutableData = Symbol('pure data without a stable snapshot');
 
 /**
  * 只遍历真正的写入槽位，跳过属性键、默认值和成员对象中的读取。
@@ -32,6 +34,9 @@ export function writeTargets(pattern, visit) {
  */
 function dataProperty(value, key) {
   if (key === undefined) return unknown;
+  if (value === mutableData) {
+    return [Object, Array, String, Number, Boolean, BigInt].some(type => key in type.prototype) ? unknown : mutableData;
+  }
   if (value instanceof Map) {
     if (value.has(key)) return value.get(key);
     return key in Object.prototype ? unknown : undefined;
@@ -89,6 +94,8 @@ function referenceTarget(node) {
   while (node.parent) {
     const parent = node.parent;
     if (transparentNodes.has(parent.type) || parent.type === 'MemberExpression' && parent.object === node) node = parent;
+    else if (parent.type === 'ArrayExpression') node = parent;
+    else if (parent.type === 'Property' && parent.value === node && parent.parent.type === 'ObjectExpression') node = parent.parent;
     else break;
   }
   return node;
@@ -159,13 +166,24 @@ export function syntaxContext(context) {
     if (definition.type !== 'Variable') return unknown;
     if (variable.references.some(ref => ref.isWrite() && !ref.init)) return unknown;
     const next = new Set([...seen, variable]);
-    if (!variable.references.every(ref => safeReference(ref, next))) return unknown;
+    const safety = referenceSafety(variable, next);
+    if (!safety) return unknown;
     const source = dataValue(definition.node.init, next);
     let result = unknown;
     project(definition.node.id, source, next, (target, value) => {
       if (target.name === node.name) result = value;
     });
-    return result;
+    return safety === mutableData && result !== unknown ? mutableData : result;
+  }
+  /**
+   * 合并引用及声明别名的安全性，同时保留属性快照是否已失效。
+   * @param variable - ESLint 词法绑定。
+   * @param seen - 已访问绑定。
+   */
+  function referenceSafety(variable, seen) {
+    const states = variable.references.map(ref => safeReference(ref, seen));
+    if (states.includes(false)) return false;
+    return states.includes(mutableData) ? mutableData : true;
   }
   /**
    * 投影确定的数据来源；未知来源的默认值仍然未知。
@@ -177,12 +195,13 @@ export function syntaxContext(context) {
   function project(pattern, value, seen, visit) {
     const target = unwrap(pattern);
     if (!target) return;
-    if (target?.type === 'AssignmentPattern') {
+    if (target.type === 'AssignmentPattern') {
+      if (value === mutableData && !pureData(target.right, seen)) value = unknown;
       return project(target.left, value === undefined ? dataValue(target.right, seen) : value, seen, visit);
     }
     visit(target, value);
-    if (target?.type === 'ObjectPattern') projectObject(target, value, seen, visit);
-    if (target?.type === 'ArrayPattern') projectArray(target, value, seen, visit);
+    if (target.type === 'ObjectPattern') projectObject(target, value, seen, visit);
+    if (target.type === 'ArrayPattern') projectArray(target, value, seen, visit);
   }
   /**
    * 对象剩余属性只保留未被静态键取走的自有数据。
@@ -222,11 +241,11 @@ export function syntaxContext(context) {
   function safeReference(reference, seen) {
     const node = referenceTarget(reference.identifier);
     const parent = node.parent;
-    if (!parent) return true;
     const owner = writeOwner(node);
-    if (owner?.type === 'AssignmentExpression') return pureWrite(owner.left, owner.right, seen);
+    if (owner?.type === 'AssignmentExpression') return pureWrite(owner.left, owner.right, seen) && mutableData;
     if (['ForOfStatement', 'ForInStatement'].includes(owner?.type)) return false;
     if (parent.type === 'UpdateExpression') return false;
+    if (parent.operator === 'delete') return mutableData;
     if (parent.type === 'VariableDeclarator' && parent.init === node) return safeAliases(parent.id, seen);
     return safeCall(node, seen);
   }
@@ -241,7 +260,7 @@ export function syntaxContext(context) {
     const member = unwrap(parent.callee);
     if (member?.type !== 'MemberExpression') return false;
     if (origin(member.object) === 'console') return true;
-    return dataMutation(parent, member, seen);
+    return dataMutation(parent, member, seen) && mutableData;
   }
   /**
    * 声明投影形成共享引用；不允许通过新绑定把数据传入未知调用或改成函数。
@@ -254,7 +273,9 @@ export function syntaxContext(context) {
       const variable = binding(target);
       if (!variable || seen.has(variable)) return;
       const next = new Set([...seen, variable]);
-      safe &&= variable.references.every(ref => safeReference(ref, next));
+      const state = referenceSafety(variable, next);
+      if (!state) safe = false;
+      else if (safe && state === mutableData) safe = mutableData;
     });
     return safe;
   }
@@ -266,7 +287,7 @@ export function syntaxContext(context) {
    */
   function dataMutation(call, member, seen) {
     if (!['Object', 'Reflect'].includes(origin(member.object))) return false;
-    if (!['assign', 'set', 'defineProperty', 'defineProperties'].includes(propertyName(member))) return false;
+    if (!['assign', 'set', 'defineProperty', 'defineProperties', 'deleteProperty'].includes(propertyName(member))) return false;
     return call.arguments.slice(1).every(argument => pureData(argument, seen));
   }
   /**

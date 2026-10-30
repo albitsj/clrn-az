@@ -211,3 +211,66 @@ test('路由默认值投影覆盖四种方法、静态键、包装及声明赋�
     for (const [source, count] of probes) await assertMatrix(source, count, routingRule);
   }
 });
+
+test('needs-repair 删除属性后不能以初始化快照跳过路由函数默认值', async () => {
+  const probes = [];
+  for (const method of ['route', 'fulfill', 'routeFromHAR', 'routeWebSocket']) {
+    const owner = method === 'fulfill' ? 'Route' : 'Page';
+    const prefix = `declare const fallback: import("@playwright/test").${owner}["${method}"];
+      const settings: {${method}?: string|typeof fallback}={${method}:"business"};`;
+    for (const member of [`.${method}`, `["${method}"]`, `[\`${method}\`]`, `[("${method}" as const)!]`]) {
+      probes.push(`${prefix} delete (settings as typeof settings)!${member};
+        const {[\`${method}\`]:reply=fallback}=settings; void reply;`);
+    }
+    const controls = [
+      `${prefix} const {${method}:reply=fallback}=settings; console.log(reply);`,
+      `${prefix} delete settings.${method}; const {${method}:reply="data"}=settings; console.log(reply,fallback);`,
+    ];
+    assertTypeScript(controls);
+    for (const source of controls) {
+      for (const filePath of [...ordinaryPaths, adapter]) {
+        const [result] = await eslint.lintText(source, { filePath });
+        assert.deepEqual(result.messages, [], `${filePath}: ${source}`);
+      }
+    }
+    await assertMatrix(`${prefix} const {${method}:reply=fallback}: typeof settings={}; void reply;`, 1, routingRule);
+  }
+  assertTypeScript(probes);
+  for (const source of probes) await assertMatrix(source, 1, routingRule);
+});
+
+test('纯数据变更使属性快照失效：成员写入、静态属性 API、共享别名及嵌套解构', async () => {
+  const prefix = `declare const fallback: import("@playwright/test").Page["route"];
+    const settings: {nested:{route?:string|typeof fallback}}={nested:{route:"business"}};`;
+  const changes = [
+    'delete settings.nested.route;',
+    'if (Math.random()>0.5) delete settings.nested.route;',
+    'const alias=settings.nested; delete alias.route;',
+    'const {nested:alias}=settings; delete alias.route;',
+    'const [alias]=[settings.nested]; delete alias!.route;',
+    'settings.nested={};',
+    '({next:settings.nested}={next:{}});',
+    'Object.assign(settings,{nested:{}});',
+    'Object["defineProperty"](settings,"nested",{value:{}});',
+    'Object[`defineProperties`](settings,{nested:{value:{}}});',
+    'Reflect[("defineProperty" as const)!](settings,"nested",{value:{}});',
+    'Reflect[`set`](settings,"nested",{});',
+    'Reflect[`deleteProperty`](settings.nested,"route");',
+  ];
+  const probes = changes.map(change => `${prefix} ${change}
+    const {nested:{route:reply=fallback}}=settings; void reply;`);
+  assertTypeScript(probes);
+  for (const source of probes) await assertMatrix(source, 1, routingRule);
+  // 数组容器、剩余属性和赋值解构使用同一失效状态；不执行循环或删除代码。
+  const projections = [
+    `${prefix} const {nested:alias}=settings; delete settings.nested.route;
+      let reply; ({route:reply=fallback}=alias); void reply;`,
+    `${prefix} const {...copy}=settings; delete copy.nested.route;
+      const {nested:{route:reply=fallback}}=settings; void reply;`,
+    `declare const fallback: import("@playwright/test").Page["route"];
+      const settings: {route?: string|typeof fallback}[]=[{route:"business"}];
+      delete settings[0]!.route; const [{route:reply=fallback}]=settings; void reply;`,
+  ];
+  assertTypeScript(projections);
+  for (const source of projections) await assertMatrix(source, 1, routingRule);
+});
