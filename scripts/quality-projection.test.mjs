@@ -227,12 +227,7 @@ test('needs-repair 删除属性后不能以初始化快照跳过路由函数默�
       `${prefix} delete settings.${method}; const {${method}:reply="data"}=settings; console.log(reply,fallback);`,
     ];
     assertTypeScript(controls);
-    for (const source of controls) {
-      for (const filePath of [...ordinaryPaths, adapter]) {
-        const [result] = await eslint.lintText(source, { filePath });
-        assert.deepEqual(result.messages, [], `${filePath}: ${source}`);
-      }
-    }
+    for (const source of controls) await assertCleanMatrix(source);
     await assertMatrix(`${prefix} const {${method}:reply=fallback}: typeof settings={}; void reply;`, 1, routingRule);
   }
   assertTypeScript(probes);
@@ -273,4 +268,126 @@ test('纯数据变更使属性快照失效：成员写入、静态属性 API、�
   ];
   assertTypeScript(projections);
   for (const source of projections) await assertMatrix(source, 1, routingRule);
+});
+
+/**
+ * 零诊断控制检查全部规则，不能只过滤网络消息。
+ * @param source - 不执行的类型有效源码。
+ */
+async function assertCleanMatrix(source) {
+  for (const filePath of [...ordinaryPaths, adapter]) {
+    const [result] = await eslint.lintText(source, { filePath });
+    assert.deepEqual(result.messages, [], `${filePath}: ${source}`);
+  }
+}
+
+test('needs-repair 数组接收者变更的 16 组有效反例及配对控制', async () => {
+  const probes = [];
+  for (const method of ['route', 'fulfill', 'routeFromHAR', 'routeWebSocket']) {
+    const owner = method === 'fulfill' ? 'Route' : 'Page';
+    const prefix = `declare const fallback: import("@playwright/test").${owner}["${method}"];`;
+    const array = `const settings: {${method}?:string|typeof fallback}[]=`;
+    const read = `const [{${method}:reply=fallback}={}]=settings; void reply;`;
+    probes.push(
+      [`${prefix}${array}[{${method}:"business"}]; settings.pop(); ${read}`, 1],
+      [`${prefix}${array}[{${method}:"business"}]; settings.splice(0,1,{}); ${read}`, 1],
+      [`${prefix}${array}[{${method}:"business"}]; ${read}`, 0],
+      [`${prefix}${array}[]; ${read}`, 1],
+    );
+  }
+  assertTypeScript(probes.map(([source]) => source));
+  for (const [source, count] of probes) {
+    if (count) await assertMatrix(source, count, routingRule);
+    else await assertCleanMatrix(source);
+  }
+});
+
+test('接收者的变更、未知方法、回调、共享返回值及调用逃逸不能证明快照稳定', async () => {
+  const prefix = `declare const fallback: import("@playwright/test").Page["route"];
+    const settings: {route?:string|typeof fallback}[]=[{route:"business"}];`;
+  const read = 'const [{route:reply=fallback}={}]=settings; void reply;';
+  const changes = [
+    'settings.shift();', 'settings.push({});', 'settings.unshift({});',
+    'settings.reverse();', 'settings.fill({});', 'settings.copyWithin(0,1);', 'settings.sort();',
+    'settings["pop"]();', 'settings[`splice`](0,1,{});',
+    '(settings as typeof settings)![("pop" as const)!]?.();',
+    'const alias=settings; alias.pop();', 'const {nested:alias}={nested:settings}; alias.pop();',
+    'const [alias]=[settings]; alias!.pop();',
+    'settings.forEach(/** 未知回调。 */ ()=>{ settings.pop(); });',
+    'declare const callback: (value: typeof settings[number])=>void; settings.forEach(callback);',
+    'declare const callback: (a: typeof settings[number],b: typeof settings[number])=>number; settings.sort(callback);',
+    'declare const callback: (value: typeof settings)=>void; callback(settings);',
+    'declare const client: {update(value:typeof settings):void}; client.update(settings);',
+    'declare const Client: new(value:typeof settings)=>object; new Client(settings);',
+    'declare const tag: (text:TemplateStringsArray,value:typeof settings)=>void; tag`value=${settings}`;',
+    'const nested={items:settings}; nested.items.pop();',
+    'settings.pop.call(settings);',
+    'declare const method: "pop"|"shift"; settings[method]();',
+    'declare const method: "slice"|"splice"; settings[method](0,1);',
+    'const client=settings as typeof settings & {rebuild():void}; client.rebuild();',
+  ];
+  const probes = changes.map(change => `${prefix}${change}${read}`);
+  assertTypeScript(probes);
+  for (const source of probes) await assertMatrix(source, 1, routingRule);
+  const shared = `${prefix}const copy=settings.slice(); copy[0]!.route=fallback;${read}`;
+  assertTypeScript([shared]);
+  await assertMatrix(shared, 2, routingRule);
+});
+
+test('已知标量读取保留纯数据来源，不接受回调或会共享容器的返回值', async () => {
+  const prefix = `declare const fallback: import("@playwright/test").Page["route"];
+    const settings: {route?:string|typeof fallback}[]=[{route:"business"}];`;
+  const read = 'const [{route:reply=fallback}={}]=settings; console.log(reply);';
+  const reads = [
+    'console.log(settings.length);', 'console.log(settings[0]);',
+    'console.info(settings);', 'console.table(settings);',
+    'settings.includes({});', 'settings.indexOf({});', 'settings.lastIndexOf({});',
+    'settings.join(",");', 'settings[`join`](";");',
+    '(settings as typeof settings)![("includes" as const)!]?.({});',
+  ];
+  const probes = reads.map(change => `${prefix}${change}${read}`);
+  assertTypeScript(probes);
+  for (const source of probes) await assertCleanMatrix(source);
+  // 回调可能删除接收者，不能因方法通常只读而放行；不执行回调或数组操作。
+  const callback = `${prefix}settings.map(/** 未知回调。 */ ()=>{ settings.pop(); return {}; });${read}`;
+  assertTypeScript([callback]);
+  await assertMatrix(callback, 1, routingRule);
+});
+
+test('needs-repair 引用经展开、容器、回调返回和分支传给未知消费者时不能证明稳定', async () => {
+  for (const method of ['route', 'fulfill', 'routeFromHAR', 'routeWebSocket']) {
+    const owner = method === 'fulfill' ? 'Route' : 'Page';
+    const prefix = `declare const fallback: import("@playwright/test").${owner}["${method}"];
+      const settings: {${method}?:string|typeof fallback}[]=[{${method}:"business"}];`;
+    const read = `const [{${method}:reply=fallback}={}]=settings; void reply;`;
+    const changes = [
+      'declare const mutate: (...items:typeof settings)=>void; mutate(...settings);',
+      'declare const mutate: (load:()=>typeof settings)=>void; mutate(/** 提供共享数据。 */ ()=>settings);',
+      'declare const mutate: (load:()=>typeof settings)=>void; mutate(/** 提供共享数据。 */ ()=>{return settings;});',
+      'declare const mutate: (load:()=>typeof settings)=>void; const load=/** 提供共享数据。 */ ()=>settings; mutate(load);',
+      'declare const mutate: (value:{load:()=>typeof settings})=>void; mutate({load:/** 提供共享数据。 */ ()=>settings});',
+      'declare const mutate: (value:typeof settings[])=>void; mutate([settings]);',
+      'declare const mutate: (value:{items:typeof settings})=>void; mutate({...{items:settings}});',
+      'declare const mutate: (value:typeof settings)=>void; mutate(Math.random()>0.5?settings:[]);',
+      'declare const mutate: (value:typeof settings|false)=>void; mutate(Math.random()>0.5&&settings);',
+      'declare const mutate: (value:typeof settings)=>void; mutate((void 0,settings));',
+      'declare const mutate: ((...items:typeof settings)=>void)|undefined; mutate?.(...(settings as typeof settings)!);',
+      'declare const mutate: (load:()=>Promise<typeof settings>)=>void; mutate(/** 提供共享数据。 */ async()=>await settings);',
+      'declare const mutate: (load:()=>typeof settings)=>void; mutate(/** 提供共享数据。 */ function(){return settings;});',
+      'declare const outside: {items:typeof settings}; outside.items=settings;',
+    ];
+    const probes = changes.map(change => `${prefix}${change}${read}`);
+    assertTypeScript(probes);
+    for (const source of probes) await assertMatrix(source, 1, routingRule);
+    const controls = [
+      'console.log(...settings);', 'console.log([settings],{items:settings});',
+      'void settings; typeof settings; settings===settings;',
+      'const load=/** 只返回标量。 */ ()=>settings.length>0; console.log(load);',
+      'declare const consume: (load:()=>boolean)=>void; consume(/** 只返回标量。 */ ()=>settings.length>0);',
+      'const label=typeof settings; console.log(label);',
+      'if(settings){console.info(settings.length);}',
+    ].map(use => `${prefix}${use}${read}`);
+    assertTypeScript(controls);
+    for (const source of controls) await assertCleanMatrix(source);
+  }
 });

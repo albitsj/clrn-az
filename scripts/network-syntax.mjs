@@ -1,11 +1,11 @@
 // 有界的语法及词法来源分析；不求值调用、getter 或任意运行时别名。
+import { referenceTarget, writeOwner, safeValueUse, aliasPattern } from './network-reference.mjs';
 const transparentNodes = new Set(['ChainExpression', 'TSAsExpression', 'TSTypeAssertion',
   'TSNonNullExpression', 'TSSatisfiesExpression', 'TSInstantiationExpression']);
 const globalObjects = new Set(['globalThis', 'window', 'self', 'global']);
 const unknown = Symbol('unknown data');
 // 仍只含数据，但发生变更后不能继续使用初始化时的属性值或字段存在性。
 const mutableData = Symbol('pure data without a stable snapshot');
-
 /**
  * 只遍历真正的写入槽位，跳过属性键、默认值和成员对象中的读取。
  * @param pattern - 赋值目标或循环左侧。
@@ -26,7 +26,6 @@ export function writeTargets(pattern, visit) {
     case 'Identifier': visit(target); break;
   }
 }
-
 /**
  * 仅读取分析器自己建立的数据容器，不访问源码对象或原型。
  * @param value - 静态数据。
@@ -47,7 +46,6 @@ function dataProperty(value, key) {
   }
   return unknown;
 }
-
 /**
  * 数据键额外支持数组下标；网络入口的字符串键策略保持不变。
  * @param node - 成员或模式属性。
@@ -56,7 +54,6 @@ function dataKey(node) {
   const key = unwrap(node.property ?? node.key);
   return key?.type === 'Literal' && typeof key.value === 'number' ? String(key.value) : propertyName(node);
 }
-
 /**
  * 去掉不改变值的 TypeScript 和可选链包装。
  * @param node - 语法节点。
@@ -65,7 +62,6 @@ export function unwrap(node) {
   while (node && transparentNodes.has(node.type)) node = node.expression;
   return node;
 }
-
 /**
  * 读取字面量或无插值模板字符串。
  * @param node - 键表达式。
@@ -76,7 +72,6 @@ export function stringKey(node) {
   if (key?.type === 'TemplateLiteral' && key.expressions.length === 0) return key.quasis[0].value.cooked;
   return undefined;
 }
-
 /**
  * 统一成员与模式的静态属性键。
  * @param node - 成员或属性节点。
@@ -85,35 +80,6 @@ export function propertyName(node) {
   const key = node.property ?? node.key;
   return !node.computed && key?.type === 'Identifier' ? key.name : stringKey(key);
 }
-
-/**
- * 沿成员和透明包装定位引用的实际使用位置。
- * @param node - 词法引用节点。
- */
-function referenceTarget(node) {
-  while (node.parent) {
-    const parent = node.parent;
-    if (transparentNodes.has(parent.type) || parent.type === 'MemberExpression' && parent.object === node) node = parent;
-    else if (parent.type === 'ArrayExpression') node = parent;
-    else if (parent.type === 'Property' && parent.value === node && parent.parent.type === 'ObjectExpression') node = parent.parent;
-    else break;
-  }
-  return node;
-}
-
-/**
- * 从一个实际目标向上定位写入，不能把计算键或默认值中的读取当成写入。
- * @param node - 最外层成员目标。
- */
-function writeOwner(node) {
-  const parent = node.parent;
-  if (!parent) return undefined;
-  if (parent.type === 'Property' && parent.value === node) return writeOwner(parent.parent);
-  if (['ArrayPattern', 'RestElement'].includes(parent.type)) return writeOwner(parent);
-  if (parent.type === 'AssignmentPattern' && parent.left === node) return writeOwner(parent);
-  return parent.left === node ? parent : undefined;
-}
-
 /**
  * 由 ESLint 词法作用域找绑定，不按变量拼写豁免业务对象。
  * @param context - 生产规则上下文。
@@ -179,9 +145,12 @@ export function syntaxContext(context) {
    * 合并引用及声明别名的安全性，同时保留属性快照是否已失效。
    * @param variable - ESLint 词法绑定。
    * @param seen - 已访问绑定。
+   * @param introduced - 正在分析的别名赋值槽位。
    */
-  function referenceSafety(variable, seen) {
-    const states = variable.references.map(ref => safeReference(ref, seen));
+  function referenceSafety(variable, seen, introduced) {
+    const states = variable.references.filter(ref => ref.identifier !== introduced
+      && !(ref.init || ref.isTypeReference && !ref.isValueReference))
+      .map(ref => safeReference(ref, seen));
     if (states.includes(false)) return false;
     return states.includes(mutableData) ? mutableData : true;
   }
@@ -239,27 +208,33 @@ export function syntaxContext(context) {
    * @param seen - 已访问绑定。
    */
   function safeReference(reference, seen) {
-    const node = referenceTarget(reference.identifier);
+    const node = referenceTarget(reference.identifier, unwrap);
     const parent = node.parent;
     const owner = writeOwner(node);
     if (owner?.type === 'AssignmentExpression') return pureWrite(owner.left, owner.right, seen) && mutableData;
     if (['ForOfStatement', 'ForInStatement'].includes(owner?.type)) return false;
     if (parent.type === 'UpdateExpression') return false;
     if (parent.operator === 'delete') return mutableData;
-    if (parent.type === 'VariableDeclarator' && parent.init === node) return safeAliases(parent.id, seen);
+    const alias = aliasPattern(node);
+    if (alias) return safeAliases(alias, seen);
     return safeCall(node, seen);
   }
   /**
-   * 传入未知调用即发生逃逸，只保留已知输出及纯数据属性 API。
+   * 接收者和参数使用同一调用边界；只证明无回调的标量读取、输出及纯数据属性 API。
    * @param node - 引用及其成员链。
    * @param seen - 已访问绑定。
    */
   function safeCall(node, seen) {
     const parent = node.parent;
-    if (parent.type !== 'CallExpression' || !parent.arguments.includes(node)) return true;
+    if (parent.type !== 'CallExpression') return safeValueUse(node);
     const member = unwrap(parent.callee);
     if (member?.type !== 'MemberExpression') return false;
-    if (origin(member.object) === 'console') return true;
+    if (parent.callee === node) {
+      return ['includes', 'indexOf', 'lastIndexOf', 'join'].includes(propertyName(member))
+        && parent.arguments.every(argument => pureData(argument, seen));
+    }
+    if (['console.log', 'console.info', 'console.warn', 'console.error', 'console.debug', 'console.dir', 'console.table']
+      .includes(`${origin(member.object)}.${propertyName(member)}`)) return true;
     return dataMutation(parent, member, seen) && mutableData;
   }
   /**
@@ -270,10 +245,11 @@ export function syntaxContext(context) {
   function safeAliases(pattern, seen) {
     let safe = true;
     writeTargets(pattern, target => {
+      if (target.type !== 'Identifier') { safe = false; return; }
       const variable = binding(target);
       if (!variable || seen.has(variable)) return;
       const next = new Set([...seen, variable]);
-      const state = referenceSafety(variable, next);
+      const state = referenceSafety(variable, next, target);
       if (!state) safe = false;
       else if (safe && state === mutableData) safe = mutableData;
     });
