@@ -1,6 +1,7 @@
 """从原生入口验证异常模式边界，以及 ACK 来自对应连接的真实成功响应。"""
 
 import json
+from itertools import product
 import os
 from pathlib import Path
 import sys
@@ -25,8 +26,8 @@ class SelectionFaultTests(unittest.IsolatedAsyncioTestCase):
     async def test_explicit_faults_filter_real_metadata_and_only_fail_seoul_health(self):
         for scene in ('network-64-unavailable', 'network-without-64'):
             addon = proxy(scene)
-            for path in METADATA:
-                request = flow(f'https://api.shafayouxi.org{path}')
+            for path, method in product(METADATA, ('GET', 'POST')):
+                request = flow(f'https://api.shafayouxi.org{path}', method)
                 await addon.request(request)
                 self.assertIsNone(request.response)
                 status, headers, raw = upstream_result(request.request.pretty_url, 'GET')
@@ -34,7 +35,7 @@ class SelectionFaultTests(unittest.IsolatedAsyncioTestCase):
                 addon.response(request)
                 body = request.response.json()
                 original = json.loads(raw)
-                expected = HOSTS[:2] if scene == 'network-64-unavailable' else HOSTS[1:]
+                expected = HOSTS if scene == 'network-64-unavailable' else HOSTS[1:]
                 self.assertEqual(list(body['result']['servers']), list(expected))
                 if isinstance(body['result']['servers'], dict):
                     for host in expected:
@@ -44,7 +45,7 @@ class SelectionFaultTests(unittest.IsolatedAsyncioTestCase):
             for host in HOSTS:
                 request = flow(f'https://{host}/node/v1/status')
                 await addon.request(request)
-                if scene == 'network-64-unavailable' and host == HOSTS[0]:
+                if scene == 'network-64-unavailable' and host in (HOSTS[0], HOSTS[2]):
                     self.assertEqual(request.response.status_code, 503)
                 else:
                     self.assertIsNone(request.response)
@@ -119,15 +120,15 @@ class LiveSelectionFaultTests(unittest.TestCase):
                  '--set', f'confdir={directory}', '--set', 'connection_strategy=lazy',
                  '-s', str(ROOT / 'android/proxy-addon.py')],
                 port, 'http://test-mitmproxy.invalid/status', environment):
-            for path in METADATA:
-                status, _, raw = fetch(port, f'http://api.shafayouxi.org{path}')
+            for path, method in product(METADATA, ('GET', 'POST')):
+                status, _, raw = fetch(port, f'http://api.shafayouxi.org{path}', method)
                 self.assertEqual(status, 200)
-                expected = HOSTS[:2] if scene == 'network-64-unavailable' else HOSTS[1:]
+                expected = HOSTS if scene == 'network-64-unavailable' else HOSTS[1:]
                 self.assertEqual(list(json.loads(raw)['result']['servers']), list(expected))
             for host in HOSTS:
                 url = f'http://{host}/node/v1/status'
                 status, _, raw = fetch(port, url)
-                if scene == 'network-64-unavailable' and host == HOSTS[0]:
+                if scene == 'network-64-unavailable' and host in (HOSTS[0], HOSTS[2]):
                     self.assertEqual(status, 503)
                 else:
                     expected_status, _, expected_raw = upstream_result(url, 'GET')

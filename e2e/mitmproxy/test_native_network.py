@@ -57,7 +57,7 @@ class NativeReplayTests(unittest.IsolatedAsyncioTestCase):
         for game, records in (('', False), ('texas-holdem', False), ('zhajinhua', False), ('', True)):
             addon = proxy(game, records)
             for url in urls:
-                for method in ('GET', 'OPTIONS'):
+                for method in ('GET', 'POST', 'OPTIONS'):
                     with self.subTest(game=game, records=records, url=url, method=method):
                         request = flow(url, method)
                         await addon.request(request)

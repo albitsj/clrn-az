@@ -66,6 +66,7 @@ class Upstream(BaseHTTPRequestHandler):
         self.wfile.write(raw)
 
     do_OPTIONS = do_GET
+    do_POST = do_GET
 
     def log_message(self, *_args):
         pass
@@ -179,7 +180,7 @@ class LiveOverrideTests(unittest.TestCase):
         urls += [f'http://{host}/node/v1/status?{query}' for host in HOSTS
                  for query in ('', 'failed', 'non-json', 'gzip')]
         for url in urls:
-            for method in ('GET', 'OPTIONS'):
+            for method in ('GET', 'POST', 'OPTIONS'):
                 with self.subTest(url=url, method=method):
                     status, headers, raw = fetch(port, url, method)
                     expected_status, expected_headers, expected_raw = upstream_result(url, method)
