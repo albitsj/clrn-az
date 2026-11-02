@@ -15,6 +15,7 @@ from username_lookup import username_lookup_response
 from game_session import GameSession
 from launch_network import LaunchNetwork
 from network_selection import NetworkSelection
+from selection_faults import SelectionFaults, SCENES as NETWORK_SCENES
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'e2e/mitmproxy'))
 from response_overrides import is_staging
 from visual_fixtures import VisualFixtures
@@ -23,12 +24,14 @@ from visual_fixtures import VisualFixtures
 class AndroidVisualProxy:
     def __init__(self):
         scene = os.environ.get('ANDROID_SCENE', 'pages')
-        if scene not in ('pages', 'records', 'texas-holdem', 'zhajinhua', 'matching', 'slot', 'skeleton', 'invitable'):
+        if scene not in ('pages', 'records', 'texas-holdem', 'zhajinhua', 'matching', 'slot', 'skeleton', 'invitable',
+                         *NETWORK_SCENES):
             raise ValueError('Unknown Android scene')
         self.fixtures = VisualFixtures('game' if scene in ('texas-holdem', 'zhajinhua') else
                                        'records' if scene == 'records' else 'pages')
         self.launch = LaunchNetwork()
         self.network_selection = NetworkSelection()
+        self.selection_faults = SelectionFaults(scene)
         self.presentation = AccountPresentation()
         self.club_search_fixture = ClubSearchFixture()
         self.records = None
@@ -78,6 +81,7 @@ class AndroidVisualProxy:
             self.records.scenario = 'visual-stable'
 
     def response(self, flow):
+        self.selection_faults.response(flow)
         self.network_selection.observe(flow)
         if (not flow.response or flow.response.status_code != 200
                 or (flow.request.host != 'api.shafayouxi.org'
@@ -112,6 +116,13 @@ class AndroidVisualProxy:
     def websocket_message(self, flow):
         if not is_staging(flow.request.host):
             return
+        self.network_selection.websocket_message(flow)
+        self.slot_websocket(flow)
+        self.matching_websocket(flow)
+        if self.game:
+            self.game.websocket_message(flow)
+
+    def slot_websocket(self, flow):
         if self.slot and flow.websocket:
             message = flow.websocket.messages[-1]
             if message.from_client and message.is_text and not message.injected:
@@ -142,6 +153,8 @@ class AndroidVisualProxy:
                     if replies:
                         ctx.master.commands.call('inject.websocket', flow, True,
                                                  '\n'.join(json.dumps(reply) for reply in replies).encode(), True)
+
+    def matching_websocket(self, flow):
         if self.matching and flow.websocket:
             message = flow.websocket.messages[-1]
             if message.from_client and message.is_text and not message.injected:
@@ -164,14 +177,14 @@ class AndroidVisualProxy:
                     if replies:
                         ctx.master.commands.call('inject.websocket', flow, True,
                                                  '\n'.join(json.dumps(reply) for reply in replies).encode(), True)
-        if self.game:
-            self.game.websocket_message(flow)
 
     def websocket_end(self, flow):
         if self.game:
             self.game.websocket_end(flow)
 
     async def request(self, flow):
+        if self.selection_faults.request(flow):
+            return
         if await self.launch.request(flow):
             return
         path = urlsplit(flow.request.path).path
@@ -179,6 +192,30 @@ class AndroidVisualProxy:
                 flow.request.method in ('OPTIONS', 'CONNECT') or not is_staging(flow.request.host)):
             self.fixtures.request(flow)
             return
+        for handler in (self.network_request, self.username_request, self.club_search_request,
+                        self.club_rooms_request, self.auto_rebuy_request, self.invitable_request,
+                        self.skeleton_request, self.slot_request, self.matching_request, self.session_request):
+            await handler(flow, path)
+            if flow.response:
+                return
+        if self.game:
+            self.game.request(flow)
+        elif self.records:
+            await self.records.request(flow)
+        if flow.response:
+            return
+        if flow.request.host == 'test-mitmproxy.invalid':
+            self.control_status(flow)
+            return
+        self.fixtures.request(flow)
+
+    def control_status(self, flow):
+        if flow.request.headers.get('X-E2E-Control-Token') != os.environ['MITMPROXY_CONTROL_TOKEN']:
+            flow.response = http.Response.make(403, b'Forbidden')
+        else:
+            flow.response = http.Response.make(200, b'{"scenario":"visual-stable"}')
+
+    async def network_request(self, flow, path):
         if flow.request.host == 'test-mitmproxy.invalid' and path == '/android/network-selection':
             if flow.request.headers.get('X-E2E-Control-Token') != os.environ['MITMPROXY_CONTROL_TOKEN']:
                 flow.response = http.Response.make(403, b'Forbidden')
@@ -188,12 +225,16 @@ class AndroidVisualProxy:
                 flow.response = http.Response.make(200, json.dumps(self.network_selection.snapshot()).encode(),
                                                    {'Content-Type': 'application/json'})
             return
+
+    async def username_request(self, flow, path):
         if self.game:
             lookup = username_lookup_response(flow.request, os.environ.get('VISUAL_USERNAME'))
             if lookup is not None:
                 flow.response = http.Response.make(200, json.dumps(lookup).encode(),
                                                    {'Content-Type': 'application/json'})
                 return
+
+    async def club_search_request(self, flow, path):
         if flow.request.host == 'test-mitmproxy.invalid' and path == '/android/club-search':
             if flow.request.headers.get('X-E2E-Control-Token') != os.environ['MITMPROXY_CONTROL_TOKEN']:
                 flow.response = http.Response.make(403, '无权访问'.encode())
@@ -215,6 +256,8 @@ class AndroidVisualProxy:
             flow.response = http.Response.make(200, json.dumps(club_search_response).encode(),
                                                {'Content-Type': 'application/json'})
             return
+
+    async def club_rooms_request(self, flow, path):
         if flow.request.host == 'test-mitmproxy.invalid' and path == '/native/club-rooms':
             if flow.request.headers.get('X-E2E-Control-Token') != os.environ['MITMPROXY_CONTROL_TOKEN']:
                 flow.response = http.Response.make(403, b'Forbidden')
@@ -241,6 +284,8 @@ class AndroidVisualProxy:
                 flow.response = http.Response.make(200, json.dumps({'ok': True, 'result': result}).encode(),
                     {'Content-Type': 'application/json'})
                 return
+
+    async def auto_rebuy_request(self, flow, path):
         if self.game and flow.request.host == 'test-mitmproxy.invalid' \
                 and path == '/android/auto-rebuy-hold':
             if flow.request.headers.get('X-E2E-Control-Token') != os.environ['MITMPROXY_CONTROL_TOKEN']:
@@ -269,6 +314,8 @@ class AndroidVisualProxy:
             flow.response = http.Response.make(200, b'{"ok":true,"result":{"auto_rebuy":true}}',
                                                {'Content-Type': 'application/json'})
             return
+
+    async def invitable_request(self, flow, path):
         if self.invitable and path == '/v2/building/rooms' and flow.request.method == 'PUT':
             room = {'room_id': '00000000-0000-4000-8000-000000000099', 'room_name': 'TestRoom',
                     'created_at': '2026-01-01T00:00:00Z', 'creator_id': 'visual-user-id',
@@ -283,6 +330,8 @@ class AndroidVisualProxy:
             flow.response = http.Response.make(200, json.dumps({'ok': True, 'result': [room]}).encode(),
                                                {'Content-Type': 'application/json'})
             return
+
+    async def skeleton_request(self, flow, path):
         if self.skeleton and flow.request.host == 'test-mitmproxy.invalid' and path == '/android/skeleton':
             if flow.request.headers.get('X-E2E-Control-Token') != os.environ['MITMPROXY_CONTROL_TOKEN']:
                 flow.response = http.Response.make(403, b'Forbidden')
@@ -309,6 +358,8 @@ class AndroidVisualProxy:
             flow.response = http.Response.make(200, json.dumps({'ok': True, 'result': self.skeleton_clubs}).encode(),
                                                {'Content-Type': 'application/json'})
             return
+
+    async def slot_request(self, flow, path):
         if self.slot and flow.request.host == 'test-mitmproxy.invalid' and urlsplit(flow.request.path).path == '/android/slot':
             if flow.request.headers.get('X-E2E-Control-Token') != os.environ['MITMPROXY_CONTROL_TOKEN']:
                 flow.response = http.Response.make(403, b'Forbidden')
@@ -346,10 +397,14 @@ class AndroidVisualProxy:
             data = self.slot_result(path.endswith('/spin')) if valid_user else {'ok': False, 'error': 'unknown_user'}
             flow.response = http.Response.make(200, json.dumps(data).encode(), {'Content-Type': 'application/json'})
             return
+
+    async def matching_request(self, flow, path):
         if self.matching and urlsplit(flow.request.path).path in self.matching_paths:
             flow.response = http.Response.make(200, b'{"ok":true,"result":{}}',
                                                {'Content-Type': 'application/json'})
             return
+
+    async def session_request(self, flow, path):
         if self.game and flow.request.host == 'test-mitmproxy.invalid' and urlsplit(flow.request.path).path == '/android/session':
             if flow.request.headers.get('X-E2E-Control-Token') != os.environ['MITMPROXY_CONTROL_TOKEN']:
                 flow.response = http.Response.make(403, b'Forbidden')
@@ -358,21 +413,6 @@ class AndroidVisualProxy:
                     'account': self.game_session.account, 'room': self.game_session.room}).encode(),
                     {'Content-Type': 'application/json'})
             return
-        if self.game:
-            self.game.request(flow)
-            if flow.response:
-                return
-        if self.records:
-            await self.records.request(flow)
-            if flow.response:
-                return
-        if flow.request.host == 'test-mitmproxy.invalid':
-            if flow.request.headers.get('X-E2E-Control-Token') != os.environ['MITMPROXY_CONTROL_TOKEN']:
-                flow.response = http.Response.make(403, b'Forbidden')
-            else:
-                flow.response = http.Response.make(200, b'{"scenario":"visual-stable"}')
-            return
-        self.fixtures.request(flow)
 
     def slot_result(self, spin):
         energy = {'user_energy': {'total_energy': 0}, 'energy_factory': {
