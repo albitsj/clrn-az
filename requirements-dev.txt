@@ -1,0 +1,2 @@
+# 本地与 Repository checks 使用同一版本；安装到仓库的 .venv 中。
+pre-commit==4.6.0

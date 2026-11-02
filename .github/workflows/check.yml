@@ -17,13 +17,20 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
-          node-version: '24'
+          node-version: '24.14.0'
           cache: npm
       - uses: astral-sh/setup-uv@v6
+        with:
+          version: '0.11.32'
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: '3.12.12'
+      - run: npm install --global npm@11.9.0
       - run: npm ci
+      - name: 安装固定版本 pre-commit（隔离虚拟环境）
+        run: |
+          uv venv --python 3.12.12 .venv
+          uv pip install --python .venv/bin/python -r requirements-dev.txt
       - name: 保存初始基线来源与比较身份
         env:
           QUALITY_BASE_REV: ${{ github.event.pull_request.base.sha || github.event.before }}
@@ -42,7 +49,14 @@ jobs:
           node scripts/lint-ratchet.mjs ruff --report > "$RUNNER_TEMP/quality-reports/ruff.json"
           node scripts/lint-ratchet.mjs dependency-cruiser --report > "$RUNNER_TEMP/quality-reports/dependencies.json"
           node scripts/lint-duplicates.mjs --report > "$RUNNER_TEMP/quality-reports/legacy-duplicates.json"
-      - run: npm run check
+      - name: 本地与 CI 共用提交前静态检查
+        run: .venv/bin/pre-commit run --all-files --show-diff-on-failure
+        env:
+          QUALITY_BASE_REV: ${{ github.event.pull_request.base.sha || github.event.before }}
+      - name: 原生用例收集与完整本机单元测试
+        run: |
+          npm run test:android:collect
+          npm test
         env:
           QUALITY_BASE_REV: ${{ github.event.pull_request.base.sha || github.event.before }}
       - name: Python 代理单元测试

@@ -18,6 +18,7 @@ visual/.visual-reference.lock/
 
 # 仓库检查依赖和缓存
 node_modules/
+.venv/
 .ruff_cache/
 android/artifacts/
 android/test-results/
