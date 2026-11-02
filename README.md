@@ -7,10 +7,15 @@
 - `scripts/`：检查工具、账号分区、staging 部署记录解析。
 - `deployments/staging.json`：发布后提交的部署身份，触发 master 上的安卓工作流。
 
-安装与静态验证（Node.js 24+、uv）：
+安装与静态验证（固定工具版本与首次克隆的 hook 安装见 [提交前检查](docs/pre-commit.md)）：
 
 ```sh
 npm ci
+uv venv --python 3.12.12 .venv
+uv pip install --python .venv/bin/python -r requirements-dev.txt
+source .venv/bin/activate
+pre-commit install
+pre-commit run --all-files
 npm run check
 python3 -m unittest discover -s android -p 'test_*.py'
 npx playwright test --config android/playwright.config.ts --list
@@ -18,7 +23,7 @@ npx playwright test --config android/playwright.config.ts --list
 
 `npm run check` 同时执行复杂度、架构与新增重复门禁；工具版本、实测结果、历史迁移清单和负例验证见
 [静态质量门禁](quality/README.md)。本地检查只读，不启动设备或访问业务接口；原生用例收集不代表设备运行通过。
-pre-commit 配置由 #25 维护，直接复用此入口，本 issue 不安装或改写 Git hook。
+提交前 hook 复用 `npm run lint` 和 `npm run typecheck`；CI 使用同一份配置，并继续运行用例收集与完整单元测试。
 
 运行真实 APK、更新截图与 CI 配置见 [Android 测试说明](android/README.md)。本地执行需独立测试账号；已有本机池可通过 `CLRN_TEST_ACCOUNT_POOL` 指向同一文件并用 `node scripts/with-test-account.mjs -- node android/run-visual.mjs` 获取本机锁。禁止借用 CI 账号。
 
