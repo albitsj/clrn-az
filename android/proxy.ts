@@ -63,7 +63,8 @@ async function configureProxy(directory: string, server: string): Promise<string
  * @param scene - 本轮 Python 场景；互斥选择页面、玩法、战绩或专项动画。
  */
 export async function withAndroidProxy<T>(task: (proxy: Mitmproxy) => Promise<T>,
-  scene: 'pages' | 'records' | 'texas-holdem' | 'zhajinhua' | 'matching' | 'slot' | 'skeleton' | 'invitable' = 'pages'): Promise<T> {
+  scene: 'pages' | 'records' | 'texas-holdem' | 'zhajinhua' | 'matching' | 'slot' | 'skeleton' | 'invitable'
+    | 'network-64-unavailable' | 'network-without-64' = 'pages'): Promise<T> {
   let previousProxy: string | undefined;
   let reversePort: string | undefined;
   const failures: unknown[] = [];

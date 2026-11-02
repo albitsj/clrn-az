@@ -36,6 +36,17 @@ Web 另外有 5 个下载帮助场景。当前 Staging APK 的发布渠道为 `d
 
 `e2e/mitmproxy/test_response_overrides_integration.py` 用本地上游验证 64 指标 1065 或失效、67 正常、第三节点真实 503，以及 metadata 不包含 64 的情况；覆盖五个共享入口及 Android 普通/登录、德州、拼三张、战绩入口，Android 直接运行 Python 夹具，不依赖 TypeScript 响应服务。`test_native_network.py` 从 Android 入口验证换线回放的订阅确认和房间隔离，并核对启动暂缓边界。这些是离线代理回归，不代表 APK 在真实设备或模拟器上通过。完整验收仍须在当前部署记录固定的同一 APK 下运行 Android 德州视觉场景，报告会附带同轮 `build-info` 和 `network-selection`：最多保留最近 200 条 metadata 候选、真实健康状态/指标、连接错误及 WebSocket 所选主机，不保存令牌、请求正文或用户/房间身份；不能用原生用例收集或旧 CI 结果替代。
 
+`tests/network-selection.spec.ts` 在英文游客 CI 任务运行两个独立冷启动的原生客户端用例。
+`network-64-unavailable` 只从真实 metadata 取已有的 64、67 候选，并让 64 健康 GET 返回
+503；67 的健康数据、认证和连接访问真实服务，必须初始化、登录并在 67 收到真实连接 ACK。
+`network-without-64` 只删除 metadata 中的 64，保留其他候选及全部健康响应，必须完成
+初始化、登录并在剩余候选建立连接及收到 ACK。二者不重试用例、不点击初始化错误的重试按钮，
+保存大厅截图、`build-info`、候选、健康响应、WebSocket 101 和脱敏 ACK 事件。
+可用 `group=guest`、`locale=en`、`filter=Android native network selection` 定向运行。
+异常模式仅由本轮 `withAndroidProxy` 的显式场景选择，普通视觉和登录准备不启用。
+`e2e/mitmproxy/test_selection_faults.py` 验证原生入口的模式边界及跨连接、错误、注入 ACK
+不能成为成功证据。代理入口按原有业务顺序拆分处理函数，删除两项已消除的复杂度历史债务。
+
 固定环境为 Android API 35、720×1280、320 dpi、字体比例 1、英文系统。GitHub Actions 使用 Ubuntu 和 x86_64 Google APIs 模拟器。正式基准应在相同 CI 环境生成并人工检查；本机 ARM 模拟器适合验证操作流程，渲染差异不能直接当作应用回归。
 
 ## 测试开始前的金币准备
