@@ -1,0 +1,1058 @@
+{
+  "run": 40923950554,
+  "runAttempt": 1,
+  "repositoryCommit": "a11c646d9b4de63895c85fb01225ca9f33dd76cf",
+  "artifact": "android-staging-visual-texas-en-game-table-40923950554-1",
+  "reportSha256": "242d6dac832863ef2681fd77fc1273fc88e41e82938601b0a03ed333e1b63550",
+  "applicationCommit": "69f9251d3b5f2b93aa2d880d27abbeefe16ee645",
+  "apkSha256": "27618d750fc306b1a75d52d642b2d90f361501fd1b9998bc3cd65ca5874196f5",
+  "archiveSha256": "d9c27f142a7f6232c60c8683cdb304eee89528b623e8c0c64f57e009f370caa1",
+  "records": [
+    {
+      "id": 0,
+      "name": "texas-holdem-accurate-bet-enter",
+      "category": "texas-en-game-table",
+      "retry": 0,
+      "status": "failed",
+      "video": {
+        "file": "8f8ebb87fce3ff77e8e91a86e0e80b5e477ce9ab27e2728be95472b3699141cb.mp4",
+        "sha256": "8f8ebb87fce3ff77e8e91a86e0e80b5e477ce9ab27e2728be95472b3699141cb",
+        "source": "data/b5e8c64154614850ffc86dbe376f7f45ab289492.mp4"
+      },
+      "before": {
+        "file": "527aca226707afe844f34cd048ace01022cee5f0a4bee864ffa33a2bf5f062cf.png",
+        "sha256": "527aca226707afe844f34cd048ace01022cee5f0a4bee864ffa33a2bf5f062cf",
+        "source": "data/63007a06465462b69a36697451dfe0260fd5d1e6.png"
+      },
+      "after": {
+        "file": "d0e9c3c05d4669828998dbd48b7a9cdc69065d56241815bcffe407ae32e0dfa4.png",
+        "sha256": "d0e9c3c05d4669828998dbd48b7a9cdc69065d56241815bcffe407ae32e0dfa4",
+        "source": "data/12d7e06ed86ca5454e9f966edd857c0063dc4de7.png"
+      },
+      "region": {
+        "x": 120,
+        "y": 360,
+        "width": 480,
+        "height": 330
+      },
+      "masks": [],
+      "anchors": [
+        "texas-holdem-accurate-bet-enter-middle.png"
+      ],
+      "timeline": [
+        0,
+        33,
+        66,
+        99,
+        132,
+        165,
+        198,
+        231,
+        264,
+        297,
+        330,
+        363,
+        396,
+        429,
+        462,
+        495,
+        528,
+        561,
+        594,
+        627,
+        660,
+        693,
+        726,
+        759,
+        792,
+        825,
+        858,
+        891,
+        924,
+        957,
+        990,
+        1023,
+        1056,
+        1089,
+        1122,
+        1155,
+        1188,
+        1221,
+        1254,
+        1287,
+        1320,
+        1353,
+        1386,
+        1419,
+        1452,
+        1485,
+        1518,
+        1551,
+        1584,
+        1617,
+        1650,
+        1683,
+        1716,
+        1749,
+        1782,
+        1815,
+        1848,
+        1881,
+        1914,
+        1947,
+        1980,
+        2013,
+        2046,
+        2079,
+        2112,
+        2145,
+        2178,
+        2211,
+        2244,
+        2277,
+        2310,
+        2343,
+        2376,
+        2409,
+        2442,
+        2475,
+        2508,
+        2541,
+        2574,
+        2607,
+        2640,
+        2673,
+        2706,
+        2739,
+        2772,
+        2805,
+        2838,
+        2871,
+        2904,
+        2937,
+        2970,
+        3003,
+        3036,
+        3069,
+        3102,
+        3135,
+        3168,
+        3201,
+        3234,
+        3267,
+        3300,
+        3333,
+        3366,
+        3399,
+        3432,
+        3465,
+        3498,
+        3531,
+        3564,
+        3597,
+        3630,
+        3663,
+        3696,
+        3729,
+        3762,
+        3795,
+        3828,
+        3861,
+        3894,
+        3927,
+        3960,
+        3993,
+        4026,
+        4059,
+        4092,
+        4125,
+        4158,
+        4191,
+        4224,
+        4257,
+        4290,
+        4323,
+        4356,
+        4389,
+        4422,
+        4455,
+        4488,
+        4521,
+        4554,
+        4587,
+        4620,
+        4653,
+        4686
+      ],
+      "nativeFrames": {
+        "frames": [
+          {
+            "best_effort_timestamp_time": "0.000000",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "0.247256",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "0.634122",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "0.666811",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "0.702778",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "0.730889",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "0.767722",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "0.831711",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "0.846556",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "0.887333",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "0.947511",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "0.978900",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "0.985133",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "1.032300",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "1.123622",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "1.132422",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "1.165922",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "1.214700",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "1.249956",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "1.267656",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "1.344833",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "1.386944",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "1.395856",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "1.448667",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "1.532167",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "1.666011",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "1.897233",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "1.907300",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "1.961278",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "1.976033",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "2.016767",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "2.069889",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "2.086233",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "2.148189",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "2.160500",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "2.200778",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "2.249022",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "2.306522",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "2.337789",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "2.348278",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "2.682122",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "3.115533",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "3.125567",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "3.178822",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "3.185500",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "3.244722",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "3.272922",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "3.284233",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "3.344100",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "3.380089",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "3.400011",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "3.436778",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "3.483822",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "3.498778",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "3.548644",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "3.698478",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "4.330144",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "4.359300",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "4.372611",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "4.433189",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "4.465100",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "4.472400",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "4.522922",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "4.561056",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "4.575722",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "4.630833",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "4.644767",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "4.677256",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "4.747300",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "4.764856",
+            "width": 240,
+            "height": 426
+          }
+        ]
+      }
+    },
+    {
+      "id": 1,
+      "name": "texas-holdem-accurate-bet-enter",
+      "category": "texas-en-game-table",
+      "retry": 1,
+      "status": "passed",
+      "video": {
+        "file": "4e557900f99e1b8f41e6109bfb562a961851f36fae42594d4d72d05753f9f3c7.mp4",
+        "sha256": "4e557900f99e1b8f41e6109bfb562a961851f36fae42594d4d72d05753f9f3c7",
+        "source": "data/633c627d7e9193fa001191552cfe7d87cac0460d.mp4"
+      },
+      "before": {
+        "file": "527aca226707afe844f34cd048ace01022cee5f0a4bee864ffa33a2bf5f062cf.png",
+        "sha256": "527aca226707afe844f34cd048ace01022cee5f0a4bee864ffa33a2bf5f062cf",
+        "source": "data/63007a06465462b69a36697451dfe0260fd5d1e6.png"
+      },
+      "after": {
+        "file": "d0e9c3c05d4669828998dbd48b7a9cdc69065d56241815bcffe407ae32e0dfa4.png",
+        "sha256": "d0e9c3c05d4669828998dbd48b7a9cdc69065d56241815bcffe407ae32e0dfa4",
+        "source": "data/12d7e06ed86ca5454e9f966edd857c0063dc4de7.png"
+      },
+      "region": {
+        "x": 120,
+        "y": 360,
+        "width": 480,
+        "height": 330
+      },
+      "masks": [],
+      "anchors": [
+        "texas-holdem-accurate-bet-enter-middle.png"
+      ],
+      "timeline": [
+        0,
+        33,
+        66,
+        99,
+        132,
+        165,
+        198,
+        231,
+        264,
+        297,
+        330,
+        363,
+        396,
+        429,
+        462,
+        495,
+        528,
+        561,
+        594,
+        627,
+        660,
+        693,
+        726,
+        759,
+        792,
+        825,
+        858,
+        891,
+        924,
+        957,
+        990,
+        1023,
+        1056,
+        1089,
+        1122,
+        1155,
+        1188,
+        1221,
+        1254,
+        1287,
+        1320,
+        1353,
+        1386,
+        1419,
+        1452,
+        1485,
+        1518,
+        1551,
+        1584,
+        1617,
+        1650,
+        1683,
+        1716,
+        1749,
+        1782,
+        1815,
+        1848,
+        1881,
+        1914,
+        1947,
+        1980,
+        2013,
+        2046,
+        2079,
+        2112,
+        2145,
+        2178,
+        2211,
+        2244,
+        2277,
+        2310,
+        2343,
+        2376,
+        2409,
+        2442,
+        2475,
+        2508,
+        2541,
+        2574,
+        2607,
+        2640,
+        2673,
+        2706,
+        2739,
+        2772,
+        2805,
+        2838,
+        2871,
+        2904,
+        2937,
+        2970,
+        3003,
+        3036,
+        3069,
+        3102,
+        3135,
+        3168,
+        3201,
+        3234,
+        3267,
+        3300,
+        3333,
+        3366,
+        3399,
+        3432,
+        3465,
+        3498,
+        3531,
+        3564,
+        3597,
+        3630,
+        3663,
+        3696,
+        3729,
+        3762,
+        3795,
+        3828,
+        3861,
+        3894,
+        3927,
+        3960,
+        3993,
+        4026,
+        4059,
+        4092,
+        4125,
+        4158,
+        4191,
+        4224,
+        4257,
+        4290,
+        4323,
+        4356,
+        4389,
+        4422,
+        4455,
+        4488,
+        4521,
+        4554,
+        4587,
+        4620,
+        4653,
+        4686,
+        4719,
+        4752,
+        4785,
+        4818,
+        4851,
+        4884,
+        4917,
+        4950,
+        4983,
+        5016,
+        5049,
+        5082,
+        5115,
+        5148,
+        5181,
+        5214,
+        5247,
+        5280,
+        5313
+      ],
+      "nativeFrames": {
+        "frames": [
+          {
+            "best_effort_timestamp_time": "0.000000",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "0.127356",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "0.164156",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "0.179467",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "0.231289",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "0.243356",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "0.280422",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "0.329333",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "0.338856",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "0.381500",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "0.431400",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "0.464178",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "0.496789",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "0.525011",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "0.529056",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "0.745933",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "1.112489",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "1.132533",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "1.193689",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "1.202744",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "1.260367",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "1.267367",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "1.330100",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "1.342989",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "1.381022",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "1.431767",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "1.479733",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "1.536400",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "1.548078",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "1.604122",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "1.614944",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "1.677011",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "1.719956",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "1.728978",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "1.780856",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "1.837933",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "1.847511",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "2.593322",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "2.601533",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "2.659300",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "2.692356",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "2.729689",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "2.740444",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "2.798589",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "2.815589",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "2.879856",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "2.932011",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "2.966211",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "3.000122",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "3.015100",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "3.813011",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "3.839200",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "3.860889",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "3.923411",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "3.933156",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "4.044578",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "4.055233",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "4.112456",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "4.154056",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "4.167044",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "4.223444",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "4.237411",
+            "width": 240,
+            "height": 426
+          },
+          {
+            "best_effort_timestamp_time": "4.812500",
+            "width": 240,
+            "height": 426
+          }
+        ]
+      }
+    }
+  ]
+}

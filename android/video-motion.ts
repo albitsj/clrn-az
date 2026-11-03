@@ -67,7 +67,7 @@ function videoColumnMotion(before: VideoThumbnail, frame: VideoThumbnail): numbe
   return columns.map(value => value / (height * 3));
 }
 
-/** 仅约束同一像素在参考和终点中共同发生的同向变化，避免把移动内容误当作持续覆盖。
+/** 约束整列共同变化的下界，移动或缩放的前景不能抬高背景的持续覆盖要求。
  * @param endpoints - 原生首尾缩略图，只用于位置诊断，不作为中途参考。
  * @param reference - 已审查中途相位。
  * @param actual - 实际录屏中途相位。
@@ -75,14 +75,18 @@ function videoColumnMotion(before: VideoThumbnail, frame: VideoThumbnail): numbe
 export function preservesVideoColumns(endpoints: VideoThumbnail[], reference: VideoThumbnail,
   actual: VideoThumbnail): boolean {
   const [before, after] = endpoints, { width, height } = before;
-  const persistent = new Array<number>(width).fill(0);
-  for (let index = 0; index < before.pixels.length; index++) {
-    const reviewed = reference.pixels[index] - before.pixels[index];
-    const final = after.pixels[index] - before.pixels[index];
-    if (reviewed * final > 0) persistent[Math.floor(index / 3) % width]
-      += Math.min(Math.abs(reviewed), Math.abs(final)) / (height * 3);
+  const persistent = new Array<number>(width).fill(Infinity);
+  for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) {
+    let common = 0;
+    for (let channel = 0; channel < 3; channel++) {
+      const index = (y * width + x) * 3 + channel;
+      const reviewed = reference.pixels[index] - before.pixels[index];
+      const final = after.pixels[index] - before.pixels[index];
+      common += reviewed * final > 0 ? Math.min(Math.abs(reviewed), Math.abs(final)) / 3 : 0;
+    }
+    persistent[x] = Math.min(persistent[x], common);
   }
-  // 沿用四分之一相位边界；在不同纵向位置发生的变化不能相互证明持续覆盖。
+  // 沿用四分之一相位边界；只要求整列共有的背景变化，不假设前景已覆盖参考中的位置。
   return videoColumnMotion(before, actual).every((value, x) => value >= persistent[x] / 4);
 }
 
