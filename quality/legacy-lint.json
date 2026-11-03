@@ -505,18 +505,6 @@
   },
   {
     "tool": "ruff",
-    "file": "android/diagnostics_io.py",
-    "rule": "C901",
-    "line": 92,
-    "column": 5,
-    "endLine": 92,
-    "endColumn": 12,
-    "message": "`capture` is too complex (20 > 10)",
-    "sourceHash": "9c5837f6e24e6123b70cacaa42ac1d891f65f217cdfe91cc4fc8da0da0b1c0b4",
-    "reason": "既有原生代理/诊断分支；涉及透传、脱敏或房间隔离，保留行为并在修改该函数时降低复杂度。"
-  },
-  {
-    "tool": "ruff",
     "file": "android/presentation.py",
     "rule": "C901",
     "line": 15,
