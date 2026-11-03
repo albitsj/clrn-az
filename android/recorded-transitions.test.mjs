@@ -12,12 +12,15 @@ import { fileURLToPath } from 'node:url';
 const require = createRequire(import.meta.url);
 const { assertReviewedVideoMiddle, middleCandidates } = require('./animation-transition.ts');
 const { maskScreenshot } = require('./screenshot.ts');
-const fixture = new URL('./fixtures/recorded-transitions/', import.meta.url);
-const manifest = JSON.parse(readFileSync(new URL('recordings.json', fixture), 'utf8'));
 const snapshots = new URL('./snapshots/android-35-x86_64-720x1280-en/', import.meta.url);
 const ffmpeg = process.platform === 'linux'
   ? fileURLToPath(new URL('../node_modules/@ffmpeg-installer/linux-x64/ffmpeg', import.meta.url)) : 'ffmpeg';
 const directory = mkdtempSync(path.join(tmpdir(), 'clrn-recorded-transitions-'));
+const collections = [['recorded-transitions', 79, 62], ['accurate-bet', 2, 1]].map(([name, count, kinds]) => {
+  const fixture = new URL(`./fixtures/${name}/`, import.meta.url);
+  return { fixture, count, kinds, directory: path.join(directory, name),
+    manifest: JSON.parse(readFileSync(new URL('recordings.json', fixture), 'utf8')) };
+});
 
 /** 计算原始输入摘要，不重新编码原录像或原生首尾截图。
  * @param bytes - 原始附件字节。
@@ -27,28 +30,33 @@ function digest(bytes) {
 }
 
 before(() => {
-  const archive = fileURLToPath(new URL('recordings.tar.gz', fixture));
-  assert.equal(digest(readFileSync(archive)), manifest.archiveSha256, '录像归档必须保持已核对的原始字节');
-  execFileSync('tar', ['-xzf', archive, '-C', directory]);
-  assert.equal(manifest.records.length, 79, '保留本轮全部有完整首尾附件的录像');
-  assert.equal(new Set(manifest.records.map(record => record.name)).size, 62, '覆盖全部实际采到的转场种类');
+  for (const collection of collections) {
+    const { fixture, manifest, count, kinds, directory } = collection;
+    const archive = fileURLToPath(new URL('recordings.tar.gz', fixture));
+    assert.equal(digest(readFileSync(archive)), manifest.archiveSha256, '录像归档必须保持已核对的原始字节');
+    mkdirSync(directory);
+    execFileSync('tar', ['-xzf', archive, '-C', directory]);
+    assert.equal(manifest.records.length, count, '保留全部有完整首尾附件的录像');
+    assert.equal(new Set(manifest.records.map(record => record.name)).size, kinds, '覆盖全部实际采到的转场种类');
+  }
 });
 
 after(() => rmSync(directory, { recursive: true, force: true }));
 
 /** 读取附件并逐项验证来源摘要。
  * @param asset - 清单中的原始附件。
+ * @param directory - 该组录像的解包目录。
  */
-function original(asset) {
+function original(asset, directory) {
   const bytes = readFileSync(path.join(directory, asset.file));
   assert.equal(digest(bytes), asset.sha256, `原始附件不得改变：${asset.source}`);
   return bytes;
 }
 
-for (const record of manifest.records) {
+for (const { manifest, directory } of collections) for (const record of manifest.records) {
   test(`真实录屏 ${record.name}，${record.category} 第 ${record.retry + 1} 次运行、采集编号 ${record.id}`, () => {
-    original(record.video);
-    const start = original(record.before), end = original(record.after);
+    original(record.video, directory);
+    const start = original(record.before, directory), end = original(record.after, directory);
     const framesDirectory = path.join(directory, `frames-${record.id}`);
     mkdirSync(framesDirectory);
     const { x, y, width, height } = record.region;
