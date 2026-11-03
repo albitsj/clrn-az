@@ -89,6 +89,89 @@ def terminate(process):
     process.wait()
 
 
+class _CaptureOutput:
+    """Share line framing between live reads and bounded shutdown recovery."""
+
+    def __init__(self, stream, report):
+        self.stream = stream
+        self.report = report
+        self.pending = b''
+        self.discard = False
+        os.set_blocking(stream.fileno(), False)
+
+    def read(self):
+        try:
+            return os.read(self.stream.fileno(), 65536)
+        except BlockingIOError:
+            return None
+
+    def consume(self, chunk):
+        self.pending += chunk
+        while b'\n' in self.pending:
+            line, self.pending = self.pending.split(b'\n', 1)
+            if not self.discard:
+                self.report(line.decode('utf-8', errors='replace'))
+            self.discard = False
+        if len(self.pending) > 16384:
+            self.report('[oversized unterminated log line omitted]')
+            self.pending = b''
+            self.discard = True
+
+    def drain(self):
+        # Recover queued output after killing the group. Never wait for EOF:
+        # an escaped descendant may still own the pipe or keep writing to it.
+        # At most 1 MiB is read, with the same bounded line buffer as live reads.
+        for _ in range(16):
+            chunk = self.read()
+            if not chunk:
+                break
+            self.consume(chunk)
+
+    def finish(self):
+        if self.pending and not self.discard:
+            self.report(self.pending.decode('utf-8', errors='replace'))
+
+
+def _interrupted_status(process, deadline, timeout, stop, report):
+    if stop is not None and stop.is_set():
+        terminate(process)
+        return 0
+    if deadline is not None and time.monotonic() >= deadline:
+        report(f'collector timeout after {timeout}s')
+        terminate(process)
+        return 124
+    return None
+
+
+def _wait_for_exit(process, deadline, timeout, stop, report):
+    # A child can close stdout while remaining alive: still enforce timeout/stop.
+    while True:
+        status = _interrupted_status(process, deadline, timeout, stop, report)
+        if status is not None:
+            return status
+        try:
+            return process.wait(timeout=0.1)
+        except subprocess.TimeoutExpired:
+            pass
+
+
+def _collect_output(process, output, deadline, timeout, stop, report):
+    with selectors.DefaultSelector() as selector:
+        selector.register(process.stdout, selectors.EVENT_READ)
+        while selector.get_map():
+            status = _interrupted_status(process, deadline, timeout, stop, report)
+            if status is not None:
+                output.drain()
+                return status
+            for key, _ in selector.select(0.1):
+                chunk = output.read()
+                if chunk == b'':
+                    selector.unregister(key.fileobj)
+                elif chunk is not None:
+                    output.consume(chunk)
+    return _wait_for_exit(process, deadline, timeout, stop, report)
+
+
 def capture(command, log, timeout=5, stop=None, env=None):
     """Stream output with bounded memory; return the native exit or 124/127."""
     def report(message):
@@ -104,54 +187,10 @@ def capture(command, log, timeout=5, stop=None, env=None):
         report(f'collector spawn failed: {type(error).__name__}: {error}')
         return 127
     deadline = time.monotonic() + timeout if timeout is not None else None
-    pending = b''
-    discard = False
-    status = None
     try:
-        with selectors.DefaultSelector() as selector:
-            selector.register(process.stdout, selectors.EVENT_READ)
-            while selector.get_map():
-                if stop is not None and stop.is_set():
-                    terminate(process)
-                    status = 0
-                    break
-                if deadline is not None and time.monotonic() >= deadline:
-                    report(f'collector timeout after {timeout}s')
-                    terminate(process)
-                    status = 124
-                    break
-                for key, _ in selector.select(0.1):
-                    chunk = os.read(key.fd, 65536)
-                    if not chunk:
-                        selector.unregister(key.fileobj)
-                        break
-                    pending += chunk
-                    while b'\n' in pending:
-                        line, pending = pending.split(b'\n', 1)
-                        if not discard:
-                            report(line.decode('utf-8', errors='replace'))
-                        discard = False
-                    if len(pending) > 16384:
-                        report('[oversized unterminated log line omitted]')
-                        pending = b''
-                        discard = True
-            if pending and not discard:
-                report(pending.decode('utf-8', errors='replace'))
-        if status is None:
-            # A child can close stdout while remaining alive: still enforce timeout.
-            while status is None:
-                if stop is not None and stop.is_set():
-                    terminate(process)
-                    status = 0
-                elif deadline is not None and time.monotonic() >= deadline:
-                    report(f'collector timeout after {timeout}s')
-                    terminate(process)
-                    status = 124
-                else:
-                    try:
-                        status = process.wait(timeout=0.1)
-                    except subprocess.TimeoutExpired:
-                        pass
+        output = _CaptureOutput(process.stdout, report)
+        status = _collect_output(process, output, deadline, timeout, stop, report)
+        output.finish()
         if status:
             report(f'collector exited with status {status}')
         return status
