@@ -215,3 +215,9 @@ raise 的 prepared-start 与正式采集 start 附件字节相同，已查看为
 新建脚本的首次原生执行会消耗较多启动时间；测试改为显式解释已有 shell 夹具，仍真实输出并挂起 30 秒，
 仍要求 1 秒超时、退出 124、保留 offline probe 和独立宿主结果；缺失 adb 的 spawn 失败路径不变。
 未修改生产采集器或测试超时。修改后 Android 全组 40 项实际通过，其余五组 91 项通过；旧失败日志继续保留。
+
+钱包定向运行 [41777539808](https://github.com/albitsj/clrn-az/actions/runs/41777539808) 的原始 HTML 已实际解析：
+仅目标 pregame 一项，retry0 passed、flaky=0、skipped=0，APK 身份与失败轮次相同。
+四次钱包读取均 HTTP200、walletOk=true，均含 coin/diamond，主机为本轮应用自主选择的 64 和 68。
+没有启用 581bd93 的弹窗重开重试。此结果证明诊断和正常读取可工作，不反推原三次失败的所有请求结果；
+最终源提交仍需重新完成全部设备分组。
