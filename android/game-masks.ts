@@ -1,4 +1,5 @@
 import type { NativeNode } from './game-controls';
+import { overlappingBounds } from './game-geometry';
 import type { ScreenshotBounds, ScreenshotMask } from './screenshot';
 
 /**
@@ -14,25 +15,16 @@ export function foregroundPanels(nodes: NativeNode[]): NativeNode[] {
     'view-community-close-button', 'raise-blind-detail', 'auto-rebuy-popup', 'report-pair-play-close-button',
     'personal-leader-board-close-button', 'level-up-close-button', 'common-alert-message', 'in_game_report_message_component']);
   // 摊牌位于头像倒计时之上；即使 Android 将牌面容器裁到头像范围，也必须保留其中的牌面。
-  const panels: NativeNode[] = nodes.filter(node => ['base-review-board-container',
-    'player_cards_container', 'texas-holdem-player-hole-cards', 'texas-holdem-show-remain-community-card-button'].includes(node.res || '')
-    || (node.res === 'showdown-assist-view-container' && node.children?.some(child =>
-      child.res === 'showdown-assist-view-strength-text' && child.text))
-    || (node.res?.startsWith('texas-holdem-shortcut-raise-button-') && node.res !== 'texas-holdem-shortcut-raise-button-group')
-    || node.res?.startsWith('zhajinhua-shortcut-raise-')
-    || node.res?.startsWith('texas-holdem-player-action-')
-    || node.children?.some(child => child.res === 'player_action_text'));
+  const panels: NativeNode[] = nodes.filter(isForeground);
   for (const marker of nodes.filter(node => markers.has(node.res || ''))) {
     /**
      * 根据原生父子关系定位这个前景控件。
      * @param node - 当前检查的祖先节点。
      */
     const contains = (node: NativeNode): boolean => node === marker || Boolean(node.children?.some(contains));
-    const panel = nodes.filter(node => node.bounds.width > 80 && node.bounds.height > 80
-      // 半透明触摸背景和整个牌桌不能作为不透明面板。
-      && node.bounds.width * node.bounds.height < 720 * 1280 * 0.95 && contains(node))
+    const panel = nodes.filter(node => panelSized(node.bounds) && contains(node))
       .sort((first, second) => second.bounds.width * second.bounds.height - first.bounds.width * first.bounds.height)[0];
-    if (panel && !panels.includes(panel)) panels.push(panel);
+    addPanel(panels, panel);
   }
   return panels;
 }
@@ -62,19 +54,10 @@ export function subtractPanel(mask: ScreenshotMask, panel: ScreenshotBounds): Sc
  * @param bounds - 原生图片节点的椭圆边界。
  */
 function subtractRoundButton(mask: ScreenshotMask, bounds: ScreenshotBounds): ScreenshotMask[] {
-  if (mask.x >= bounds.x + bounds.width || mask.x + mask.width <= bounds.x
-    || mask.y >= bounds.y + bounds.height || mask.y + mask.height <= bounds.y) return [mask];
+  if (!overlappingBounds(mask, bounds)) return [mask];
   const result: ScreenshotMask[] = [];
-  const cx = bounds.x + bounds.width / 2, cy = bounds.y + bounds.height / 2;
-  // 按钮 PNG 的首行 alpha 最大仅 229；缩放后的外缘一像素仍混合背景计时。
-  const rx = bounds.width / 2 - 1, ry = bounds.height / 2 - 1;
   for (let y = Math.floor(mask.y); y < Math.ceil(mask.y + mask.height); y++) {
-    const row = { ...mask, y, height: 1 };
-    const relative = (y + 0.5 - cy) / ry;
-    if (Math.abs(relative) >= 1) { result.push(row); continue; }
-    const radius = rx * Math.sqrt(1 - relative * relative);
-    const left = Math.ceil(cx - radius), right = Math.floor(cx + radius);
-    result.push(...subtractPanel(row, { x: left, y, width: right - left, height: 1 }));
+    result.push(...subtractRoundRow(mask, bounds, y));
   }
   return result;
 }
@@ -94,16 +77,7 @@ export function visibleMasks(mask: ScreenshotMask, source: NativeNode, panels: N
   return panels.filter(panel => !contains(panel))
     // 无障碍边界取整后，面板最外一像素仍可能露出背景；买入框实测漏出两个箭头像素。
     .reduce((parts, panel) => {
-      const circle = panel.res?.startsWith('zhajinhua-shortcut-raise-') ? panel.children?.[0]?.bounds : undefined;
-      if (circle) {
-        const withoutCircle = parts.flatMap(part => subtractRoundButton(part, circle));
-        return (panel.children || []).filter(child => child.text)
-          .reduce((remaining, child) => remaining.flatMap(part => subtractPanel(part, child.bounds)), withoutCircle);
-      }
-      return parts.flatMap(part => subtractPanel(part, {
-      x: panel.bounds.x + 1, y: panel.bounds.y + 1,
-      width: panel.bounds.width - 2, height: panel.bounds.height - 2,
-      }));
+      return subtractForeground(parts, panel);
     }, [mask]);
 }
 
@@ -113,8 +87,10 @@ export function visibleMasks(mask: ScreenshotMask, source: NativeNode, panels: N
  */
 export function networkStatusMask(bounds: ScreenshotBounds): ScreenshotMask {
   const scale = bounds.height / 70;
-  return { x: bounds.x + bounds.width - 55 * scale, y: bounds.y + bounds.height - 30 * scale,
-    width: 50 * scale, height: 24 * scale, reason: '网络延迟数值、图标与前后端延迟比例条' };
+  return {
+    x: bounds.x + bounds.width - 55 * scale, y: bounds.y + bounds.height - 30 * scale,
+    width: 50 * scale, height: 24 * scale, reason: '网络延迟数值、图标与前后端延迟比例条'
+  };
 }
 
 /**
@@ -125,6 +101,118 @@ export function networkStatusMask(bounds: ScreenshotBounds): ScreenshotMask {
 export function countdownMask(bounds: ScreenshotBounds, text: string): ScreenshotMask {
   if (!/^\d{1,2}$/.test(text)) throw new Error('公共牌倒计时必须是一位或两位数字。');
   const width = Math.round(bounds.width / text.length) * 2;
-  return { ...bounds, x: Math.round(bounds.x + bounds.width / 2 - width / 2), width,
-    reason: 'view-community-cards-countdown' };
+  return {
+    ...bounds, x: Math.round(bounds.x + bounds.width / 2 - width / 2), width,
+    reason: 'view-community-cards-countdown'
+  };
 }
+
+/** 识别固定牌面容器和原生操作提示。
+ * @param node - 当前可见控件。
+ */
+function isForeground(node: NativeNode): boolean {
+  return [fixedForeground(node), showdownForeground(node), shortcutForeground(node),
+  foregroundAction(node)].some(Boolean);
+}
+
+/** 明确登记的牌面及看牌按钮始终保留。
+ * @param node - 当前可见控件。
+ */
+function fixedForeground(node: NativeNode): boolean {
+  return ['base-review-board-container', 'player_cards_container', 'texas-holdem-player-hole-cards',
+    'texas-holdem-show-remain-community-card-button'].includes(node.res || '');
+}
+
+/** 结算横条必须已绘制牌型文字。
+ * @param node - 当前可见控件。
+ */
+function showdownForeground(node: NativeNode): boolean {
+  return node.res === 'showdown-assist-view-container' && Boolean(node.children?.some(child =>
+    child.res === 'showdown-assist-view-strength-text' && child.text));
+}
+
+/** 德州加注按钮组自身不是不透明面板。
+ * @param node - 当前可见控件。
+ */
+function shortcutForeground(node: NativeNode): boolean {
+  return Boolean(node.res?.startsWith('texas-holdem-shortcut-raise-button-'))
+    && node.res !== 'texas-holdem-shortcut-raise-button-group';
+}
+
+/** 排除触摸背景、全屏牌桌和过小祖先节点。
+ * @param bounds - 当前祖先边界。
+ */
+function panelSized(bounds: ScreenshotBounds): boolean {
+  const largeEnough = bounds.width > 80 && bounds.height > 80;
+  return largeEnough && bounds.width * bounds.height < 720 * 1280 * 0.95;
+}
+
+/** 仅加入已定位且尚未登记的前景。
+ * @param panels - 已登记前景。
+ * @param panel - 当前定位结果。
+ */
+function addPanel(panels: NativeNode[], panel: NativeNode | undefined): void {
+  if (panel && !panels.includes(panel)) panels.push(panel);
+}
+
+/** 按钮每行只排除椭圆的不透明部分。
+ * @param mask - 背景动态区域。
+ * @param bounds - 圆形按钮边界。
+ * @param y - 当前扫描行。
+ */
+function subtractRoundRow(mask: ScreenshotMask, bounds: ScreenshotBounds, y: number): ScreenshotMask[] {
+  const row = { ...mask, y, height: 1 };
+  const cx = bounds.x + bounds.width / 2, cy = bounds.y + bounds.height / 2;
+  // 按钮 PNG 的首行 alpha 最大仅 229；缩放后的外缘一像素仍混合背景计时。
+  const rx = bounds.width / 2 - 1, ry = bounds.height / 2 - 1;
+  const relative = (y + 0.5 - cy) / ry;
+  if (Math.abs(relative) >= 1) return [row];
+  const radius = rx * Math.sqrt(1 - relative * relative);
+  const left = Math.ceil(cx - radius), right = Math.floor(cx + radius);
+  return subtractPanel(row, { x: left, y, width: right - left, height: 1 });
+}
+
+/** 取得拼三张圆形按钮的实际图片边界。
+ * @param panel - 前景控件。
+ */
+function roundButtonBounds(panel: NativeNode): ScreenshotBounds | undefined {
+  if (!String(panel.res).startsWith('zhajinhua-shortcut-raise-')) return undefined;
+  return firstChildBounds(panel.children);
+}
+
+/** 根据矩形或圆形前景裁剪现有遮罩。
+ * @param parts - 已裁剪的背景遮罩。
+ * @param panel - 当前前景。
+ */
+function subtractForeground(parts: ScreenshotMask[], panel: NativeNode): ScreenshotMask[] {
+  const circle = roundButtonBounds(panel);
+  if (circle) return subtractCircleForeground(parts, panel, circle);
+  return parts.flatMap(part => subtractPanel(part, {
+    x: panel.bounds.x + 1, y: panel.bounds.y + 1,
+    width: panel.bounds.width - 2, height: panel.bounds.height - 2,
+  }));
+}
+
+/** 圆形按钮的图片和文字分别保留像素比较。
+ * @param parts - 背景遮罩。
+ * @param panel - 圆形按钮控件。
+ * @param circle - 原生图片边界。
+ */
+function subtractCircleForeground(parts: ScreenshotMask[], panel: NativeNode, circle: ScreenshotBounds): ScreenshotMask[] {
+  const withoutCircle = parts.flatMap(part => subtractRoundButton(part, circle));
+  return (panel.children || []).filter(child => child.text)
+    .reduce((remaining, child) => remaining.flatMap(part => subtractPanel(part, child.bounds)), withoutCircle);
+}
+
+/** 两种玩法的动作提示及快捷加注控件。
+ * @param node - 当前原生节点。
+ */
+function foregroundAction(node: NativeNode): boolean {
+  return [String(node.res).startsWith('zhajinhua-shortcut-raise-'), String(node.res).startsWith('texas-holdem-player-action-'),
+  node.children?.some(child => child.res === 'player_action_text')].some(Boolean);
+}
+
+/** 缺少原生图片子节点时沿用矩形裁剪。
+ * @param children - 前景子节点。
+ */
+function firstChildBounds(children: NativeNode[] = []): ScreenshotBounds | undefined { return children[0]?.bounds; }

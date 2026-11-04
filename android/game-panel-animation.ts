@@ -1,8 +1,8 @@
 import type { TestInfo } from '@playwright/test';
 import type { AndroidDevice } from 'playwright';
+import { captureNativeTransition, captureTimedPrompt } from './animation-transition';
 import { adb } from './device';
 import { gameConnected, gameReady, gameTap } from './game-controls';
-import { captureNativeTransition, captureTimedPrompt } from './animation-transition';
 import type { ScreenshotBounds, ScreenshotMask } from './screenshot';
 
 type SamplingMethod = 'motionFrames' | 'launchFrames' | 'videoFrames';
@@ -16,7 +16,7 @@ type SamplingMethod = 'motionFrames' | 'launchFrames' | 'videoFrames';
 export function gamePanelSamplingMethod(game: 'texas-holdem' | 'zhajinhua', name: string,
   phase: 'enter' | 'exit', requested: SamplingMethod): SamplingMethod {
   // 带入审核的短缩放/淡入可能落在两次 UiAutomation 截图之间，固定走现有连续录屏。
-  return game === 'texas-holdem' && name === 'buy-in-applications' && phase === 'enter'
+  return [game === 'texas-holdem', name === 'buy-in-applications', phase === 'enter'].every(Boolean)
     ? 'videoFrames' : requested;
 }
 
@@ -35,12 +35,13 @@ export function gamePanelSamplingMethod(game: 'texas-holdem' | 'zhajinhua', name
  * @param videoPhaseAnchors - 经原生录屏审查的其他有效相位。
  */
 export async function animateGamePanel(device: AndroidDevice, game: 'texas-holdem' | 'zhajinhua', name: string,
-  button: string, region: ScreenshotBounds, testInfo?: TestInfo, phase: 'enter' | 'exit' = 'enter',
-  samplingMethod: SamplingMethod = game === 'zhajinhua'
-    ? 'videoFrames' : 'motionFrames',
-  masks: ScreenshotMask[] = [], afterReady?: () => Promise<void>,
-  videoPhaseAnchors: string[] = []): Promise<void> {
+  button: string, region: ScreenshotBounds, testInfo?: TestInfo, phase?: 'enter' | 'exit',
+  samplingMethod?: SamplingMethod,
+  masks?: ScreenshotMask[], afterReady?: () => Promise<void>,
+  videoPhaseAnchors?: string[]): Promise<void> {
   if (!testInfo) { await gameTap(device, button); return; }
+  phase = panelPhase(phase);
+  samplingMethod = panelSampling(game, samplingMethod);
   await gameConnected(device);
   const { bounds } = await gameReady(device, button);
   /** 通过独立 ADB 连接点击真实牌桌控件，使驱动同时截取每一帧。 */
@@ -65,4 +66,18 @@ export async function captureTimedLevelUp(device: AndroidDevice, game: 'texas-ho
     { x: 0, y: 20, width: 620, height: 230 },
     () => adb('shell', 'input', 'tap', String(Math.round(bounds.x + bounds.width / 2)),
       String(Math.round(bounds.y + bounds.height / 2))));
+}
+
+/** 统一未指定的面板动画相位。
+ * @param phase - 调用方相位。
+ */
+function panelPhase(phase: 'enter' | 'exit' = 'enter'): 'enter' | 'exit' { return phase; }
+
+/** 保留两种玩法的默认采样方式。
+ * @param game - 当前玩法。
+ * @param method - 调用方指定的采样方式。
+ */
+export function panelSampling(game: 'texas-holdem' | 'zhajinhua', method?: SamplingMethod): SamplingMethod {
+  if (method !== undefined) return method;
+  return game === 'zhajinhua' ? 'videoFrames' : 'motionFrames';
 }
