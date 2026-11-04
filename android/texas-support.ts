@@ -1,8 +1,10 @@
+import { readFileSync } from 'node:fs';
 import { expect, type TestInfo } from '@playwright/test';
 import type { AndroidDevice } from 'playwright';
 import type { Mitmproxy } from '../e2e/helpers/mitmproxy-client';
 import { restoreTable, type Street, type TableOptions } from '../e2e/helpers/game-scenes';
-import { gameGone, gameNodes, gameReady, gameTap, type NativeNode } from './game-controls';
+import { gameGone, gameNodes, gameReady, gameTap, gameScreenshot, type NativeNode } from './game-controls';
+import { motionParts, samePixels } from './motion-regions';
 import { gameCardNames, replay } from './game-replay';
 import { adb } from './device';
 import type { ScreenshotMask } from './screenshot';
@@ -13,6 +15,30 @@ export type TexasContext = {
   animationInfo?: TestInfo;
   capture(state: string, masks?: ScreenshotMask[], triggerTransient?: () => Promise<string | void>): Promise<void>;
 };
+
+// 与动作标签录屏共用同一区域，不包含头像倒计时。
+export const playerActionRegion = { x: 132, y: 465, width: 63, height: 130 };
+
+/**
+ * 前一动作的退场完成后再触发下一动作，不能仅检查下一动作的节点尚未出现。
+ * @param device - 专用模拟器连接。
+ * @param testInfo - 当前报告与已有起点基准。
+ * @param action - 即将触发的玩家动作。
+ */
+export async function waitForPlayerActionStart(device: AndroidDevice, testInfo: TestInfo,
+  action: string): Promise<void> {
+  const name = `texas-player-action-${action}`;
+  const reference = readFileSync(testInfo.snapshotPath(`${name}-start.png`));
+  let current: Buffer | undefined;
+  try {
+    await expect.poll(async () => {
+      current = motionParts(await gameScreenshot(device), [playerActionRegion]).regions[0];
+      return samePixels(current, reference);
+    }, { message: '上一玩家动作必须完成退场后才能采集下一动作', timeout: 30_000, intervals: [250] }).toBe(true);
+  } finally {
+    if (current) await testInfo.attach(`${name}-prepared-start`, { body: current, contentType: 'image/png' });
+  }
+}
 
 /**
  * 复用 Python 命名场景恢复牌局，等待五个真实牌面容器完成更新。

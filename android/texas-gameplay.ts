@@ -8,7 +8,7 @@ import { flattenNodes, gameConnected, gameReady, gameGone, gameTap, gameNodes, g
 import { replay, gameCardNames } from './game-replay';
 import { closeAnimatedGameMask, closeGameMask } from './game-pregame';
 import { dismissKeyboard } from './keyboard';
-import { gameTapText, type TexasContext } from './texas-support';
+import { gameTapText, playerActionRegion, waitForPlayerActionStart, type TexasContext } from './texas-support';
 import { captureNativeTransition, captureTransientTransition } from './animation-transition';
 import { animateGamePanel } from './game-panel-animation';
 import { captureMovingKeyframes } from './loop-keyframes';
@@ -162,9 +162,10 @@ export async function texasGameplay(device: AndroidDevice, proxy: Mitmproxy, roo
         };
         await expect.poll(playerAction, { timeout: 30_000 }).toBe(false);
         await gameReady(device, 'texas-holdem-active-countdown');
+        await waitForPlayerActionStart(device, animationInfo, action);
         await captureNativeTransition(device, `texas-player-action-${action}`, animationInfo,
           // 动作标签右侧不与玩家头像倒计时重叠，可完整观察标签而无需遮罩。
-          { x: 132, y: 465, width: 63, height: 130 },
+          playerActionRegion,
           () => send({ scene: 'player-action', action }),
           [], [], 0, 'videoFrames');
         await expect.poll(playerAction, { timeout: 30_000 }).toBe(true);
