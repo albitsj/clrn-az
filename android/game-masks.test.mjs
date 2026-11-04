@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
+const { pointInBounds } = require('./game-geometry.ts');
 const { foregroundPanels, subtractPanel, visibleMasks, countdownMask } = require('./game-masks.ts');
 
 test('公共牌倒计时从两位变一位时保持同一小块遮罩，不覆盖旁边说明', () => {
@@ -15,11 +16,7 @@ test('公共牌倒计时从两位变一位时保持同一小块遮罩，不覆�
 test('前景只裁掉相交区域，跨越面板边缘的背景箭头仍需遮罩', () => {
   const mask = { x: 0, y: 0, width: 20, height: 20, reason: '座位动画' };
   const parts = subtractPanel(mask, { x: 5, y: 5, width: 10, height: 10 });
-  for (let y = 0; y < 20; y++) for (let x = 0; x < 20; x++) {
-    const covered = parts.some(part => x >= part.x && x < part.x + part.width
-      && y >= part.y && y < part.y + part.height);
-    assert.equal(covered, !(x >= 5 && x < 15 && y >= 5 && y < 15));
-  }
+  for (let y = 0; y < 20; y++) checkMaskRow(parts, y);
   assert.deepEqual(subtractPanel(mask, mask), []);
   assert.deepEqual(subtractPanel(mask, { x: 20, y: 0, width: 10, height: 10 }), [mask]);
 });
@@ -54,8 +51,7 @@ test('两种玩法摊牌后的牌面必须参与比较，不能被下面的头�
     const panels = foregroundPanels([countdown, cards]);
     assert.deepEqual(panels, [cards]);
     const masks = visibleMasks({ x: 29, y: 694, width: 104, height: 104, reason: '倒计时' }, countdown, panels);
-    assert.equal(masks.some(mask => 80 >= mask.x && 80 < mask.x + mask.width
-      && 740 >= mask.y && 740 < mask.y + mask.height), false);
+    assert.equal(masks.some(mask => pointInBounds(mask, 80, 740)), false);
     assert.equal(masks.reduce((sum, mask) => sum + mask.width * mask.height, 0), 104 ** 2 - 98 ** 2);
   }
 });
@@ -67,8 +63,7 @@ test('倒计时上方的小尺寸看牌和下注动作提示仍完整参与像�
   const panels = foregroundPanels([countdown, action, ...action.children]);
   assert.deepEqual(panels, [action]);
   const masks = visibleMasks({ ...countdown.bounds, reason: '倒计时' }, countdown, panels);
-  assert.equal(masks.some(mask => 120 >= mask.x && 120 < mask.x + mask.width
-    && 130 >= mask.y && 130 < mask.y + mask.height), false);
+  assert.equal(masks.some(mask => pointInBounds(mask, 120, 130)), false);
 });
 
 test('房间计时不能遮掉结算牌型和覆盖其上的牌桌按钮', () => {
@@ -111,6 +106,17 @@ test('拼三张圆形加注按钮的透明角落仍遮罩背景计时，圆形�
   for (const [x, y, expected] of [[422, 750, true], [428, 750, true],
     [413, 751, true], [414, 751, true], [415, 751, true],
     [412, 752, true], [413, 752, true], [428, 752, false], [428, 780, false], [428, 840, false]]) {
-    assert.equal(parts.some(part => x >= part.x && x < part.x + part.width && y >= part.y && y < part.y + part.height), expected);
+    assert.equal(parts.some(part => pointInBounds(part, x, y)), expected);
   }
 });
+
+/** 每个像素仍独立断言遮罩裁剪，避免嵌套循环堆在场景回调里。
+ * @param parts - 裁剪后的背景遮罩。
+ * @param y - 当前检查行。
+ */
+function checkMaskRow(parts, y) {
+  for (let x = 0; x < 20; x++) {
+    const covered = parts.some(part => pointInBounds(part, x, y));
+    assert.equal(covered, !pointInBounds({ x: 5, y: 5, width: 10, height: 10 }, x, y));
+  }
+}

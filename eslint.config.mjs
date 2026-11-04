@@ -3,6 +3,7 @@ import jsdoc from 'eslint-plugin-jsdoc';
 import tsdoc from 'eslint-plugin-tsdoc';
 import tseslint from 'typescript-eslint';
 import globals from 'globals';
+import { androidGameFiles, androidGameTools, androidGameChecks } from './scripts/android-game-scope.mjs';
 
 import { unwrap, stringKey, propertyName, syntaxContext, writeTargets } from './scripts/network-syntax.mjs';
 
@@ -29,8 +30,8 @@ function replacesFetch(call, member, syntax) {
   const method = propertyName(member);
   const objectAPI = syntax.origin(member.object) === 'Object';
   const reflectAPI = syntax.origin(member.object) === 'Reflect';
-  if ((objectAPI || reflectAPI) && method === 'defineProperty'
-    || reflectAPI && method === 'set' && syntax.origin(call.arguments[0]) === 'global') return stringKey(call.arguments[1]) === 'fetch';
+  if (definesProperty(objectAPI, reflectAPI, method)
+    || setsGlobalProperty(reflectAPI, method, call, syntax)) return stringKey(call.arguments[1]) === 'fetch';
   if (!objectAPI || !['assign', 'defineProperties'].includes(method)) return false;
   return call.arguments.slice(1).some(hasFetchProperty);
 }
@@ -60,10 +61,7 @@ const networkRoutingSyntax = {
      */
     function pureRoutingSource(node) {
       if (node.type === 'MemberExpression') return syntax.pureData(node.object);
-      let pattern = node.parent;
-      while (['Property', 'AssignmentPattern', 'ArrayPattern', 'RestElement'].includes(pattern.parent?.type)) {
-        pattern = pattern.parent.type === 'Property' ? pattern.parent.parent : pattern.parent;
-      }
+      const pattern = routingPattern(node);
       const parent = pattern.parent;
       if (parent?.type === 'VariableDeclarator') return syntax.purePattern(pattern, parent.init, node);
       if (parent?.type === 'AssignmentExpression') return syntax.purePattern(pattern, parent.right, node);
@@ -109,6 +107,13 @@ const networkResponses = {
       const target = unwrap(pattern);
       if (target?.type === 'AssignmentPattern') return checkPattern(target.left, origin);
       if (target?.type !== 'ObjectPattern') return;
+      checkObjectPattern(target, origin);
+    }
+    /** 检查每个对象属性并递归传播明确来源。
+     * @param target - 对象模式。
+     * @param origin - 已确定的来源。
+     */
+    function checkObjectPattern(target, origin) {
       for (const property of target.properties) {
         if (property.type !== 'Property') continue;
         const key = propertyName(property);
@@ -241,4 +246,48 @@ export default [
     files: ['visual/cases/_shared/room.test.ts'],
     rules: { 'quality/no-network-responses': 'off' },
   },
+  {
+    // 新门禁只约束本检出目录；只读历史快照继续使用其已归档的 10 分测量口径。
+    // 当前 lint/check/pre-commit/CI 及独立门禁均在本目录检查，仍强制 3/6。
+    basePath: import.meta.dirname,
+    files: androidGameTools,
+    linterOptions: { noInlineConfig: true },
+    rules: { complexity: ['error', { max: 6, variant: 'classic' }] },
+  },
+  {
+    basePath: import.meta.dirname,
+    files: [...androidGameFiles, ...androidGameChecks],
+    linterOptions: { noInlineConfig: true },
+    rules: { complexity: ['error', { max: 3, variant: 'classic' }] },
+  },
 ];
+
+/** 两种原生属性 API 的单属性定义入口。
+ * @param objectAPI - 是否来自 Object。
+ * @param reflectAPI - 是否来自 Reflect。
+ * @param method - 静态方法名。
+ */
+function definesProperty(objectAPI, reflectAPI, method) {
+  return (objectAPI || reflectAPI) && method === 'defineProperty';
+}
+
+/** Reflect.set 仅在写入全局对象时替换网络入口。
+ * @param reflectAPI - 是否来自 Reflect。
+ * @param method - 静态方法名。
+ * @param call - 原调用节点。
+ * @param syntax - 词法来源分析。
+ */
+function setsGlobalProperty(reflectAPI, method, call, syntax) {
+  return reflectAPI && method === 'set' && syntax.origin(call.arguments[0]) === 'global';
+}
+
+/** 找到解构路由访问的根模式，保持透明包装和默认值边界。
+ * @param node - 路由属性节点。
+ */
+function routingPattern(node) {
+  let pattern = node.parent;
+  while (['Property', 'AssignmentPattern', 'ArrayPattern', 'RestElement'].includes(pattern.parent?.type)) {
+    pattern = pattern.parent.type === 'Property' ? pattern.parent.parent : pattern.parent;
+  }
+  return pattern;
+}

@@ -1,0 +1,313 @@
+{
+  "issue": 50,
+  "baselineRevision": "7f4343fb4297a1391a038ca4a0fde6394802268e",
+  "metric": "ESLint 10.12.0 classic complexity; max:0 reports every function without changing counting rules",
+  "limits": {
+    "androidTestAndSupport": 3,
+    "gateTests": 3,
+    "independentToolsAndRootConfig": 6
+  },
+  "beforeAndroidFunctions": 334,
+  "beforeAndroidOverLimit": 39,
+  "afterAndroidFunctions": 559,
+  "afterOverLimit": 0,
+  "reportCommand": "node scripts/android-game-complexity.mjs --report",
+  "beforeSources": [
+    {
+      "file": "android/game-animation.ts",
+      "beforeSha256": "b76ad3d57abc80dfb852f275ac5ab8e5d3848e2785a722955b5572ff57036694"
+    },
+    {
+      "file": "android/game-capture.ts",
+      "beforeSha256": "d45622c40788f9def88583824a300259d942d5d946a5e7d452ebdc5db4cf6698"
+    },
+    {
+      "file": "android/game-controls.test.mjs",
+      "beforeSha256": "acd5a56e5f065a7560acf79b03239ac479bd6f0f6c0d21a90425dcfb1a03ac0b"
+    },
+    {
+      "file": "android/game-controls.ts",
+      "beforeSha256": "1cc8a93a85aaf95fbc551c131d54ef832a8cde2f3881c1e89b117adb65a79237"
+    },
+    {
+      "file": "android/game-masks.test.mjs",
+      "beforeSha256": "bcac86efc6478857e41ccb31ea1d400d848f2e9762800baee2493b1ded10706b"
+    },
+    {
+      "file": "android/game-masks.ts",
+      "beforeSha256": "2f24efdbc7c434fd9141bcc96661caa0b60db974d8aca4fbd4421ab24c75b95a"
+    },
+    {
+      "file": "android/game-panel-animation.ts",
+      "beforeSha256": "acf03af8b15dbdbb42fe6d688a398da176ee7479fb3387edf66a5bea156bd6e7"
+    },
+    {
+      "file": "android/game-pregame.ts",
+      "beforeSha256": "5fe09801168b7adafdeccee1dc34b5c91d3a55c5d5e8654a2e7329c494919930"
+    },
+    {
+      "file": "android/game-replay.ts",
+      "beforeSha256": "08083e3c2bb34df642b890ee7a0dd7df3c3562b4c45da05b4a786eb2b1d8ae5e"
+    },
+    {
+      "file": "android/game-room.ts",
+      "beforeSha256": "218a15cc7e7ea92c8898b2e3c8a97ec5c911b5f6f9b95c9ad2480b13627f9ccf"
+    },
+    {
+      "file": "android/game-transient.test.mjs",
+      "beforeSha256": "70733ad9af08b86e3d49bdc3d65e861b42ce7867be9ca4b416a434a8924ad4ae"
+    },
+    {
+      "file": "android/game-transient.ts",
+      "beforeSha256": "f894ba7a2b82fc0c4d10ba8a6ba68896fa3b0c0e000fff54c81e15feb39fa7cc"
+    },
+    {
+      "file": "android/texas-control-variants.ts",
+      "beforeSha256": "2385acc2f50889cdc98ec58ef57714319cd902feb188b4162c7028dacf8d8130"
+    },
+    {
+      "file": "android/texas-flows.ts",
+      "beforeSha256": "d3c14e3015e7aafabdd91e6bf1f486aaa87fb9b2008725e34b03d4dde4728329"
+    },
+    {
+      "file": "android/texas-gameplay.ts",
+      "beforeSha256": "c224fddf15f8009ad5593afca49a9308863faa9bf23380e5204dc750f1e3d206"
+    },
+    {
+      "file": "android/texas-hall.ts",
+      "beforeSha256": "636c09a6045c076d3342c6b03f4cf6842528d8dcb1be3f73c86383798b477432"
+    },
+    {
+      "file": "android/texas-panel-variants.ts",
+      "beforeSha256": "941214db87bd27ca0511cef28195c1120222dcb6c8c99c9ce4c968ba0d0f4fad"
+    },
+    {
+      "file": "android/texas-panels.ts",
+      "beforeSha256": "95c714f8b7e971354d61b9045dc3eb38bb03b1642b60b2395cd44940ca478279"
+    },
+    {
+      "file": "android/texas-record-variants.ts",
+      "beforeSha256": "8d509076d625ce37cb4679c31c0f891c3ed2c5724cf94f862e64b36465be639a"
+    },
+    {
+      "file": "android/texas-support.ts",
+      "beforeSha256": "5f367a752dc4f7a2628e83a4f71de8f83a6d2bb92cf528a8ccaa962b3355a75c"
+    },
+    {
+      "file": "android/texas-table-variants.ts",
+      "beforeSha256": "f4d1f2c90a142d1fadf3d89e9c8936396cbee963f9225276d732ef329c5a20fc"
+    },
+    {
+      "file": "android/zhajinhua-gameplay.ts",
+      "beforeSha256": "5acdd36a0996035c3630e6f8cecd055b81fac9c7004e86d22e86bd313a5b0aa2"
+    },
+    {
+      "file": "eslint.config.mjs",
+      "beforeSha256": "ddf9945b5707c2c870d54bf517adecc2dec9dcec985d9b442b70fbed42ec646a"
+    }
+  ],
+  "afterSources": [
+    {
+      "file": "android/game-animation.ts",
+      "afterSha256": "ecff0250798c54e3d1eb57433da0ba10e6ec000692b5e9a1629a431acb6faaa7"
+    },
+    {
+      "file": "android/game-capture-masks.test.mjs",
+      "afterSha256": "08820eb4255029a16582967e4336d3eed74ae65d2d6c1e353d49045cfbe25148"
+    },
+    {
+      "file": "android/game-capture-masks.ts",
+      "afterSha256": "e87d76af9c65c2c0268d159687ae8c03694b093232872baccd900c82232b34cd"
+    },
+    {
+      "file": "android/game-capture-retry.test.mjs",
+      "afterSha256": "9c7240b3d1c9de29351b5d70589e938d9b074d5a1faab090c907d02c40d0a596"
+    },
+    {
+      "file": "android/game-capture-retry.ts",
+      "afterSha256": "803a568efdeba8a3b7214c8735fa0d3f4b36182a2660676f049ef26dd5aa3748"
+    },
+    {
+      "file": "android/game-capture.ts",
+      "afterSha256": "e31964f91b131af447410fdafa835f9a6f49f9c90a6df9ce06ce63aded8db483"
+    },
+    {
+      "file": "android/game-controls.test.mjs",
+      "afterSha256": "fe31775c4dbd0be1f4a446107b0b859672a1ada81c1b3bff1e163db81102558c"
+    },
+    {
+      "file": "android/game-controls.ts",
+      "afterSha256": "bd7d967b8cf4d73a67e33979b7dd8a9f4b260db4a067e1abdd80c73c7c8c9df0"
+    },
+    {
+      "file": "android/game-feedback.ts",
+      "afterSha256": "4c27089f3c3b2533b7f25d0c605a6df51a8020b989bf555860e550f70e5d732c"
+    },
+    {
+      "file": "android/game-flow-fixture.mjs",
+      "afterSha256": "786fb7503fc3f54aea0aa3b0d86bce14706df898337d267b43d3cc5f12b07c08"
+    },
+    {
+      "file": "android/game-geometry.ts",
+      "afterSha256": "572b2f2a125b24af4de1b3a6065e47bea9886850712ed68c4bcc466fde77b6c1"
+    },
+    {
+      "file": "android/game-masks.test.mjs",
+      "afterSha256": "f80847d4c01d4f805c3dcafdd064364079631b416ff0056515473905c5647ec0"
+    },
+    {
+      "file": "android/game-masks.ts",
+      "afterSha256": "de5e2cfa67ffc3c8053cbc9b974ce1677853f03accf5a14534f44cfa0c699f7d"
+    },
+    {
+      "file": "android/game-panel-animation.ts",
+      "afterSha256": "a641f52be58a3961e68ec33d14205c59206a60cde9f11ebbad94e38d7bce2154"
+    },
+    {
+      "file": "android/game-pregame-final.ts",
+      "afterSha256": "e6893bb818b13416863b76b0f0f4df9e9f59b4d5f5a1104835db0d61c960f5c0"
+    },
+    {
+      "file": "android/game-pregame-helpers.ts",
+      "afterSha256": "28dd7aa0b7ad97f20c478043fe9e41ef9e03f9919221d518c6ab6ec85047d61c"
+    },
+    {
+      "file": "android/game-pregame-panels.ts",
+      "afterSha256": "4e1cd1e390fac3b0fb2efa8f0f9dcd739fc6748551a3dac1c430c3a8ae3fdb05"
+    },
+    {
+      "file": "android/game-pregame-phases.ts",
+      "afterSha256": "b8ebf4d8f5abff7a990010a92cf40afc3da1c6c28155952dcc4da45adcd18791"
+    },
+    {
+      "file": "android/game-pregame.test.mjs",
+      "afterSha256": "8e27963c5319b5ca54a337b25cdcee4af92e897eb140830c1c8b164f012b5c07"
+    },
+    {
+      "file": "android/game-pregame.ts",
+      "afterSha256": "49bb62a00538b01c187bb194845ab183ad2d6e733fe876f0d65943a7718e4b30"
+    },
+    {
+      "file": "android/game-replay.ts",
+      "afterSha256": "b22edd6946a44870b58636d406c5270053bce8d2ec6c73bfbace1308e2692f41"
+    },
+    {
+      "file": "android/game-room.ts",
+      "afterSha256": "64d105f855f5cc491fa470ea0ff1473d6f5ac9a057cf27d5d6bd85e12274973b"
+    },
+    {
+      "file": "android/game-transient.test.mjs",
+      "afterSha256": "70733ad9af08b86e3d49bdc3d65e861b42ce7867be9ca4b416a434a8924ad4ae"
+    },
+    {
+      "file": "android/game-transient.ts",
+      "afterSha256": "74f9c917d6d810bef2a0041afcb5ae2ddebf0dc47da4a8b97b053bff2edbb00a"
+    },
+    {
+      "file": "android/texas-control-variants.ts",
+      "afterSha256": "e97f64822b61a2a686952b92c671e3822b210619234f3cadba1a0e2c487cb648"
+    },
+    {
+      "file": "android/texas-flows.ts",
+      "afterSha256": "6e05c998be3234ce8a61edf2115d0ad350972acfdf9a127793f99c8aac679526"
+    },
+    {
+      "file": "android/texas-gameplay-profiles.ts",
+      "afterSha256": "06d16abf0e63efa5dacfa9ec475823472683b652c7e333902de3f9aae9fc42be"
+    },
+    {
+      "file": "android/texas-gameplay-restore.test.mjs",
+      "afterSha256": "7e7e8168941f19b79213904675f486ed809ead25ea1fb1113180f5b69b8377b1"
+    },
+    {
+      "file": "android/texas-gameplay-restore.ts",
+      "afterSha256": "ab06625b6306289f1c002cb1d2a26ec509beefd00b615ba3e20f1a00638a86e7"
+    },
+    {
+      "file": "android/texas-gameplay-table.ts",
+      "afterSha256": "dbd04870c251121b5c3ecfe722ee967df9d1402de48e61cab20ffbedb52ac37f"
+    },
+    {
+      "file": "android/texas-gameplay.test.mjs",
+      "afterSha256": "d315a9c5efd7acf724a188b6dce817a631ae4c31bc8f00bbaaec185e90b5eab3"
+    },
+    {
+      "file": "android/texas-gameplay.ts",
+      "afterSha256": "f891434733a18a1f9e6e21f968ce09636153045c64fb3cfee75d1e369b34b3d2"
+    },
+    {
+      "file": "android/texas-hall.ts",
+      "afterSha256": "ee519ac93736779f01718d572cdada7e3495ce08d4a07906b021da8de9bb352d"
+    },
+    {
+      "file": "android/texas-panel-variants.ts",
+      "afterSha256": "8796034df72d7447d86fd2077afae9281a471a5bd39b13b39f09c13d16c59a63"
+    },
+    {
+      "file": "android/texas-panels.ts",
+      "afterSha256": "975a34361ded0528eb25f11f5b58c1212ba81aaacf864e533dbbf25177635b53"
+    },
+    {
+      "file": "android/texas-record-variants.ts",
+      "afterSha256": "8d509076d625ce37cb4679c31c0f891c3ed2c5724cf94f862e64b36465be639a"
+    },
+    {
+      "file": "android/texas-support.ts",
+      "afterSha256": "0d9748f636125a61c1e86e4bd8a012df092e9a5b3ddee300ce9f8f835368533b"
+    },
+    {
+      "file": "android/texas-table-variants.ts",
+      "afterSha256": "a95e288f7d72dbf73cb0efbbb995855a71df1609f1b203bdd00e12fb8dddfcc6"
+    },
+    {
+      "file": "android/zhajinhua-gameplay-support.ts",
+      "afterSha256": "e8ea92692edd53a128628cfa7dc0f474908993aa13b10ef598fcec632661e199"
+    },
+    {
+      "file": "android/zhajinhua-gameplay-table.ts",
+      "afterSha256": "a473696e7c1eb61c02d47a52356fe45f0670b1957dbf6d12686a6bc9fe2d4def"
+    },
+    {
+      "file": "android/zhajinhua-gameplay.test.mjs",
+      "afterSha256": "d9a11d4e9addc353ecd5bca887182580b85fdfd6c7af4eb2fdc55a3048f0a522"
+    },
+    {
+      "file": "android/zhajinhua-gameplay.ts",
+      "afterSha256": "ce13393c78ec6612ebd899f2b8c00a9586ee00faf37fb6fcbbe364a53c78db98"
+    },
+    {
+      "file": "eslint.config.mjs",
+      "afterSha256": "563d0a61dc19e7bd70564eb3bed682e3821c1d0b4f743583d72e6f088c4e3444"
+    },
+    {
+      "file": "scripts/android-game-complexity.mjs",
+      "afterSha256": "f5b95b44886e0d0236fdc31a56ae541a0d4c087c31c35cd81a3b8be3388367d6"
+    },
+    {
+      "file": "scripts/android-game-complexity.test.mjs",
+      "afterSha256": "99ec2a2b3050cc61b577c169e17708274b0180571c6d6e925d7c9c92a134d46c"
+    }
+  ],
+  "highValueChanges": [
+    {
+      "function": "captureGame",
+      "before": 57,
+      "after": 2
+    },
+    {
+      "function": "gamePreGame",
+      "before": 47,
+      "after": 3
+    },
+    {
+      "function": "texasGameplay",
+      "before": 30,
+      "after": 2
+    },
+    {
+      "function": "zhajinhuaGameplay",
+      "before": 16,
+      "after": 3
+    }
+  ]
+}
