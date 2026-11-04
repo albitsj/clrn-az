@@ -1,6 +1,7 @@
 import { appendFileSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { setTimeout } from 'node:timers/promises';
 import { androidAccountMatrix } from './ci-accounts.mjs';
-import { planSignature, schedulePlan, shardId, stageJobs, verifyCompletion } from './android-ci-policy.mjs';
+import { PendingJobsError, planSignature, schedulePlan, shardId, verifyCompletion } from './android-ci-policy.mjs';
 import { githubJson, githubJobs, loadHistory } from './android-ci-github.mjs';
 
 const directory = '.ttyctl/android-ci';
@@ -115,22 +116,54 @@ function phaseSummary(plan, jobs, run) {
     + '开始时间含准备及阶段依赖等待；GitHub jobs API 未提供独立入队时间，不将此数值当作纯排队时间。\n\n';
 }
 
+/**
+ * 分页及网络等待共用截止时间，给门禁写入诊断和上传产物留出时间。
+ * @param endpoint - 本轮 Jobs API 分页地址。
+ * @param deadline - 单调时钟上的同步截止时间。
+ */
+function completionJson(endpoint, deadline) {
+  const remaining = deadline - performance.now();
+  if (remaining <= 0) throw new Error('等待 Jobs API 状态同步超时');
+  return githubJson(endpoint, Math.ceil(Math.min(30000, remaining)));
+}
+
+/**
+ * 仅等待尚未同步的预期分片，每轮都重新分页查询；身份、依赖与失败仍严格验证。
+ * @param plan - 本轮完整计划。
+ * @param needs - 当前依赖结论。
+ * @param run - 当前运行身份。
+ * @param snapshot - 保存最后一次完整 API 快照，超时或错误后仍可输出诊断。
+ */
+async function waitForCompletion(plan, needs, run, snapshot) {
+  const deadline = performance.now() + 5 * 60 * 1000;
+  while (true) {
+    snapshot.jobs = githubJobs(runEndpoint, endpoint => completionJson(endpoint, deadline));
+    try {
+      return verifyCompletion(plan, snapshot.jobs, needs, run);
+    } catch (error) {
+      if (!(error instanceof PendingJobsError)) throw error;
+      const remaining = deadline - performance.now();
+      if (remaining <= 0) throw new Error(`等待 Jobs API 状态同步超时：${error.message}`, { cause: error });
+      console.log(`Jobs API 状态尚未同步：${error.message}；等待后重新查询。`);
+      await setTimeout(Math.min(10000, remaining));
+    }
+  }
+}
+
 /** 无条件运行的总门禁，任何缺失、取消、失败、意外跳过均不能放行。 */
-function completeRun() {
+async function completeRun() {
   const plan = JSON.parse(readFileSync(`${directory}/plan.json`, 'utf8'));
   const needs = JSON.parse(process.env.CI_ANDROID_NEEDS);
   let report = planSummary(plan);
-  let jobs = [];
+  const snapshot = { jobs: [] };
   let run;
   let failure;
   try {
     run = githubJson(runEndpoint);
-    jobs = githubJobs(runEndpoint);
     // 强制全量或规划时 API 故障仍可按唯一 run ID + SHA 校验本轮身份。
     const verifiedPlan = plan.workflowId === null ? { ...plan, workflowId: run.workflow_id } : plan;
     if (plan.checkoutSha !== process.env.GITHUB_SHA) throw new Error('检出提交不一致');
-    verifyCompletion(verifiedPlan, jobs, needs, run);
-    const executed = [...stageJobs(plan, jobs, 'priority'), ...stageJobs(plan, jobs, 'remaining')];
+    const executed = await waitForCompletion(verifiedPlan, needs, run, snapshot);
     const last = Math.max(...executed.map(job => Date.parse(job.completed_at)));
     report += `当前提交全部 ${plan.full.length} 项成功。全部重型分片完成耗时：${Math.round((last - Date.parse(run.created_at)) / 1000)} 秒（不含最终汇总和兼容门禁）。\n\n`;
   } catch (error) {
@@ -138,13 +171,13 @@ function completeRun() {
     report += `全量门禁失败：${error.message}。详见本轮依赖结论及 job 诊断。\n\n`;
   }
   report += `阶段结论：${Object.entries(needs).map(([name, value]) => `${name}=${value.result}`).join(', ')}\n\n`;
-  if (run) report += phaseSummary(plan, jobs, run);
+  if (run) report += phaseSummary(plan, snapshot.jobs, run);
   summary(report);
-  writeFileSync(`${directory}/results.json`, `${JSON.stringify({ runId, sha: plan.sha, success: !failure, needs, jobs }, null, 2)}\n`);
+  writeFileSync(`${directory}/results.json`, `${JSON.stringify({ runId, sha: plan.sha, success: !failure, needs, jobs: snapshot.jobs }, null, 2)}\n`);
   if (failure) throw new Error('当前提交的 Android 完整回归未通过');
 }
 
 mkdirSync(directory, { recursive: true });
 if (process.argv[2] === 'plan') planRun();
-else if (process.argv[2] === 'complete') completeRun();
+else if (process.argv[2] === 'complete') await completeRun();
 else throw new Error('指定 plan 或 complete');

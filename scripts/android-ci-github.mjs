@@ -6,10 +6,11 @@ import { join } from 'node:path';
 /**
  * 使用 gh 的认证读取 JSON；任何网络错误交给规划器回退全量。
  * @param endpoint - 仓库内 Actions API 路径。
+ * @param timeout - 单次查询的截止毫秒数，门禁等待时不得超过剩余预算。
  */
-export function githubJson(endpoint) {
+export function githubJson(endpoint, timeout = 30000) {
   try {
-    return JSON.parse(execFileSync('gh', ['api', endpoint], { encoding: 'utf8', timeout: 30000,
+    return JSON.parse(execFileSync('gh', ['api', endpoint], { encoding: 'utf8', timeout,
       maxBuffer: 32 * 1024 * 1024, stdio: ['ignore', 'pipe', 'pipe'] }));
   } catch {
     throw new Error('GitHub Actions API 不可用或响应无效');

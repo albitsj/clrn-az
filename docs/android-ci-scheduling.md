@@ -8,7 +8,7 @@
 2. `driver` 准备一次原生驱动；`apk` 按当前 `deployments/staging.json` 下载、校验一次 APK，保存同轮不可变产物。两个阶段下载同一份 APK，每个分片仍核对应用提交、Release 元数据、文件大小与 SHA-256。APK 与驱动保留一天；过期后须 Re-run all jobs，不能用新下载的可变外部包替代本轮目标。
 3. `priority` 仅展开此前未成功的分片，依赖 `accounts`、`driver`、`apk`。
 4. `remaining` 明确依赖整个 `priority` 阶段成功，才展开余下矩阵。无优先项时，只有预期的空阶段 skipped 才允许执行全量 remaining。优先失败或取消时，剩余重型检查不提交给 runner。
-5. `Android full regression` 使用 `always()` 检查依赖结论，并经 Actions API 逐项核对当前 run、当前 SHA 的完整计划。所有预期 job 必须唯一、完成且成功。失败、取消、neutral、意外 skipped、结果缺失或门禁 API 故障都不放行。
+5. `Android full regression` 使用 `always()` 检查依赖结论，并经 Actions API 逐项核对当前 run、当前 SHA 的完整计划。所有预期 job 必须唯一、完成且成功。依赖已成功而 Jobs API 暂时缺项、仍显示未完成或缺少结论时，每隔 10 秒重新分页读取最新快照，最多等待 5 分钟；网络查询也受同一截止时间约束。只有快照完整且全部成功才放行，超时保留最后一次完整 API 快照并拒绝放行。失败、取消、neutral、意外 skipped、身份不匹配、重复或计划外分片及门禁 API 故障直接拒绝，不因另一个分片未同步而重试。
 6. 原 `Android (业务组 / 语言 / 分片)` 名称保留为轻量门禁，每项都依赖全量门禁成功。已有 required check 名称继续有效；为保留它们，每轮增加 35 个只执行结论检查的轻量 job。重型任务改名为 `Android priority (...)`、`Android remaining (...)`。
 
 本实现不修改分支保护。可以将 `Android full regression` 设为额外 required check；既有分片 required checks 和 Repository checks 无需重命名。若静态规划自身失败，矩阵可能无法生成，应通过 accounts / 全量门禁的失败定位，不能把未出现的分片视为通过。
@@ -41,14 +41,18 @@ GitHub jobs API 没有独立的 job 入队时间，摘要明确把 run 创建到
 
 本地自动化覆盖真实 35 分片计划、连续修复、取消/跳过/超时、配置与分片变化、来源隔离、API/产物不可用、分页、同提交 failed-jobs 重跑及全量门禁。离线 CLI 集成测试执行真实规划和汇总入口，使用 ZIP 计划产物模拟三轮 PR：全量 35 → 优先 1 失败且余项零启动 → 优先 1 加剩余 34 成功；这些是模拟结果，不能据此声称线上排队或反馈时间改善。
 
+Jobs API 同步回归测试执行真实汇总 CLI，并只替换离线 API 响应和等待时钟：覆盖优先阶段为 0、1、35 项时的缺项与 `in_progress` 后恢复、持续不完整直到截止时间、等待期间出现终态失败或 API 故障，以及错误身份、依赖失败和重复映射不能被后续成功快照覆盖。测试核对退出状态、完整 35 项结果、摘要及失败诊断产物；这不替代修复后的真实 PR 线上验收，本次未触发或重跑 CI。
+
 本地验证结果：
 
 - `npm run lint`（含 actionlint、ShellCheck、架构和重复代码门禁）通过。
-- `npm run typecheck`、`npm run test:android:collect` 通过。
-- `npm test`：300 项通过，含全部 81 段真实录屏回放。
-- `node --test scripts/android-ci-*.test.mjs`：最终版本 14 项调度专项测试通过。
+- `npm run typecheck`、`npm run test:android:collect` 通过，另按实际矩阵逐项收集全部 35 个分片（简体 9、繁体 9、英文 17），均非空且无收集错误。
+- `npm test`：全量运行 309 项，295 项在沙箱内通过，14 项因禁止监听 `127.0.0.1` 报 `listen EPERM`；随后在沙箱外分别复跑 `android/proxy.test.mjs` 和 `e2e/helpers/mitmproxy-session.test.mjs`，两文件各 8 项全部通过，覆盖全部受限项。309 项均已验证，含全部 81 段真实录屏回放。
+- `node --test scripts/android-ci-*.test.mjs`：含 Jobs API 同步回归的 22 项调度专项测试通过。
 - `python3 -m unittest discover -s android -p 'test_*.py'`：38 项通过。
 - Composite action 的所有 run 步骤均声明 shell，所有 env 引用均由两个阶段提供；`git diff --check` 通过。
+
+本机默认 `uv` 缓存不可写，静态检查使用已缓存的相同固定版本 Ruff、actionlint 和 ShellCheck 二进制执行，检查配置未调整。
 
 真实 PR 验收尚需在发布该改动后记录以下数据：
 

@@ -1,5 +1,8 @@
 import { createHash } from 'node:crypto';
 
+/** 预期分片尚未同步；仅此错误允许当前门禁重新读取 Jobs API。 */
+export class PendingJobsError extends Error {}
+
 /**
  * 稳定分片标识不包含随运行轮转的账号。
  * @param shard - 当前账号矩阵的一项。
@@ -43,8 +46,11 @@ export function stageJobs(plan, jobs, stage) {
     const shard = plan.full.find(item => shardId(item) === id);
     const name = `Android ${stage} (${shard.label})`;
     const matches = jobs.filter(job => job.name === name);
-    if (matches.length !== 1 || matches[0].status !== 'completed' || !matches[0].conclusion) {
+    if (matches.length > 1) {
       throw new Error(`无法可靠映射 ${name}`);
+    }
+    if (!matches.length || matches[0].status !== 'completed' || !matches[0].conclusion) {
+      throw new PendingJobsError(`无法可靠映射 ${name}`);
     }
     return { ...matches[0], shardId: id };
   });
@@ -98,6 +104,23 @@ export function schedulePlan(current, history) {
 }
 
 /**
+ * 先拒绝快照中已明确的失败与映射错误，不能让另一缺项将它们变成可重试错误。
+ * @param plan - 已验证的本轮完整计划。
+ * @param jobs - 本轮最新 job 快照。
+ */
+function validateJobSnapshot(plan, jobs) {
+  const expected = new Set(['priority', 'remaining'].flatMap(stage => plan[stage].map(id =>
+    `Android ${stage} (${plan.full.find(item => shardId(item) === id).label})`)));
+  const selected = jobs.filter(job => expected.has(job.name));
+  const heavy = jobs.filter(job => /^Android (priority|remaining) \(/.test(job.name) && job.conclusion !== 'skipped');
+  if (new Set(selected.map(job => job.name)).size !== selected.length || heavy.some(job => !expected.has(job.name))) {
+    throw new Error('当前提交存在重复或计划外分片');
+  }
+  if (selected.some(job => job.conclusion && job.conclusion !== 'success')) throw new Error('当前提交仍有未成功分片');
+  return heavy;
+}
+
+/**
  * 全量门禁同时检查阶段结论、完整计划和当前提交每个实际 job。
  * @param plan - 本轮计划。
  * @param jobs - 本轮最新 job 列表，不能使用旧提交结果。
@@ -114,9 +137,8 @@ export function verifyCompletion(plan, jobs, needs, run) {
     const expected = ['priority', 'remaining'].includes(dependency) && !plan[dependency].length ? 'skipped' : 'success';
     if (needs[dependency]?.result !== expected) throw new Error(`${dependency} 阶段未满足 ${expected}`);
   }
+  const heavy = validateJobSnapshot(plan, jobs);
   const executed = [...stageJobs(plan, jobs, 'priority'), ...stageJobs(plan, jobs, 'remaining')];
-  if (executed.some(job => job.conclusion !== 'success')) throw new Error('当前提交仍有未成功分片');
-  const heavy = jobs.filter(job => /^Android (priority|remaining) \(/.test(job.name) && job.conclusion !== 'skipped');
   if (heavy.length !== plan.full.length) throw new Error('当前提交执行数量与完整计划不一致');
   return executed;
 }
