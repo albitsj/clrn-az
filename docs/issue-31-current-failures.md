@@ -210,3 +210,8 @@ raise 的 prepared-start 与正式采集 start 附件字节相同，已查看为
 在 1 秒探测窗口内未找到 offline probe，独立执行也复现；其源码和采集器源码相对 ec7ff5a 均未改。
 完整原失败及独立日志分别保存在 `/tmp/clrn-31-final-python-android.log` 与 `/tmp/clrn-31-python-isolated-collector.log`。
 其余五组 Python 共 91 项通过；不把早先 129 项全通过或 Node 的 291 项通过冒充这次 Android 组通过。
+
+后续直接执行与 `/bin/sh` 解释同一临时夹具的探针对比保存在 `/tmp/clrn-31-collector-launch-probe.json`。
+新建脚本的首次原生执行会消耗较多启动时间；测试改为显式解释已有 shell 夹具，仍真实输出并挂起 30 秒，
+仍要求 1 秒超时、退出 124、保留 offline probe 和独立宿主结果；缺失 adb 的 spawn 失败路径不变。
+未修改生产采集器或测试超时。修改后 Android 全组 40 项实际通过，其余五组 91 项通过；旧失败日志继续保留。
