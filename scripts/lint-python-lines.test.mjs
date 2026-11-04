@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import test from 'node:test';
 import { scanPythonLines } from './lint-python-lines.mjs';
-import { repository } from './source-files.mjs';
+import { repository, sourceFiles } from './source-files.mjs';
 
 /**
  * 建立独立临时 Git 仓库，以真实扫描器和忽略规则验证命令行行为。
@@ -43,13 +43,14 @@ function runGate(root, env = process.env) {
     { cwd: tmpdir(), encoding: 'utf8', env });
 }
 
-for (const ending of ['\n', '\r\n']) {
+for (const endings of [['\n'], ['\r\n'], ['\r'], ['\r\n', '\r', '\n']]) {
   for (const trailing of [true, false]) {
-    test(`500 行通过、501 行失败：${JSON.stringify(ending)}，末尾换行 ${trailing}`, context => {
+    test(`500 行通过、501 行失败：${JSON.stringify(endings)}，末尾换行 ${trailing}`, context => {
       const root = fixture(context);
       const file = 'nested/含 空格的源码.py';
       for (const lines of [500, 501]) {
-        const source = Array(lines).fill('# 注释').join(ending) + (trailing ? ending : '');
+        const source = Array.from({ length: lines }, (_, index) =>
+          'x = 1 # 注释' + (index < lines - 1 || trailing ? endings[index % endings.length] : '')).join('');
         writeSource(root, file, source);
         assert.deepEqual(scanPythonLines(root), [{ file, lines }]);
         const result = runGate(root);
@@ -88,6 +89,21 @@ test('覆盖已跟踪、新增、代理、测试、fixture 和工具，跳过已
   assert.equal(result.status, 1);
   for (const file of added) assert.ok(result.stderr.includes(`${file}: 501 行（上限 500 行）`));
   assert.match(result.stdout, /扫描 6 个文件/);
+});
+
+test('祖先目录被普通文件替换时跳过索引中的旧子路径，继续扫描现存源码', context => {
+  const root = fixture(context);
+  writeSource(root, 'old/deleted.py', '# deleted');
+  writeSource(root, 'old/deleted.sh', '# deleted');
+  execFileSync('git', ['add', '--', 'old'], { cwd: root });
+  rmSync(join(root, 'old'), { recursive: true });
+  writeSource(root, 'old', 'replacement');
+  writeSource(root, 'kept.py', '# kept');
+  assert.deepEqual(sourceFiles(root).filter(file => file.startsWith('old')), ['old']);
+  assert.deepEqual(scanPythonLines(root), [{ file: 'kept.py', lines: 1 }]);
+  const result = runGate(root);
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /扫描 1 个文件；最长 kept\.py: 1 行/);
 });
 
 test('沿用忽略规则和明确排除目录，排除项即使已跟踪也跳过', context => {
@@ -138,9 +154,13 @@ test('缺少 Git 或不在 Git 仓库中时失败', context => {
 test('真实 npm Python 静态入口在 Ruff 之前拒绝超长的新文件', context => {
   const root = fixture(context);
   copyFileSync(join(repository, 'package.json'), join(root, 'package.json'));
-  writeSource(root, 'probe.py', '\n'.repeat(501));
-  const result = spawnSync('npm', ['run', 'lint:python'], { cwd: root, encoding: 'utf8' });
-  assert.equal(result.status, 1);
-  assert.match(result.stderr, /probe\.py: 501 行（上限 500 行）/);
-  assert.doesNotMatch(result.stderr, /ERR_MODULE_NOT_FOUND/);
+  for (const endings of [['\n'], ['\r\n'], ['\r'], ['\r\n', '\r', '\n']]) {
+    const source = Array.from({ length: 501 }, (_, index) =>
+      'value = 1' + (index < 500 ? endings[index % endings.length] : '')).join('');
+    writeSource(root, 'probe.py', source);
+    const result = spawnSync('npm', ['run', 'lint:python'], { cwd: root, encoding: 'utf8' });
+    assert.equal(result.status, 1);
+    assert.match(result.stderr, /probe\.py: 501 行（上限 500 行）/);
+    assert.doesNotMatch(result.stderr, /ERR_MODULE_NOT_FOUND/);
+  }
 });

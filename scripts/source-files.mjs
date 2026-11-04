@@ -19,7 +19,7 @@ export function sourceFiles(root = repository) {
       lstatSync(join(root, file));
       return true;
     } catch (error) {
-      if (error.code === 'ENOENT') return false;
+      if (error.code === 'ENOENT' || error.code === 'ENOTDIR') return false;
       throw error;
     }
   }).sort();

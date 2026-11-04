@@ -15,7 +15,7 @@ export function scanPythonLines(root = repository) {
   if (files.length === 0) throw new Error('未发现 Python 源文件，拒绝空扫描。');
   return files.map(file => {
     const source = readFileSync(join(root, file), 'utf8');
-    const lines = source === '' ? 0 : source.split('\n').length - Number(source.endsWith('\n'));
+    const lines = source === '' ? 0 : source.split(/\r\n|[\r\n]/).length - Number(/[\r\n]$/.test(source));
     return { file, lines };
   });
 }
