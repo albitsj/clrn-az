@@ -1,4 +1,6 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
+import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { test } from 'node:test';
 import { PNG } from 'pngjs';
@@ -68,12 +70,13 @@ function toastFrames(frames) {
 const toast = { res: 'toastText1', text: 'Minimum Raise Is 40',
   bounds: { x: 80, y: 121, width: 570, height: 33 } };
 const png = PNG.sync.write(new PNG({ width: 8, height: 8 })).toString('base64');
+const metadata = readFileSync(new URL('./fixtures/toast-entry/frames.json', import.meta.url));
 
 test('提示入场时面板尚未进入控件树的移动帧保留原图，但不能充当稳定相位', async () => {
-  // 真实首败的前后边界：y0/6px -> y121/33px；panel 在首次读取时不存在。
-  const before = { ...toast, bounds: { ...toast.bounds, y: 0, height: 6 } };
-  const moving = { before, after: toast, panel: null, capturedAt: 0, png };
-  const visible = { before: toast, after: toast, panel: toast, capturedAt: 300, png };
+  assert.equal(createHash('sha256').update(metadata).digest('hex'),
+    'cf0fabee0ba58f5faa9f5e817802ee279b1d10affbe36f77232e71ec29fe3d18');
+  // 沿用原始首败节点元数据；小 PNG 仅是测试像素，不冒充缺失的真实入场位图。
+  const [moving, visible] = JSON.parse(metadata).slice(0, 2).map(frame => ({ ...frame, png }));
   const probe = toastFrames([moving, visible]);
   await assert.rejects(probe.run(), /必须连续稳定至少 250 毫秒/);
   assert.ok(probe.attachments.includes('提示-frame-0-original'));
