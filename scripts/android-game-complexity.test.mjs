@@ -2,9 +2,27 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { ESLint } from 'eslint';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { repository } from './source-files.mjs';
+
+/** 使用生产配置、脚本及依赖创建隔离项目，探针不进入共享工作树。
+ * @param context - 负责清理临时目录的测试上下文。
+ */
+function temporaryProject(context) {
+  const directory = mkdtempSync(join(tmpdir(), 'android-game-complexity-'));
+  context.after(() => rmSync(directory, { recursive: true, force: true }));
+  for (const file of ['package.json', 'eslint.config.mjs', 'scripts']) {
+    cpSync(join(repository, file), join(directory, file), { recursive: true });
+  }
+  symlinkSync(join(repository, 'node_modules'), join(directory, 'node_modules'), 'dir');
+  mkdirSync(join(directory, 'android'));
+  for (const prefix of ['game', 'texas', 'zhajinhua-gameplay']) {
+    writeFileSync(join(directory, 'android', `${prefix}-probe.ts`), 'export const probe = 1;');
+  }
+  return directory;
+}
 
 /** 使用真实生产配置静态解析探针，关闭行内豁免。
  * @param source - 不执行的探针源码。
@@ -43,23 +61,26 @@ for (const source of probes) {
   });
 }
 
-test('独立门禁及既有 lint:js 入口阻断临时超限辅助文件，解析错误同样失败', () => {
-  const path = `android/game-complexity-probe-${process.pid}.ts`;
-  try {
-    writeFileSync(path, '/* eslint-disable complexity */ function helper(a) { if(a) return 1; if(a) return 2; if(a) return 3; }');
-    for (const [command, args] of [[process.execPath, ['scripts/android-game-complexity.mjs']], ['npm', ['run', 'lint:js']]]) {
-      const result = spawnSync(command, args, { encoding: 'utf8' });
-      assert.notEqual(result.status, 0);
-      assert.match(result.stderr, /complexity/);
-    }
-    writeFileSync(path, 'function broken( {');
-    const result = spawnSync(process.execPath, ['scripts/android-game-complexity.mjs'], { encoding: 'utf8' });
+test('独立门禁及既有 lint:js 入口阻断临时超限辅助文件，解析错误同样失败', context => {
+  const directory = temporaryProject(context);
+  const options = { cwd: directory, encoding: 'utf8' };
+  const clean = spawnSync(process.execPath, ['scripts/android-game-complexity.mjs'], options);
+  assert.equal(clean.status, 0, clean.stdout + clean.stderr);
+  const path = join(directory, 'android/game-probe.ts');
+  writeFileSync(path, '/* eslint-disable complexity */ function helper(a) { if(a) return 1; if(a) return 2; if(a) return 3; }');
+  for (const [command, args] of [[process.execPath, ['scripts/android-game-complexity.mjs']], ['npm', ['run', 'lint:js']]]) {
+    const result = spawnSync(command, args, options);
     assert.notEqual(result.status, 0);
-    assert.match(result.stderr, /Parsing error/);
-    const report = spawnSync(process.execPath, ['scripts/android-game-complexity.mjs', '--report'], { encoding: 'utf8' });
-    assert.notEqual(report.status, 0);
-    assert.match(report.stderr, /无法解析/);
-  } finally { rmSync(path, { force: true }); }
+    assert.match(result.stderr, /game-probe\.ts/);
+    assert.match(result.stderr, /complexity of 4.*Maximum allowed is 3/);
+  }
+  writeFileSync(path, 'function broken( {');
+  const result = spawnSync(process.execPath, ['scripts/android-game-complexity.mjs'], options);
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /Parsing error/);
+  const report = spawnSync(process.execPath, ['scripts/android-game-complexity.mjs', '--report'], options);
+  assert.notEqual(report.status, 0);
+  assert.match(report.stderr, /无法解析/);
 });
 
 test('缺少 ESLint 依赖时入口非零退出', () => {

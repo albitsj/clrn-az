@@ -586,11 +586,13 @@
   {"file":"scripts/android-game-complexity.mjs","line":28,"column":1,"function":"Function 'functionMeasurements'","complexity":2,"limit":6},
   {"file":"scripts/android-game-complexity.mjs","line":30,"column":41,"function":"Arrow function","complexity":1,"limit":6},
   {"file":"scripts/android-game-complexity.mjs","line":30,"column":89,"function":"Arrow function","complexity":1,"limit":6},
-  {"file":"scripts/android-game-complexity.test.mjs","line":13,"column":1,"function":"Async function 'diagnostics'","complexity":1,"limit":3},
-  {"file":"scripts/android-game-complexity.test.mjs","line":15,"column":41,"function":"Arrow function","complexity":1,"limit":3},
-  {"file":"scripts/android-game-complexity.test.mjs","line":20,"column":46,"function":"Async arrow function","complexity":1,"limit":3},
-  {"file":"scripts/android-game-complexity.test.mjs","line":26,"column":47,"function":"Async arrow function","complexity":1,"limit":3},
-  {"file":"scripts/android-game-complexity.test.mjs","line":41,"column":63,"function":"Async arrow function","complexity":1,"limit":3},
-  {"file":"scripts/android-game-complexity.test.mjs","line":46,"column":50,"function":"Arrow function","complexity":2,"limit":3},
-  {"file":"scripts/android-game-complexity.test.mjs","line":65,"column":32,"function":"Arrow function","complexity":1,"limit":3}
+  {"file":"scripts/android-game-complexity.test.mjs","line":13,"column":1,"function":"Function 'temporaryProject'","complexity":3,"limit":3},
+  {"file":"scripts/android-game-complexity.test.mjs","line":15,"column":20,"function":"Arrow function","complexity":1,"limit":3},
+  {"file":"scripts/android-game-complexity.test.mjs","line":31,"column":1,"function":"Async function 'diagnostics'","complexity":1,"limit":3},
+  {"file":"scripts/android-game-complexity.test.mjs","line":33,"column":41,"function":"Arrow function","complexity":1,"limit":3},
+  {"file":"scripts/android-game-complexity.test.mjs","line":38,"column":46,"function":"Async arrow function","complexity":1,"limit":3},
+  {"file":"scripts/android-game-complexity.test.mjs","line":44,"column":47,"function":"Async arrow function","complexity":1,"limit":3},
+  {"file":"scripts/android-game-complexity.test.mjs","line":59,"column":63,"function":"Async arrow function","complexity":1,"limit":3},
+  {"file":"scripts/android-game-complexity.test.mjs","line":64,"column":55,"function":"Arrow function","complexity":2,"limit":3},
+  {"file":"scripts/android-game-complexity.test.mjs","line":86,"column":32,"function":"Arrow function","complexity":1,"limit":3}
 ]
