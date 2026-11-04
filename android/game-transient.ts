@@ -49,17 +49,18 @@ async function captureTransient(device: AndroidDevice, name: string, testInfo: T
       if (resource === 'toastText1') expect(frame.before.text).toContain(expectedText);
       else expect(frame.before.text, '预测结果金额必须与回放事件一致').toBe(expectedText);
     }
-    if (requirePanel) expect(frame.panel, '提示面板不能被背景遮罩覆盖').toBeTruthy();
-    const panel = frame.panel;
-    const masks = panel ? backgroundMasks.flatMap(mask => subtractPanel(mask, panel.bounds)) : backgroundMasks;
     const original = Buffer.from(frame.png, 'base64');
-    const current = maskScreenshot(original, masks);
     await testInfo.attach(`${name}-frame-${index}-original`, { body: original, contentType: 'image/png' });
-    await testInfo.attach(`${name}-frame-${index}-masks`, { body: JSON.stringify(masks), contentType: 'application/json' });
+    // 入场时文字可先于面板进入控件树；位置变化中的帧仍保留原图，但不能参与稳定截图。
     if (JSON.stringify(frame.before.bounds) !== JSON.stringify(frame.after.bounds)) {
       reference = undefined;
       continue;
     }
+    if (requirePanel) expect(frame.panel, '提示面板不能被背景遮罩覆盖').toBeTruthy();
+    const panel = frame.panel;
+    const masks = panel ? backgroundMasks.flatMap(mask => subtractPanel(mask, panel.bounds)) : backgroundMasks;
+    const current = maskScreenshot(original, masks);
+    await testInfo.attach(`${name}-frame-${index}-masks`, { body: JSON.stringify(masks), contentType: 'application/json' });
     if (!reference || !samePixels(current, reference)) {
       reference = current;
       stableSince = frame.capturedAt;
