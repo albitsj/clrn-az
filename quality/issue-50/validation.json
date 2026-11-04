@@ -1,0 +1,243 @@
+{
+  "issue": 50,
+  "baselineRevision": "7f4343fb4297a1391a038ca4a0fde6394802268e",
+  "nodeVersion": "v24.14.0",
+  "metric": "ESLint classic complexity (defaults, optional chains, short-circuit expressions and nested functions counted independently)",
+  "finalChecks": [
+    {
+      "command": "npm run lint",
+      "exitCode": 0,
+      "details": "ESLint、Ruff、ShellCheck、actionlint、400 行、依赖环及重复门禁全部通过；无新增豁免。"
+    },
+    {
+      "command": "npm run typecheck",
+      "exitCode": 0
+    },
+    {
+      "command": "npm run test:android:collect",
+      "exitCode": 0,
+      "details": "仅用例收集，不代表设备运行。"
+    },
+    {
+      "command": "node --import tsx --test <sourceFiles() 中全部 *.test.*，不重复 android/recorded-transitions.test.mjs>",
+      "files": 35,
+      "tests": 260,
+      "passed": 260,
+      "failed": 0,
+      "skipped": 0,
+      "exitCode": 0
+    },
+    {
+      "command": "npm run check（首次完整检查中的 android/recorded-transitions.test.mjs）",
+      "tests": 81,
+      "passed": 81,
+      "failed": 0,
+      "details": "原始录屏夹具离线重放；测试文件及其 animation-transition/video-frames/screenshot 比较实现未改，最终复测不重复这 81 项。"
+    },
+    {
+      "command": "node scripts/android-game-complexity.mjs --report",
+      "exitCode": 0,
+      "androidFunctions": 559,
+      "overLimit": 0
+    },
+    {
+      "command": "git diff --check",
+      "exitCode": 0
+    }
+  ],
+  "thresholdProbes": {
+    "tests": "3 通过、4 失败",
+    "tools": "6 通过、7 失败",
+    "nestedCallbacks": true,
+    "constructorsAndAccessors": true,
+    "testSupportWithoutTestSuffix": true,
+    "inlineDisableBlocked": true,
+    "defaultParametersOptionalChainsAndShortCircuitCounted": true,
+    "missingESLintDependencyExitCode": 1,
+    "parseFailureExitCode": 1,
+    "parseFailureInReportModeExitCode": 1,
+    "actualNpmLintJsEntryBlocksProbe": true,
+    "details": "临时静态负例完成后删除；只解析探针，不执行探针代码。"
+  },
+  "legacyEntriesRemoved": [
+    {
+      "file": "android/game-capture.ts",
+      "line": 35,
+      "rule": "complexity"
+    },
+    {
+      "file": "android/game-controls.ts",
+      "line": 52,
+      "rule": "complexity"
+    },
+    {
+      "file": "android/game-controls.ts",
+      "line": 73,
+      "rule": "max-depth"
+    },
+    {
+      "file": "android/game-masks.ts",
+      "line": 17,
+      "rule": "complexity"
+    },
+    {
+      "file": "android/game-pregame.ts",
+      "line": 89,
+      "rule": "complexity"
+    },
+    {
+      "file": "android/game-pregame.ts",
+      "line": 258,
+      "rule": "max-depth"
+    },
+    {
+      "file": "android/game-transient.ts",
+      "line": 22,
+      "rule": "complexity"
+    },
+    {
+      "file": "android/texas-gameplay.ts",
+      "line": 30,
+      "rule": "complexity"
+    },
+    {
+      "file": "android/texas-gameplay.ts",
+      "line": 46,
+      "rule": "complexity"
+    },
+    {
+      "file": "android/texas-gameplay.ts",
+      "line": 69,
+      "rule": "max-depth"
+    },
+    {
+      "file": "android/texas-gameplay.ts",
+      "line": 124,
+      "rule": "max-depth"
+    },
+    {
+      "file": "android/texas-hall.ts",
+      "line": 45,
+      "rule": "max-depth"
+    },
+    {
+      "file": "android/texas-panel-variants.ts",
+      "line": 13,
+      "rule": "complexity"
+    },
+    {
+      "file": "android/zhajinhua-gameplay.ts",
+      "line": 25,
+      "rule": "complexity"
+    }
+  ],
+  "firstCompleteCheck": {
+    "command": "npm run check",
+    "tests": 301,
+    "passed": 300,
+    "failed": 1,
+    "exitCode": 1,
+    "reason": "新 override 最初影响只读历史快照的归档重测。",
+    "resolution": "override 使用当前检出目录作为 basePath；历史快照保留归档的 10 分口径，当前检出及独立门禁严格执行 3/6。该失败项已单独重跑通过，并包含在最终 260 项复测中。",
+    "wholeCommandRerun": false
+  },
+  "representativeDeviceRun": {
+    "status": "not-run",
+    "releaseTag": "android-staging-300001601-b20853dbe65c",
+    "applicationSha": "b20853dbe65c5025d7232b17ea99e9a5d9a1a3ec",
+    "adbDevices": [],
+    "hostArchitecture": "arm64",
+    "availableParityAvdArchitecture": "arm64-v8a",
+    "reason": "SDK 内有 adb，但未连接固定 API 35/x86_64 模拟器；本机 ClrnVisualParity AVD 为 ARM。静态检查、用例收集和原始录屏重放不能替代实时固定构建设备验证。",
+    "remainingScenarios": [
+      "en / texas / signed_in_texas_pre_game_first",
+      "en / texas / signed_in_texas_pre_game_middle",
+      "en / texas / signed_in_texas_game_table",
+      "en / texas / signed_in_texas_game_profiles",
+      "en / texas / signed_in_texas_panel_variants",
+      "en / zhajinhua / signed_in_zhajinhua_pre_game_first",
+      "en / zhajinhua / signed_in_zhajinhua_game_table",
+      "en / zhajinhua / signed_in_zhajinhua_game_effects"
+    ]
+  },
+  "reports": {
+    "before": "complexity-before.json",
+    "after": "complexity-after.json",
+    "sourceHashesAndHighValueChanges": "measurement.json"
+  },
+  "prFixValidation": {
+    "finding": "[P2][本PR负责] 复杂度负例在共享工作树创建、改写和删除探针，与默认并发全仓 ESLint 扫描竞争。",
+    "isolation": "真实生产配置、package.json 和脚本复制到系统临时项目，依赖通过符号链接复用；全部探针只写入临时目录，由测试清理钩子回收。",
+    "assertions": "干净项目通过；复杂度 4 超过 3 时独立脚本及真实 npm lint:js 入口失败；普通/报告模式解析失败及依赖缺失仍非零退出。原有 3/4、6/7、嵌套、访问器、构造函数、默认值、可选链、短路及禁用注释探针保留。",
+    "checks": [
+      {
+        "command": "node --test scripts/android-game-complexity.test.mjs",
+        "tests": 14,
+        "passed": 14,
+        "failed": 0,
+        "exitCode": 0
+      },
+      {
+        "command": "npm run lint",
+        "exitCode": 0
+      },
+      {
+        "command": "npm run typecheck",
+        "exitCode": 0
+      },
+      {
+        "command": "npm run test:android:collect",
+        "exitCode": 0
+      },
+      {
+        "command": "ANDROID_LOCALE=<en|zh-Hans|zh-Hant> node_modules/.bin/playwright test --config android/playwright.config.ts --list",
+        "collectedTests": {
+          "en": 107,
+          "zh-Hans": 100,
+          "zh-Hant": 100
+        },
+        "exitCode": 0
+      },
+      {
+        "command": "npm test",
+        "defaultFileConcurrency": true,
+        "testFiles": 36,
+        "runs": [
+          {
+            "tests": 341,
+            "passed": 341,
+            "failed": 0,
+            "skipped": 0,
+            "exitCode": 0
+          },
+          {
+            "tests": 341,
+            "passed": 341,
+            "failed": 0,
+            "skipped": 0,
+            "exitCode": 0
+          }
+        ],
+        "details": "两轮均使用未经串行化的默认入口，包含全部 81 段原始录屏回放；无探针读取 ENOENT。"
+      },
+      {
+        "command": "node scripts/android-game-complexity.mjs --report",
+        "measuredFunctions": 596,
+        "androidFunctions": 559,
+        "overLimit": 0,
+        "exitCode": 0
+      },
+      {
+        "command": "git diff --check",
+        "exitCode": 0
+      }
+    ],
+    "fullDiffReview": "复查完整 diff 的截图几何与遮罩、三语言分支、阶段分派、交互结果、动画采样与时序、错误传播、房间/账号隔离及清理；未发现其他可独立确认的范围内阻断问题。base 逐函数测量与归档及源码哈希匹配，历史清单只删除原有 14 个精确条目，未新增或扩大豁免，未改视觉基准。",
+    "environment": "首次受限沙箱执行因既有代理测试的本地监听权限及 uv 缓存访问权限受阻；允许所需权限后完整 lint 及两轮默认 npm test 均通过，未调整测试范围或并发参数。",
+    "representativeDeviceRun": {
+      "status": "not-run",
+      "adbDevices": [],
+      "reason": "adb devices -l 返回空设备列表；静态检查、用例收集和原始录屏离线重放不能替代固定构建的实时设备验证。"
+    }
+  }
+}

@@ -46,18 +46,7 @@ export async function texasTableVariants(context: TexasContext): Promise<void> {
   }, { timeout: 30_000 }).toEqual(pots.map(String));
   const items = (await gameNodes(device)).filter(node => /^texas_holdem_side_pot_\d+$/.test(node.res || ''));
   expect(items).toHaveLength(pots.length);
-  for (const [index, item] of items.entries()) {
-    const bounds = item.bounds;
-    expect(bounds.x).toBeGreaterThanOrEqual(container.x);
-    expect(bounds.y).toBeGreaterThanOrEqual(container.y);
-    expect(bounds.x + bounds.width).toBeLessThanOrEqual(container.x + container.width);
-    expect(bounds.y + bounds.height).toBeLessThanOrEqual(container.y + container.height);
-    if (index % 2 === 1) {
-      expect(bounds.y).toBe(items[index - 1].bounds.y);
-      expect(bounds.x).toBeGreaterThanOrEqual(items[index - 1].bounds.x + items[index - 1].bounds.width);
-    }
-    if (index >= 2) expect(bounds.y).toBeGreaterThanOrEqual(items[index - 2].bounds.y + items[index - 2].bounds.height);
-  }
+  assertSidePotLayout(items, container);
   await capture('full_table_multiple_pots');
   await texasEvents(context, 'stand-up-extra');
   await clearHand();
@@ -75,4 +64,31 @@ export async function texasTableVariants(context: TexasContext): Promise<void> {
   await gameGone(device, 'drawer-menu-item-renew');
   await gameReady(device, 'drawer-menu-item-exit');
   await capture('guest_menu');
+}
+
+/** 每个边池仍逐项检查容器边界、两列排列及行间顺序。
+ * @param items - 实际可见的边池节点。
+ * @param container - 真实边池容器边界。
+ */
+function assertSidePotLayout(items: import('./game-controls').NativeNode[], container: import('./screenshot').ScreenshotBounds): void {
+  for (const [index, item] of items.entries()) {
+    const bounds = item.bounds;
+    expect(bounds.x).toBeGreaterThanOrEqual(container.x);
+    expect(bounds.y).toBeGreaterThanOrEqual(container.y);
+    expect(bounds.x + bounds.width).toBeLessThanOrEqual(container.x + container.width);
+    expect(bounds.y + bounds.height).toBeLessThanOrEqual(container.y + container.height);
+    if (index % 2 === 1) {
+      expect(bounds.y).toBe(items[index - 1].bounds.y);
+      expect(bounds.x).toBeGreaterThanOrEqual(items[index - 1].bounds.x + items[index - 1].bounds.width);
+    }
+    assertSidePotRow(items, index);
+  }
+}
+
+/** 第二行起，每个边池都须位于上一行底部之后。
+ * @param items - 实际边池。
+ * @param index - 当前边池下标。
+ */
+function assertSidePotRow(items: import('./game-controls').NativeNode[], index: number): void {
+  if (index >= 2) expect(items[index].bounds.y).toBeGreaterThanOrEqual(items[index - 2].bounds.y + items[index - 2].bounds.height);
 }

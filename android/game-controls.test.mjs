@@ -63,3 +63,31 @@ test('无响应的原生驱动在查询超时后失败，留出用例清理时�
   context.mock.timers.tick(30_000);
   await rejected;
 });
+
+test('遍历中的两类瞬时异常重读完整树，保持原有五次读取上限', async () => {
+  const root = { bounds: { x: 0, y: 0, width: 720, height: 1280 }, children: [] };
+  let calls = 0;
+  const device = { _connection: { /** 返回同一原生连接。 */ toImpl: () => ({
+    /** 前两次模拟真实转场移除节点，第三次返回完整树。 */
+    _send: async () => {
+      calls++;
+      if (calls < 3) throw new Error('StaleObjectException');
+      return root;
+    },
+  }) } };
+  assert.deepEqual(await gameNodes(device), [root]);
+  assert.equal(calls, 3);
+  let failures = 0;
+  const failure = new Error('NullPointerException');
+  await assert.rejects(gameNodes({ _connection: { /** 返回持续失败的原生连接。 */ toImpl: () => ({
+    /** 每次都传播相同的遍历异常。 */ _send: async () => { failures++; throw failure; },
+  }) } }), failure);
+  assert.equal(failures, 5);
+});
+
+test('命中第一个语义标记后立即停止，不读取后续兄弟子树', () => {
+  const bounds = { x: 0, y: 0, width: 10, height: 10 };
+  const unused = { bounds, /** 命中后不能继续访问此树。 */ get children() { throw new Error('unexpected traversal'); } };
+  const root = { bounds, children: [{ res: 'target', text: '', bounds }, unused] };
+  assert.equal(gameSemanticText(root, 'target'), '');
+});

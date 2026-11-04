@@ -10,7 +10,7 @@
     "test": "node scripts/test-local.mjs",
     "test:android:collect": "playwright test --config android/playwright.config.ts --list > /dev/null",
     "check": "npm run lint && npm run typecheck && npm run test:android:collect && npm test",
-    "lint:js": "node scripts/lint-ratchet.mjs eslint",
+    "lint:js": "npm run lint:android-games && node scripts/lint-ratchet.mjs eslint",
     "lint:python": "npm run lint:python:lines && node scripts/lint-ratchet.mjs ruff",
     "lint:python:lines": "node scripts/lint-python-lines.mjs",
     "lint:shell": "node scripts/lint-shell.mjs",
@@ -18,7 +18,8 @@
     "lint:lines": "node lint-lines.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint:architecture": "node scripts/lint-ratchet.mjs dependency-cruiser",
-    "lint:duplicates": "node scripts/lint-duplicates.mjs"
+    "lint:duplicates": "node scripts/lint-duplicates.mjs",
+    "lint:android-games": "node scripts/android-game-complexity.mjs"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

@@ -1,19 +1,26 @@
 import { expect } from '@playwright/test';
+import { setTimeout } from 'node:timers/promises';
 import type { AndroidDevice } from 'playwright';
 import { adb } from './device';
 import type { ScreenshotBounds } from './screenshot';
-import { setTimeout } from 'node:timers/promises';
 
-export type NativeNode = { res?: string; text?: string; enabled?: boolean; checked?: boolean;
-  bounds: ScreenshotBounds; children?: NativeNode[] };
+export type NativeNode = {
+  res?: string; text?: string; enabled?: boolean; checked?: boolean;
+  bounds: ScreenshotBounds; children?: NativeNode[]
+};
 
 /**
  * 直接由 UiAutomation 截取真实屏幕，避免每帧启动 screencap 进程错过短时提示。
  * @param device - 使用固定补丁驱动的模拟器连接。
  */
 export async function gameScreenshot(device: AndroidDevice): Promise<Buffer> {
-  const implementation = (device as unknown as { _connection: { toImpl(device: AndroidDevice): {
-    _send(method: string): Promise<string> } } })._connection.toImpl(device);
+  const implementation = (device as unknown as {
+    _connection: {
+      toImpl(device: AndroidDevice): {
+        _send(method: string): Promise<string>
+      }
+    }
+  })._connection.toImpl(device);
   const timeout = new AbortController();
   try {
     const encoded = await Promise.race([
@@ -32,8 +39,13 @@ export async function gameScreenshot(device: AndroidDevice): Promise<Buffer> {
  * @param resource - 提示控件标记。
  */
 export async function gameMarker(device: AndroidDevice, resource: string): Promise<NativeNode | null> {
-  const implementation = (device as unknown as { _connection: { toImpl(device: AndroidDevice): {
-    _send(method: string, parameters: { resource: string }): Promise<NativeNode | null> } } })._connection.toImpl(device);
+  const implementation = (device as unknown as {
+    _connection: {
+      toImpl(device: AndroidDevice): {
+        _send(method: string, parameters: { resource: string }): Promise<NativeNode | null>
+      }
+    }
+  })._connection.toImpl(device);
   const timeout = new AbortController();
   try {
     const node = await Promise.race([
@@ -50,38 +62,12 @@ export async function gameMarker(device: AndroidDevice, resource: string): Promi
  * @param device - 本机进程内创建的原生驱动连接。
  */
 export async function gameNodes(device: AndroidDevice): Promise<NativeNode[]> {
-  const internal = device as unknown as { _connection: { toImpl(device: AndroidDevice): {
-    _send(method: string): Promise<NativeNode> } } };
-  let connectionRetries = 0;
-  for (let attempt = 0; ; attempt++) {
+  const state = { connectionRetries: 0 };
+  for (let attempt = 0;; attempt++) {
     const timeout = new AbortController();
     try {
-      // 内部协议不受 device.setDefaultTimeout 约束；断连时不能一直等到整例超时。
-      const root = await Promise.race([
-        internal._connection.toImpl(device)._send('tree'),
-        setTimeout(30_000, undefined, { signal: timeout.signal }).then(() => {
-          throw new Error('原生控件树查询超过 30 秒，驱动未响应。');
-        }),
-      ]);
-      if (!root?.bounds || !Array.isArray(root.children)) throw new Error('原生驱动没有返回完整控件树。');
-      const nodes = flattenNodes(root);
-      // Staging 的原生网络超时对话框会盖住整棵牌桌控件树；只对该明确文案执行真实重试。
-      const timeoutAlert = nodes.some(node => node.res?.endsWith(':id/alert_title')
-        && node.text === 'Connection Timeout');
-      const retry = nodes.find(node => node.res === 'android:id/button1' && node.text === 'RETRY');
-      if (timeoutAlert && retry) {
-        if (++connectionRetries > 3) throw new Error('Staging 连接超时，对话框重试三次后仍未恢复。');
-        console.log(`ANDROID > Staging 连接超时，点击原生 RETRY（${connectionRetries}/3）`);
-        const { x, y, width, height } = retry.bounds;
-        adb('shell', 'input', 'tap', String(Math.round(x + width / 2)), String(Math.round(y + height / 2)));
-        await setTimeout(1_000);
-        continue;
-      }
-      return nodes;
-    } catch (error) {
-      // 转场会在驱动遍历过程中移除子节点；重读整棵树，不返回残缺或伪造的空结果。
-      if (attempt >= 4 || !/NullPointerException|StaleObjectException/.test(String(error))) throw error;
-      await setTimeout(250);
+      const nodes = await readTreeAttempt(device, timeout, attempt, state);
+      if (nodes) return nodes;
     } finally { timeout.abort(); }
   }
 }
@@ -92,9 +78,7 @@ export async function gameNodes(device: AndroidDevice): Promise<NativeNode[]> {
  */
 export function flattenNodes(root: NativeNode): NativeNode[] {
   return [root, ...(root.children || []).flatMap(flattenNodes)]
-    .filter(node => node.bounds.width > 0 && node.bounds.height > 0
-      && node.bounds.x < 720 && node.bounds.y < 1280
-      && node.bounds.x + node.bounds.width > 0 && node.bounds.y + node.bounds.height > 0);
+    .filter(node => visibleBounds(node.bounds));
 }
 
 /**
@@ -105,11 +89,7 @@ export function flattenNodes(root: NativeNode): NativeNode[] {
 export function gameSemanticText(root: NativeNode | undefined, marker: string): string | undefined {
   if (!root) return undefined;
   if (root.res === marker) return root.text;
-  for (const child of root.children || []) {
-    const value = gameSemanticText(child, marker);
-    if (value !== undefined) return value;
-  }
-  return undefined;
+  return childSemanticText(root.children, marker);
 }
 
 /**
@@ -120,9 +100,8 @@ export function gameSemanticText(root: NativeNode | undefined, marker: string): 
 export function gameNodesWithin(nodes: NativeNode[], marker: string): NativeNode[] {
   const container = nodes.find(node => node.res === marker)?.bounds;
   if (!container) return [];
-  return nodes.filter(node => node.bounds.x >= container.x && node.bounds.y >= container.y
-    && node.bounds.x + node.bounds.width <= container.x + container.width
-    && node.bounds.y + node.bounds.height <= container.y + container.height);
+  return nodes.filter(({ bounds }) => withinAxis(bounds.x, bounds.width, container.x, container.width)
+    && withinAxis(bounds.y, bounds.height, container.y, container.height));
 }
 
 /**
@@ -163,14 +142,14 @@ export async function gameGone(device: AndroidDevice, res: string): Promise<void
  * @param device - 专用模拟器连接。
  * @param stableMs - 指定入口需要额外连续无重连遮罩的时间。
  */
-export async function gameConnected(device: AndroidDevice, stableMs = 0): Promise<void> {
+export async function gameConnected(device: AndroidDevice, stableMs?: number): Promise<void> {
+  stableMs = stableDuration(stableMs);
   const initial = await gameNodes(device);
-  if (!stableMs && !initial.some(node => /Connecting\.\.\./.test(node.text || ''))) return;
+  if (!stableMs && !nodesConnecting(initial)) return;
   let availableSince = 0;
   await expect.poll(async () => {
-    const connecting = (await gameNodes(device)).some(node => /Connecting\.\.\./.test(node.text || ''));
-    if (connecting) availableSince = 0;
-    else if (!availableSince) availableSince = Date.now();
+    const connecting = nodesConnecting(await gameNodes(device));
+    availableSince = connectionStart(connecting, availableSince);
     return !connecting && Date.now() - availableSince >= Math.max(1_000, stableMs);
   }, { timeout: 120_000, intervals: [250] }).toBe(true);
 }
@@ -197,4 +176,156 @@ export async function gameTap(device: AndroidDevice, res: string, nativeInput = 
   const point = { x: Math.round(x + width / 2), y: Math.round(y + height / 2) };
   if (nativeInput) await device.input.tap(point);
   else adb('shell', 'input', 'tap', String(point.x), String(point.y));
+}
+
+/** 检查原生边界的面积和屏幕交集。
+ * @param bounds - 当前节点边界。
+ */
+function visibleBounds(bounds: ScreenshotBounds): boolean {
+  return [bounds.width > 0, bounds.height > 0, bounds.x < 720, bounds.y < 1280,
+  bounds.x + bounds.width > 0, bounds.y + bounds.height > 0].every(Boolean);
+}
+
+/** 检查一个方向是否完全包含在容器内。
+ * @param start - 节点起点。
+ * @param size - 节点长度。
+ * @param outerStart - 容器起点。
+ * @param outerSize - 容器长度。
+ */
+function withinAxis(start: number, size: number, outerStart: number, outerSize: number): boolean {
+  return start >= outerStart && start + size <= outerStart + outerSize;
+}
+
+/** 遍历语义子树并保留第一个已定义的文字（包括空文字）。
+ * @param children - 原生子节点。
+ * @param marker - 目标语义标记。
+ */
+function childSemanticText(children: NativeNode[] | undefined, marker: string): string | undefined {
+  if (!children) return undefined;
+  return firstSemanticText(children, marker);
+}
+
+/** 保持深度优先且命中即停止，不读取后续子树。
+ * @param children - 已确认存在的子节点。
+ * @param marker - 语义标记。
+ */
+function firstSemanticText(children: NativeNode[], marker: string): string | undefined {
+  for (const child of children) {
+    const value = gameSemanticText(child, marker);
+    if (value !== undefined) return value;
+  }
+  return undefined;
+}
+
+/** 识别原生房间重连提示。
+ * @param nodes - 当前可见树。
+ */
+export function nodesConnecting(nodes: NativeNode[]): boolean {
+  return nodes.some(node => /Connecting\.\.\./.test(node.text || ''));
+}
+
+/** 更新连续无重连提示的起始时间。
+ * @param connecting - 是否正在重连。
+ * @param previous - 上次起始时间。
+ */
+function connectionStart(connecting: boolean, previous: number): number {
+  if (connecting) return 0;
+  return previous || Date.now();
+}
+
+/** 读取完整原生树，拒绝协议错误和超时。
+ * @param device - 原生设备。
+ * @param timeout - 当前读取的超时控制器。
+ */
+async function readGameTree(device: AndroidDevice, timeout: AbortController): Promise<NativeNode[]> {
+  const internal = device as unknown as {
+    _connection: {
+      toImpl(device: AndroidDevice): {
+        _send(method: string): Promise<NativeNode>
+      }
+    }
+  };
+  // 内部协议不受 device.setDefaultTimeout 约束；断连时不能一直等到整例超时。
+  const root = await Promise.race([
+    internal._connection.toImpl(device)._send('tree'),
+    setTimeout(30_000, undefined, { signal: timeout.signal }).then(() => {
+      throw new Error('原生控件树查询超过 30 秒，驱动未响应。');
+    }),
+  ]);
+  if (!completeTree(root)) throw new Error('原生驱动没有返回完整控件树。');
+  return flattenNodes(root);
+}
+
+/** 只匹配明确的 Staging 超时对话框和 RETRY 按钮。
+ * @param nodes - 当前可见树。
+ */
+function connectionRetry(nodes: NativeNode[]): NativeNode | undefined {
+  const timeoutAlert = nodes.some(node => node.res?.endsWith(':id/alert_title')
+    && node.text === 'Connection Timeout');
+  if (!timeoutAlert) return undefined;
+  return nodes.find(node => node.res === 'android:id/button1' && node.text === 'RETRY');
+}
+
+/** 通过真实按钮恢复连接，保留三次上限。
+ * @param retry - 当前原生 RETRY 按钮。
+ * @param attempt - 已执行的重连次数。
+ */
+async function retryConnection(retry: NativeNode, attempt: number): Promise<void> {
+  if (attempt > 3) throw new Error('Staging 连接超时，对话框重试三次后仍未恢复。');
+  console.log(`ANDROID > Staging 连接超时，点击原生 RETRY（${attempt}/3）`);
+  const { x, y, width, height } = retry.bounds;
+  adb('shell', 'input', 'tap', String(Math.round(x + width / 2)), String(Math.round(y + height / 2)));
+  await setTimeout(1_000);
+}
+
+/** 完整树协议必须同时包含边界和子节点数组。
+ * @param root - 驱动返回值。
+ */
+function completeTree(root: NativeNode): boolean {
+  return Boolean(root?.bounds) && Array.isArray(root.children);
+}
+
+/** 未指定稳定窗口时保留原有零值。
+ * @param duration - 调用方窗口。
+ */
+function stableDuration(duration = 0): number { return duration; }
+
+/** 仅转场移除节点的两类驱动错误允许重读。
+ * @param device - 原生设备。
+ * @param timeout - 当前查询的超时控制器。
+ * @param attempt - 当前树读取序号。
+ * @param state - 真实连接重试计数。
+ */
+async function readTreeAttempt(device: AndroidDevice, timeout: AbortController, attempt: number,
+  state: { connectionRetries: number }): Promise<NativeNode[] | undefined> {
+  try {
+    const nodes = await readGameTree(device, timeout);
+    if (await retryTreeConnection(nodes, device, state)) return undefined;
+    return nodes;
+  }
+  catch (error) {
+    assertTreeRetry(attempt, error);
+    await setTimeout(250);
+    return undefined;
+  }
+}
+
+/** 保留原有五次读取及明确异常条件。
+ * @param attempt - 当前树读取序号。
+ * @param error - 原始驱动错误。
+ */
+function assertTreeRetry(attempt: number, error: unknown): void {
+  if (attempt >= 4 || !/NullPointerException|StaleObjectException/.test(String(error))) throw error;
+}
+
+/** 只对明确的原生超时对话框点击 RETRY，跨遍历异常保留同一重试计数。
+ * @param nodes - 本次完整树。
+ * @param device - 原生设备。
+ * @param state - 当前真实连接重试计数。
+ */
+async function retryTreeConnection(nodes: NativeNode[], device: AndroidDevice, state: { connectionRetries: number }): Promise<boolean> {
+  const retry = connectionRetry(nodes);
+  if (!retry) return false;
+  await retryConnection(retry, ++state.connectionRetries);
+  return true;
 }
