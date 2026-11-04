@@ -1,0 +1,145 @@
+name: Android visual shard
+description: Execute an isolated Android shard using the current run APK and driver
+inputs:
+  accounts:
+    description: Android isolated account pool secret
+    required: true
+  testing-token:
+    description: Testing API token
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: 开始 Android 初始化诊断
+      env:
+        CLRN_CI_TEST_ACCOUNTS: ${{ inputs.accounts }}
+        TESTING_API_TOKEN: ${{ inputs.testing-token }}
+      shell: bash
+      run: python3 android/ci_diagnostics.py start
+    - uses: actions/setup-node@v4
+      with:
+        node-version: '24'
+        cache: npm
+    - name: 准备 Android 独占账号及金币余额
+      env:
+        CLRN_CI_ACCOUNT: ${{ env.CLRN_CI_ACCOUNT }}
+        CLRN_CI_TEST_ACCOUNTS: ${{ inputs.accounts }}
+        TESTING_API_TOKEN: ${{ inputs.testing-token }}
+      shell: bash
+      run: node scripts/configure-ci-account.mjs
+    - shell: bash
+      run: npm ci
+    - name: 准备短转场录屏解码器
+      if: env.ANDROID_GROUP == 'guest' || env.ANDROID_GROUP == 'account' || env.ANDROID_GROUP == 'social' || env.ANDROID_GROUP == 'rooms' || env.ANDROID_GROUP == 'texas' || env.ANDROID_GROUP == 'zhajinhua'
+      shell: bash
+      run: |
+        binary="$GITHUB_WORKSPACE/node_modules/@ffmpeg-installer/linux-x64/ffmpeg"
+        test -x "$binary"
+        "$binary" -version
+        echo "$GITHUB_WORKSPACE/node_modules/@ffmpeg-installer/linux-x64" >> "$GITHUB_PATH"
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+    - name: 安装共用网络代理
+      shell: bash
+      run: |
+        python -m unittest discover -s android -p 'test_*.py'
+        python -m venv e2e/.venv
+        e2e/.venv/bin/python -m pip install -r e2e/mitmproxy/requirements.txt
+    - name: 下载本轮已校验的固定 APK
+      uses: actions/download-artifact@v4
+      with:
+        name: android-visual-apk
+        path: android/artifacts/current
+    - name: 校验 APK 身份与摘要
+      shell: bash
+      run: node --input-type=module -e "import { readVerifiedBuild } from './android/release.mjs'; await readVerifiedBuild('android/artifacts/current')"
+    - name: 安装原生控件测试驱动
+      shell: bash
+      run: npx playwright install android
+    - uses: actions/setup-java@v4
+      with:
+        distribution: temurin
+        java-version: '17'
+    - name: 下载固定原生驱动
+      if: env.ANDROID_GROUP == 'texas' || env.ANDROID_GROUP == 'zhajinhua' || env.ANDROID_GROUP == 'guest' || env.ANDROID_GROUP == 'social' || env.ANDROID_GROUP == 'rooms' || env.ANDROID_GROUP == 'account'
+      uses: actions/download-artifact@v4
+      with:
+        name: android-visual-driver
+        path: .ttyctl/android-driver
+    - name: 校验固定原生驱动产物
+      if: env.ANDROID_GROUP == 'texas' || env.ANDROID_GROUP == 'zhajinhua' || env.ANDROID_GROUP == 'guest' || env.ANDROID_GROUP == 'social' || env.ANDROID_GROUP == 'rooms' || env.ANDROID_GROUP == 'account'
+      shell: bash
+      run: |
+        test -s .ttyctl/android-driver/android-driver-target.apk
+        test -s .ttyctl/android-driver/android-driver.apk
+        node -e 'const source = require("./.ttyctl/android-driver/source.json"); if (source.revision !== "39e3553a4f283a41134d75d7e404484bd9e6865a" || source.patch !== 6) process.exit(1)'
+    - name: 准备固定 Android 系统镜像
+      shell: bash
+      run: |
+        sdk_manager="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+        (yes || true) | "$sdk_manager" --licenses > /dev/null
+        for attempt in 1 2 3; do
+          if "$sdk_manager" --install 'system-images;android-35;google_apis;x86_64' &&
+            test -f "$ANDROID_HOME/system-images/android-35/google_apis/x86_64/system.img"; then
+            break
+          fi
+          if [ "$attempt" = 3 ]; then exit 1; fi
+          sleep 5
+        done
+    - name: 启用模拟器硬件加速
+      shell: bash
+      run: |
+        echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+        sudo udevadm control --reload-rules
+        sudo udevadm trigger --name-match=kvm
+    - name: 原生页面截图回归
+      uses: reactivecircus/android-emulator-runner@v2
+      env:
+        ANDROID_VISUAL_MODE: ${{ env.ANDROID_VISUAL_MODE }}
+        TESTING_API_TOKEN: ${{ inputs.testing-token }}
+      with:
+        api-level: 35
+        target: google_apis
+        arch: x86_64
+        ram-size: 4096M
+        heap-size: 256M
+        disk-size: 4096M
+        disable-animations: true
+        disable-spellchecker: true
+        pre-emulator-launch-script: python3 android/ci_diagnostics.py install-emulator-wrapper
+        emulator-options: -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader_indirect -camera-back none -camera-front none -skin 720x1280
+        script: python3 android/ci_diagnostics.py run -- node android/run-visual.mjs
+    - name: 完成 Android 清理诊断
+      if: always()
+      env:
+        CLRN_CI_TEST_ACCOUNTS: ${{ inputs.accounts }}
+        TESTING_API_TOKEN: ${{ inputs.testing-token }}
+      shell: bash
+      run: python3 android/ci_diagnostics.py stop
+    - name: 保存脱敏 Android 诊断
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: android-diagnostics-${{ env.ANDROID_GROUP }}-${{ env.ANDROID_LOCALE }}-${{ env.ANDROID_DIAGNOSTICS_SHARD }}-${{ github.run_id }}-${{ github.run_attempt }}
+        path: android/artifacts/diagnostics/
+        if-no-files-found: error
+        retention-days: 7
+    - name: 保存报告、失败截图和构建身份
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: android-staging-visual-${{ env.ANDROID_GROUP }}-${{ env.ANDROID_LOCALE }}-${{ env.ANDROID_DIAGNOSTICS_SHARD }}-${{ github.run_id }}-${{ github.run_attempt }}
+        retention-days: 14
+        path: |
+          android/playwright-report/
+          android/test-results/
+          android/artifacts/current/build-info.json
+          android/artifacts/current/release.json
+    - name: 保存待审查基准
+      if: always() && env.ANDROID_VISUAL_MODE == 'reference'
+      uses: actions/upload-artifact@v4
+      with:
+        name: android-staging-reference-${{ env.ANDROID_GROUP }}-${{ env.ANDROID_LOCALE }}-${{ env.ANDROID_DIAGNOSTICS_SHARD }}-${{ github.run_id }}-${{ github.run_attempt }}
+        path: android/snapshots/
+        retention-days: 14
