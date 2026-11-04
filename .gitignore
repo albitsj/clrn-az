@@ -1,2 +1,23 @@
 # ttyctl local runtime data (agent-writable)
 .ttyctl/
+
+# 仓库检查依赖和缓存
+node_modules/
+.venv/
+.ruff_cache/
+__pycache__/
+.pnpm-store/
+
+e2e/test-results/
+e2e/playwright-report/
+e2e/blob-report/
+e2e/playwright/.auth/
+app/
+visual/auth-state.json
+visual/test-results/
+visual/playwright-report/
+visual/.visual-reference.lock/
+android/artifacts/
+android/test-results/
+android/playwright-report/
+android/snapshots/local/

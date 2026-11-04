@@ -1,0 +1,14 @@
+{
+  "revision": "4cc323f746c4b15f97848dd7791590196b101ad8",
+  "source": "https://github.com/albitsj/clrn-az/commit/4cc323f746c4b15f97848dd7791590196b101ad8",
+  "method": "从该固定提交只读归档源码，使用当前锁定工具与规则独立扫描；不是合并后工作区测量，也不是自动测试通过证明。",
+  "node": "v24.14.0",
+  "ruff": "0.15.12",
+  "policyHashes": {
+    "eslint.config.mjs": "b5dedd4ed212b4c9f707dbee60393cdd63873c63736d7808c952ccb996e6247c",
+    "ruff.toml": "900ac49d028a60881c2d27270ccc0fc03dabd4652d52c687747e022d7d8b2451",
+    ".dependency-cruiser.cjs": "d40daff27b7bc8bb5e03efd044b7ed69f5c319cb421cdf2914607e693055a554",
+    ".jscpd.json": "29ed876f4cdf95144c8a9264357166071add9be3269141927ada5c9209c8ba46",
+    "package-lock.json": "a42e103b2e985e6f5ad0cae649653f713c0ae0d033d77c4343b1ed98e40c228b"
+  }
+}

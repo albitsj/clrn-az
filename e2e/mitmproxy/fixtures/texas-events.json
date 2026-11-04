@@ -1,0 +1,376 @@
+{
+  "all-in": {
+    "stream": "texas_holdem",
+    "queue": [
+      {
+        "event": "all_in",
+        "player_id": "00000000-0000-4000-8000-000000000001",
+        "amount": 960,
+        "stack": 0
+      },
+      {
+        "event": "all_in_show_hole_card",
+        "players": [
+          {
+            "player_id": "00000000-0000-4000-8000-000000000001",
+            "hole_card": [
+              "kh",
+              "ks"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "showdown": {
+    "stream": "texas_holdem",
+    "queue": [
+      {
+        "event": "showdown",
+        "players": [
+          {
+            "player_id": "$self",
+            "hole_card": [
+              "as",
+              "ad"
+            ],
+            "best_cards": [
+              "as",
+              "ad",
+              "ah",
+              "kd",
+              "qs"
+            ],
+            "hand_strength": "three_of_a_kind",
+            "strength_cards": [
+              "as",
+              "ad",
+              "ah"
+            ],
+            "is_max_strength": true
+          },
+          {
+            "player_id": "00000000-0000-4000-8000-000000000001",
+            "hole_card": [
+              "kh",
+              "ks"
+            ],
+            "best_cards": [
+              "kh",
+              "ks",
+              "kd",
+              "ah",
+              "qs"
+            ],
+            "hand_strength": "three_of_a_kind",
+            "strength_cards": [
+              "kh",
+              "ks",
+              "kd"
+            ],
+            "is_max_strength": false
+          }
+        ]
+      }
+    ]
+  },
+  "settlement": {
+    "stream": "texas_holdem",
+    "queue": [
+      {
+        "event": "settlement",
+        "players": [
+          {
+            "player_id": "$self",
+            "net": 180,
+            "prize": 180,
+            "stack": 1180
+          },
+          {
+            "player_id": "00000000-0000-4000-8000-000000000001",
+            "net": -960,
+            "prize": 0,
+            "stack": 0
+          }
+        ]
+      }
+    ]
+  },
+  "opponent-turn": {
+    "stream": "texas_holdem",
+    "queue": [
+      {
+        "event": "switch_player",
+        "player_id": "00000000-0000-4000-8000-000000000001",
+        "valid_bets": {
+          "call": {
+            "amount": 20
+          }
+        }
+      }
+    ]
+  },
+  "own-turn": {
+    "stream": "texas_holdem",
+    "queue": [
+      {
+        "event": "switch_player",
+        "player_id": "$self",
+        "valid_bets": {
+          "fold": {},
+          "call": {
+            "amount": 20
+          },
+          "raise": {
+            "minimum": 40,
+            "maximum": 1000
+          },
+          "all_in": {
+            "amount": 1000
+          }
+        }
+      }
+    ]
+  },
+  "action-turn": {
+    "stream": "texas_holdem",
+    "queue": [
+      {
+        "event": "switch_player",
+        "player_id": "00000000-0000-4000-8000-000000000002",
+        "remain_operating_seconds": 12
+      }
+    ]
+  },
+  "player-action": {
+    "stream": "texas_holdem",
+    "queue": [
+      {
+        "event": "$action",
+        "player_id": "00000000-0000-4000-8000-000000000002",
+        "amount": 40,
+        "stack": 920
+      }
+    ]
+  },
+  "sticker": {
+    "stream": "room_message",
+    "payload": {
+      "action": "sticker",
+      "content": {
+        "from_user_id": "$self",
+        "to_user_id": "00000000-0000-4000-8000-000000000002",
+        "file": "$file"
+      }
+    }
+  },
+  "props": {
+    "stream": "room_message",
+    "payload": {
+      "action": "props",
+      "content": {
+        "from_user_id": "$self",
+        "to_user_id": "00000000-0000-4000-8000-000000000002",
+        "file": "$file"
+      }
+    }
+  },
+  "system-prompt": {
+    "stream": "texas_holdem",
+    "queue": [
+      {
+        "event": "check_community_card",
+        "player_id": "00000000-0000-4000-8000-000000000001"
+      }
+    ]
+  },
+  "text": {
+    "stream": "room_message",
+    "payload": {
+      "action": "text",
+      "content": {
+        "from_user_id": "00000000-0000-4000-8000-000000000001",
+        "from_user_nickname": "Player1",
+        "text": "Good hand!"
+      }
+    }
+  },
+  "buy-in-review": {
+    "stream": "buy_in",
+    "payload": {
+      "action": "apply_buy_in",
+      "content": {
+        "application_id": "visual-application",
+        "user_id": "00000000-0000-4000-8000-000000000002",
+        "user_nickname": "Player2",
+        "nickname": "Player2",
+        "amount": 500
+      }
+    }
+  },
+  "new-game": {
+    "stream": "texas_holdem",
+    "queue": [
+      {
+        "event": "new_game",
+        "game_id": "visual-fixed-game",
+        "settings": {
+          "small_blind": 1,
+          "big_blind": 2,
+          "ante": 0
+        }
+      }
+    ]
+  },
+  "hand-end": {
+    "stream": "texas_holdem",
+    "queue": [
+      {
+        "event": "settlement",
+        "players": [
+          {
+            "player_id": "$self",
+            "net": 180,
+            "prize": 180,
+            "stack": 1180
+          }
+        ]
+      }
+    ]
+  },
+  "show-cards": {
+    "stream": "texas_holdem",
+    "queue": [
+      {
+        "event": "publish_hole_card",
+        "player_id": "$self",
+        "public_hole_card": [
+          "as",
+          "ad"
+        ]
+      }
+    ]
+  },
+  "audio": {
+    "stream": "room_message",
+    "payload": {
+      "action": "audio",
+      "content": {
+        "from_user_id": "00000000-0000-4000-8000-000000000001",
+        "from_user_nickname": "Player1",
+        "duration": 3,
+        "codec": "mp3",
+        "content": ""
+      }
+    }
+  },
+  "stand-up-extra": {
+    "stream": "texas_holdem",
+    "queue": [
+      {
+        "event": "stand_up",
+        "player_id": "00000000-0000-4000-8000-000000000005"
+      },
+      {
+        "event": "stand_up",
+        "player_id": "00000000-0000-4000-8000-000000000006"
+      },
+      {
+        "event": "stand_up",
+        "player_id": "00000000-0000-4000-8000-000000000007"
+      },
+      {
+        "event": "stand_up",
+        "player_id": "00000000-0000-4000-8000-000000000008"
+      }
+    ]
+  },
+  "reserve-seat": {
+    "stream": "texas_holdem",
+    "queue": [
+      {
+        "event": "reserve_seat",
+        "seat_number": 6,
+        "player_id": "00000000-0000-4000-8000-000000000005",
+        "remain_reserve_seconds": 120
+      }
+    ]
+  },
+  "disconnect-player": {
+    "stream": "texas_holdem",
+    "queue": [
+      {
+        "event": "cancel_reserve_seat",
+        "seat_number": 6
+      },
+      {
+        "event": "quit",
+        "player_id": "00000000-0000-4000-8000-000000000003"
+      }
+    ]
+  },
+  "personal-statistics": {
+    "stream": "texas_holdem",
+    "queue": [
+      {
+        "event": "player_statistics",
+        "player_id": "$self",
+        "history_buy_in_amount": 1000,
+        "played_game_count": 10,
+        "settlement_net_amount": 180
+      }
+    ]
+  },
+  "prediction-ready": {
+    "stream": "texas_holdem",
+    "queue": [
+      {
+        "event": "settlement",
+        "players": [
+          {
+            "player_id": "00000000-0000-4000-8000-000000000001",
+            "net": 180,
+            "prize": 180,
+            "stack": 1140
+          }
+        ]
+      }
+    ]
+  },
+  "prediction-win": {
+    "stream": "texas_holdem",
+    "queue": [
+      {
+        "event": "settlement_hand_prediction",
+        "result": {
+          "net": 10,
+          "currency_name": "coin"
+        }
+      }
+    ]
+  },
+  "prediction-loss": {
+    "stream": "texas_holdem",
+    "queue": [
+      {
+        "event": "settlement_hand_prediction",
+        "result": {
+          "net": -10,
+          "currency_name": "coin"
+        }
+      }
+    ]
+  },
+  "prediction-diamond": {
+    "stream": "texas_holdem",
+    "queue": [
+      {
+        "event": "settlement_hand_prediction",
+        "result": {
+          "net": 20,
+          "currency_name": "diamond"
+        }
+      }
+    ]
+  }
+}

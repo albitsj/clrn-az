@@ -1,0 +1,76 @@
+name: Repository checks
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.14.0'
+          cache: npm
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: '0.11.32'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12.12'
+      - run: npm install --global npm@11.9.0
+      - run: npm ci
+      - name: 安装固定版本 pre-commit（隔离虚拟环境）
+        run: |
+          uv venv --python 3.12.12 .venv
+          uv pip install --python .venv/bin/python -r requirements-dev.txt
+      - name: 保存初始基线来源与比较身份
+        env:
+          QUALITY_BASE_REV: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/quality-reports"
+          printf '%s\n' "$QUALITY_BASE_REV" > "$RUNNER_TEMP/quality-reports/comparison-base.txt"
+          git show -s --format='%H%n%P' HEAD > "$RUNNER_TEMP/quality-reports/merge-parents.txt"
+          cp -R quality/measurements "$RUNNER_TEMP/quality-reports/initial-measurements"
+      - name: 保存本轮静态测量
+        run: |
+          mkdir -p "$RUNNER_TEMP/quality-reports"
+          git rev-parse HEAD > "$RUNNER_TEMP/quality-reports/repository-sha.txt"
+          npm ls --depth=0 > "$RUNNER_TEMP/quality-reports/npm-versions.txt"
+          uvx --from ruff==0.15.12 ruff --version > "$RUNNER_TEMP/quality-reports/ruff-version.txt"
+          node scripts/lint-ratchet.mjs eslint --report > "$RUNNER_TEMP/quality-reports/eslint.json"
+          node scripts/lint-ratchet.mjs ruff --report > "$RUNNER_TEMP/quality-reports/ruff.json"
+          node scripts/lint-ratchet.mjs dependency-cruiser --report > "$RUNNER_TEMP/quality-reports/dependencies.json"
+          node scripts/lint-duplicates.mjs --report > "$RUNNER_TEMP/quality-reports/legacy-duplicates.json"
+      - name: 本地与 CI 共用提交前静态检查
+        run: .venv/bin/pre-commit run --all-files --show-diff-on-failure
+        env:
+          QUALITY_BASE_REV: ${{ github.event.pull_request.base.sha || github.event.before }}
+      - name: 原生用例收集与完整本机单元测试
+        run: |
+          npm run test:android:collect
+          npm test
+        env:
+          QUALITY_BASE_REV: ${{ github.event.pull_request.base.sha || github.event.before }}
+      - name: Python 代理单元测试
+        run: |
+          python -m unittest discover -s android -p 'test_*.py'
+          python -m pip install -r e2e/mitmproxy/requirements.txt
+          for directory in e2e/mitmproxy visual/cases/club/mitmproxy visual/cases/game-record/mitmproxy visual/cases/texas-holdem/mitmproxy visual/cases/zhajinhua/mitmproxy; do
+            python -m unittest discover -s "$directory" -p 'test_*.py'
+          done
+      - name: 上传静态测量与仓库身份
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: quality-reports-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/quality-reports/
+          if-no-files-found: error
+          retention-days: 14

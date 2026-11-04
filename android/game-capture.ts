@@ -1,0 +1,147 @@
+import type { AndroidDevice } from 'playwright';
+import presentation from '../visual/fixtures/game-presentation.json';
+import type { TestInfo } from '@playwright/test';
+import { compareScreenshot } from './device';
+import { gameConnected, gameNodes, gameReady, gameMarker, gameScreenshot } from './game-controls';
+import { expect } from '@playwright/test';
+import type { ScreenshotBounds, ScreenshotMask } from './screenshot';
+import { foregroundPanels, visibleMasks, networkStatusMask, countdownMask } from './game-masks';
+import { capturePredictionResult, captureToast } from './game-transient';
+import { captureChallengeAnimation } from './game-animation';
+import { verifyLoopAnimation } from './loop-animation';
+import { captureMovingKeyframes } from './loop-keyframes';
+
+/**
+ * 使原生控件边界及绘制余量落到实际截图的整数像素。
+ * @param bounds - 原生控件边界。
+ */
+function pixelBounds(bounds: ScreenshotBounds): ScreenshotBounds {
+  const x = Math.floor(bounds.x), y = Math.floor(bounds.y);
+  return { x, y, width: Math.ceil(bounds.x + bounds.width) - x,
+    height: Math.ceil(bounds.y + bounds.height) - y };
+}
+
+/**
+ * 保留真实牌桌布局，仅遮罩网络延迟、倒计时和循环座位指示箭头等动态区域。
+ * @param device - 专用模拟器连接。
+ * @param name - 共享场景与状态生成的截图名。
+ * @param testInfo - 当前测试报告。
+ * @param transientMarker - 仅用于会自动消失的提示，截图前后都必须实际存在。
+ * @param expectedAlertMarker - 错误分支已断言内容后，允许截图的特定业务弹窗按钮。
+ * @param inputMasks - 已根据真实输入框位移校准的光标区域。
+ * @param triggerTransient - 背景遮罩准备完成后触发短时提示，并返回应出现的文字。
+ * @param reconnectRetry - 同一张截图已在真实重连结束后重新采集一次。
+ */
+export async function captureGame(device: AndroidDevice, name: string, testInfo: TestInfo, transientMarker?: string,
+  expectedAlertMarker?: string, inputMasks: ScreenshotMask[] = [], triggerTransient?: () => Promise<string | void>,
+  reconnectRetry = false): Promise<void> {
+  if (triggerTransient && !['toastText1', 'bet-next-hand-result-amount'].includes(transientMarker || '')) {
+    throw new Error('提前准备遮罩仅用于已核对的短时提示。');
+  }
+  if (!expectedAlertMarker) await gameConnected(device, 1_000);
+  if (expectedAlertMarker) await gameReady(device, expectedAlertMarker);
+  let nodes = await gameNodes(device);
+  if ((!transientMarker || transientMarker === 'level-up-title') && foregroundPanels(nodes).length) {
+    let previous = '';
+    await expect(async () => {
+      nodes = await gameNodes(device);
+      const current = JSON.stringify(foregroundPanels(nodes).map(node => node.bounds));
+      const before = previous;
+      previous = current;
+      expect(current, '前景面板边界须完成转场后再裁剪背景遮罩').toBe(before);
+    }).toPass({ timeout: 30_000, intervals: [300] });
+  }
+  if (expectedAlertMarker) expect(nodes.some(node => node.res === expectedAlertMarker), '目标业务提示必须可见').toBe(true);
+  expect(nodes.some(node => node.res === 'android:id/message' || (!expectedAlertMarker && node.res === 'common-alert-message')),
+    '截图前不能存在意外错误提示').toBe(false);
+  const masks: ScreenshotMask[] = [...inputMasks];
+  const panels = foregroundPanels(nodes);
+  await testInfo.attach(`${name}-native-tree`, { body: JSON.stringify(nodes[0]), contentType: 'application/json' });
+  for (const node of nodes) {
+    /**
+     * 只排除仍可见的动态内容，保留覆盖其上的真实弹窗。
+     * @param mask - 当前动态控件的范围。
+     */
+    const add = (mask: ScreenshotMask) => masks.push(...visibleMasks(mask, node, panels));
+    if (['texas-holdem-room-id-text', 'zhajinhua-room-id-text'].includes(node.res || '')) {
+      expect(node.text, '房号展示应与 Web 共用夹具一致').toBe(presentation.roomNumber);
+      continue;
+    }
+    if (/^seat-guide-\d+$/.test(node.res || '')) {
+      // Android 将越出父节点的箭头边界裁短；按共用 24×20 图案及 11dp 动画行程还原范围。
+      const scale = node.bounds.width / 24;
+      const height = 20 * scale;
+      add({ x: node.bounds.x - 1, y: node.bounds.y + node.bounds.height - height - 1,
+        width: node.bounds.width + 2, height: height + 22 + 2, reason: `${node.res} 完整箭头动画范围` });
+      continue;
+    }
+    if (/^(texas-holdem|zhajinhua)-active-countdown$/.test(node.res || '') || node.res === 'seat-progress-pie') {
+      // API 35 控件边界向下取整；实测相邻帧在右侧两像素仍有倒计时填充变化。
+      add({ x: node.bounds.x - 2, y: node.bounds.y - 2,
+        width: node.bounds.width + 4, height: node.bounds.height + 4,
+        reason: `${node.res} 含两像素绘制边缘` });
+      continue;
+    }
+    if (node.res === 'leader-board-room-id') {
+      // UUID 使用比例字体且每轮不同；按居中的固定文本槽遮罩，不能随字符宽度改变边缘。
+      expect(node.text).toMatch(/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i);
+      add({ ...node.bounds, x: Math.round(node.bounds.x + node.bounds.width / 2) - 220, width: 440, reason: node.res });
+      continue;
+    }
+    if (node.res === 'view-community-cards-countdown') {
+      add(countdownMask(node.bounds, node.text || ''));
+      continue;
+    }
+    if (node.res === 'game-network-proxy-code'
+      || /^\d{1,2}:\d{2}(?::\d{2})?$/.test(node.text || '')
+      || (node.res === 'countdown_timer_text' && /^\d+s$/.test(node.text || ''))
+      || node.res === 'player-profile-id'
+      || (!node.res && /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(node.text || ''))) {
+      // 玩家 ID 是透明语义标记；不能因它覆盖头像而把整个头像排除。
+      add({ ...node.bounds, reason: node.res || (node.text?.includes(':') ? '保座或加时冷却倒计时' : '本轮真实房间 UUID') });
+    }
+    if (node.res === 'ping-screen-container') add(networkStatusMask(node.bounds));
+  }
+  if (name.endsWith('-zhajinhua-game-challenge-select')) {
+    await captureChallengeAnimation(device, name, testInfo, masks);
+    return;
+  }
+  // 普通页面仍按三语言比较；循环动画的采样附件只在英文生成。
+  if (name.startsWith('en-') && name.endsWith('-pre-game-waiting-table')) {
+    const guides = masks.filter(mask => /^seat-guide-\d+ 完整箭头动画范围$/.test(mask.reason));
+    expect(guides.length, '等待开局的空座引导箭头必须可见').toBeGreaterThan(0);
+    await verifyLoopAnimation(device, name, testInfo, guides.map(pixelBounds), masks);
+  }
+  if (name.startsWith('en-') && /-signed-in-(?:texas|zhajinhua)-game-opponent-turn$/.test(name)) {
+    const marker = name.includes('-zhajinhua-') ? 'zhajinhua-active-countdown' : 'texas-holdem-active-countdown';
+    const countdown = nodes.filter(node => node.res === marker);
+    expect(countdown, '对手行动时必须出现原生倒计时').toHaveLength(1);
+    const regions = countdown.map(node => pixelBounds({ x: node.bounds.x - 2, y: node.bounds.y - 2,
+      width: node.bounds.width + 4, height: node.bounds.height + 4 }));
+    await verifyLoopAnimation(device, name, testInfo, regions, masks);
+    if (name.startsWith('en-')) await captureMovingKeyframes(device, `${name}-countdown`, testInfo, regions);
+  }
+  if (triggerTransient && transientMarker === 'toastText1') {
+    const expectedText = await triggerTransient();
+    await captureToast(device, name, testInfo, masks, expectedText || undefined);
+    return;
+  }
+  if (triggerTransient && transientMarker === 'bet-next-hand-result-amount') {
+    await capturePredictionResult(device, name, testInfo, masks, triggerTransient);
+    return;
+  }
+  /** 不允许把提示消失后的稳定页面当成提示截图。 */
+  const assertTransient = async () => {
+    expect((await gameMarker(device, transientMarker!))?.text,
+      `${transientMarker} 必须在截图前后可见`).toBeTruthy();
+  };
+  try {
+    await compareScreenshot(device, name, testInfo, masks, transientMarker ? assertTransient : undefined,
+      transientMarker ? () => gameScreenshot(device) : undefined);
+  } catch (error) {
+    if (reconnectRetry || transientMarker || triggerTransient || expectedAlertMarker
+      || !(await gameNodes(device)).some(node => /Connecting\.\.\./.test(node.text || ''))) throw error;
+    await gameConnected(device, 2_000);
+    await captureGame(device, name, testInfo, transientMarker, expectedAlertMarker, inputMasks, triggerTransient, true);
+  }
+}

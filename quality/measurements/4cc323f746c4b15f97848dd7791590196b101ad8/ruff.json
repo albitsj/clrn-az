@@ -1,0 +1,134 @@
+[
+  {
+    "tool": "ruff",
+    "file": "android/diagnostics_io.py",
+    "rule": "C901",
+    "line": 92,
+    "column": 5,
+    "endLine": 92,
+    "endColumn": 12,
+    "message": "`capture` is too complex (20 > 10)",
+    "sourceHash": "9c5837f6e24e6123b70cacaa42ac1d891f65f217cdfe91cc4fc8da0da0b1c0b4"
+  },
+  {
+    "tool": "ruff",
+    "file": "android/presentation.py",
+    "rule": "C901",
+    "line": 15,
+    "column": 9,
+    "endLine": 15,
+    "endColumn": 18,
+    "message": "`normalize` is too complex (14 > 10)",
+    "sourceHash": "2a40adc81b2713efa258ceac3e18f64fcd7acd51d6068f4e6bc47010e70aa392"
+  },
+  {
+    "tool": "ruff",
+    "file": "android/proxy-addon.py",
+    "rule": "C901",
+    "line": 112,
+    "column": 9,
+    "endLine": 112,
+    "endColumn": 26,
+    "message": "`websocket_message` is too complex (17 > 10)",
+    "sourceHash": "1a0155bf61a02c00bf2c712866ae9403749dc8ac8cfc517d64a25d90b223018d"
+  },
+  {
+    "tool": "ruff",
+    "file": "android/proxy-addon.py",
+    "rule": "C901",
+    "line": 174,
+    "column": 15,
+    "endLine": 174,
+    "endColumn": 22,
+    "message": "`request` is too complex (52 > 10)",
+    "sourceHash": "4d64bdd87ea86879cc42beab81e0d33df97c148c78a0e79dc90c51e9cbc418b3"
+  },
+  {
+    "tool": "ruff",
+    "file": "e2e/mitmproxy/replay_scenes.py",
+    "rule": "C901",
+    "line": 25,
+    "column": 5,
+    "endLine": 25,
+    "endColumn": 17,
+    "message": "`replay_scene` is too complex (12 > 10)",
+    "sourceHash": "8e029b0a507326b16f7a20b2563e4fb1bbcec450b477de181c8ea5a1ee017f94"
+  },
+  {
+    "tool": "ruff",
+    "file": "e2e/mitmproxy/visual_fixtures.py",
+    "rule": "C901",
+    "line": 31,
+    "column": 9,
+    "endLine": 31,
+    "endColumn": 15,
+    "message": "`result` is too complex (14 > 10)",
+    "sourceHash": "9af8d0b859cbfe17d67036dfd74f270653388b54eb87e45b93302805b4e0de7f"
+  },
+  {
+    "tool": "ruff",
+    "file": "visual/cases/game-record/mitmproxy/addon.py",
+    "rule": "C901",
+    "line": 52,
+    "column": 9,
+    "endLine": 52,
+    "endColumn": 16,
+    "message": "`control` is too complex (12 > 10)",
+    "sourceHash": "448f4130e231a1533b64493478d9aa9821d7a8c9c03644afe14f37a04ae09b72"
+  },
+  {
+    "tool": "ruff",
+    "file": "visual/cases/game-record/mitmproxy/addon.py",
+    "rule": "C901",
+    "line": 91,
+    "column": 9,
+    "endLine": 91,
+    "endColumn": 16,
+    "message": "`fixture` is too complex (29 > 10)",
+    "sourceHash": "277fdb908475c444a94393c831a7d8ab293ca347a3a12b0785fbc93e6a8b559b"
+  },
+  {
+    "tool": "ruff",
+    "file": "visual/cases/texas-holdem/mitmproxy/addon.py",
+    "rule": "C901",
+    "line": 43,
+    "column": 9,
+    "endLine": 43,
+    "endColumn": 16,
+    "message": "`control` is too complex (12 > 10)",
+    "sourceHash": "448f4130e231a1533b64493478d9aa9821d7a8c9c03644afe14f37a04ae09b72"
+  },
+  {
+    "tool": "ruff",
+    "file": "visual/cases/texas-holdem/mitmproxy/addon.py",
+    "rule": "C901",
+    "line": 112,
+    "column": 9,
+    "endLine": 112,
+    "endColumn": 16,
+    "message": "`request` is too complex (17 > 10)",
+    "sourceHash": "24a8dd35c3edbb33da4df312e49b9147a9888516bbb0891f152185e37f21ac9d"
+  },
+  {
+    "tool": "ruff",
+    "file": "visual/cases/texas-holdem/mitmproxy/texas_replay.py",
+    "rule": "C901",
+    "line": 65,
+    "column": 9,
+    "endLine": 65,
+    "endColumn": 26,
+    "message": "`websocket_message` is too complex (20 > 10)",
+    "sourceHash": "1a0155bf61a02c00bf2c712866ae9403749dc8ac8cfc517d64a25d90b223018d"
+  },
+  {
+    "tool": "ruff",
+    "file": "visual/cases/zhajinhua/mitmproxy/zhajinhua_replay.py",
+    "rule": "C901",
+    "line": 66,
+    "column": 9,
+    "endLine": 66,
+    "endColumn": 26,
+    "message": "`websocket_message` is too complex (20 > 10)",
+    "sourceHash": "1a0155bf61a02c00bf2c712866ae9403749dc8ac8cfc517d64a25d90b223018d"
+  }
+]

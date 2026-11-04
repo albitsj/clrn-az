@@ -1,0 +1,74 @@
+name: Android diagnostics smoke
+
+on:
+  pull_request:
+    paths:
+      - 'android/*diagnostic*.py'
+      - '.github/workflows/android-diagnostics.yml'
+      - '.github/workflows/android-visual.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  diagnostics:
+    name: Diagnostics (${{ matrix.case }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        case: [normal, init-failure]
+    env:
+      ANDROID_SERIAL: emulator-5554
+      ANDROID_DIAGNOSTICS_DIR: ${{ github.workspace }}/android/artifacts/diagnostics
+      ANDROID_DIAGNOSTICS_INTERVAL: '2'
+      ANDROID_DIAGNOSTICS_TIMEOUT: '3'
+      # Deliberately public sentinel; its absence from uploaded logs proves filtering.
+      DIAGNOSTICS_SMOKE_TOKEN: ci-diagnostics-redaction-sentinel-793fa2
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Start diagnostics before initialization
+        run: python3 android/ci_diagnostics.py start
+      - name: Enable emulator hardware acceleration
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Exercise real emulator lifecycle
+        id: emulator
+        continue-on-error: ${{ matrix.case == 'init-failure' }}
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          emulator-boot-timeout: ${{ matrix.case == 'init-failure' && '30' || '600' }}
+          emulator-options: -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader_indirect ${{ matrix.case == 'init-failure' && '-diagnostics-deliberately-invalid-option' || '' }}
+          pre-emulator-launch-script: python3 android/ci_diagnostics.py install-emulator-wrapper
+          script: python3 android/ci_diagnostics_smoke.py exercise
+      - name: Finalize diagnostics
+        if: always()
+        run: python3 android/ci_diagnostics.py stop
+      - name: Verify retained logs and redaction
+        if: always()
+        env:
+          SMOKE_CASE: ${{ matrix.case }}
+          EMULATOR_OUTCOME: ${{ steps.emulator.outcome }}
+        run: python3 android/ci_diagnostics_smoke.py verify "$SMOKE_CASE" "$EMULATOR_OUTCOME"
+      - name: Upload verified diagnostics, including failure evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-diagnostics-smoke-${{ matrix.case }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: android/artifacts/diagnostics/
+          if-no-files-found: error
+          retention-days: 7
