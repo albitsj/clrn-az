@@ -1,11 +1,11 @@
-import { request, expect } from '@playwright/test';
+import { expect, request } from '@playwright/test';
 import type { AndroidDevice } from 'playwright';
 import type { Mitmproxy } from '../e2e/helpers/mitmproxy-client';
 import { ensureRoomBalance, type Account, type RoomSession } from '../visual/cases/_shared/room';
-import { dismissKeyboard } from './keyboard';
-import { tap, returnToTabs, reveal } from './navigation';
-import { gameReady, gameGone, gameNodes } from './game-controls';
 import { enterTexasRoom } from '../visual/cases/texas-holdem/room';
+import { gameGone, gameNodes, gameReady } from './game-controls';
+import { dismissKeyboard } from './keyboard';
+import { returnToTabs, reveal, tap } from './navigation';
 
 /**
  * 从认证的本机控制接口取得本轮真实会话；不将令牌写入日志或报告。
@@ -25,13 +25,39 @@ export async function gameSession(proxy: Mitmproxy): Promise<{ account: Account 
  * @param observerConnection - 大厅或非房主展示也必须建立当前私人房的真实观察者连接。
  */
 export async function createGameRoom(device: AndroidDevice, proxy: Mitmproxy,
-  game: 'texas-holdem' | 'zhajinhua', onCreated: (room: RoomSession) => void, optionalFeatures = false,
-  observerConnection = false): Promise<RoomSession> {
-  const { account } = await gameSession(proxy);
-  if (!account || account.username !== process.env.VISUAL_USERNAME) throw new Error('建房必须使用本轮真实登录的测试账号。');
+  game: 'texas-holdem' | 'zhajinhua', onCreated: (room: RoomSession) => void, optionalFeatures?: boolean,
+  observerConnection?: boolean): Promise<RoomSession> {
+  const account = await roomAccount(proxy);
   const api = await request.newContext();
   try { await ensureRoomBalance(api, account); }
   finally { await api.dispose(); }
+  await submitRoomForm(device, game, optionalFeatures);
+  let room: RoomSession | null = null;
+  await expect(async () => {
+    room = (await gameSession(proxy)).room;
+    expect(room, '真实建房接口必须返回本轮新建的房间').not.toBeNull();
+  }).toPass({ timeout: 60_000, intervals: [500] });
+  onCreated(room!);
+  await connectRoomObserver(room!, observerConnection);
+  await waitRoomReady(device, game);
+  return room!;
+}
+
+/** 建房前核实当前真实测试账号身份。
+ * @param proxy - 本轮独占代理。
+ */
+async function roomAccount(proxy: Mitmproxy): Promise<Account> {
+  const { account } = await gameSession(proxy);
+  if (!account || account.username !== process.env.VISUAL_USERNAME) throw new Error('建房必须使用本轮真实登录的测试账号。');
+  return account;
+}
+
+/** 真实填写私人房表单，可选功能仍经原生高级设置启用。
+ * @param device - 原生设备。
+ * @param game - 当前玩法。
+ * @param optionalFeatures - 是否启用升盲。
+ */
+async function submitRoomForm(device: AndroidDevice, game: 'texas-holdem' | 'zhajinhua', optionalFeatures?: boolean): Promise<void> {
   await returnToTabs(device);
   await tap(device, 'private-room-tab');
   await reveal(device, { res: 'copy-house-number-button' });
@@ -46,17 +72,25 @@ export async function createGameRoom(device: AndroidDevice, proxy: Mitmproxy,
     await tap(device, 'BlindsEnableFlipSwitch');
   }
   await tap(device, 'creat-room-button');
-  let room: RoomSession | null = null;
-  await expect(async () => {
-    room = (await gameSession(proxy)).room;
-    expect(room, '真实建房接口必须返回本轮新建的房间').not.toBeNull();
-  }).toPass({ timeout: 60_000, intervals: [500] });
-  onCreated(room!);
+}
+
+/** 大厅或非房主场景仍建立真实观察者连接并释放请求上下文。
+ * @param room - 已登记的新房间。
+ * @param observerConnection - 是否需要观察者连接。
+ */
+async function connectRoomObserver(room: RoomSession, observerConnection?: boolean): Promise<void> {
   if (observerConnection) {
     const observerApi = await request.newContext();
     try { await enterTexasRoom({ request: observerApi }, room!); }
     finally { await observerApi.dispose(); }
   }
+}
+
+/** 等待真实牌桌就绪，拼三张必须先有九个完整座位。
+ * @param device - 原生设备。
+ * @param game - 当前玩法。
+ */
+async function waitRoomReady(device: AndroidDevice, game: 'texas-holdem' | 'zhajinhua'): Promise<void> {
   await gameReady(device, 'run-game-view');
   await gameGone(device, 'game-splash-screen-bg');
   await gameReady(device, 'menu-button');
@@ -66,5 +100,4 @@ export async function createGameRoom(device: AndroidDevice, proxy: Mitmproxy,
       { timeout: 45_000 }).toBe(9);
     await gameReady(device, 'zhajinhua-text-room-name', 'TestRoom');
   }
-  return room!;
 }

@@ -1,12 +1,12 @@
 import { expect, type TestInfo } from '@playwright/test';
 import type { AndroidDevice } from 'playwright';
-import type { Mitmproxy } from '../e2e/helpers/mitmproxy-client';
 import { restoreTable, type Street, type TableOptions } from '../e2e/helpers/game-scenes';
-import { gameGone, gameNodes, gameReady, gameTap, type NativeNode } from './game-controls';
-import { gameCardNames, replay } from './game-replay';
+import type { Mitmproxy } from '../e2e/helpers/mitmproxy-client';
 import { adb } from './device';
-import type { ScreenshotMask } from './screenshot';
+import { gameGone, gameNodes, gameReady, gameSemanticText, gameTap, type NativeNode } from './game-controls';
 import { gameMenu } from './game-pregame';
+import { gameCardNames, replay } from './game-replay';
+import type { ScreenshotMask } from './screenshot';
 
 export type TexasContext = {
   device: AndroidDevice; proxy: Mitmproxy; room: string; self: string;
@@ -21,7 +21,8 @@ export type TexasContext = {
  * @param street - 要恢复的回合。
  * @param opponent - 是否轮到对手操作。
  */
-export async function restoreTexas(context: TexasContext, options: TableOptions = 'standard', street: Street = 'river', opponent = false): Promise<void> {
+export async function restoreTexas(context: TexasContext, options?: TableOptions, street?: Street, opponent?: boolean): Promise<void> {
+  street = texasStreet(street);
   await replay(context.proxy, 'texas', context.room, restoreTable(street, opponent, options));
   const count = { preflop: 0, flop: 3, turn: 4, river: 5 }[street];
   await gameCardNames(context.device, 'community_card', 'community_card_name_text',
@@ -68,4 +69,19 @@ export async function enableGameSetting(device: AndroidDevice, setting: string):
   await expect.poll(async () => (await gameReady(device, marker)).checked, { timeout: 30_000 }).toBe(true);
   await gameTap(device, 'game-settings-close-button');
   await gameGone(device, 'game-settings-popup-container');
+}
+
+/** 统一恢复牌局时的默认街。
+ * @param street - 调用方指定的街。
+ */
+function texasStreet(street: Street = 'river'): Street { return street; }
+
+/** 从当前可见玩家读取牌型覆盖下仍保留的余额语义节点。
+ * @param context - 当前真实房间。
+ * @param amount - 牌局预期余额。
+ */
+export async function expectTexasBalance(context: TexasContext, amount: string): Promise<void> {
+  await expect.poll(async () => gameSemanticText((await gameNodes(context.device))
+    .find(node => node.res === `texas-holdem-player-container-${context.self}`), 'text-holdem-own-balance-text'),
+    { timeout: 30_000 }).toBe(amount);
 }
