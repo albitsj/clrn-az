@@ -1,21 +1,21 @@
 import { expect } from '@playwright/test';
 import { setTimeout } from 'node:timers/promises';
-import { gameGone, gameMarker, gameNodes, gameReady, gameScreenshot, gameTap, gameTextWithin } from './game-controls';
-import { closeGameMask } from './game-pregame';
-import { adb } from './device';
-import { dismissKeyboard } from './keyboard';
-import { focusedCaretMask } from './screenshot';
 import { translateCaret } from './caret-mask';
-import { enableGameSetting, restoreTexas, texasEvents, type TexasContext } from './texas-support';
+import { adb } from './device';
+import { gameGone, gameMarker, gameNodes, gameReady, gameScreenshot, gameTap, gameTextWithin } from './game-controls';
 import { animateGamePanel, captureTimedLevelUp } from './game-panel-animation';
+import { closeGameMask } from './game-pregame';
+import { dismissKeyboard } from './keyboard';
 import { captureMovingKeyframes } from './loop-keyframes';
+import { focusedCaretMask } from './screenshot';
+import { enableGameSetting, restoreTexas, texasEvents, type TexasContext } from './texas-support';
 
 /**
  * 复用 Web 的大厅牌桌、自动带入、举报、个人收益、猜牌及升级状态。
  * @param context - 大厅展示夹具下保持真实私人房观察者连接的上下文。
  */
 export async function texasHall(context: TexasContext): Promise<void> {
-  const { device, proxy, capture, animationInfo } = context;
+  const { device, capture, animationInfo } = context;
   await restoreTexas(context, 'standard', 'flop', true);
   await gameReady(device, 'auto-rebuy-button');
   await gameReady(device, 'report-pair-play-button');
@@ -28,25 +28,7 @@ export async function texasHall(context: TexasContext): Promise<void> {
     { x: 320, y: 430, width: 340, height: 400 }, animationInfo, 'enter', 'videoFrames');
   await gameReady(device, 'auto-rebuy-popup');
   await capture('auto_rebuy');
-  if (animationInfo) {
-    await proxy.command('texas/ui', {});
-    await proxy.command('android/auto-rebuy-hold', { hold: true });
-    try {
-      await gameTap(device, 'auto-rebuy-switch');
-      await expect.poll(async () => (await proxy.command<{ requested: boolean }>('android/auto-rebuy-hold')).requested,
-        { timeout: 5000 }).toBe(true);
-      await animationInfo.attach('texas-loading-full', { body: await gameScreenshot(device), contentType: 'image/png' });
-      // 两层图标分别旋转，逐区保存真实画面明暗/位置相位。
-      const results = await Promise.allSettled([
-        captureMovingKeyframes(device, 'texas-loading-spinner', animationInfo,
-          [{ x: 300, y: 550, width: 26, height: 50 }, { x: 338, y: 580, width: 42, height: 52 }]),
-        setTimeout(1_500).then(() => proxy.command('android/auto-rebuy-hold', { hold: false })),
-      ]);
-      for (const result of results) if (result.status === 'rejected') throw result.reason;
-    } finally { await proxy.command('android/auto-rebuy-hold', { hold: false }); }
-    await expect.poll(async () => (await gameReady(device, 'auto-rebuy-switch')).checked,
-      { timeout: 30_000 }).toBe(true);
-  }
+  await captureAutoRebuyLoading(context);
   await animateGamePanel(device, 'texas-holdem', 'auto-rebuy', 'auto-rebuy-close-button',
     { x: 320, y: 430, width: 340, height: 400 }, animationInfo, 'exit', 'videoFrames');
   await gameGone(device, 'auto-rebuy-popup');
@@ -160,4 +142,37 @@ export async function texasHallVariants(context: TexasContext): Promise<void> {
   await gameTap(device, 'texas-holdem-delay-operation-button');
   expect((await gameReady(device, 'common-alert-message')).text).toMatch(/冷却|冷卻|cool/i);
   await capture('delay_cooldown_alert');
+}
+
+/** 保持代理暂缓释放、真实开关与双层加载旋转采样。
+ * @param context - 当前真实房间。
+ */
+async function captureAutoRebuyLoading(context: TexasContext): Promise<void> {
+  const { device, proxy, animationInfo } = context;
+  if (animationInfo) {
+    await proxy.command('texas/ui', {});
+    await proxy.command('android/auto-rebuy-hold', { hold: true });
+    try {
+      await gameTap(device, 'auto-rebuy-switch');
+      await expect.poll(async () => (await proxy.command<{ requested: boolean }>('android/auto-rebuy-hold')).requested,
+        { timeout: 5000 }).toBe(true);
+      await animationInfo.attach('texas-loading-full', { body: await gameScreenshot(device), contentType: 'image/png' });
+      // 两层图标分别旋转，逐区保存真实画面明暗/位置相位。
+      const results = await Promise.allSettled([
+        captureMovingKeyframes(device, 'texas-loading-spinner', animationInfo,
+          [{ x: 300, y: 550, width: 26, height: 50 }, { x: 338, y: 580, width: 42, height: 52 }]),
+        setTimeout(1_500).then(() => proxy.command('android/auto-rebuy-hold', { hold: false })),
+      ]);
+      results.forEach(assertLoadingResult);
+    } finally { await proxy.command('android/auto-rebuy-hold', { hold: false }); }
+    await expect.poll(async () => (await gameReady(device, 'auto-rebuy-switch')).checked,
+      { timeout: 30_000 }).toBe(true);
+  }
+}
+
+/** 所有并发采集和释放任务的错误都必须传播。
+ * @param result - 实际异步结果。
+ */
+function assertLoadingResult(result: PromiseSettledResult<unknown>): void {
+  if (result.status === 'rejected') throw result.reason;
 }

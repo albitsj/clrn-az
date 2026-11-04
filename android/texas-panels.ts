@@ -1,15 +1,15 @@
 import { expect } from '@playwright/test';
+import { captureNativeTransition, captureTransientTransition, framePaletteDistance } from './animation-transition';
+import { translateCaret } from './caret-mask';
+import { adb, applicationId } from './device';
 import { flattenNodes, gameGone, gameNodes, gameReady, gameSemanticText, gameTap, gameTextWithin } from './game-controls';
+import { animateGamePanel } from './game-panel-animation';
 import { captureGameThemes, closeGameMask, gameMenu } from './game-pregame';
 import { gameCardNames, replay } from './game-replay';
-import { adb, applicationId } from './device';
 import { dismissKeyboard } from './keyboard';
-import { focusedCaretMask } from './screenshot';
-import { translateCaret } from './caret-mask';
-import { gameTapText, restoreTexas, texasEvents, type TexasContext } from './texas-support';
-import { animateGamePanel } from './game-panel-animation';
-import { captureNativeTransition, captureTransientTransition, framePaletteDistance } from './animation-transition';
 import { captureMovingKeyframes } from './loop-keyframes';
+import { focusedCaretMask } from './screenshot';
+import { gameTapText, restoreTexas, texasEvents, type TexasContext } from './texas-support';
 
 /**
  * 复用 Web 的二十一个面板、聊天、带入审核和手牌展示状态。
@@ -71,12 +71,7 @@ export async function texasPanels(context: TexasContext): Promise<void> {
     () => replay(proxy, 'texas', room, { scene: 'system-prompt' }));
   await replay(proxy, 'texas', room, { scene: 'text' });
   await gameReady(device, 'barrage_text', 'Player1: Good hand!');
-  if (animationInfo) {
-    const barrage = await gameReady(device, 'barrage_text', 'Player1: Good hand!');
-    await captureMovingKeyframes(device, 'texas-barrage', animationInfo,
-      [{ x: 0, y: barrage.bounds.y - 8, width: 720, height: barrage.bounds.height + 16 }],
-      18, framePaletteDistance, 1, ['texas-barrage-1-first-alternate.png']);
-  }
+  await captureBarrage(context);
   await gameTap(device, 'texas-holdem-chat-button');
   await gameTap(device, '-in-game-chat-message-tab');
   await expect.poll(async () => (await gameNodes(device)).some(node => node.res?.startsWith('in-game-chat-phrase-')),
@@ -157,4 +152,17 @@ export async function texasPanels(context: TexasContext): Promise<void> {
   await gameMenu(device, 'exit', 'common-alert-button-quit');
   await capture('quit_confirm');
   await gameTap(device, 'common-alert-button-cancel');
+}
+
+/** 弹幕保留原有十八个实际运动采样及审查相位。
+ * @param context - 当前真实房间。
+ */
+async function captureBarrage(context: TexasContext): Promise<void> {
+  const { device, animationInfo } = context;
+  if (animationInfo) {
+    const barrage = await gameReady(device, 'barrage_text', 'Player1: Good hand!');
+    await captureMovingKeyframes(device, 'texas-barrage', animationInfo,
+      [{ x: 0, y: barrage.bounds.y - 8, width: 720, height: barrage.bounds.height + 16 }],
+      18, framePaletteDistance, 1, ['texas-barrage-1-first-alternate.png']);
+  }
 }

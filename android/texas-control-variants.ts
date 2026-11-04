@@ -1,8 +1,8 @@
 import { expect } from '@playwright/test';
 import { REPLAY_PLAYER_IDS } from '../e2e/helpers/game-scenes';
-import { flattenNodes, gameGone, gameNodes, gameReady, gameTap, gameSemanticText } from './game-controls';
-import { closeGameMask } from './game-pregame';
 import { adb } from './device';
+import { flattenNodes, gameGone, gameNodes, gameReady, gameSemanticText, gameTap } from './game-controls';
+import { closeGameMask } from './game-pregame';
 import { gameTapText, restoreTexas, texasEvents, type TexasContext } from './texas-support';
 
 /**
@@ -78,6 +78,14 @@ export async function texasControlVariants(context: TexasContext): Promise<void>
     await capture('raise_dragging');
   } finally { adb('shell', 'input', 'motionevent', 'UP', String(x), String(endY)); }
   await gameTap(device, 'raise-bet-cancel-button');
+  await captureAccurateRaiseInput(context);
+}
+
+/** 保留精确加注逐位输入、退格及最小金额错误断言。
+ * @param context - 当前真实房间。
+ */
+async function captureAccurateRaiseInput(context: TexasContext): Promise<void> {
+  const { device, capture } = context;
   await gameTap(device, 'texas-holdem-operation-accurate-bet-button');
   for (const digit of [1, 2, 3]) await gameTap(device, `texas-holdem-operation-accurate-bet-number-button-${digit}`);
   await gameReady(device, 'accurate-bet-value-text', '123');

@@ -1,14 +1,14 @@
 import { readFileSync } from 'node:fs';
 import { expect, type TestInfo } from '@playwright/test';
 import type { AndroidDevice } from 'playwright';
-import type { Mitmproxy } from '../e2e/helpers/mitmproxy-client';
 import { restoreTable, type Street, type TableOptions } from '../e2e/helpers/game-scenes';
-import { flattenNodes, gameGone, gameNodes, gameReady, gameTap, gameScreenshot, type NativeNode } from './game-controls';
+import type { Mitmproxy } from '../e2e/helpers/mitmproxy-client';
 import { motionParts, samePixels } from './motion-regions';
-import { gameCardNames, replay } from './game-replay';
 import { adb } from './device';
-import type { ScreenshotMask } from './screenshot';
+import { flattenNodes, gameGone, gameNodes, gameReady, gameScreenshot, gameSemanticText, gameTap, type NativeNode } from './game-controls';
 import { gameMenu } from './game-pregame';
+import { gameCardNames, replay } from './game-replay';
+import type { ScreenshotMask } from './screenshot';
 
 export type TexasContext = {
   device: AndroidDevice; proxy: Mitmproxy; room: string; self: string;
@@ -34,25 +34,44 @@ export async function waitForPlayerActionStart(device: AndroidDevice, testInfo: 
   let current: Buffer | undefined;
   let previous: Buffer | undefined;
   let stableSince = 0;
+  /** 检查没有基准时的动作区域稳定性。 */
+  const candidateReady = async (): Promise<boolean> => {
+    if (!await playerActionGone(device, playerId)) {
+      previous = undefined;
+      return false;
+    }
+    if (pixelsChanged(current!, previous)) {
+      stableSince = Date.now();
+      previous = current;
+    }
+    return Date.now() - stableSince >= 500;
+  };
   try {
     await expect.poll(async () => {
       current = motionParts(await gameScreenshot(device), [playerActionRegion]).regions[0];
       if (reference) return samePixels(current, reference);
-      // 首次候选采集没有基准：目标玩家的所有旧动作均须消失，且绘制区域稳定后才采集。
-      const player = (await gameNodes(device)).find(node => node.res?.startsWith(`texas-holdem-player-container-${playerId}`));
-      if (!player || flattenNodes(player).some(node => node.res?.startsWith('texas-holdem-player-action-'))) {
-        previous = undefined;
-        return false;
-      }
-      if (!previous || !samePixels(current, previous)) {
-        stableSince = Date.now();
-        previous = current;
-      }
-      return Date.now() - stableSince >= 500;
+      return candidateReady();
     }, { message: '上一玩家动作必须完成退场后才能采集下一动作', timeout: 30_000, intervals: [250] }).toBe(true);
   } finally {
     if (current) await testInfo.attach(`${name}-prepared-start`, { body: current, contentType: 'image/png' });
   }
+}
+
+/** 检查目标玩家的旧动作是否消失。
+ * @param device - 原生设备。
+ * @param playerId - 玩家标识。
+ */
+async function playerActionGone(device: AndroidDevice, playerId: string): Promise<boolean> {
+  const player = (await gameNodes(device)).find(node => node.res?.startsWith(`texas-holdem-player-container-${playerId}`));
+  return !!player && !flattenNodes(player).some(node => node.res?.startsWith('texas-holdem-player-action-'));
+}
+
+/** 比较连续采集的区域。
+ * @param current - 当前图像。
+ * @param previous - 上一图像。
+ */
+function pixelsChanged(current: Buffer, previous?: Buffer): boolean {
+  return !previous || !samePixels(current, previous);
 }
 
 /**
@@ -62,7 +81,8 @@ export async function waitForPlayerActionStart(device: AndroidDevice, testInfo: 
  * @param street - 要恢复的回合。
  * @param opponent - 是否轮到对手操作。
  */
-export async function restoreTexas(context: TexasContext, options: TableOptions = 'standard', street: Street = 'river', opponent = false): Promise<void> {
+export async function restoreTexas(context: TexasContext, options?: TableOptions, street?: Street, opponent?: boolean): Promise<void> {
+  street = texasStreet(street);
   await replay(context.proxy, 'texas', context.room, restoreTable(street, opponent, options));
   const count = { preflop: 0, flop: 3, turn: 4, river: 5 }[street];
   await gameCardNames(context.device, 'community_card', 'community_card_name_text',
@@ -109,4 +129,19 @@ export async function enableGameSetting(device: AndroidDevice, setting: string):
   await expect.poll(async () => (await gameReady(device, marker)).checked, { timeout: 30_000 }).toBe(true);
   await gameTap(device, 'game-settings-close-button');
   await gameGone(device, 'game-settings-popup-container');
+}
+
+/** 统一恢复牌局时的默认街。
+ * @param street - 调用方指定的街。
+ */
+function texasStreet(street: Street = 'river'): Street { return street; }
+
+/** 从当前可见玩家读取牌型覆盖下仍保留的余额语义节点。
+ * @param context - 当前真实房间。
+ * @param amount - 牌局预期余额。
+ */
+export async function expectTexasBalance(context: TexasContext, amount: string): Promise<void> {
+  await expect.poll(async () => gameSemanticText((await gameNodes(context.device))
+    .find(node => node.res === `texas-holdem-player-container-${context.self}`), 'text-holdem-own-balance-text'),
+    { timeout: 30_000 }).toBe(amount);
 }

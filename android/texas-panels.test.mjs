@@ -18,6 +18,10 @@ function panels(failureAt) {
   const events = [];
   let failed = false;
   let dataReady = false;
+  /** 首次等待失败。 */
+  function failOnce() {
+    if (!failed) { failed = true; throw failure; }
+  }
   const modules = {
     './game-controls': {
       /** 记录真实入口；排行榜之后的页面不在本回归范围内。
@@ -35,7 +39,7 @@ function panels(failureAt) {
        */
       gameReady: async (_device, resource, text) => {
         events.push(['ready', resource, text]);
-        if (resource === failureAt && !failed) { failed = true; throw failure; }
+        if (resource === failureAt) failOnce();
         if (resource === 'public-leader-board-item-round-0') {
           assert.equal(text, '10');
           dataReady = true;

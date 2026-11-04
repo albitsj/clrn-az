@@ -1,8 +1,8 @@
 import { expect } from '@playwright/test';
 import type { AndroidDevice } from 'playwright';
 import type { Mitmproxy } from '../e2e/helpers/mitmproxy-client';
-import { gameSession } from './game-room';
 import { gameNodes, gameNodesWithin, gameSemanticText } from './game-controls';
+import { gameSession } from './game-room';
 
 /**
  * 复用 Web 回放控制接口，且只允许本轮真实建房响应中登记的 UUID。
@@ -35,5 +35,14 @@ export async function gameCardNames(device: AndroidDevice, container: string, ma
       .map(node => gameSemanticText(node, marker) || '')
       .filter(text => !options.namedOnly || text !== '').sort();
   },
-  { timeout: 30_000, intervals: [250] }).toEqual([...expected].sort());
+    { timeout: 30_000, intervals: [250] }).toEqual([...expected].sort());
+}
+
+/** 为当前房间绑定共用回放入口，所有事件仍经过会话 UUID 校验。
+ * @param proxy - 本轮独占代理。
+ * @param game - 共用玩法名。
+ * @param roomId - 本轮真实房间。
+ */
+export function gameReplaySender(proxy: Mitmproxy, game: 'texas' | 'zhajinhua', roomId: string): (scene: unknown) => Promise<void> {
+  return scene => replay(proxy, game, roomId, scene);
 }
