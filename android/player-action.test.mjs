@@ -27,6 +27,7 @@ function screen(crop) {
  */
 function readiness(frames, options = {}) {
   let reads = 0;
+  const sampleTimes = [];
   const attachments = [];
   const device = { _connection: {
     /** 返回原始首败画面，随后才完成上一动作退场。 */
@@ -34,7 +35,10 @@ function readiness(frames, options = {}) {
        * @param method - 驱动截图方法。
        */
       _send: async method => {
-        if (method === 'tree') return { bounds: playerActionRegion, children: options.players?.(reads - 1) || [] };
+        if (method === 'tree') {
+          sampleTimes.push(Date.now());
+          return { bounds: playerActionRegion, children: options.players?.(reads - 1) || [] };
+        }
         assert.equal(method, 'screen');
         return screen(frames[Math.min(reads++, frames.length - 1)]);
       },
@@ -54,6 +58,7 @@ function readiness(frames, options = {}) {
   };
   return {
     attachments,
+    sampleTimes,
     /** 读取准备条件实际拍摄的次数。 */
     reads: () => reads,
     /** 使用生产参数执行准备条件。 */
@@ -95,7 +100,8 @@ test('reference 不读取缺失或过期基准，等待目标玩家全部旧动�
       { ...player([label]), res: 'texas-holdem-player-container-other' }],
   });
   await probe.run();
-  assert.ok(probe.reads() >= 5, '旧标签消失后仍须确认实际画面连续稳定');
+  assert.ok(probe.reads() >= 4, '旧标签消失后仍须再次采样确认画面稳定');
+  assert.ok(probe.sampleTimes.at(-1) - probe.sampleTimes[2] >= 500, '实际画面须连续稳定至少 500ms');
   assert.deepEqual(PNG.sync.read(probe.attachments[0].body).data, PNG.sync.read(ready).data);
 });
 
