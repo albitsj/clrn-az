@@ -1,10 +1,11 @@
 /** 经专用模拟器代理验证俱乐部搜索命中结果，并比较独立原生截图基准。 */
 import { expect, test } from '@playwright/test';
 import type { AndroidDevice } from 'playwright';
-import { compareScreenshot, launchApplication, waitForHall } from '../device';
+import { artifacts, compareScreenshot, launchApplication, waitForHall } from '../device';
 import { dismissKeyboard } from '../keyboard';
 import { selectLanguage, signIn, tap } from '../navigation';
 import { withAndroidProxy } from '../proxy';
+import { captureFailure } from '../diagnostics';
 
 type ClubSearchStatus = { active: boolean; searchRequests: number; detailsRequests: number };
 
@@ -28,6 +29,10 @@ test('俱乐部搜索命中固定结果并显示原生卡片', async ({}, testIn
       // 初始化时也可能读取俱乐部资料；只在搜索页就绪后激活定向响应。
       await proxy.command('android/club-search', { active: true });
       await device.fill({ res: 'club-search-input' }, 'VisualClubSearch');
+      await device.wait({ res: 'club-search-input', text: 'VisualClubSearch', focused: true });
+      await testInfo.attach('club-search-before-submit', {
+        body: JSON.stringify(await device.info({ res: 'club-search-input' })), contentType: 'application/json',
+      });
       await device.input.press('Enter');
       await device.wait({ res: 'club-search-item-name', text: '搜索测试俱乐部' });
       await device.wait({ res: 'club-search-item-touchable' });
@@ -38,8 +43,18 @@ test('俱乐部搜索命中固定结果并显示原生卡片', async ({}, testIn
       await dismissKeyboard(device);
       const locale = process.env.ANDROID_LOCALE || 'en';
       await compareScreenshot(device, `${locale}-signed-in-club-search-result`, testInfo);
+    } catch (error) {
+      if (device) await captureFailure(device, testInfo);
+      throw error;
     } finally {
-      await device?.close();
+      try {
+        await proxy.command<ClubSearchStatus>('android/club-search')
+          .then(status => testInfo.attach('club-search-status', {
+            body: JSON.stringify(status), contentType: 'application/json',
+          }))
+          .catch(error => testInfo.attach('club-search-status-error', { body: String(error), contentType: 'text/plain' }));
+        await testInfo.attach('build-info', { path: `${artifacts}/build-info.json`, contentType: 'application/json' });
+      } finally { await device?.close(); }
     }
   });
 });
