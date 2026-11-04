@@ -40,11 +40,12 @@ export async function waitForPlayerActionStart(device: AndroidDevice, testInfo: 
       previous = undefined;
       return false;
     }
+    const sampledAt = Date.now();
     if (pixelsChanged(current!, previous)) {
-      stableSince = Date.now();
+      stableSince = sampledAt;
       previous = current;
     }
-    return Date.now() - stableSince >= 500;
+    return sampledAt - stableSince >= 500;
   };
   try {
     await expect.poll(async () => {
