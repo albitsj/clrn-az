@@ -3,6 +3,7 @@ import type { AndroidDevice } from 'playwright';
 import { adb } from './device';
 import { gameConnected, gameReady, gameTap } from './game-controls';
 import { captureNativeTransition, captureTimedPrompt } from './animation-transition';
+import { preserveAnimationFailure } from './animation-diagnostics';
 import type { ScreenshotBounds, ScreenshotMask } from './screenshot';
 
 type SamplingMethod = 'motionFrames' | 'launchFrames' | 'videoFrames';
@@ -47,8 +48,16 @@ export async function animateGamePanel(device: AndroidDevice, game: 'texas-holde
   const press = () => adb('shell', 'input', 'tap',
     String(Math.round(bounds.x + bounds.width / 2)),
     String(Math.round(bounds.y + bounds.height / 2)));
-  await captureNativeTransition(device, `${game}-${name}-${phase}`, testInfo, region, press,
-    masks, [], 0, gamePanelSamplingMethod(game, name, phase, samplingMethod), undefined, afterReady, videoPhaseAnchors);
+  const startedAt = Date.now();
+  try {
+    await captureNativeTransition(device, `${game}-${name}-${phase}`, testInfo, region, press,
+      masks, [], 0, gamePanelSamplingMethod(game, name, phase, samplingMethod), undefined, afterReady, videoPhaseAnchors);
+  } catch (error) {
+    if (`${game}-${name}-${phase}` === 'texas-holdem-chat-enter') {
+      await preserveAnimationFailure(`${game}-${name}-${phase}`, startedAt, testInfo).catch(() => undefined);
+    }
+    throw error;
+  }
 }
 
 /**
