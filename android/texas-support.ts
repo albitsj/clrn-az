@@ -3,7 +3,7 @@ import { expect, type TestInfo } from '@playwright/test';
 import type { AndroidDevice } from 'playwright';
 import type { Mitmproxy } from '../e2e/helpers/mitmproxy-client';
 import { restoreTable, type Street, type TableOptions } from '../e2e/helpers/game-scenes';
-import { gameGone, gameNodes, gameReady, gameTap, gameScreenshot, type NativeNode } from './game-controls';
+import { flattenNodes, gameGone, gameNodes, gameReady, gameTap, gameScreenshot, type NativeNode } from './game-controls';
 import { motionParts, samePixels } from './motion-regions';
 import { gameCardNames, replay } from './game-replay';
 import { adb } from './device';
@@ -22,18 +22,33 @@ export const playerActionRegion = { x: 132, y: 465, width: 63, height: 130 };
 /**
  * 前一动作的退场完成后再触发下一动作，不能仅检查下一动作的节点尚未出现。
  * @param device - 专用模拟器连接。
- * @param testInfo - 当前报告与已有起点基准。
+ * @param testInfo - 当前报告、采集模式与起点基准。
  * @param action - 即将触发的玩家动作。
+ * @param playerId - 本轮动作所属玩家，避免其他座位的标签影响退场判断。
  */
 export async function waitForPlayerActionStart(device: AndroidDevice, testInfo: TestInfo,
-  action: string): Promise<void> {
+  action: string, playerId: string): Promise<void> {
   const name = `texas-player-action-${action}`;
-  const reference = readFileSync(testInfo.snapshotPath(`${name}-start.png`));
+  const reference = testInfo.config.updateSnapshots === 'all'
+    ? undefined : readFileSync(testInfo.snapshotPath(`${name}-start.png`));
   let current: Buffer | undefined;
+  let previous: Buffer | undefined;
+  let stableSince = 0;
   try {
     await expect.poll(async () => {
       current = motionParts(await gameScreenshot(device), [playerActionRegion]).regions[0];
-      return samePixels(current, reference);
+      if (reference) return samePixels(current, reference);
+      // 首次候选采集没有基准：目标玩家的所有旧动作均须消失，且绘制区域稳定后才采集。
+      const player = (await gameNodes(device)).find(node => node.res?.startsWith(`texas-holdem-player-container-${playerId}`));
+      if (!player || flattenNodes(player).some(node => node.res?.startsWith('texas-holdem-player-action-'))) {
+        previous = undefined;
+        return false;
+      }
+      if (!previous || !samePixels(current, previous)) {
+        stableSince = Date.now();
+        previous = current;
+      }
+      return Date.now() - stableSince >= 500;
     }, { message: '上一玩家动作必须完成退场后才能采集下一动作', timeout: 30_000, intervals: [250] }).toBe(true);
   } finally {
     if (current) await testInfo.attach(`${name}-prepared-start`, { body: current, contentType: 'image/png' });

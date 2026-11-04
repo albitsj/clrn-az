@@ -14,8 +14,9 @@ export default defineConfig({
   workers: 1,
   fullyParallel: false,
   forbidOnly: Boolean(process.env.CI),
-  // 预发布环境的房间服务可能先断开长连接、再次建房又返回 502；允许两次从真实建房开始的完整重试，仍须通过原有视觉断言。
+  // 重试只保留诊断证据；首次失败后重试通过仍阻塞验收，不能靠重试变绿。
   retries: process.env.CI ? 2 : 0,
+  failOnFlakyTests: true,
   // 基准采集遍历全部独立场景以报告覆盖缺口；正式比较连续故障时停止当前业务组。
   // 两种模式中的任何失败都会使 CI 失败，房间仍由每个场景的 finally 清理。
   maxFailures: process.env.ANDROID_VISUAL_MODE === 'reference' ? 0 : 3,

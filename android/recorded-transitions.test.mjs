@@ -2,19 +2,18 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { mkdtempSync, mkdirSync, readFileSync, readdirSync, rmSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { after, before, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { decodeRecordedVideo } from './video-fixtures.mjs';
 
 const require = createRequire(import.meta.url);
 const { assertReviewedVideoMiddle, middleCandidates } = require('./animation-transition.ts');
 const { maskScreenshot } = require('./screenshot.ts');
 const snapshots = new URL('./snapshots/android-35-x86_64-720x1280-en/', import.meta.url);
-const ffmpeg = process.platform === 'linux'
-  ? fileURLToPath(new URL('../node_modules/@ffmpeg-installer/linux-x64/ffmpeg', import.meta.url)) : 'ffmpeg';
 const directory = mkdtempSync(path.join(tmpdir(), 'clrn-recorded-transitions-'));
 const collections = [['recorded-transitions', 79, 62], ['accurate-bet', 2, 1]].map(([name, count, kinds]) => {
   const fixture = new URL(`./fixtures/${name}/`, import.meta.url);
@@ -58,16 +57,12 @@ for (const { manifest, directory } of collections) for (const record of manifest
     original(record.video, directory);
     const start = original(record.before, directory), end = original(record.after, directory);
     const framesDirectory = path.join(directory, `frames-${record.id}`);
-    mkdirSync(framesDirectory);
-    const { x, y, width, height } = record.region;
+    const { x, y } = record.region;
     // 与生产录屏使用同一解码参数，所有真实帧均参与选帧，不只重放报告中每五帧的抽样。
-    execFileSync(ffmpeg, ['-y', '-v', 'error', '-i', path.join(directory, record.video.file), '-vf',
-      `fps=30,scale=720:1280:flags=lanczos,crop=${width}:${height}:${x}:${y}`,
-      path.join(framesDirectory, 'frame-%04d.png')]);
-    const files = readdirSync(framesDirectory).sort();
-    assert.equal(files.length, record.timeline.length, '解码帧数必须与原报告完整时间线一致');
+    const decoded = decodeRecordedVideo(path.join(directory, record.video.file), record.region, framesDirectory);
+    assert.equal(decoded.length, record.timeline.length, '解码帧数必须与原报告完整时间线一致');
     const masks = record.masks.map(mask => ({ ...mask, x: mask.x - x, y: mask.y - y }));
-    const frames = files.map(file => maskScreenshot(readFileSync(path.join(framesDirectory, file)), masks));
+    const frames = decoded.map(frame => maskScreenshot(frame, masks));
     // 接受距离只使用原调用方已有的已审查相位，首尾与本轮实际图都不能扩大参考集合。
     const anchors = record.anchors.map(file => readFileSync(new URL(file, snapshots)));
     assertReviewedVideoMiddle(start, end, middleCandidates(start, end, frames, 'videoFrames'), anchors);
