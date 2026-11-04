@@ -201,3 +201,12 @@ raise 的 prepared-start 与正式采集 start 附件字节相同，已查看为
 已实际 retry0 通过：提交前文本为 VisualClubSearch、focused=true，Python searchRequests=1、detailsRequests=1。
 这验证当前提交前提和真实网络路径，不追溯宣称已经唯一解释旧首败。
 后续本地完整检查为 291 项全部通过；新增的钱包诊断仍须新提交设备证据验收。
+
+自动 CI 修复流程后来推送了 `581bd93`，在余额与价格都为 0 时重开续费弹窗两次。
+这不符合本 issue 不追加重试掩盖故障的验收要求，已经以保留历史的 revert 撤销；对应自动修复流程停止，PR 暂转草稿。
+钱包定向诊断继续使用没有该重试的 `ac38ee7`，不会采用该自动修复的成功结果作为验收。
+
+最新本地复核中 Android Python 40 项有 39 项通过，既有 `test_hung_adb_probes_do_not_block_host_collectors`
+在 1 秒探测窗口内未找到 offline probe，独立执行也复现；其源码和采集器源码相对 ec7ff5a 均未改。
+完整原失败及独立日志分别保存在 `/tmp/clrn-31-final-python-android.log` 与 `/tmp/clrn-31-python-isolated-collector.log`。
+其余五组 Python 共 91 项通过；不把早先 129 项全通过或 Node 的 291 项通过冒充这次 Android 组通过。
