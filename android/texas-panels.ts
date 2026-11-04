@@ -36,18 +36,10 @@ export async function texasPanels(context: TexasContext): Promise<void> {
     { x: 220, y: 820, width: 280, height: 450 }, animationInfo, 'exit', 'videoFrames', [],
     undefined, ['texas-holdem-voice-exit-open-phase.png']);
   await gameGone(device, 'in-game-audio-root-container');
-  // 排行榜偶发加载失败会留下空白面板，重新打开以重发请求，仍须等到完整业务数据。
-  for (let attempt = 0; attempt < 3; attempt++) {
-    await gameTap(device, 'texas-holdem-leaderboard-button');
-    await gameReady(device, 'public-leader-board-container');
-    try {
-      await gameReady(device, 'public-leader-board-item-round-0', '10');
-      break;
-    } catch (error) {
-      if (attempt === 2) throw error;
-      await closeGameMask(device, 'public-leader-board-container');
-    }
-  }
+  // 首次加载失败须保留现场并阻塞验收，不能关闭重开后继续截图。
+  await gameTap(device, 'texas-holdem-leaderboard-button');
+  await gameReady(device, 'public-leader-board-container');
+  await gameReady(device, 'public-leader-board-item-round-0', '10');
   await capture('leaderboard_players');
   await closeGameMask(device, 'public-leader-board-container');
   await gameTap(device, 'game-record-button');
