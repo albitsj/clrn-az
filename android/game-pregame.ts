@@ -4,7 +4,7 @@ import { expect, type TestInfo } from '@playwright/test';
 import { gameTap as tap, gameConnected, gameReady, gameGone, gameNodes } from './game-controls';
 import { adb } from './device';
 import { animateGamePanel } from './game-panel-animation';
-import { waitForRenewal, waitForRenewalData } from './game-renewal';
+import presentation from '../visual/fixtures/account-presentation.json';
 import { captureMovingKeyframes } from './loop-keyframes';
 import { captureNativeTransition } from './animation-transition';
 import type { ScreenshotBounds, ScreenshotMask } from './screenshot';
@@ -160,12 +160,12 @@ export async function gamePreGame(device: AndroidDevice, game: 'texas-holdem' | 
         { timeout: 45_000 }).toBe(false);
       await tap(device, 'menu-button');
       await gameReady(device, `drawer-menu-item-${state}`);
-      // 动画终点也必须等待续费数据加载完成。
-      const renewalReady = state === 'renew' && animationInfo
-        ? () => waitForRenewalData(
-          device,
-        )
-        : undefined;
+      const renewalReady = state === 'renew' && animationInfo ? async () => {
+        await expect.poll(async () => (await gameReady(device, 'renew-popup-remain-diamond')).text?.trim(),
+          { timeout: 45_000 }).toBe(presentation.balance);
+        await expect.poll(async () => Number((await gameReady(device, 'renew-popup-spend-diamond')).text?.trim()),
+          { timeout: 45_000 }).toBeGreaterThan(0);
+      } : undefined;
       await animateGamePanel(device, game, state, `drawer-menu-item-${state}`,
         { x: 110, y: 360, width: 480, height: 500 }, animationInfo, 'enter',
         game === 'zhajinhua' || (game === 'texas-holdem' && ['theme', 'buy_in'].includes(state))
@@ -175,11 +175,11 @@ export async function gamePreGame(device: AndroidDevice, game: 'texas-holdem' | 
       await gameGone(device, 'drawer-menu-item-exit');
       await gameReady(device, ready);
       if (state === 'renew') {
-        await waitForRenewal(
-          device,
-          game,
-          animationInfo,
-        );
+        // 关闭按钮先于异步余额和续费价格出现，初始的两个 0 不能作为业务就绪。
+        await expect.poll(async () => (await gameReady(device, 'renew-popup-remain-diamond')).text?.trim(),
+          { timeout: 45_000 }).toBe(presentation.balance);
+        await expect.poll(async () => Number((await gameReady(device, 'renew-popup-spend-diamond')).text?.trim()),
+          { timeout: 45_000 }).toBeGreaterThan(0);
       }
       await captureConnected(state);
       const exitReady = game === 'zhajinhua' && state === 'buy_in' && animationInfo ? async () => {
