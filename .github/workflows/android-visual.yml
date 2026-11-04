@@ -214,6 +214,9 @@ jobs:
               break
             fi
             if [ "$attempt" = 3 ]; then exit 1; fi
+            # sdkmanager 会复用损坏的下载；清除缓存及未完成安装后重新下载。
+            rm -rf "${ANDROID_HOME:?}/.temp" "${ANDROID_HOME:?}/system-images/android-35/google_apis/x86_64"
+            rm -rf "${ANDROID_USER_HOME:-$HOME/.android}/cache"
             sleep 5
           done
       - name: 启用模拟器硬件加速
