@@ -75,6 +75,17 @@ pre-commit run repository-typecheck --all-files
 可分别运行 `npm run lint:js`、`npm run lint:python`、`npm run lint:shell`、
 `npm run lint:workflows`、`npm run lint:lines`、`npm run lint:architecture`、
 `npm run lint:duplicates` 和 `npm run typecheck` 定位问题。
+
+Python 源文件另有 **500 物理行**硬门禁，独立运行 `npm run lint:python:lines`
+（或 `node scripts/lint-python-lines.mjs`）。`npm run lint:python` 先执行行数门禁，再执行 Ruff；
+因此 `npm run lint`、提交前的 `repository-lint` hook 和 CI 共用的 pre-commit 入口都会阻断超长文件。
+扫描器只读检查 Git 已跟踪及未忽略的新 `.py` 文件，包含代理、测试、fixture、工具及嵌套目录；
+沿用 `scripts/source-files.mjs` 的依赖、快照和报告目录排除，以及 `.gitignore` 对新文件的忽略规则。
+已跟踪文件不会仅因匹配 `.gitignore` 被放过，已删除文件正常跳过。
+空行、注释和 docstring 均计入行数；空文件为 0 行，最后一行没有换行符也计为一行，支持 LF、CRLF、单独 CR 及其混用。
+成功时报告扫描文件数和最长文件；超限时列出文件、实际行数与 500 行上限并非零退出。
+读取失败、Git 缺失和没有适用 Python 文件均会失败；此限制没有历史额度或单文件豁免。
+
 确需自动修复时可另外显式运行 `npx eslint <文件> --fix` 或
 `uvx --from ruff==0.15.12 ruff check <文件> --config ruff.toml --fix`，审阅差异后再暂存；
 这不会自动解决复杂度、架构或重复违规。
