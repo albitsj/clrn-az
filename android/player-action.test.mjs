@@ -51,6 +51,7 @@ function readiness(frames) {
   };
   return {
     attachments,
+    info,
     /** 读取准备条件实际拍摄的次数。 */
     reads: () => reads,
     /** 使用生产参数执行准备条件。 */
@@ -68,9 +69,16 @@ test('真实首败仍有 call 标签时不能开始 raise，须等已有起点�
   assert.deepEqual(PNG.sync.read(probe.attachments[0].body).data, PNG.sync.read(ready).data);
 });
 
-test('旧动作持续可见时超时失败，并保存真实阻塞画面', async () => {
-  const probe = readiness([stale]);
-  await assert.rejects(probe.run(), /上一玩家动作必须完成退场/);
-  assert.ok(probe.reads() > 1);
-  assert.deepEqual(PNG.sync.read(probe.attachments[0].body).data, PNG.sync.read(stale).data);
-});
+for (const updateSnapshots of ['none', 'all']) {
+  test(`${updateSnapshots} 模式旧动作持续可见时超时失败，并保存真实阻塞画面`, async () => {
+    const probe = readiness([stale]);
+    probe.info.config = { updateSnapshots };
+    /** 即使 reference 的输出完全不存在，也必须先检查退场并因旧动作持续可见失败。
+     * @param name - 本轮尚未生成的基准名。
+     */
+    probe.info.snapshotPath = name => new URL(`./snapshots/local/player-action-test-absent/${name}`, import.meta.url).pathname;
+    await assert.rejects(probe.run(), /上一玩家动作必须完成退场/);
+    assert.ok(probe.reads() > 1);
+    assert.deepEqual(PNG.sync.read(probe.attachments[0].body).data, PNG.sync.read(stale).data);
+  });
+}

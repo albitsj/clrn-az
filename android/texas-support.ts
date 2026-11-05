@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import path from 'node:path';
 import { expect, type TestInfo } from '@playwright/test';
 import type { AndroidDevice } from 'playwright';
 import { restoreTable, type Street, type TableOptions } from '../e2e/helpers/game-scenes';
@@ -22,13 +23,15 @@ export const playerActionRegion = { x: 132, y: 465, width: 63, height: 130 };
 /**
  * 前一动作的退场完成后再触发下一动作，不能仅检查下一动作的节点尚未出现。
  * @param device - 专用模拟器连接。
- * @param testInfo - 当前报告与已有起点基准。
+ * @param testInfo - 当前采集报告。
  * @param action - 即将触发的玩家动作。
  */
 export async function waitForPlayerActionStart(device: AndroidDevice, testInfo: TestInfo,
   action: string): Promise<void> {
   const name = `texas-player-action-${action}`;
-  const reference = readFileSync(testInfo.snapshotPath(`${name}-start.png`));
+  // 四种动作共用已审查的空牌桌；准备依据独立于本轮 reference 将生成的输出。
+  const reference = readFileSync(path.join(__dirname,
+    'snapshots/android-35-x86_64-720x1280-en/texas-player-action-call-start.png'));
   let current: Buffer | undefined;
   try {
     await expect.poll(async () => {
