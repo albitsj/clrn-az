@@ -36,7 +36,9 @@ export async function texasPanels(context: TexasContext): Promise<void> {
     { x: 220, y: 820, width: 280, height: 450 }, animationInfo, 'exit', 'videoFrames', [],
     undefined, ['texas-holdem-voice-exit-open-phase.png']);
   await gameGone(device, 'in-game-audio-root-container');
+  // 首次加载失败须保留现场并阻塞验收，不能关闭重开后继续截图。
   await gameTap(device, 'texas-holdem-leaderboard-button');
+  await gameReady(device, 'public-leader-board-container');
   await gameReady(device, 'public-leader-board-item-round-0', '10');
   await capture('leaderboard_players');
   await closeGameMask(device, 'public-leader-board-container');

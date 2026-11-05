@@ -3,6 +3,7 @@ import type { AndroidDevice } from 'playwright';
 import { captureNativeTransition, captureTimedPrompt } from './animation-transition';
 import { adb } from './device';
 import { gameConnected, gameReady, gameTap } from './game-controls';
+import { preserveAnimationFailure } from './animation-diagnostics';
 import type { ScreenshotBounds, ScreenshotMask } from './screenshot';
 
 type SamplingMethod = 'motionFrames' | 'launchFrames' | 'videoFrames';
@@ -48,8 +49,23 @@ export async function animateGamePanel(device: AndroidDevice, game: 'texas-holde
   const press = () => adb('shell', 'input', 'tap',
     String(Math.round(bounds.x + bounds.width / 2)),
     String(Math.round(bounds.y + bounds.height / 2)));
-  await captureNativeTransition(device, `${game}-${name}-${phase}`, testInfo, region, press,
-    masks, [], 0, gamePanelSamplingMethod(game, name, phase, samplingMethod), undefined, afterReady, videoPhaseAnchors);
+  const startedAt = Date.now();
+  try {
+    await captureNativeTransition(device, `${game}-${name}-${phase}`, testInfo, region, press,
+      masks, [], 0, gamePanelSamplingMethod(game, name, phase, samplingMethod), undefined, afterReady, videoPhaseAnchors);
+  } catch (error) {
+    await preservePanelFailure(`${game}-${name}-${phase}`, startedAt, testInfo);
+    throw error;
+  }
+}
+
+/** 保存聊天入场失败的诊断。
+ * @param name - 动画名称。
+ * @param startedAt - 开始时间。
+ * @param info - 测试报告。
+ */
+async function preservePanelFailure(name: string, startedAt: number, info: TestInfo): Promise<void> {
+  if (name === 'texas-holdem-chat-enter') await preserveAnimationFailure(name, startedAt, info).catch(() => undefined);
 }
 
 /**

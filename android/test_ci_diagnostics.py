@@ -24,6 +24,10 @@ class CollectorTests(unittest.TestCase):
 
     def capture_with_portable_host(self, command, log, timeout):
         if 'adb' in Path(command[0]).name:
+            # 直接解释新建的 shell 夹具，避免宿主首次执行临时文件的启动延迟耗尽 1 秒窗口。
+            # 仍执行真实子进程、输出和 sleep；缺失的 adb 继续走原生 spawn 失败路径。
+            if Path(command[0]).is_file():
+                command = ['/bin/sh', *command]
             return capture(command, log, timeout)
         return capture([sys.executable, '-c', 'print("host resources available")'], log, timeout=5)
 

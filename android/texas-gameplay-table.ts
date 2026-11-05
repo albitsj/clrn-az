@@ -13,7 +13,7 @@ import { animateGamePanel } from './game-panel-animation';
 import { closeAnimatedGameMask } from './game-pregame';
 import { gameReplaySender } from './game-replay';
 import { captureMovingKeyframes } from './loop-keyframes';
-import { expectTexasBalance, type TexasContext } from './texas-support';
+import { expectTexasBalance, playerActionRegion, waitForPlayerActionStart, type TexasContext } from './texas-support';
 
 import type { TexasRestore } from './texas-gameplay-restore';
 
@@ -150,9 +150,10 @@ export async function capturePlayerActions(context: TexasContext, restore: Texas
       };
       await expect.poll(playerAction, { timeout: 30_000 }).toBe(false);
       await gameReady(device, 'texas-holdem-active-countdown');
+      await waitForPlayerActionStart(device, animationInfo, action, actionPlayer);
       await captureNativeTransition(device, `texas-player-action-${action}`, animationInfo,
         // 动作标签右侧不与玩家头像倒计时重叠，可完整观察标签而无需遮罩。
-        { x: 132, y: 465, width: 63, height: 130 },
+        playerActionRegion,
         () => send({ scene: 'player-action', action }),
         [], [], 0, 'videoFrames');
       await expect.poll(playerAction, { timeout: 30_000 }).toBe(true);

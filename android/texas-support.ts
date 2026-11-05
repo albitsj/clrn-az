@@ -1,9 +1,11 @@
+import { readFileSync } from 'node:fs';
 import { expect, type TestInfo } from '@playwright/test';
 import type { AndroidDevice } from 'playwright';
 import { restoreTable, type Street, type TableOptions } from '../e2e/helpers/game-scenes';
 import type { Mitmproxy } from '../e2e/helpers/mitmproxy-client';
+import { motionParts, samePixels } from './motion-regions';
 import { adb } from './device';
-import { gameGone, gameNodes, gameReady, gameSemanticText, gameTap, type NativeNode } from './game-controls';
+import { flattenNodes, gameGone, gameNodes, gameReady, gameScreenshot, gameSemanticText, gameTap, type NativeNode } from './game-controls';
 import { gameMenu } from './game-pregame';
 import { gameCardNames, replay } from './game-replay';
 import type { ScreenshotMask } from './screenshot';
@@ -13,6 +15,65 @@ export type TexasContext = {
   animationInfo?: TestInfo;
   capture(state: string, masks?: ScreenshotMask[], triggerTransient?: () => Promise<string | void>): Promise<void>;
 };
+
+// 与动作标签录屏共用同一区域，不包含头像倒计时。
+export const playerActionRegion = { x: 132, y: 465, width: 63, height: 130 };
+
+/**
+ * 前一动作的退场完成后再触发下一动作，不能仅检查下一动作的节点尚未出现。
+ * @param device - 专用模拟器连接。
+ * @param testInfo - 当前报告、采集模式与起点基准。
+ * @param action - 即将触发的玩家动作。
+ * @param playerId - 本轮动作所属玩家，避免其他座位的标签影响退场判断。
+ */
+export async function waitForPlayerActionStart(device: AndroidDevice, testInfo: TestInfo,
+  action: string, playerId: string): Promise<void> {
+  const name = `texas-player-action-${action}`;
+  const reference = testInfo.config.updateSnapshots === 'all'
+    ? undefined : readFileSync(testInfo.snapshotPath(`${name}-start.png`));
+  let current: Buffer | undefined;
+  let previous: Buffer | undefined;
+  let stableSince = 0;
+  /** 检查没有基准时的动作区域稳定性。 */
+  const candidateReady = async (): Promise<boolean> => {
+    if (!await playerActionGone(device, playerId)) {
+      previous = undefined;
+      return false;
+    }
+    const sampledAt = Date.now();
+    if (pixelsChanged(current!, previous)) {
+      stableSince = sampledAt;
+      previous = current;
+    }
+    return sampledAt - stableSince >= 500;
+  };
+  try {
+    await expect.poll(async () => {
+      current = motionParts(await gameScreenshot(device), [playerActionRegion]).regions[0];
+      if (reference) return samePixels(current, reference);
+      return candidateReady();
+    }, { message: '上一玩家动作必须完成退场后才能采集下一动作', timeout: 30_000, intervals: [250] }).toBe(true);
+  } finally {
+    if (current) await testInfo.attach(`${name}-prepared-start`, { body: current, contentType: 'image/png' });
+  }
+}
+
+/** 检查目标玩家的旧动作是否消失。
+ * @param device - 原生设备。
+ * @param playerId - 玩家标识。
+ */
+async function playerActionGone(device: AndroidDevice, playerId: string): Promise<boolean> {
+  const player = (await gameNodes(device)).find(node => node.res?.startsWith(`texas-holdem-player-container-${playerId}`));
+  return !!player && !flattenNodes(player).some(node => node.res?.startsWith('texas-holdem-player-action-'));
+}
+
+/** 比较连续采集的区域。
+ * @param current - 当前图像。
+ * @param previous - 上一图像。
+ */
+function pixelsChanged(current: Buffer, previous?: Buffer): boolean {
+  return !previous || !samePixels(current, previous);
+}
 
 /**
  * 复用 Python 命名场景恢复牌局，等待五个真实牌面容器完成更新。

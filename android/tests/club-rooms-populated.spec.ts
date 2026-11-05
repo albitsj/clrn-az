@@ -1,10 +1,11 @@
 /** 在独立应用会话中采集有牌局的俱乐部页面，避免资料留在空态场景。 */
 import { test } from '@playwright/test';
 import { androidScenarios } from '../scenarios';
-import { launchApplication, waitForHall, compareScreenshot } from '../device';
+import { artifacts, launchApplication, waitForHall, compareScreenshot } from '../device';
 import { selectLanguage, signIn, navigateScenario } from '../navigation';
 import { screenshotMasks } from '../screenshot';
 import { withAndroidProxy } from '../proxy';
+import { captureFailure } from '../diagnostics';
 
 const locale = process.env.ANDROID_LOCALE || 'en';
 const group = process.env.ANDROID_GROUP || 'all';
@@ -28,8 +29,19 @@ if (group === 'all' || group === 'social') {
         for (const path of ['/v10/club', '/v10/clubs', '/v2/building/rooms']) {
           if (!(status.requests[path] > 0)) throw new Error(`有数据牌局场景未经过 mitmproxy：${path}`);
         }
+      } catch (error) {
+        await captureFailure(device, testInfo);
+        throw error;
       } finally {
-        await device.close();
+        try {
+          await proxy.command('native/club-rooms').then(status => testInfo.attach('club-rooms-status', {
+            body: JSON.stringify(status), contentType: 'application/json',
+          })).catch(error => testInfo.attach('club-rooms-status-error', { body: String(error), contentType: 'text/plain' }));
+          await proxy.command('android/network-selection').then(status => testInfo.attach('network-selection', {
+            body: JSON.stringify(status), contentType: 'application/json',
+          })).catch(error => testInfo.attach('network-selection-error', { body: String(error), contentType: 'text/plain' }));
+          await testInfo.attach('build-info', { path: `${artifacts}/build-info.json`, contentType: 'application/json' });
+        } finally { await device.close(); }
       }
     });
   });

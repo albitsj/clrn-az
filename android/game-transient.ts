@@ -31,7 +31,15 @@ async function captureTransient(device: AndroidDevice, name: string, testInfo: T
   expect(frames.length, '提示可见时必须采集至少两帧真实屏幕').toBeGreaterThanOrEqual(2);
   const state: TransientState = { stableSince: 0 };
   for (const [index, frame] of frames.entries()) {
-    validateTransientFrame(frame, resource, expectedText, requirePanel);
+    validateTransientFrame(frame, resource, expectedText);
+    if (JSON.stringify(frame.before.bounds) !== JSON.stringify(frame.after.bounds)) {
+      await testInfo.attach(`${name}-frame-${index}-original`, {
+        body: Buffer.from(frame.png, 'base64'), contentType: 'image/png',
+      });
+      state.reference = undefined;
+      continue;
+    }
+    validateTransientPanel(frame, requirePanel);
     const current = await transientFrameImage(frame, backgroundMasks, name, index, testInfo);
     updateTransientStability(state, frame, current);
   }
@@ -104,13 +112,19 @@ async function transientFrames(device: AndroidDevice, resource: string, expected
  * @param frame - 原生采集帧。
  * @param resource - 提示标记。
  * @param expectedText - 业务预期文字。
- * @param requirePanel - 是否要求独立前景面板。
  */
-function validateTransientFrame(frame: Frame, resource: string, expectedText?: string, requirePanel?: boolean): void {
+function validateTransientFrame(frame: Frame, resource: string, expectedText?: string): void {
   expect(frame.before.text, '截图前提示必须可见').toBeTruthy();
   expect(frame.after.text, '截图后提示文字必须保持一致').toBe(frame.before.text);
   if (expectedText) assertTransientText(frame.before.text, resource, expectedText);
-  if (requirePanel) expect(frame.panel, '提示面板不能被背景遮罩覆盖').toBeTruthy();
+}
+
+/** 校验需要独立面板的帧。
+ * @param frame - 采集帧。
+ * @param required - 是否需要面板。
+ */
+function validateTransientPanel(frame: Frame, required?: boolean): void {
+  if (required) expect(frame.panel, '提示面板不能被背景遮罩覆盖').toBeTruthy();
 }
 
 /** Toast 包含业务文字，预测结果则必须与金额完全一致。

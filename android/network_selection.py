@@ -1,11 +1,31 @@
-"""只读选线诊断：不保存请求正文、令牌、完整 URL 或用户/房间身份。"""
+"""只读选线与钱包读取诊断：不保存正文、令牌、余额、完整 URL 或用户/房间身份。"""
 
 import json
+import re
 import time
 from urllib.parse import urlsplit
 
 METADATA_PATHS = ('/public/v12/metadata/servers', '/public/v13/metadata/servers')
 HEALTH_PATH = '/node/v1/status'
+
+
+def diagnostic_path(request):
+    path = urlsplit(request.path).path
+    if path in (*METADATA_PATHS, HEALTH_PATH, '/v2/centrifugo/connection/websocket'):
+        return path
+    if request.method == 'PUT' and re.fullmatch(r'/v10/wallet/[^/]+', path):
+        return '/v10/wallet/{user}'
+    return None
+
+
+def wallet_details(body):
+    if not isinstance(body, dict):
+        return {}
+    result = body.get('result')
+    currencies = result.get('currencies') if isinstance(result, dict) else None
+    codes = [item.get('code') for item in currencies if isinstance(item, dict)
+             and item.get('code') in ('coin', 'diamond')] if isinstance(currencies, list) else None
+    return {'walletOk': body.get('ok') if type(body.get('ok')) is bool else None, 'walletCodes': codes}
 
 
 def ack_frames(message):
@@ -35,9 +55,8 @@ class NetworkSelection:
         self.total = 0
 
     def observe(self, flow, event='response', **details):
-        path = urlsplit(flow.request.path).path
-        if not staging(flow.request.host) or path not in (*METADATA_PATHS, HEALTH_PATH,
-                                                         '/v2/centrifugo/connection/websocket'):
+        path = diagnostic_path(flow.request)
+        if not staging(flow.request.host) or path is None:
             return
         record = {'at': round(time.time() * 1000), 'event': event, 'host': flow.request.host,
                   'path': path, 'method': flow.request.method, **details}
@@ -45,6 +64,8 @@ class NetworkSelection:
             record['status'] = flow.response.status_code
             try:
                 body = flow.response.json()
+                if path == '/v10/wallet/{user}':
+                    record.update(wallet_details(body))
                 if path == HEALTH_PATH and isinstance(body, dict):
                     for key in ('backend_delay', 'server_load'):
                         value = body.get(key)
