@@ -13,6 +13,7 @@ on:
       - 'package.json'
       - 'package-lock.json'
       - '.github/workflows/android-visual.yml'
+      - '.github/actions/android-visual/**'
   push:
     branches: [master]
     paths:
@@ -25,10 +26,15 @@ on:
       - 'package.json'
       - 'package-lock.json'
       - '.github/workflows/android-visual.yml'
+      - '.github/actions/android-visual/**'
   schedule:
     - cron: '42 22 * * *'
   workflow_dispatch:
     inputs:
+      full:
+        description: '强制全量执行，不使用历史失败优先调度'
+        type: boolean
+        default: false
       group:
         description: '业务组；默认全部'
         type: choice
@@ -51,6 +57,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   # 只淘汰同一 PR 的旧回归；手动、定时及 master 推送运行互不取消。
@@ -60,8 +67,14 @@ concurrency:
 jobs:
   accounts:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     outputs:
+      priority: ${{ steps.plan.outputs.priority }}
+      remaining: ${{ steps.plan.outputs.remaining }}
+      has-priority: ${{ steps.plan.outputs.has-priority }}
+      has-remaining: ${{ steps.plan.outputs.has-remaining }}
       matrix: ${{ steps.plan.outputs.matrix }}
+      merge-gate: ${{ steps.plan.outputs.merge-gate }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -69,9 +82,42 @@ jobs:
           node-version: '24'
       - id: plan
         env:
+          GH_TOKEN: ${{ github.token }}
           CI_ANDROID_GROUP: ${{ inputs.group || 'all' }}
           CI_ANDROID_LOCALE: ${{ inputs.locale || 'all' }}
-        run: node scripts/plan-ci-accounts.mjs android
+          CI_ANDROID_FULL: ${{ inputs.full || false }}
+          CI_ANDROID_FILTER: ${{ inputs.filter || '' }}
+          CI_ANDROID_MODE: ${{ inputs.mode || 'compare' }}
+        run: node scripts/android-ci-run.mjs plan
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android-ci-plan
+          include-hidden-files: true
+          overwrite: true
+          path: .ttyctl/android-ci/plan.json
+          retention-days: 14
+          if-no-files-found: error
+  apk:
+    timeout-minutes: 30
+    if: >-
+      (github.event_name != 'pull_request' ||
+       (github.event.pull_request.head.repo.full_name == github.repository && !github.event.pull_request.draft))
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: 下载并校验本轮唯一 Release APK
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node android/download-release.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android-visual-apk
+          path: android/artifacts/current/
+          retention-days: 1
+          if-no-files-found: error
   driver:
     if: >-
       (github.event_name != 'pull_request' ||
@@ -124,18 +170,19 @@ jobs:
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 1
-  visual:
-    needs: [accounts, driver]
-    name: Android (${{ matrix.label }})
+  priority:
+    needs: [accounts, driver, apk]
+    name: Android priority (${{ matrix.label }})
     strategy:
       fail-fast: false
-      matrix: ${{ fromJSON(needs.accounts.outputs.matrix) }}
+      matrix: ${{ fromJSON(needs.accounts.outputs.priority) }}
     concurrency:
       group: android-staging-account-${{ matrix.account }}
       cancel-in-progress: false
       queue: max
     # 登录凭据仅供本仓库分支使用。
     if: >-
+      needs.accounts.outputs.has-priority == 'true' &&
       (github.event_name != 'pull_request' ||
        (github.event.pull_request.head.repo.full_name == github.repository && !github.event.pull_request.draft))
     runs-on: ubuntu-24.04
@@ -145,128 +192,94 @@ jobs:
       ANDROID_SERIAL: emulator-5554
       ANDROID_GROUP: ${{ matrix.group }}
       ANDROID_LOCALE: ${{ matrix.locale }}
+      CLRN_CI_ACCOUNT: ${{ matrix.account }}
+      ANDROID_VISUAL_MODE: ${{ inputs.mode || 'compare' }}
       ANDROID_FILTER: ${{ inputs.filter || '' }}
       ANDROID_SHARD_FILTER: ${{ matrix.filter }}
       ANDROID_DIAGNOSTICS_DIR: android/artifacts/diagnostics
       ANDROID_DIAGNOSTICS_SHARD: ${{ matrix.shard }}
     steps:
       - uses: actions/checkout@v4
-      - name: 开始 Android 初始化诊断
-        env:
-          CLRN_CI_TEST_ACCOUNTS: ${{ secrets.CLRN_CI_TEST_ACCOUNTS_V2 }}
-          TESTING_API_TOKEN: ${{ secrets.TESTING_API_TOKEN }}
-        run: python3 android/ci_diagnostics.py start
+      - uses: ./.github/actions/android-visual
+        with:
+          accounts: ${{ secrets.CLRN_CI_TEST_ACCOUNTS_V2 }}
+          testing-token: ${{ secrets.TESTING_API_TOKEN }}
+  remaining:
+    needs: [accounts, driver, apk, priority]
+    name: Android remaining (${{ matrix.label }})
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.accounts.outputs.remaining) }}
+    concurrency:
+      group: android-staging-account-${{ matrix.account }}
+      cancel-in-progress: false
+      queue: max
+    # 登录凭据仅供本仓库分支使用。
+    if: >-
+      always() && !cancelled() &&
+      needs.accounts.result == 'success' && needs.driver.result == 'success' && needs.apk.result == 'success' &&
+      (needs.priority.result == 'success' ||
+       (needs.accounts.outputs.has-priority == 'false' && needs.priority.result == 'skipped')) &&
+      needs.accounts.outputs.has-remaining == 'true' &&
+      (github.event_name != 'pull_request' ||
+       (github.event.pull_request.head.repo.full_name == github.repository && !github.event.pull_request.draft))
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    env:
+      CI: 'true'
+      ANDROID_SERIAL: emulator-5554
+      ANDROID_GROUP: ${{ matrix.group }}
+      ANDROID_LOCALE: ${{ matrix.locale }}
+      CLRN_CI_ACCOUNT: ${{ matrix.account }}
+      ANDROID_VISUAL_MODE: ${{ inputs.mode || 'compare' }}
+      ANDROID_FILTER: ${{ inputs.filter || '' }}
+      ANDROID_SHARD_FILTER: ${{ matrix.filter }}
+      ANDROID_DIAGNOSTICS_DIR: android/artifacts/diagnostics
+      ANDROID_DIAGNOSTICS_SHARD: ${{ matrix.shard }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/android-visual
+        with:
+          accounts: ${{ secrets.CLRN_CI_TEST_ACCOUNTS_V2 }}
+          testing-token: ${{ secrets.TESTING_API_TOKEN }}
+  complete:
+    name: ${{ needs.accounts.outputs.merge-gate != 'false' && 'Android full regression' || 'Android diagnostic regression' }}
+    timeout-minutes: 15
+    if: always()
+    needs: [accounts, driver, apk, priority, remaining]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
-          cache: npm
-      - name: 准备 Android 独占账号及金币余额
-        env:
-          CLRN_CI_ACCOUNT: ${{ matrix.account }}
-          CLRN_CI_TEST_ACCOUNTS: ${{ secrets.CLRN_CI_TEST_ACCOUNTS_V2 }}
-          TESTING_API_TOKEN: ${{ secrets.TESTING_API_TOKEN }}
-        run: node scripts/configure-ci-account.mjs
-      - run: npm ci
-      - name: 准备短转场录屏解码器
-        if: matrix.group == 'guest' || matrix.group == 'account' || matrix.group == 'social' || matrix.group == 'rooms' || matrix.group == 'texas' || matrix.group == 'zhajinhua'
-        run: |
-          binary="$GITHUB_WORKSPACE/node_modules/@ffmpeg-installer/linux-x64/ffmpeg"
-          test -x "$binary"
-          "$binary" -version
-          echo "$GITHUB_WORKSPACE/node_modules/@ffmpeg-installer/linux-x64" >> "$GITHUB_PATH"
-      - uses: actions/setup-python@v5
+      - uses: actions/download-artifact@v4
         with:
-          python-version: '3.12'
-      - name: 安装共用网络代理
-        run: |
-          python -m unittest discover -s android -p 'test_*.py'
-          python -m venv e2e/.venv
-          e2e/.venv/bin/python -m pip install -r e2e/mitmproxy/requirements.txt
-      - name: 下载并校验 Release APK
+          name: android-ci-plan
+          path: .ttyctl/android-ci
+      - name: 验证当前提交完整覆盖并记录阶段结果
         env:
           GH_TOKEN: ${{ github.token }}
-        run: node android/download-release.mjs
-      - name: 安装原生控件测试驱动
-        run: npx playwright install android
-      - uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
-      - name: 下载固定原生驱动
-        if: matrix.group == 'texas' || matrix.group == 'zhajinhua' || matrix.group == 'guest' || matrix.group == 'social' || matrix.group == 'rooms' || matrix.group == 'account'
-        uses: actions/download-artifact@v4
-        with:
-          name: android-visual-driver
-          path: .ttyctl/android-driver
-      - name: 校验固定原生驱动产物
-        if: matrix.group == 'texas' || matrix.group == 'zhajinhua' || matrix.group == 'guest' || matrix.group == 'social' || matrix.group == 'rooms' || matrix.group == 'account'
-        run: |
-          test -s .ttyctl/android-driver/android-driver-target.apk
-          test -s .ttyctl/android-driver/android-driver.apk
-          node -e 'const source = require("./.ttyctl/android-driver/source.json"); if (source.revision !== "39e3553a4f283a41134d75d7e404484bd9e6865a" || source.patch !== 6) process.exit(1)'
-      - name: 准备固定 Android 系统镜像
-        run: |
-          sdk_manager="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
-          (yes || true) | "$sdk_manager" --licenses > /dev/null
-          for attempt in 1 2 3; do
-            if "$sdk_manager" --install 'system-images;android-35;google_apis;x86_64' &&
-              test -f "$ANDROID_HOME/system-images/android-35/google_apis/x86_64/system.img"; then
-              break
-            fi
-            if [ "$attempt" = 3 ]; then exit 1; fi
-            sleep 5
-          done
-      - name: 启用模拟器硬件加速
-        run: |
-          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
-          sudo udevadm control --reload-rules
-          sudo udevadm trigger --name-match=kvm
-      - name: 原生页面截图回归
-        uses: reactivecircus/android-emulator-runner@v2
-        env:
-          ANDROID_VISUAL_MODE: ${{ inputs.mode || 'compare' }}
-          TESTING_API_TOKEN: ${{ secrets.TESTING_API_TOKEN }}
-        with:
-          api-level: 35
-          target: google_apis
-          arch: x86_64
-          ram-size: 4096M
-          heap-size: 256M
-          disk-size: 4096M
-          disable-animations: true
-          disable-spellchecker: true
-          pre-emulator-launch-script: python3 android/ci_diagnostics.py install-emulator-wrapper
-          emulator-options: -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader_indirect -camera-back none -camera-front none -skin 720x1280
-          script: python3 android/ci_diagnostics.py run -- node android/run-visual.mjs
-      - name: 完成 Android 清理诊断
+          CI_ANDROID_NEEDS: ${{ toJSON(needs) }}
+        run: node scripts/android-ci-run.mjs complete
+      - uses: actions/upload-artifact@v4
         if: always()
-        env:
-          CLRN_CI_TEST_ACCOUNTS: ${{ secrets.CLRN_CI_TEST_ACCOUNTS_V2 }}
-          TESTING_API_TOKEN: ${{ secrets.TESTING_API_TOKEN }}
-        run: python3 android/ci_diagnostics.py stop
-      - name: 保存脱敏 Android 诊断
-        if: always()
-        uses: actions/upload-artifact@v4
         with:
-          name: android-diagnostics-${{ matrix.group }}-${{ matrix.locale }}-${{ matrix.shard }}-${{ github.run_id }}-${{ github.run_attempt }}
-          path: android/artifacts/diagnostics/
-          if-no-files-found: error
-          retention-days: 7
-      - name: 保存报告、失败截图和构建身份
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: android-staging-visual-${{ matrix.group }}-${{ matrix.locale }}-${{ matrix.shard }}-${{ github.run_id }}-${{ github.run_attempt }}
+          name: android-ci-results-${{ github.run_attempt }}
+          include-hidden-files: true
+          path: .ttyctl/android-ci/
           retention-days: 14
-          path: |
-            android/playwright-report/
-            android/test-results/
-            android/artifacts/current/build-info.json
-            android/artifacts/current/release.json
-      - name: 保存待审查基准
-        if: always() && inputs.mode == 'reference'
-        uses: actions/upload-artifact@v4
-        with:
-          name: android-staging-reference-${{ matrix.group }}-${{ matrix.locale }}-${{ matrix.shard }}-${{ github.run_id }}
-          path: android/snapshots/
-          retention-days: 14
+  # 保留已有 required-check 名称；跳过的重型阶段不能替代当前提交全量成功。
+  visual:
+    name: ${{ needs.accounts.outputs.merge-gate != 'false' && 'Android' || 'Android diagnostic' }} (${{ matrix.label }})
+    if: always() && needs.accounts.result == 'success'
+    needs: [accounts, complete]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.accounts.outputs.matrix) }}
+    steps:
+      - name: 保留分片合并门禁
+        env:
+          COMPLETE_RESULT: ${{ needs.complete.result }}
+        run: test "$COMPLETE_RESULT" = success
