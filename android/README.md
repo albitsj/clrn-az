@@ -189,3 +189,5 @@ Android CI 在初始化前启动独立诊断采集器，持续保存 logcat、AD
 截图比例调整关联 [问题 #27](https://github.com/albitsj/clrn-az/issues/27)。按固定版本 Playwright 比较器复核本修复请求中原有的 76 张基准替换，73 张新旧图在 0.5% 范围内，已恢复 master 中经过审查的旧图；超过该比例的既有替换继续保留。动画运动幅度、真实中途相位、素材完整性、遮罩及业务断言保持原有检查范围。比较器边界测试覆盖一万有效像素中 50 个差异通过、51 个失败，整图、局部图、静态补集和稳定性判断均须遵守。
 
 此前十张中文失败截图来自[比较运行 40450523520](https://github.com/albitsj/clrn-az/actions/runs/40450523520)，应用固定为 `69f9251d3b5f2b93aa2d880d27abbeefe16ee645`、Release `android-staging-300001001-69f9251d3b5f`。应用[圆形按钮修复 #7066](https://github.com/kevinanew/laiwan_react_native/pull/7066)将图像模式由 `center` 改为 `contain`，引起已审查并获认可的圆环差异。当时按 0.5% 比较首次及重试共二十张实际图全部通过，因此保留旧图。恢复真实选线后的基准选择以[合并请求 #29 修订记录](BASELINE_REVIEW_29_REVISION.md)为准；完整模拟器回归仍需新提交的后续比较运行验证。
+
+CI 的失败优先两阶段调度、手动全量运行、required checks 和验证记录见 [Android CI 调度](../docs/android-ci-scheduling.md)。
