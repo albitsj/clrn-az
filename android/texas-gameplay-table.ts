@@ -150,7 +150,7 @@ export async function capturePlayerActions(context: TexasContext, restore: Texas
       };
       await expect.poll(playerAction, { timeout: 30_000 }).toBe(false);
       await gameReady(device, 'texas-holdem-active-countdown');
-      await waitForPlayerActionStart(device, animationInfo, action, actionPlayer);
+      await waitForPlayerActionStart(device, animationInfo, action);
       await captureNativeTransition(device, `texas-player-action-${action}`, animationInfo,
         // 动作标签右侧不与玩家头像倒计时重叠，可完整观察标签而无需遮罩。
         playerActionRegion,

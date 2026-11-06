@@ -11,6 +11,10 @@ SHA256 为 `7f5bc709b2ce7b76d85dca9338085ca528eacf6025d0152f50a04fe4ab4b2a10`。
 首败为起点逐像素断言失败，重试通过；不能把 Actions success 当成首次通过。
 本图仅是准备逻辑的否定输入，不是新增或替换的正式截图基准。
 
+退场判定复用仓库已有的英文 `texas-player-action-call-start.png` 空牌桌区域；
+call/raise/check/fold 的正式起点字节一致。该只读准备依据不读取本轮快照输出路径，
+因此本机 `snapshots/local/` 尚无图片时也能先验证退场，再进入 reference 采集。
+正式 compare 仍逐项检查本轮指定的起点、终点和中途轨迹，缺图或错误画面仍失败。
 reference 回归另使用 `check-middle.png`：原样取自同一固定 APK 的
 [运行 41814766279](https://github.com/albitsj/clrn-az/actions/runs/41814766279) 中
 `texas/en/game-table` retry0 的 `texas-player-action-check-middle` 附件

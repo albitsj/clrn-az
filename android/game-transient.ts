@@ -29,24 +29,39 @@ async function captureTransient(device: AndroidDevice, name: string, testInfo: T
     body: JSON.stringify(frames.map(({ png: _png, ...metadata }) => metadata)), contentType: 'application/json',
   });
   expect(frames.length, '提示可见时必须采集至少两帧真实屏幕').toBeGreaterThanOrEqual(2);
+  const stable = await stableTransientFrames(frames, resource, expectedText, requirePanel, backgroundMasks, name, testInfo);
+  expect(stable, '提示存在期间全部未遮罩像素必须连续稳定至少 250 毫秒').toBeDefined();
+  await testInfo.attach(name, { body: stable!, contentType: 'image/png' });
+  expect.soft(stable!).toMatchSnapshot(`${name}.png`);
+}
+
+/** 检查每帧并保留连续稳定的截图。
+ * @param frames - 原生采集帧。
+ * @param resource - 提示标记。
+ * @param expectedText - 业务预期文字。
+ * @param requirePanel - 是否要求独立面板。
+ * @param backgroundMasks - 背景遮罩。
+ * @param name - 截图名。
+ * @param testInfo - 测试报告。
+ */
+async function stableTransientFrames(frames: Frame[], resource: string, expectedText: string | undefined,
+  requirePanel: boolean | undefined, backgroundMasks: ScreenshotMask[], name: string,
+  testInfo: TestInfo): Promise<Buffer | undefined> {
   const state: TransientState = { stableSince: 0 };
   for (const [index, frame] of frames.entries()) {
     validateTransientFrame(frame, resource, expectedText);
+    const original = Buffer.from(frame.png, 'base64');
+    await testInfo.attach(`${name}-frame-${index}-original`, { body: original, contentType: 'image/png' });
+    // 移动中的帧保留原图，但不要求面板或参与稳定截图。
     if (JSON.stringify(frame.before.bounds) !== JSON.stringify(frame.after.bounds)) {
-      await testInfo.attach(`${name}-frame-${index}-original`, {
-        body: Buffer.from(frame.png, 'base64'), contentType: 'image/png',
-      });
       state.reference = undefined;
       continue;
     }
     validateTransientPanel(frame, requirePanel);
-    const current = await transientFrameImage(frame, backgroundMasks, name, index, testInfo);
-    updateTransientStability(state, frame, current);
+    const current = await transientFrameImage(frame, backgroundMasks, name, index, testInfo, original);
+    updateStablePixels(state, frame.capturedAt, current);
   }
-  const stable = state.stable;
-  expect(stable, '提示存在期间全部未遮罩像素必须连续稳定至少 250 毫秒').toBeDefined();
-  await testInfo.attach(name, { body: stable!, contentType: 'image/png' });
-  expect.soft(stable!).toMatchSnapshot(`${name}.png`);
+  return state.stable;
 }
 
 /**
@@ -108,7 +123,7 @@ async function transientFrames(device: AndroidDevice, resource: string, expected
   return { frames, expectedText };
 }
 
-/** 每帧都校验前后文字与独立面板。
+/** 每帧都校验前后文字。
  * @param frame - 原生采集帧。
  * @param resource - 提示标记。
  * @param expectedText - 业务预期文字。
@@ -119,12 +134,12 @@ function validateTransientFrame(frame: Frame, resource: string, expectedText?: s
   if (expectedText) assertTransientText(frame.before.text, resource, expectedText);
 }
 
-/** 校验需要独立面板的帧。
- * @param frame - 采集帧。
- * @param required - 是否需要面板。
+/** 稳定帧需要独立面板时检查其存在。
+ * @param frame - 原生采集帧。
+ * @param requirePanel - 是否要求面板。
  */
-function validateTransientPanel(frame: Frame, required?: boolean): void {
-  if (required) expect(frame.panel, '提示面板不能被背景遮罩覆盖').toBeTruthy();
+function validateTransientPanel(frame: Frame, requirePanel?: boolean): void {
+  if (requirePanel) expect(frame.panel, '提示面板不能被背景遮罩覆盖').toBeTruthy();
 }
 
 /** Toast 包含业务文字，预测结果则必须与金额完全一致。
@@ -143,32 +158,18 @@ function assertTransientText(actual: string | undefined, resource: string, expec
  * @param name - 截图名。
  * @param index - 当前帧序号。
  * @param testInfo - 测试报告。
+ * @param original - 已保存的原始截图。
  */
 async function transientFrameImage(frame: Frame, backgroundMasks: ScreenshotMask[], name: string,
-  index: number, testInfo: TestInfo): Promise<Buffer> {
+  index: number, testInfo: TestInfo, original: Buffer): Promise<Buffer> {
   const panel = frame.panel;
   const masks = panel ? backgroundMasks.flatMap(mask => subtractPanel(mask, panel.bounds)) : backgroundMasks;
-  const original = Buffer.from(frame.png, 'base64');
   const current = maskScreenshot(original, masks);
-  await testInfo.attach(`${name}-frame-${index}-original`, { body: original, contentType: 'image/png' });
   await testInfo.attach(`${name}-frame-${index}-masks`, { body: JSON.stringify(masks), contentType: 'application/json' });
   return current;
 }
 
 type TransientState = { reference?: Buffer; stableSince: number; stable?: Buffer };
-
-/** 布局发生变化时废弃连续稳定参考，保留此前已采到的稳定结果。
- * @param state - 连续稳定状态。
- * @param frame - 原生采集帧。
- * @param current - 当前遮罩图。
- */
-function updateTransientStability(state: TransientState, frame: Frame, current: Buffer): void {
-  if (JSON.stringify(frame.before.bounds) !== JSON.stringify(frame.after.bounds)) {
-    state.reference = undefined;
-    return;
-  }
-  updateStablePixels(state, frame.capturedAt, current);
-}
 
 /** 未遮罩像素必须在提示仍可见期间连续稳定至少 250ms。
  * @param state - 连续稳定状态。
