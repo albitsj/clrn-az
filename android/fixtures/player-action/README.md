@@ -15,3 +15,11 @@ SHA256 为 `7f5bc709b2ce7b76d85dca9338085ca528eacf6025d0152f50a04fe4ab4b2a10`。
 call/raise/check/fold 的正式起点字节一致。该只读准备依据不读取本轮快照输出路径，
 因此本机 `snapshots/local/` 尚无图片时也能先验证退场，再进入 reference 采集。
 正式 compare 仍逐项检查本轮指定的起点、终点和中途轨迹，缺图或错误画面仍失败。
+reference 回归另使用 `check-middle.png`：原样取自同一固定 APK 的
+[运行 41814766279](https://github.com/albitsj/clrn-az/actions/runs/41814766279) 中
+`texas/en/game-table` retry0 的 `texas-player-action-check-middle` 附件
+`data/a110bb58fb3325c2cf1aab9377a16da97de74228.png`。
+SHA256 为 `4c84342f37dddf2bc946d10f35076d1dbe3ce1fbc55df00c8e9e2d2c48b92a28`，未修改像素。
+既有正式 check 中途图十分接近起点，不能当作录屏候选的测试输入；这里保留实际录屏中途帧，
+不改变正式参考集合或候选阈值。reference 测试在临时目录实际生成并核对四种动作的首中尾图片，
+覆盖首次缺图及已有起点变化；静止、直接跳到终点、录屏未完成仍必须失败。
