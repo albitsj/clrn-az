@@ -121,6 +121,8 @@ def emulator(command, diagnostics, shutdown_grace=10):
         (diagnostics.directory / 'emulator.exit').write_text(str(result))
         if result == 124:
             failure(diagnostics.directory, log, 'phase=emulator-cleanup timed out; process group killed')
+        elif result:
+            failure(diagnostics.directory, log, f'phase=emulator-cleanup exit={result}')
         return result if result >= 0 else 128 - result
     finally:
         finished.set()

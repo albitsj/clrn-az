@@ -13,7 +13,7 @@ import sys
 import time
 from urllib.parse import quote
 
-from diagnostics_lifecycle import finish_group, group_members
+from diagnostics_lifecycle import finish_group, group_members, wait_group_exit
 
 
 class Redactor:
@@ -195,8 +195,6 @@ def _collect_output(process, output, deadline, timeout, stop, report, exit_timeo
 
 
 def _finish_capture_group(process, status, report):
-    if status == 124:
-        return status
     try:
         if not finish_group(process, report):
             report(f'process_exit={status}; cleanup required SIGKILL')
@@ -218,6 +216,23 @@ def _register_capture(process, log, report):
     except OSError:
         report('diagnostic process registration unavailable')
     return pidfile
+
+
+def _unregister_capture(process, paths, report):
+    # A native 124 (or an exited leader) says nothing about descendants.
+    # Keep recovery registrations until the entire group is confirmed gone.
+    try:
+        exited = wait_group_exit(process.pid)
+    except (OSError, subprocess.SubprocessError):
+        report(f'phase=process-cleanup unverified pgid={process.pid}; retaining registration')
+        return
+    if not exited:
+        report(f'phase=process-cleanup incomplete pgid={process.pid}; retaining registration')
+        describe_group(process, report)
+        return
+    for path in paths:
+        if path is not None:
+            path.unlink(missing_ok=True)
 
 
 def capture(command, log, timeout=5, stop=None, env=None, exit_timeout=2, stop_status=0, pidfile=None):
@@ -250,7 +265,4 @@ def capture(command, log, timeout=5, stop=None, env=None, exit_timeout=2, stop_s
         process.stdout.close()
         if process.poll() is None:
             terminate(process)
-        if pidfile is not None:
-            pidfile.unlink(missing_ok=True)
-        if registration is not None:
-            registration.unlink(missing_ok=True)
+        _unregister_capture(process, (pidfile, registration), report)

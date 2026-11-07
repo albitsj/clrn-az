@@ -42,6 +42,16 @@ def signal_group(pid, sig):
         pass
 
 
+def wait_group_exit(pid, timeout=2):
+    """Allow a bounded interval for signalled descendants to leave the group."""
+    deadline = time.monotonic() + timeout
+    while group_members(pid):
+        if time.monotonic() >= deadline:
+            return False
+        time.sleep(0.05)
+    return True
+
+
 def finish_group(process, report, grace=2):
     """Reap the leader and stop descendants even when they closed their pipes."""
     process.poll()
@@ -148,10 +158,38 @@ def stop_captures(directory, log):
                 report(log, f'phase=diagnostic-process-recovery pgid={pid}\n' + '\n'.join(members))
                 signal_group(pid, signal.SIGKILL)
                 failure(directory, log, 'phase=diagnostic-process-recovery required SIGKILL')
+                try:
+                    exited = wait_group_exit(pid)
+                except (OSError, subprocess.SubprocessError):
+                    failure(directory, log, f'phase=diagnostic-process-recovery pgid={pid} exit unverified; '
+                            'retaining registration')
+                    continue
+                if not exited:
+                    failure(directory, log, f'phase=diagnostic-process-recovery pgid={pid} still alive; '
+                            'retaining registration')
+                    continue
             pidfile.unlink(missing_ok=True)
         except FileNotFoundError:
             # A normally exiting capture may remove its registration concurrently.
             pass
+
+
+def check_emulator_exit(directory, log):
+    """An absent wrapper is successful only with a valid native exit result."""
+    exitfile = directory / 'emulator.exit'
+    if not (directory / 'emulator.started').exists() and not exitfile.exists():
+        return True
+    try:
+        result = int(exitfile.read_text())
+    except FileNotFoundError:
+        failure(directory, log, 'phase=emulator-wrapper missing exit result')
+    except (OSError, ValueError):
+        failure(directory, log, 'phase=emulator-wrapper invalid exit result')
+    else:
+        if not result:
+            return True
+        failure(directory, log, f'phase=emulator-wrapper exit={result}')
+    return False
 
 
 def wait_emulator(directory, log, timeout=15):
@@ -161,9 +199,7 @@ def wait_emulator(directory, log, timeout=15):
     while pidfile.exists() and time.monotonic() < deadline:
         time.sleep(0.1)
     if not pidfile.exists():
-        if (directory / 'emulator.started').exists() and not (directory / 'emulator.exit').exists():
-            failure(directory, log, 'phase=emulator-wrapper missing exit result')
-        return not (directory / 'cleanup-failed').exists()
+        return check_emulator_exit(directory, log) and not (directory / 'cleanup-failed').exists()
     failure(directory, log, 'phase=emulator-wrapper timeout; terminating registered processes')
     childfile = directory / 'emulator-process.pid'
     if childfile.exists():

@@ -13,7 +13,7 @@ from unittest.mock import patch
 
 from ci_diagnostics import Collector, run, stop, stop_daemon
 from diagnostics_io import capture
-from diagnostics_lifecycle import group_members, request_shutdown, wait_emulator
+from diagnostics_lifecycle import group_members, request_shutdown, stop_captures, wait_emulator
 from diagnostics_wrappers import install_binaries, restore, shutdown
 
 
@@ -38,6 +38,19 @@ class LifecycleTests(unittest.TestCase):
 
     def contents(self, name):
         return ''.join(path.read_text() for path in sorted(self.directory.glob(f'{name}.log*')))
+
+    def final_stop(self, env=None):
+        with patch('ci_diagnostics.collector', return_value=self.diagnostics), \
+                patch('ci_diagnostics.directory', return_value=self.directory), \
+                patch.object(self.diagnostics, 'sample', return_value={}), \
+                patch.dict(os.environ, env or {'ANDROID_HOME': str(self.directory / 'sdk')}):
+            return stop()
+
+    def kill_group(self, pid):
+        try:
+            os.killpg(pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
 
     def test_parent_exit_cannot_wait_forever_for_inherited_output_pipe(self):
         pidfile = self.directory / 'child.pid'
@@ -127,8 +140,13 @@ if sys.argv[1] == 'adb':
     sys.exit(0)
 signal.signal(signal.SIGTERM, signal.SIG_IGN)
 (directory / 'native-ready').touch()
-while os.environ['FIXTURE_MODE'] != 'normal' or not (directory / 'native-stop').exists():
+mode = os.environ['FIXTURE_MODE']
+while mode not in ['normal', 'nonzero-exit', 'signal-exit'] or not (directory / 'native-stop').exists():
     time.sleep(0.05)
+if mode == 'nonzero-exit': sys.exit(23)
+if mode == 'signal-exit':
+    signal.signal(signal.SIGTERM, signal.SIG_DFL)
+    os.kill(os.getpid(), signal.SIGTERM)
 print('native emulator stopped', flush=True)
 ''')
         for relative, kind in [('emulator/emulator', 'emulator'), ('platform-tools/adb', 'adb')]:
@@ -184,11 +202,38 @@ print('native emulator stopped', flush=True)
         self.assertFalse(group_members(pgid))
         self.assertTrue((self.directory / 'cleanup-failed').exists())
         self.assertIn('phase=emulator-shutdown timeout', self.contents('emulator'))
-        with patch('ci_diagnostics.collector', return_value=self.diagnostics), \
-                patch('ci_diagnostics.directory', return_value=self.directory), \
-                patch.object(self.diagnostics, 'sample', return_value={}), \
-                patch.dict(os.environ, env):
-            self.assertEqual(stop(), 1)
+        self.assertEqual(self.final_stop(env), 1)
+
+    def abnormal_emulator_shutdown(self, mode, expected):
+        sdk, env = self.sdk(mode)
+        process = self.launch(sdk, env)
+        pgid = int((self.directory / 'emulator-process.pid').read_text())
+        self.addCleanup(self.kill_group, pgid)
+        (self.directory / 'test.exit').write_text('23')
+        with patch.object(self.diagnostics, 'sample', return_value={}), patch.dict(os.environ, env):
+            result = shutdown([str(sdk / 'platform-tools/adb.diagnostics-original'), 'emu', 'kill'],
+                              self.diagnostics)
+        self.assertNotEqual(result, 0)
+        self.assertEqual(process.wait(timeout=5), expected if expected >= 0 else 128 - expected)
+        self.assertEqual((self.directory / 'emulator.exit').read_text(), str(expected))
+        self.assertIn('cleanup_exit=0', self.contents('cleanup'))
+        self.assertIn(f'phase=emulator-cleanup exit={expected}', self.contents('emulator'))
+        self.assertTrue((self.directory / 'cleanup-failed').exists())
+        self.assertFalse(group_members(pgid))
+        # Final cleanup must validate the recorded exit independently of the marker.
+        (self.directory / 'cleanup-failed').unlink()
+        self.assertEqual(self.final_stop(env), 1)
+        self.assertTrue((self.directory / 'cleanup-failed').exists())
+        self.assertEqual((self.directory / 'test.exit').read_text(), '23')
+        self.assertFalse((self.directory / 'emulator-wrapper.pid').exists())
+        self.assertFalse((self.directory / 'emulator-process.pid').exists())
+        self.assertFalse((sdk / 'emulator/emulator.diagnostics-original').exists())
+
+    def test_adb_success_cannot_hide_nonzero_emulator_exit(self):
+        self.abnormal_emulator_shutdown('nonzero-exit', 23)
+
+    def test_adb_success_cannot_hide_emulator_signal_exit(self):
+        self.abnormal_emulator_shutdown('signal-exit', -signal.SIGTERM)
 
     def test_failed_cleanup_stage_does_not_skip_other_cleanup_or_restore(self):
         with patch('ci_diagnostics.collector', return_value=self.diagnostics), \
@@ -237,6 +282,16 @@ print('native emulator stopped', flush=True)
         self.assertEqual(child.wait(timeout=3), -signal.SIGKILL)
         self.assertIn('phase=emulator-wrapper timeout', self.contents('cleanup'))
 
+    def test_capture_recovery_signals_all_groups_when_inspection_fails(self):
+        processes = [self.stubborn(f'diagnostic-process-{name}.pid') for name in ['first', 'second']]
+        with patch('diagnostics_lifecycle.group_members', side_effect=OSError('snapshot unavailable')):
+            stop_captures(self.directory, self.log)
+        for process in processes:
+            self.assertEqual(process.wait(timeout=3), -signal.SIGKILL)
+        self.assertEqual(len(list(self.directory.glob('diagnostic-process-*.pid'))), 2)
+        self.assertTrue((self.directory / 'cleanup-failed').exists())
+        self.assertIn('exit unverified; retaining registration', self.contents('cleanup'))
+
     def test_unresponsive_collector_is_killed_and_cleanup_fails(self):
         collector = self.stubborn('collector.pid')
         (self.directory / 'ready').touch()
@@ -284,6 +339,67 @@ capture([sys.executable, '-c',
         self.assertFalse(group_members(pgid))
         self.assertFalse(registration.exists())
         self.assertIn('phase=diagnostic-process-recovery', self.contents('lifecycle'))
+
+    def test_native_124_cleans_descendants_that_closed_both_output_pipes(self):
+        pgidfile = self.directory / 'native.pgid'
+        ready = self.directory / 'child.ready'
+        script = '''import os, pathlib, signal, sys, time
+pgidfile, ready = map(pathlib.Path, sys.argv[1:])
+pgidfile.write_text(str(os.getpid()))
+if os.fork() == 0:
+    signal.signal(signal.SIGTERM, signal.SIG_IGN)
+    os.close(1)
+    os.close(2)
+    ready.touch()
+    time.sleep(60)
+    os._exit(0)
+while not ready.exists(): time.sleep(0.01)
+sys.exit(124)
+'''
+        started = time.monotonic()
+        try:
+            self.assertEqual(capture([sys.executable, '-c', script, str(pgidfile), str(ready)],
+                                     self.log, timeout=5), 124)
+            self.assertLess(time.monotonic() - started, 6)
+            self.assertFalse(group_members(int(pgidfile.read_text())))
+            self.assertFalse(list(self.directory.glob('diagnostic-process-*.pid')))
+            self.assertIn('process_exit=124; cleanup required SIGKILL', self.contents('cleanup'))
+            stop_captures(self.directory, self.log)
+            self.assertFalse(group_members(int(pgidfile.read_text())))
+        finally:
+            if pgidfile.exists():
+                self.kill_group(int(pgidfile.read_text()))
+
+    def test_unverified_capture_registration_is_kept_for_final_recovery(self):
+        childfile = self.directory / 'capture.pid'
+        with patch('diagnostics_io.wait_group_exit', side_effect=OSError('snapshot unavailable')):
+            result = capture([sys.executable, '-c', 'raise SystemExit(124)'], self.log, pidfile=childfile)
+        self.assertEqual(result, 124)
+        registration = self.directory / f'diagnostic-process-{childfile.read_text()}.pid'
+        self.assertTrue(registration.exists())
+        self.assertIn('retaining registration', self.contents('cleanup'))
+        stop_captures(self.directory, self.log)
+        self.assertFalse(registration.exists())
+
+    def test_final_stop_validates_exit_content_and_preserves_test_result(self):
+        cases = [None, '', 'invalid', '23', '-15', '0']
+        for result in cases:
+            for test_exit in ['0', '23', '130']:
+                with self.subTest(result=result, test_exit=test_exit):
+                    (self.directory / 'cleanup-failed').unlink(missing_ok=True)
+                    (self.directory / 'emulator.started').touch()
+                    exitfile = self.directory / 'emulator.exit'
+                    exitfile.unlink(missing_ok=True)
+                    if result is not None:
+                        exitfile.write_text(result)
+                    (self.directory / 'test.exit').write_text(test_exit)
+                    self.assertEqual(self.final_stop(), 0 if result == '0' else 1)
+                    self.assertEqual((self.directory / 'cleanup-failed').exists(), result != '0')
+                    self.assertEqual((self.directory / 'test.exit').read_text(), test_exit)
+
+    def test_no_emulator_launch_does_not_require_an_exit_record(self):
+        self.assertTrue(wait_emulator(self.directory, self.log))
+        self.assertFalse((self.directory / 'cleanup-failed').exists())
 
 
 if __name__ == '__main__':
