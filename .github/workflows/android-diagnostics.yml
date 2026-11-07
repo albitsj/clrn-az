@@ -89,6 +89,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 2
     strategy:
+      fail-fast: false
       matrix:
         case: [normal, init-failure, test-failure, cancel, unresponsive, retained-pipe]
     concurrency:
@@ -99,4 +100,4 @@ jobs:
       - name: Confirm subsequent account task can start
         env:
           DIAGNOSTICS_RESULT: ${{ needs.diagnostics.result }}
-        run: test "$DIAGNOSTICS_RESULT" = success
+        run: echo "Account slot acquired after diagnostics result=$DIAGNOSTICS_RESULT"

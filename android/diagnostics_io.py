@@ -199,7 +199,8 @@ def _finish_capture_group(process, status, report):
         return status
     try:
         if not finish_group(process, report):
-            return status or 124
+            report(f'process_exit={status}; cleanup required SIGKILL')
+            return 124
     except (OSError, subprocess.SubprocessError):
         report(f'phase=process-cleanup failed pgid={process.pid}; killing group')
         terminate(process)

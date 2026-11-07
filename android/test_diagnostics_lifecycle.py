@@ -59,6 +59,15 @@ else:
         self.assertIn('descendant retains pipe', self.contents('cleanup'))
         self.assertIn('pgid=', self.contents('cleanup'))
 
+    def test_capture_reports_cleanup_failure_even_when_failed_parent_closed_output(self):
+        pgidfile = self.directory / 'capture.pgid'
+        command = ['/bin/sh', '-c',
+                   'trap "" TERM; sleep 60 >/dev/null 2>&1 & echo $$ > "$1"; exit 23',
+                   'fixture', str(pgidfile)]
+        self.assertEqual(capture(command, self.log, timeout=5), 124)
+        self.assertIn('process_exit=23; cleanup required SIGKILL', self.contents('cleanup'))
+        self.assertFalse(group_members(int(pgidfile.read_text())))
+
     def test_lingering_test_child_is_killed_without_replacing_original_failure(self):
         pidfile = self.directory / 'child.pid'
         script = '''import os, pathlib, signal, sys, time
