@@ -7,6 +7,7 @@ import sys
 import threading
 
 from diagnostics_io import capture
+from diagnostics_lifecycle import failure, request_shutdown, wait_emulator
 
 
 SUFFIX = '.diagnostics-original'
@@ -55,27 +56,72 @@ def restore():
 
 
 def wrapped(kind, original, arguments):
-    from ci_diagnostics import best_effort, collector
+    from ci_diagnostics import collector
     command = [original, *arguments]
     if kind == 'adb' and any(arguments[index:index + 2] == ['emu', 'kill']
                              for index in range(len(arguments) - 1)):
-        diagnostics = best_effort(collector)
-        if diagnostics is None:
-            os.execv(original, command)
-        best_effort(lambda: diagnostics.sample('before-emulator-shutdown'))
-        result = capture(command, diagnostics.logs['cleanup'], timeout=30)
-        best_effort(lambda: diagnostics.logs['cleanup'].write(f'cleanup_exit={result}'))
-        return result if result >= 0 else 128 - result
+        return shutdown(command, collector())
     if kind == 'emulator' and ('-avd' in arguments or any(arg.startswith('@') for arg in arguments)):
-        diagnostics = best_effort(collector)
-        if diagnostics is None:
-            os.execv(original, command)
-        stopped = threading.Event()
-        signal.signal(signal.SIGTERM, lambda *_: stopped.set())
-        signal.signal(signal.SIGINT, lambda *_: stopped.set())
-        best_effort(lambda: diagnostics.logs['emulator'].write('emulator launch'))
-        result = capture(command, diagnostics.logs['emulator'], timeout=None, stop=stopped)
-        best_effort(lambda: diagnostics.logs['emulator'].write(f'emulator_exit={result}'))
-        return result if result >= 0 else 128 - result
+        return emulator(command, collector())
     # Never record command arguments: test input may contain passwords and tokens.
     os.execv(original, command)
+
+
+def shutdown(command, diagnostics, timeout=10):
+    """Bound adb, emulator exit and wrapper completion as separate stages."""
+    from ci_diagnostics import best_effort
+    log = diagnostics.logs['cleanup']
+    best_effort(lambda: diagnostics.sample('before-emulator-shutdown'), log)
+    try:
+        result = capture(command, log, timeout=timeout)
+        log.write(f'cleanup_exit={result}')
+        if result:
+            failure(diagnostics.directory, log, f'phase=adb-emu-kill exit={result}')
+    except Exception:
+        failure(diagnostics.directory, log, 'phase=adb-emu-kill failed')
+        raise
+    finally:
+        request_shutdown(diagnostics.directory)
+    if not wait_emulator(diagnostics.directory, log):
+        result = result or 124
+    return result if result >= 0 else 128 - result
+
+
+def emulator(command, diagnostics, shutdown_grace=10):
+    """Release action-owned pipes and enforce a deadline after shutdown starts."""
+    # emulator-runner starts us in the background. Holding its stdout/stderr open
+    # can keep the Node action alive even after its emu kill command has returned.
+    with open(os.devnull, 'r+b') as sink:
+        for descriptor in (0, 1, 2):
+            os.dup2(sink.fileno(), descriptor)
+    stopped = threading.Event()
+    finished = threading.Event()
+    signal.signal(signal.SIGTERM, lambda *_: stopped.set())
+    signal.signal(signal.SIGINT, lambda *_: stopped.set())
+    log = diagnostics.logs['emulator']
+    pidfile = diagnostics.directory / 'emulator-wrapper.pid'
+    (diagnostics.directory / 'emulator.started').touch()
+    pidfile.write_text(str(os.getpid()))
+
+    def watch_shutdown():
+        while not finished.wait(0.1):
+            if (diagnostics.directory / 'shutdown-requested').exists():
+                log.write('phase=emulator-shutdown requested')
+                if not finished.wait(shutdown_grace):
+                    log.write(f'phase=emulator-shutdown timeout after {shutdown_grace}s')
+                    stopped.set()
+                return
+
+    threading.Thread(target=watch_shutdown, daemon=True).start()
+    log.write('emulator launch')
+    try:
+        result = capture(command, log, timeout=None, stop=stopped, stop_status=124,
+                         pidfile=diagnostics.directory / 'emulator-process.pid')
+        log.write(f'emulator_exit={result}')
+        (diagnostics.directory / 'emulator.exit').write_text(str(result))
+        if result == 124:
+            failure(diagnostics.directory, log, 'phase=emulator-cleanup timed out; process group killed')
+        return result if result >= 0 else 128 - result
+    finally:
+        finished.set()
+        pidfile.unlink(missing_ok=True)
