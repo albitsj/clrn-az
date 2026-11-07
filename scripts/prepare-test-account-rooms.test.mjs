@@ -1,3 +1,4 @@
+import { selectionReply, testNode } from '../network/test-fixture.mjs';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { prepareTestAccountRooms } from './prepare-test-account-rooms.mjs';
@@ -16,6 +17,8 @@ const room = { room_id: '33333333-2222-4333-8444-555555555555', room_name: 'Test
 function network(context, replies) {
   const requests = [];
   context.mock.method(globalThis, 'fetch', async (url, options) => {
+    const selection = selectionReply(url, options);
+    if (selection) return selection;
     requests.push({ url, ...options });
     assert.ok(requests.length <= replies.length, '不得发出未预期请求');
     const reply = replies[requests.length - 1];
@@ -43,7 +46,7 @@ test('本账号空闲测试房必须复查详情、删除并回读为空', async
       [`/v1/room/${room.room_id}`, 'GET'], [`/v1/room/${room.room_id}`, 'DELETE'], ['/v2/building/rooms', 'PUT'],
     ]);
     for (const request of requests) {
-      assert.equal(new URL(request.url).origin, 'https://api.shafayouxi.org');
+      assert.equal(new URL(request.url).origin, testNode);
       assert.equal(request.headers.Authorization, session.authorization);
       assert.equal(request.headers['X-Testing-Api-Token'], undefined);
       assert.equal(request.redirect, 'error');
