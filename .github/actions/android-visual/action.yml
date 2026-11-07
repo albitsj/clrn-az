@@ -97,6 +97,8 @@ runs:
         sudo udevadm control --reload-rules
         sudo udevadm trigger --name-match=kvm
     - name: 原生页面截图回归
+      # Reserve time for the always() cleanup and artifact uploads before the job limit.
+      timeout-minutes: 110
       uses: reactivecircus/android-emulator-runner@v2
       env:
         ANDROID_VISUAL_MODE: ${{ env.ANDROID_VISUAL_MODE }}
@@ -115,6 +117,7 @@ runs:
         script: python3 android/ci_diagnostics.py run -- node android/run-visual.mjs
     - name: 完成 Android 清理诊断
       if: always()
+      timeout-minutes: 2
       env:
         CLRN_CI_TEST_ACCOUNTS: ${{ inputs.accounts }}
         TESTING_API_TOKEN: ${{ inputs.testing-token }}

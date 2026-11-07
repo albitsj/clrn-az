@@ -133,6 +133,7 @@ time.sleep(10)
         with patch('ci_diagnostics.collector', return_value=collector), \
                 patch('ci_diagnostics.directory', return_value=self.directory), \
                 patch.object(collector, 'sample', side_effect=OSError('final sample unavailable')), \
+                patch('ci_diagnostics.group_members', return_value=[]), \
                 patch('ci_diagnostics.os.kill') as kill, \
                 patch('diagnostics_wrappers.restore') as restore:
             self.assertEqual(stop(), 0)
@@ -146,6 +147,7 @@ time.sleep(10)
         pidfile.write_text('12345')
         with patch('ci_diagnostics.collector', side_effect=OSError('diagnostics unavailable')), \
                 patch('ci_diagnostics.directory', return_value=self.directory), \
+                patch('ci_diagnostics.group_members', return_value=[]), \
                 patch('ci_diagnostics.os.kill') as kill, \
                 patch('diagnostics_wrappers.restore') as restore:
             self.assertEqual(stop(), 0)
@@ -155,10 +157,12 @@ time.sleep(10)
 
     def test_stop_restores_sdk_even_when_daemon_termination_fails(self):
         with patch('ci_diagnostics.collector', side_effect=OSError('diagnostics unavailable')), \
+                patch('ci_diagnostics.directory', return_value=self.directory), \
                 patch('ci_diagnostics.stop_daemon', side_effect=OSError('cannot signal daemon')), \
                 patch('diagnostics_wrappers.restore') as restore:
-            self.assertEqual(stop(), 0)
+            self.assertEqual(stop(), 1)
         restore.assert_called_once_with()
+        self.assertTrue((self.directory / 'cleanup-failed').exists())
 
 
 if __name__ == '__main__':
