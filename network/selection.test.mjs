@@ -30,6 +30,127 @@ function metadata(hosts) {
   return Response.json({ ok: true, result: { servers: Object.fromEntries(hosts.map(host => [new URL(host).host, '127.0.0.1'])) } });
 }
 
+/** Return a normal response for a health probe.
+ * @param url - Requested URL.
+ */
+function normalHealthResponse(url) {
+  return url.endsWith('/node/v1/status') ? Response.json({ server_load: 'normal' }) : null;
+}
+
+for (const refreshFails of [false, true]) {
+  for (const [replay, maxAttempts] of [['safe', 2], ['never', 2], ['safe', 1]]) {
+    test(`cached list exhaustion with ${refreshFails ? 'failed' : 'unchanged'} metadata: ${replay}, limit ${maxAttempts}`, async t => {
+      let discoveries = 0;
+      const calls = [];
+      const events = [];
+      // The bootstrap (first) is healthy but absent from metadata; only the regional node (second) resets.
+      const client = clientFor(t, async (url, options) => {
+        if (url.endsWith('/node/v1/status')) return Response.json({ server_load: 'normal' });
+        if (url.endsWith('/public/v13/metadata/servers')) {
+          assert.equal(options.headers.Authorization, undefined);
+          discoveries++;
+          if (refreshFails && discoveries > 1) throw new Error('socket hang up');
+          return metadata([second]);
+        }
+        calls.push(new URL(url).origin);
+        assert.equal(options.headers.Authorization, 'Bearer test-session');
+        if (url.startsWith(second)) throw new Error('read ECONNRESET');
+        return Response.json({ ok: true, result: { balance: 60 } });
+      }, { maxAttempts,
+        /** Collect the final outcome and the original failure.
+         * @param event - Sanitized network diagnostic.
+         */
+        diagnostic: event => events.push(event) });
+      const pending = client.request({ ...request, replay, headers: { Authorization: 'Bearer test-session' } });
+      if (replay === 'safe' && maxAttempts > 1) {
+        assert.deepEqual(await pending, { ok: true, result: { balance: 60 } });
+        assert.deepEqual(calls, [second, first]);
+        assert.equal(discoveries, 2);
+        assert.ok(events.some(event => event.event === 'success' && event.node === first && event.attempt === 2));
+        assert.ok(events.some(event => event.event === 'switch' && event.node === second && event.attempt === 1));
+      } else {
+        await assert.rejects(pending, error => error.kind === 'network' && error.attempts === 1);
+        assert.deepEqual(calls, [second]);
+        assert.equal(discoveries, 1);
+        assert.ok(!events.some(event => event.event === 'switch'));
+      }
+      assert.ok(events.some(event => event.event === 'failure' && event.node === second && event.kind === 'network'));
+    });
+  }
+}
+
+for (const healthy of [true, false]) {
+  test(`bootstrap fallback checks expired health before sending: healthy=${healthy}`, async t => {
+    t.mock.timers.enable({ apis: ['Date'], now: Date.now() });
+    let bootstrapProbes = 0;
+    const calls = [];
+    const client = clientFor(t, async url => {
+      if (url.endsWith('/node/v1/status')) {
+        if (url.startsWith(first)) bootstrapProbes++;
+        return Response.json({ server_load: bootstrapProbes > 1 && !healthy ? 'busy' : 'normal' });
+      }
+      if (url.endsWith('/public/v13/metadata/servers')) return metadata([second]);
+      calls.push(new URL(url).origin);
+      if (url.startsWith(second)) {
+        t.mock.timers.tick(11);
+        throw new Error('read ECONNRESET');
+      }
+      return Response.json({ ok: true, result: { balance: 60 } });
+    }, { healthCacheMs: 10 });
+    if (healthy) {
+      assert.deepEqual(await client.request(request), { ok: true, result: { balance: 60 } });
+      assert.deepEqual(calls, [second, first]);
+    } else {
+      await assert.rejects(client.request(request), error => error.kind === 'unavailable' && error.attempts === 1);
+      assert.deepEqual(calls, [second]);
+    }
+    assert.equal(bootstrapProbes, 2);
+  });
+}
+
+test('an omitted bootstrap that also fails is excluded for the rest of the business call', async t => {
+  const calls = [];
+  const client = clientFor(t, async url => {
+    const health = normalHealthResponse(url);
+    if (health) return health;
+    if (url.endsWith('/public/v13/metadata/servers')) return metadata([second]);
+    calls.push(new URL(url).origin);
+    throw new Error('socket hang up');
+  });
+  await assert.rejects(client.request(request), error => error.kind === 'unavailable' && error.attempts === 2);
+  assert.deepEqual(calls, [second, first]);
+});
+
+for (const stop of ['timeout', 'cancel', 'dispose']) {
+  test(`${stop} during metadata refresh prevents bootstrap business replay and cleans the request`, async t => {
+    let discoveries = 0;
+    let active = 0;
+    const calls = [];
+    const controller = new AbortController();
+    const client = clientFor(t, async (url, options) => {
+      if (url.endsWith('/node/v1/status')) return Response.json({ server_load: 'normal' });
+      if (url.endsWith('/public/v13/metadata/servers')) {
+        if (++discoveries === 1) return metadata([second]);
+        active++;
+        if (stop === 'cancel') queueMicrotask(() => controller.abort());
+        if (stop === 'dispose') queueMicrotask(() => client.dispose());
+        return new Promise((_, reject) => options.signal.addEventListener('abort', () => {
+          active--;
+          reject(options.signal.reason);
+        }, { once: true }));
+      }
+      calls.push(new URL(url).origin);
+      throw new Error('read ECONNRESET');
+    }, { totalTimeoutMs: 40, probeTimeoutMs: 200 });
+    const started = performance.now();
+    await assert.rejects(client.request({ ...request, signal: controller.signal }),
+      error => error.kind === (stop === 'timeout' ? 'timeout' : 'cancelled') && error.attempts === 1);
+    assert.deepEqual(calls, [second]);
+    assert.equal(active, 0);
+    assert.ok(performance.now() - started < 500);
+  });
+}
+
 test('first unavailable bootstrap is skipped and healthy nodes require normal server_load', async t => {
   const calls = [];
   const client = clientFor(t, async (url, options) => {
@@ -80,7 +201,8 @@ test('all health probes fail within the call deadline without sending a business
 test('metadata falls back to another entry without forwarding credentials', async t => {
   const origins = [];
   const client = clientFor(t, async (url, options) => {
-    if (url.endsWith('/node/v1/status')) return Response.json({ server_load: 'normal' });
+    const health = normalHealthResponse(url);
+    if (health) return health;
     if (url.endsWith('/public/v13/metadata/servers')) {
       assert.equal(options.headers.Authorization, undefined);
       origins.push(new URL(url).origin);

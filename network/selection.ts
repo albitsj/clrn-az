@@ -114,7 +114,7 @@ export class HostSelector {
     finally { controller.abort(); await Promise.allSettled(workers); }
   }
 
-  /** Download the metadata list through distinct healthy/bootstrap entries, without credentials.
+  /** Refresh metadata without credentials, retaining candidates if no entry supplies a valid list.
    * @param preferred - Healthy bootstrap or previous selected origin.
    * @param excluded - Failed business nodes.
    * @param signal - Total call deadline.
@@ -137,7 +137,7 @@ export class HostSelector {
         this.emit({ event: 'discovery', endpoint: '/public/v13/metadata/servers', node: host, attempt: 0, kind: classify(error) });
       }
     }
-    throw new NetworkError('unavailable');
+    // Metadata failure must not bypass health selection of cached or bootstrap candidates.
   }
 
   /** Select from bootstrap then refresh remote metadata; force one refresh after exhausting a cached list.
@@ -154,8 +154,7 @@ export class HostSelector {
     let bootstrap = '';
     if (Date.now() - this.hostsAt >= (this.config.cacheMs ?? 30_000)) {
       bootstrap = await this.race(this.available([...this.config.bootstrap, ...this.hosts], excluded), signal);
-      try { await this.discover(bootstrap, excluded, signal); }
-      catch { signal.throwIfAborted(); /* A healthy bootstrap remains usable if metadata is unavailable. */ }
+      await this.discover(bootstrap, excluded, signal);
     }
     let chosen: string;
     try { chosen = await this.race(this.available(this.hosts, excluded), signal); }
@@ -164,7 +163,7 @@ export class HostSelector {
       if (bootstrap) chosen = bootstrap;
       else {
         await this.discover('', excluded, signal);
-        chosen = await this.race(this.available(this.hosts, excluded), signal);
+        chosen = await this.race(this.available([...this.hosts, ...this.config.bootstrap], excluded), signal);
       }
     }
     this.selected = chosen;
