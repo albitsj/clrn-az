@@ -1,3 +1,4 @@
+import { selectionReply, testNode } from '../network/test-fixture.mjs';
 import assert from 'node:assert/strict';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -21,6 +22,8 @@ const wallet = { currencies: [{ code: 'coin', balance: '10000' }] };
 function network(context, replies = [session, prepared, wallet]) {
   const calls = [];
   context.mock.method(globalThis, 'fetch', async (url, options) => {
+    const selection = selectionReply(url, options);
+    if (selection) return selection;
     calls.push({ url, ...options, body: JSON.parse(options.body) });
     const reply = replies[calls.length - 1];
     if (reply instanceof Error) throw reply;
@@ -51,7 +54,7 @@ test('设置固定金币后读取钱包核对，不设置钻石、不向其他�
   assert.equal(calls[2].headers['X-Testing-Api-Token'], undefined);
   assert.equal(calls[2].headers.Authorization, 'Bearer private-session-token');
   for (const call of calls) {
-    assert.equal(new URL(call.url).origin, 'https://api.shafayouxi.org');
+    assert.equal(new URL(call.url).origin, call.url.endsWith('/set_balance/testing') ? 'https://api.shafayouxi.org' : testNode);
     assert.equal(call.redirect, 'error');
     assert.ok(call.signal instanceof AbortSignal);
   }

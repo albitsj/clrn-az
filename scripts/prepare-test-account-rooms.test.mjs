@@ -1,3 +1,4 @@
+import { selectionReply, testNode } from '../network/test-fixture.mjs';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { prepareTestAccountRooms } from './prepare-test-account-rooms.mjs';
@@ -16,6 +17,8 @@ const room = { room_id: '33333333-2222-4333-8444-555555555555', room_name: 'Test
 function network(context, replies) {
   const requests = [];
   context.mock.method(globalThis, 'fetch', async (url, options) => {
+    const selection = selectionReply(url, options);
+    if (selection) return selection;
     requests.push({ url, ...options });
     assert.ok(requests.length <= replies.length, '不得发出未预期请求');
     const reply = replies[requests.length - 1];
@@ -43,7 +46,7 @@ test('本账号空闲测试房必须复查详情、删除并回读为空', async
       [`/v1/room/${room.room_id}`, 'GET'], [`/v1/room/${room.room_id}`, 'DELETE'], ['/v2/building/rooms', 'PUT'],
     ]);
     for (const request of requests) {
-      assert.equal(new URL(request.url).origin, 'https://api.shafayouxi.org');
+      assert.equal(new URL(request.url).origin, testNode);
       assert.equal(request.headers.Authorization, session.authorization);
       assert.equal(request.headers['X-Testing-Api-Token'], undefined);
       assert.equal(request.redirect, 'error');
@@ -95,18 +98,27 @@ test('删除前状态变化必须停止，清理后仍有房间也必须失败',
   await assert.rejects(prepareTestAccountRooms(session), /清理后.*仍非空/);
 });
 
-test('任一网络或业务失败都会停止且错误中不泄露会话', async context => {
+test('失败按接口恢复上限停止且不推进后续步骤或泄露会话', async context => {
   const replies = [house, [room], room, undefined, []];
+  const flow = [[`/v10/house/user/${session.userId}`, 'PUT'], ['/v2/building/rooms', 'PUT'],
+    [`/v1/room/${room.room_id}`, 'GET'], [`/v1/room/${room.room_id}`, 'DELETE'], ['/v2/building/rooms', 'PUT']];
   for (const stage of [0, 1, 2, 3, 4]) {
-    for (const failure of [new Error(session.authorization), new Response(session.authorization, { status: 503 }),
-      new Response(session.authorization), Response.json({ ok: false })]) {
-      const requests = network(context, [...replies.slice(0, stage), failure]);
+    for (const [failure, kind] of [[() => new Error(session.authorization), 'invalid-response'],
+      [() => new Response(session.authorization, { status: 503 }), 'server'],
+      [() => new Response(session.authorization), 'invalid-response'], [() => Response.json({ ok: false }), 'business']]) {
+      const attempts = kind === 'server' && [1, 2, 4].includes(stage) ? 3 : 1;
+      const failures = Array.from({ length: attempts }, failure);
+      const requests = network(context, [...replies.slice(0, stage), ...failures]);
       await assert.rejects(prepareTestAccountRooms(session), error => {
         assert.match(error.message, /失败/);
         assert.ok(!error.message.includes(session.authorization));
+        assert.equal(error.cause.kind, kind);
+        assert.equal(error.cause.attempts, attempts);
         return true;
       });
-      assert.equal(requests.length, stage + 1);
+      assert.deepEqual(requests.map(request => [new URL(request.url).pathname, request.method]),
+        [...flow.slice(0, stage), ...Array.from({ length: attempts }, () => flow[stage])]);
+      assert.equal(new Set(requests.slice(stage).map(request => new URL(request.url).origin)).size, attempts);
       context.mock.restoreAll();
     }
   }
