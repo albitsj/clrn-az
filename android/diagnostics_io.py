@@ -207,6 +207,18 @@ def _finish_capture_group(process, status, report):
     return status
 
 
+def _register_capture(process, log, report):
+    directory = getattr(log, 'directory', None)
+    if directory is None:
+        return None
+    pidfile = directory / f'diagnostic-process-{process.pid}.pid'
+    try:
+        pidfile.write_text(str(process.pid))
+    except OSError:
+        report('diagnostic process registration unavailable')
+    return pidfile
+
+
 def capture(command, log, timeout=5, stop=None, env=None, exit_timeout=2, stop_status=0, pidfile=None):
     """Stream output with bounded memory; return the native exit or 124/127."""
     def report(message):
@@ -222,6 +234,7 @@ def capture(command, log, timeout=5, stop=None, env=None, exit_timeout=2, stop_s
         report(f'collector spawn failed: {type(error).__name__}: {error}')
         return 127
     deadline = time.monotonic() + timeout if timeout is not None else None
+    registration = _register_capture(process, log, report)
     try:
         if pidfile is not None:
             pidfile.write_text(str(process.pid))
@@ -238,3 +251,5 @@ def capture(command, log, timeout=5, stop=None, env=None, exit_timeout=2, stop_s
             terminate(process)
         if pidfile is not None:
             pidfile.unlink(missing_ok=True)
+        if registration is not None:
+            registration.unlink(missing_ok=True)

@@ -13,7 +13,9 @@ import threading
 import time
 
 from diagnostics_io import BoundedLog, Redactor, capture
-from diagnostics_lifecycle import failure, group_members, report, request_shutdown, run_test, stop_test, wait_emulator
+from diagnostics_lifecycle import (
+    failure, group_members, report, request_shutdown, run_test, stop_captures, stop_test, wait_emulator,
+)
 
 
 ROOT = Path(__file__).resolve().parent
@@ -191,7 +193,8 @@ def stop():
     if diagnostics:
         best_effort(lambda: diagnostics.sample('after-emulator-action'), log)
     actions = [lambda: request_shutdown(directory()), lambda: wait_emulator(directory(), log),
-               lambda: stop_test(directory(), log), lambda: stop_daemon(log), restore]
+               lambda: stop_test(directory(), log), lambda: stop_daemon(log),
+               lambda: stop_captures(directory(), log), restore]
     for action in actions:
         try:
             if action() is False:

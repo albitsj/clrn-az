@@ -135,6 +135,25 @@ def stop_test(directory, log):
     pidfile.unlink(missing_ok=True)
 
 
+def stop_captures(directory, log):
+    """Recover independent probe/logcat sessions after a collector is killed."""
+    for pidfile in directory.glob('diagnostic-process-*.pid'):
+        try:
+            pid = int(pidfile.read_text())
+            try:
+                members = group_members(pid)
+            except (OSError, subprocess.SubprocessError):
+                members = ['process snapshot unavailable']
+            if members:
+                report(log, f'phase=diagnostic-process-recovery pgid={pid}\n' + '\n'.join(members))
+                signal_group(pid, signal.SIGKILL)
+                failure(directory, log, 'phase=diagnostic-process-recovery required SIGKILL')
+            pidfile.unlink(missing_ok=True)
+        except FileNotFoundError:
+            # A normally exiting capture may remove its registration concurrently.
+            pass
+
+
 def wait_emulator(directory, log, timeout=15):
     """Do not rely on emulator-runner propagating errors from adb emu kill."""
     pidfile = directory / 'emulator-wrapper.pid'

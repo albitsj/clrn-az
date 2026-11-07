@@ -66,6 +66,10 @@ def verify_processes(directory):
         assert not group_members(json.loads(path.read_text())['pgid']), 'Retained pipe child still alive'
     for filename in ['emulator-wrapper.pid', 'emulator-process.pid', 'test-process.pid', 'collector.pid', 'ready']:
         assert not (directory / filename).exists(), f'{filename} not cleaned'
+    assert not list(directory.glob('diagnostic-process-*.pid')), 'Diagnostic process registrations remain'
+    sdk = Path(os.environ['ANDROID_HOME'])
+    for relative in ['emulator/emulator', 'platform-tools/adb']:
+        assert not (sdk / (relative + '.diagnostics-original')).exists(), 'SDK wrapper not restored'
     original = Path(os.environ['ANDROID_HOME']) / 'emulator/emulator.smoke-original'
     if original.exists():
         original.replace(original.with_name('emulator'))

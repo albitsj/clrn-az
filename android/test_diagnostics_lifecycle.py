@@ -238,6 +238,44 @@ print('native emulator stopped', flush=True)
         self.assertFalse((self.directory / 'collector.pid').exists())
         self.assertIn('phase=collector-shutdown timeout', self.contents('cleanup'))
 
+    def test_killed_collector_cannot_leave_independent_logcat_session_alive(self):
+        ready = self.directory / 'stream.ready'
+        script = '''import signal, sys
+from pathlib import Path
+from diagnostics_io import BoundedLog, Redactor, capture
+signal.signal(signal.SIGTERM, signal.SIG_IGN)
+capture([sys.executable, '-c',
+         'import pathlib,sys,time; pathlib.Path(sys.argv[1]).touch(); time.sleep(60)', sys.argv[2]],
+        BoundedLog(Path(sys.argv[1]), 'logcat', Redactor({})), timeout=None)
+'''
+        process = subprocess.Popen([sys.executable, '-c', script, str(self.directory), str(ready)],
+                                   env={**os.environ, 'PYTHONPATH': str(ROOT)}, start_new_session=True)
+
+        def cleanup():
+            if process.poll() is None:
+                process.kill()
+            process.wait(timeout=3)
+
+        self.addCleanup(cleanup)
+        self.wait_for(ready, process)
+        (self.directory / 'collector.pid').write_text(str(process.pid))
+        registration = next(self.directory.glob('diagnostic-process-*.pid'))
+        pgid = int(registration.read_text())
+        original_stop = stop_daemon
+        with patch('ci_diagnostics.collector', return_value=self.diagnostics), \
+                patch('ci_diagnostics.directory', return_value=self.directory), \
+                patch.object(self.diagnostics, 'sample', return_value={}), \
+                patch('ci_diagnostics.stop_daemon', side_effect=lambda log: original_stop(log, timeout=0.2)), \
+                patch('diagnostics_wrappers.restore'):
+            self.assertEqual(stop(), 1)
+        self.assertEqual(process.wait(timeout=3), -signal.SIGKILL)
+        deadline = time.monotonic() + 2
+        while group_members(pgid) and time.monotonic() < deadline:
+            time.sleep(0.05)
+        self.assertFalse(group_members(pgid))
+        self.assertFalse(registration.exists())
+        self.assertIn('phase=diagnostic-process-recovery', self.contents('lifecycle'))
+
 
 if __name__ == '__main__':
     unittest.main()
