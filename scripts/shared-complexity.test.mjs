@@ -66,7 +66,7 @@ function temporaryProject(context) {
   fs.mkdirSync(join(directory, 'scripts'));
   for (const file of ['package.json', 'eslint.config.mjs', 'scripts/shared-scope.mjs',
     'scripts/shared-complexity.mjs', 'scripts/shared-complexity-runner.mjs', 'scripts/source-files.mjs', 'scripts/android-game-scope.mjs',
-    'scripts/network-syntax.mjs', 'scripts/network-syntax-nodes.mjs', 'scripts/network-reference.mjs']) {
+    'scripts/android-navigation-scope.mjs', 'scripts/network-syntax.mjs', 'scripts/network-syntax-nodes.mjs', 'scripts/network-reference.mjs']) {
     fs.cpSync(join(repository, file), join(directory, file));
   }
   fs.symlinkSync(join(repository, 'node_modules'), join(directory, 'node_modules'), 'dir');

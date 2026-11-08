@@ -1,4 +1,5 @@
 import { cpSync, mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { repository } from './source-files.mjs';
@@ -19,5 +20,6 @@ export function temporaryComplexityProject(context, config) {
     mkdirSync(dirname(target), { recursive: true });
     writeFileSync(target, 'export const probe = 1;');
   }
+  execFileSync('git', ['init', '--quiet'], { cwd: directory });
   return directory;
 }
