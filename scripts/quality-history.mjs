@@ -14,6 +14,13 @@ export function previousRevision() {
   execFileSync('git', ['cat-file', '-e', `${revision}^{commit}`], { cwd: repository });
   // 宿主保留首次接入 master 的合并状态时，HEAD 仍是旧修复分支；首次测量对照登记 master。
   // 仅识别这一固定 MERGE_HEAD；合并完成后及未来其他合并仍对照 HEAD 清单，不能扩容。
+  return mergeBaseRevision(revision);
+}
+
+/** Recognize only the originally registered in-progress migration merge.
+ * @param revision - Already verified base revision.
+ */
+function mergeBaseRevision(revision) {
   if (!process.env.QUALITY_BASE_REV) {
     const mergePath = execFileSync('git', ['rev-parse', '--git-path', 'MERGE_HEAD'], { cwd: repository, encoding: 'utf8' }).trim();
     const mergeFile = resolve(repository, mergePath);

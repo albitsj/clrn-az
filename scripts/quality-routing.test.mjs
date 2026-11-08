@@ -1,3 +1,4 @@
+import { forEachCase } from './shared-test-cases.mjs';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { ESLint } from 'eslint';
@@ -92,7 +93,7 @@ async function networkMessages(source, filePath) {
 
 test('needs-repair 嵌套 Response 解构沿明确全局来源递归，保持精确离线例外', async () => {
   const sources = [];
-  for (const root of ['globalThis', 'window', 'self', 'global']) {
+  await forEachCase(['globalThis', 'window', 'self', 'global'], async (root) => {
     for (const key of ['Response', '["Response"]', '[`Response`]', '[("Response" as const)!]']) {
       for (const field of ['json', '["json"]', '[`json`]', '[("json" satisfies string)]']) {
         sources.push(
@@ -103,15 +104,15 @@ test('needs-repair 嵌套 Response 解构沿明确全局来源递归，保持精
         );
       }
     }
-  }
-  for (const source of sources) {
+  });
+  await forEachCase(sources, async (source) => {
     for (const filePath of ordinaryPaths) {
             const messages = await networkMessages(source, filePath);
             assert.equal(messages.length, 1, `${filePath}: ${source}`);
             assert.equal(messages[0].ruleId, 'quality/no-network-responses');
           }
     assert.deepEqual(await networkMessages(source, adapterPath), [], source);
-  }
+  });
 });
 
 test('真实业务字段的读取、可选链、静态键、嵌套解构及纯数据更新没有网络误报', async () => {

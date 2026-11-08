@@ -1,3 +1,4 @@
+import { forEachCase } from './shared-test-cases.mjs';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { join } from 'node:path';
@@ -31,12 +32,12 @@ async function networkMessages(source, filePath) {
  * @param rule - 唯一预期规则。
  */
 async function assertMatrix(source, count, rule = responseRule) {
-  for (const path of [...ordinaryPaths, adapter]) {
+  await forEachCase([...ordinaryPaths, adapter], async (path) => {
     const messages = await networkMessages(source, path);
     const expected = path === adapter && rule === responseRule ? 0 : count;
     assert.equal(messages.length, expected, `${path}: ${source}\n${JSON.stringify(messages)}`);
     assert.ok(messages.every(message => message.ruleId === rule && message.severity === 2));
-  }
+  });
 }
 
 /**
@@ -85,7 +86,7 @@ test('needs-repair 的 11 组有效核心探针通过真实 TypeScript 并按语
 
 test('实际写入槽位覆盖全局对象、静态键、包装、嵌套、默认值、剩余项及循环', async () => {
   const probes = [];
-  for (const root of ['globalThis', 'window', 'self', 'global']) {
+  await forEachCase(['globalThis', 'window', 'self', 'global'], async (root) => {
     for (const member of ['.fetch', '["fetch"]', '[`fetch`]', '[("fetch" as const)!]']) {
       const target = `(${root} as typeof ${root})!${member}`;
       probes.push(`({ fetch: ${target} } = { fetch: ${fake} });`);
@@ -94,14 +95,14 @@ test('实际写入槽位覆盖全局对象、静态键、包装、嵌套、默�
       probes.push(`for (${target} of [${fake}]) { void 0; }`);
       probes.push(`for ({ handler: ${target} } of [{ handler: ${fake} }]) { void 0; }`);
     }
-  }
+  });
   // 剩余结果不能赋给函数类型，用类型有效的未知成员核对实际目标。
   probes.push('declare const client: {fetch: object}; ({ ...client.fetch } = {});');
   probes.push('declare const client: {fetch: unknown[]}; [...client.fetch] = [];');
   // for-in 的 fetch 函数目标类型不合法，改用类型有效的可写任意成员测试相同 AST 入口。
   probes.push('declare const client: Record<string, unknown>; for (client.fetch in {}) { void 0; }');
   assertTypeScript(probes);
-  for (const source of probes) await assertMatrix(source, 1);
+  await forEachCase(probes, async (source) => {await assertMatrix(source, 1);});
 });
 
 test('写入遍历不会把计算键、默认值、右值和普通 fetch 引用误当替换', async () => {
@@ -184,12 +185,12 @@ test('needs-repair 默认值反例与配对控制通过真实 TypeScript 并只�
 });
 
 test('路由默认值投影覆盖四种方法、静态键、包装及声明赋值嵌套矩阵', async () => {
-  for (const method of ['route', 'fulfill', 'routeFromHAR', 'routeWebSocket']) {
+  await forEachCase(['route', 'fulfill', 'routeFromHAR', 'routeWebSocket'], async (method) => {
     const owner = method === 'fulfill' ? 'Route' : 'Page';
     const fallback = `declare const fallback: import("@playwright/test").${owner}["${method}"];`;
     const optional = `{${method}?: string|typeof fallback}`;
     const probes = [];
-    for (const key of [method, `["${method}"]`, `[\`${method}\`]`, `[("${method}" as const)!]`]) {
+    await forEachCase([method, `["${method}"]`, `[\`${method}\`]`, `[("${method}" as const)!]`], async (key) => {
       probes.push(
         [`${fallback} const {${key}:reply=fallback}: ${optional}={}; void reply;`, 1],
         [`${fallback} let reply; ({${key}:reply=fallback}=({} as ${optional})!); void reply;`, 1],
@@ -205,33 +206,33 @@ test('路由默认值投影覆盖四种方法、静态键、包装及声明赋�
         [`const {${key}:reply="data"}={}; console.log(reply);`, 0],
         [`const {${key}:reply=null}={}; console.log(reply);`, 0],
       );
-    }
+    });
     // 每种语法形态独立通过真实编译；其余静态键由生产解析器的路径矩阵验证。
     assertTypeScript(probes.slice(0, 13).map(([source]) => source));
-    for (const [source, count] of probes) await assertMatrix(source, count, routingRule);
-  }
+    await forEachCase(probes, async ([source, count]) => {await assertMatrix(source, count, routingRule);});
+  });
 });
 
 test('needs-repair 删除属性后不能以初始化快照跳过路由函数默认值', async () => {
   const probes = [];
-  for (const method of ['route', 'fulfill', 'routeFromHAR', 'routeWebSocket']) {
+  await forEachCase(['route', 'fulfill', 'routeFromHAR', 'routeWebSocket'], async (method) => {
     const owner = method === 'fulfill' ? 'Route' : 'Page';
     const prefix = `declare const fallback: import("@playwright/test").${owner}["${method}"];
       const settings: {${method}?: string|typeof fallback}={${method}:"business"};`;
-    for (const member of [`.${method}`, `["${method}"]`, `[\`${method}\`]`, `[("${method}" as const)!]`]) {
+    await forEachCase([`.${method}`, `["${method}"]`, `[\`${method}\`]`, `[("${method}" as const)!]`], async (member) => {
       probes.push(`${prefix} delete (settings as typeof settings)!${member};
         const {[\`${method}\`]:reply=fallback}=settings; void reply;`);
-    }
+    });
     const controls = [
       `${prefix} const {${method}:reply=fallback}=settings; console.log(reply);`,
       `${prefix} delete settings.${method}; const {${method}:reply="data"}=settings; console.log(reply,fallback);`,
     ];
     assertTypeScript(controls);
-    for (const source of controls) await assertCleanMatrix(source);
+    await forEachCase(controls, async (source) => {await assertCleanMatrix(source);});
     await assertMatrix(`${prefix} const {${method}:reply=fallback}: typeof settings={}; void reply;`, 1, routingRule);
-  }
+  });
   assertTypeScript(probes);
-  for (const source of probes) await assertMatrix(source, 1, routingRule);
+  await forEachCase(probes, async (source) => {await assertMatrix(source, 1, routingRule);});
 });
 
 test('纯数据变更使属性快照失效：成员写入、静态属性 API、共享别名及嵌套解构', async () => {
@@ -283,7 +284,7 @@ async function assertCleanMatrix(source) {
 
 test('needs-repair 数组接收者变更的 16 组有效反例及配对控制', async () => {
   const probes = [];
-  for (const method of ['route', 'fulfill', 'routeFromHAR', 'routeWebSocket']) {
+  await forEachCase(['route', 'fulfill', 'routeFromHAR', 'routeWebSocket'], async (method) => {
     const owner = method === 'fulfill' ? 'Route' : 'Page';
     const prefix = `declare const fallback: import("@playwright/test").${owner}["${method}"];`;
     const array = `const settings: {${method}?:string|typeof fallback}[]=`;
@@ -294,12 +295,12 @@ test('needs-repair 数组接收者变更的 16 组有效反例及配对控制', 
       [`${prefix}${array}[{${method}:"business"}]; ${read}`, 0],
       [`${prefix}${array}[]; ${read}`, 1],
     );
-  }
+  });
   assertTypeScript(probes.map(([source]) => source));
-  for (const [source, count] of probes) {
+  await forEachCase(probes, async ([source, count]) => {
     if (count) await assertMatrix(source, count, routingRule);
     else await assertCleanMatrix(source);
-  }
+  });
 });
 
 test('接收者的变更、未知方法、回调、共享返回值及调用逃逸不能证明快照稳定', async () => {
@@ -355,7 +356,7 @@ test('已知标量读取保留纯数据来源，不接受回调或会共享容�
 });
 
 test('needs-repair 引用经展开、容器、回调返回和分支传给未知消费者时不能证明稳定', async () => {
-  for (const method of ['route', 'fulfill', 'routeFromHAR', 'routeWebSocket']) {
+  await forEachCase(['route', 'fulfill', 'routeFromHAR', 'routeWebSocket'], async (method) => {
     const owner = method === 'fulfill' ? 'Route' : 'Page';
     const prefix = `declare const fallback: import("@playwright/test").${owner}["${method}"];
       const settings: {${method}?:string|typeof fallback}[]=[{${method}:"business"}];`;
@@ -378,7 +379,7 @@ test('needs-repair 引用经展开、容器、回调返回和分支传给未知�
     ];
     const probes = changes.map(change => `${prefix}${change}${read}`);
     assertTypeScript(probes);
-    for (const source of probes) await assertMatrix(source, 1, routingRule);
+    await forEachCase(probes, async (source) => {await assertMatrix(source, 1, routingRule);});
     const controls = [
       'console.log(...settings);', 'console.log([settings],{items:settings});',
       'void settings; typeof settings; settings===settings;',
@@ -388,6 +389,6 @@ test('needs-repair 引用经展开、容器、回调返回和分支传给未知�
       'if(settings){console.info(settings.length);}',
     ].map(use => `${prefix}${use}${read}`);
     assertTypeScript(controls);
-    for (const source of controls) await assertCleanMatrix(source);
-  }
+    await forEachCase(controls, async (source) => {await assertCleanMatrix(source);});
+  });
 });

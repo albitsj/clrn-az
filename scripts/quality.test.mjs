@@ -1,3 +1,4 @@
+import { forEachCase } from './shared-test-cases.mjs';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
@@ -102,15 +103,15 @@ test('属性 API 替换 fetch 和计算属性 Response.json 分别失败，精�
     'Object.assign(globalThis, { fetch: /** 返回伪造响应。 */ async () => Response["json"]({ fake: true }) });',
     'Object.defineProperty(globalThis, "fetch", { value: /** 返回伪造响应。 */ async () => Response["json"]({ fake: true }) });',
   ];
-  for (const filePath of ['android/tests/quality-probe.spec.ts', 'visual/cases/quality-probe.spec.ts',
-    'e2e/tests/quality-probe.spec.ts', 'visual/cases/_shared/other.test.ts']) {
+  await forEachCase(['android/tests/quality-probe.spec.ts', 'visual/cases/quality-probe.spec.ts',
+    'e2e/tests/quality-probe.spec.ts', 'visual/cases/_shared/other.test.ts'], async (filePath) => {
     for (const source of sources) {
       assert.ok((await diagnostics(source, networkRules, filePath)).length > 0, `${filePath}: ${source}`);
     }
-  }
-  for (const source of sources) {
+  });
+  await forEachCase(sources, async (source) => {
     assert.deepEqual(await diagnostics(source, networkRules, 'visual/cases/_shared/room.test.ts'), [], source);
-  }
+  });
 });
 
 test('属性 API 的普通数据操作及字符串不会触发网络伪造规则', async () => {
@@ -166,38 +167,38 @@ test('needs-repair 原始反例通过 TypeScript 检查后，独立生产规则�
    */
   host.getSourceFile = (name, languageVersion, ...rest) => name === file
     ? ts.createSourceFile(name, source, languageVersion, true) : readSource(name, languageVersion, ...rest);
-  for (const [probe, count] of probes) {
+  await forEachCase(probes, async ([probe, count]) => {
     source = probe;
     assert.deepEqual(ts.getPreEmitDiagnostics(ts.createProgram([file], options, host)), []);
     for (const filePath of ['android/tests/quality-probe.spec.ts', 'visual/cases/quality-probe.spec.ts',
       'e2e/tests/quality-probe.spec.ts', 'visual/cases/_shared/room.test.tsx']) {
       assert.equal((await diagnostics(source, networkRules, filePath)).length, count, filePath);
     }
-  }
-  for (const [probe] of probes.filter(([, count]) => count < 2)) {
+  });
+  await forEachCase(probes.filter(([, count]) => count < 2), async ([probe]) => {
     assert.deepEqual(await diagnostics(probe, networkRules, 'visual/cases/_shared/room.test.ts'), []);
-  }
+  });
 });
 
 test('静态属性 API 族独立阻止 fetch 替换：点访问、固定计算键、全局对象和透明包装', async () => {
   const sources = [];
-  for (const target of ['globalThis', 'window', 'self', 'global']) {
-    for (const method of ['Reflect.set', 'Reflect["set"]', 'Reflect[`set`]',
+  await forEachCase(['globalThis', 'window', 'self', 'global'], async (target) => {
+    await forEachCase(['Reflect.set', 'Reflect["set"]', 'Reflect[`set`]',
       'Object.defineProperty', 'Object["defineProperty"]', 'Object[`defineProperty`]',
-      'Reflect.defineProperty', 'Reflect["defineProperty"]', 'Reflect[`defineProperty`]']) {
+      'Reflect.defineProperty', 'Reflect["defineProperty"]', 'Reflect[`defineProperty`]'], async (method) => {
       for (const key of ['"fetch"', '`fetch`', '(("fetch" as const)!)', '("fetch" satisfies string)']) {
         sources.push(`${method}((${target} as typeof ${target}), ${key}, ${method.includes('set') ? 'fetch' : '{ value: fetch }'});`);
       }
-    }
-    for (const method of ['assign', 'defineProperties']) {
+    });
+    await forEachCase(['assign', 'defineProperties'], async (method) => {
       for (const access of [`.${method}`, `["${method}"]`, `[\`${method}\`]`]) {
         sources.push(`(Object${access})!(${target}, ({ [(\`fetch\` satisfies string)]: ${method === 'assign' ? 'fetch' : '{ value: fetch }'} } as const));`);
       }
-    }
+    });
     sources.push(`(${target} as typeof ${target})[("fetch" as const)!] = fetch;`);
     sources.push(`globalThis.Reflect[\`set\`](${target}, \`fetch\`, fetch);`);
     sources.push(`(Object.assign<typeof ${target}, { fetch: typeof fetch }>)(${target}, { fetch });`);
-  }
+  });
   sources.push('(Reflect as typeof Reflect)[("set" as const)]!(globalThis!, (`fetch` as const), fetch);');
   sources.push('(<typeof Reflect>Reflect)[`set`](globalThis, `fetch`, fetch);');
   sources.push('Reflect?.[`set`]?.(globalThis, `fetch`, fetch);');
@@ -212,10 +213,10 @@ test('静态属性 API 族独立阻止 fetch 替换：点访问、固定计算�
 
 test('Response 入口独立失败：全局限定、固定计算键和透明包装，不依赖 fetch 替换', async () => {
   const sources = [];
-  for (const root of ['', 'globalThis', 'window', 'self', 'global']) {
+  await forEachCase(['', 'globalThis', 'window', 'self', 'global'], async (root) => {
     const constructors = root ? [root + '.Response', `${root}["Response"]`, `${root}[\`Response\`]`,
       `(${root} as typeof ${root})[("Response" as const)!]`] : ['Response'];
-    for (const constructor of constructors) {
+    await forEachCase(constructors, async (constructor) => {
       sources.push(`new (${constructor})("fake");`);
       for (const key of ['json', '"json"', '["json"]', '[`json`]', '[("json" as const)!]', '[(`json` satisfies string)]']) {
         sources.push(`const { ${key}: reply } = (${constructor} as typeof Response)!; void reply;`);
@@ -226,8 +227,8 @@ test('Response 入口独立失败：全局限定、固定计算键和透明包�
         sources.push(`(${constructor} as typeof Response)${key}({ fake: true });`);
         sources.push(`const reply = (${constructor})!${key}; void reply;`);
       }
-    }
-  }
+    });
+  });
   sources.push('globalThis?.["Response"]?.[`json`]?.({ fake: true });');
   sources.push('(<typeof Response>globalThis.Response)[`json`]({ fake: true });');
   await assertResponseGate(sources);

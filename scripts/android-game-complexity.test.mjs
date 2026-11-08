@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { ESLint } from 'eslint';
-import { spawnSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -17,6 +17,7 @@ function temporaryProject(context) {
     cpSync(join(repository, file), join(directory, file), { recursive: true });
   }
   symlinkSync(join(repository, 'node_modules'), join(directory, 'node_modules'), 'dir');
+  execFileSync('git', ['init', '--quiet'], { cwd: directory });
   mkdirSync(join(directory, 'android'));
   for (const prefix of ['game', 'texas', 'zhajinhua-gameplay']) {
     writeFileSync(join(directory, 'android', `${prefix}-probe.ts`), 'export const probe = 1;');
@@ -86,6 +87,8 @@ test('独立门禁及既有 lint:js 入口阻断临时超限辅助文件，解�
 test('缺少 ESLint 依赖时入口非零退出', () => {
   const directory = mkdtempSync(join(tmpdir(), 'android-game-missing-dependency-'));
   try {
+    writeFileSync(join(directory, 'android-game-scope.mjs'), readFileSync('scripts/android-game-scope.mjs', 'utf8'));
+    writeFileSync(join(directory, 'shared-complexity-runner.mjs'), readFileSync('scripts/shared-complexity-runner.mjs', 'utf8'));
     const script = readFileSync('scripts/android-game-complexity.mjs', 'utf8');
     writeFileSync(join(directory, 'check.mjs'), script);
     const result = spawnSync(process.execPath, [join(directory, 'check.mjs'), 'eslint'], { encoding: 'utf8' });

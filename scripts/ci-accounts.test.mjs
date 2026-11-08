@@ -1,3 +1,4 @@
+import { forEachCase } from './shared-test-cases.mjs';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
@@ -108,7 +109,7 @@ test('仓库账号分区固定，不能选用另一仓库账号，接受分区�
 });
 
 
-test('安卓超时场景分片后独占账号，筛选保持槽位，牌桌优先', () => {
+test('安卓超时场景分片后独占账号，筛选保持槽位，牌桌优先', async () => {
   const full = androidAccountMatrix('29').include;
   assert.equal(full.length, 35);
   assert.equal(new Set(full.map(item => item.account)).size, 35);
@@ -116,11 +117,13 @@ test('安卓超时场景分片后独占账号，筛选保持槽位，牌桌优�
   const locales = ['zh-Hans', 'zh-Hant', 'en'];
   assert.deepEqual([...new Set(full.map(item => `${item.group}/${item.locale}`))],
     ['texas', 'zhajinhua', ...groups.slice(0, 6)].flatMap(group => locales.map(locale => `${group}/${locale}`)));
-  for (const group of groups) for (const locale of locales) {
-    const parts = full.filter(item => item.group === group && item.locale === locale);
-    assert.equal(parts[0].account, allocateCiAccount('29', groups.indexOf(group) * 3 + locales.indexOf(locale)));
-    assert.deepEqual(androidAccountMatrix('29', group, locale).include, parts);
-  }
+  await forEachCase(groups, async (group) => {
+    for (const locale of locales) {
+      const parts = full.filter(item => item.group === group && item.locale === locale);
+      assert.equal(parts[0].account, allocateCiAccount('29', groups.indexOf(group) * 3 + locales.indexOf(locale)));
+      assert.deepEqual(androidAccountMatrix('29', group, locale).include, parts);
+    }
+  });
   const labels = {
     'texas/zh-Hans': ['pre_game', 'optional_pre_game', 'game', 'panels', 'hall', 'records_v2',
       'controls', 'table_states', 'panel_variants', 'hall_variants'],
@@ -131,14 +134,14 @@ test('安卓超时场景分片后独占账号，筛选保持槽位，牌桌优�
       'controls', 'table_states', 'panel_variants', 'hall_variants'],
     'zhajinhua/en': ['pre_game_first', 'pre_game_second', 'game_table', 'game_effects'],
   };
-  for (const [key, suffixes] of Object.entries(labels)) {
+  await forEachCase(Object.entries(labels), async ([key, suffixes]) => {
     const [group, locale] = key.split('/');
     const parts = full.filter(item => item.group === group && item.locale === locale);
     for (const suffix of suffixes) {
       const title = `${locale} / ${group} / signed_in_${group}_${suffix}`;
       assert.equal(parts.filter(item => new RegExp(item.filter).test(title)).length, 1, title);
     }
-  }
+  });
   assert.throws(() => androidAccountMatrix('29', 'typo'));
   assert.throws(() => androidAccountMatrix('29', 'all', 'typo'));
 });

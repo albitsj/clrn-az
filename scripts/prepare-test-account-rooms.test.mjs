@@ -22,8 +22,7 @@ function network(context, replies) {
     requests.push({ url, ...options });
     assert.ok(requests.length <= replies.length, '不得发出未预期请求');
     const reply = replies[requests.length - 1];
-    if (reply instanceof Error) throw reply;
-    return reply instanceof Response ? reply : Response.json({ ok: true, result: reply });
+    return fixtureResponse(reply);
   });
   return requests;
 }
@@ -106,7 +105,7 @@ test('失败按接口恢复上限停止且不推进后续步骤或泄露会话',
     for (const [failure, kind] of [[() => new Error(session.authorization), 'invalid-response'],
       [() => new Response(session.authorization, { status: 503 }), 'server'],
       [() => new Response(session.authorization), 'invalid-response'], [() => Response.json({ ok: false }), 'business']]) {
-      const attempts = kind === 'server' && [1, 2, 4].includes(stage) ? 3 : 1;
+      const attempts = recoveryAttempts(kind, stage);
       const failures = Array.from({ length: attempts }, failure);
       const requests = network(context, [...replies.slice(0, stage), ...failures]);
       await assert.rejects(prepareTestAccountRooms(session), error => {
@@ -123,3 +122,20 @@ test('失败按接口恢复上限停止且不推进后续步骤或泄露会话',
     }
   }
 });
+
+/** Resolve one fixture while preserving explicit failures and unexpected-call checks.
+ * @param reply - Ordered response fixture.
+ */
+function fixtureResponse(reply) {
+  if (reply instanceof Error) throw reply;
+  if (reply instanceof Response) return reply;
+  return Response.json({ ok: true, result: reply });
+}
+
+/** Preserve the operation-specific safe recovery budget.
+ * @param kind - Failure kind.
+ * @param stage - Preparation step.
+ */
+function recoveryAttempts(kind, stage) {
+  return kind === 'server' && [1, 2, 4].includes(stage) ? 3 : 1;
+}

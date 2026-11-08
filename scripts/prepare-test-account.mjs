@@ -12,22 +12,48 @@ export const initialCoinBalance = '10000';
  */
 export async function readTestingApiToken(environment = process.env,
   deploymentFile = new URL('../../goplay_staging_auto_stack/user_transaction_flask/deploy.yaml', import.meta.url)) {
+  return testingToken(environment, deploymentFile);
+}
+
+/** Prefer explicit credentials before considering local deployment secrets.
+ * @param environment - Current environment.
+ * @param deploymentFile - Local deployment file.
+ */
+async function testingToken(environment, deploymentFile) {
   const configured = environment.TESTING_API_TOKEN?.trim();
   if (configured) return configured;
+  return localTestingToken(environment, deploymentFile);
+}
+
+/** Refuse local secret fallback in CI and redact read failures.
+ * @param environment - Current environment.
+ * @param deploymentFile - Local deployment file.
+ */
+async function localTestingToken(environment, deploymentFile) {
   if (canReadLocalToken(environment)) {
-    try {
-      const deployment = await readFile(deploymentFile, 'utf8');
-      const secret = deployment.split(/^---\s*$/m).find(document =>
-        /^kind:\s*Secret\s*$/m.test(document)
-        && /^\s+name:\s*test-api-token\s*$/m.test(document)
-        && /^\s+namespace:\s*goplay-staging\s*$/m.test(document));
-      const token = secret?.match(/^stringData:\s*\n(?:\s*#.*\n)*\s+token:\s*["']?([A-Za-z0-9_=-]+)["']?\s*$/m)?.[1];
-      if (token) return token;
-    } catch {
-      // 只报告缺少配置，不输出部署文件或底层错误中的凭据。
-    }
+    const token = await deploymentToken(deploymentFile);
+    if (token) return token;
   }
   throw new Error('缺少 TESTING_API_TOKEN，无法准备测试账号金币余额');
+}
+
+/** Read the local secret without exposing filesystem or parsing errors.
+ * @param deploymentFile - Local deployment file.
+ */
+async function deploymentToken(deploymentFile) {
+  try { return secretToken(await readFile(deploymentFile, 'utf8')); }
+  catch { return undefined; }
+}
+
+/** Select only the named staging Secret document.
+ * @param deployment - Deployment YAML text.
+ */
+function secretToken(deployment) {
+  const secret = deployment.split(/^---\s*$/m).find(document =>
+    /^kind:\s*Secret\s*$/m.test(document)
+    && /^\s+name:\s*test-api-token\s*$/m.test(document)
+    && /^\s+namespace:\s*goplay-staging\s*$/m.test(document));
+  return secret?.match(/^stringData:\s*\n(?:\s*#.*\n)*\s+token:\s*["']?([A-Za-z0-9_=-]+)["']?\s*$/m)?.[1];
 }
 
 /**
@@ -41,9 +67,7 @@ export async function readTestingApiToken(environment = process.env,
  */
 async function requestJson(client, path, method, body, headers, stage) {
   try {
-    const response = path.endsWith('/set_balance/testing')
-      ? await setTestingBalance(path, body, headers['X-Testing-Api-Token'])
-      : await businessRequest(client, path, method, body, headers.Authorization);
+    const response = await accountRequest(client, path, method, body, headers);
     if (!response.result) throw new Error('业务响应失败');
     return response.result;
   } catch (error) {
@@ -78,8 +102,7 @@ async function prepareCoins(client, account, token) {
   const result = await requestJson(client, `/public/v1/wallet/${userId}/set_balance/testing`, 'POST', {
     currency_name: 'coin', balance: initialCoinBalance,
   }, { 'X-Testing-Api-Token': token }, '设置测试金币');
-  if (result.wallet_id !== userId || result.currency_name !== 'coin'
-    || Number(result.balance) !== Number(initialCoinBalance)) throw new Error('设置测试金币返回钱包、币种或余额不符');
+  validatePreparedBalance(result, userId);
   const wallet = await requestJson(client, `/v10/wallet/${userId}`, 'PUT', { currencies: ['coin'] }, {
     Authorization: `${session.api_token.token_type} ${session.api_token.access_token}`,
   }, '核对测试金币');
@@ -100,28 +123,90 @@ function canReadLocalToken(environment) {
  */
 function validateAccount(account, token) {
   if (typeof token !== 'string' || !token.trim()) throw new Error('缺少 TESTING_API_TOKEN');
-  if (typeof account?.username !== 'string' || !/^[a-zA-Z0-9.]{6,30}$/.test(account.username)
-    || typeof account.password !== 'string' || !account.password || account.password.length > 20
-    || /[\r\n\0]/.test(account.password)) throw new Error('测试账号凭据无效');
+  validateCredentials(account);
 }
 
-/** Validate returned identity and session separately from credentials.
+/** Validate the account name before reading the password.
+ * @param account - Locked account.
+ */
+function validateCredentials(account) {
+  if (!validUsername(account?.username)) throw new Error('测试账号凭据无效');
+  requirePassword(account.password);
+}
+
+/** Check the UI-compatible username format.
+ * @param value - Configured name.
+ */
+function validUsername(value) {
+  return typeof value === 'string' && /^[a-zA-Z0-9.]{6,30}$/.test(value);
+}
+
+/** Check password type and UI length before control characters.
+ * @param value - Configured password.
+ */
+function validPassword(value) {
+  if (typeof value !== 'string') return false;
+  return validPasswordText(value);
+}
+
+/** Validate identity and authorization before wallet operations.
  * @param session - Real login result.
  * @param account - Expected account.
  */
 function validateSession(session, account) {
-  const userId = session.user_id;
-  if (typeof userId !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId)
-    || session.username !== account.username || (account.userId !== undefined && account.userId !== userId)
-    || !validSessionToken(session.api_token)) throw new Error('准备账号登录返回身份或会话不符');
+  if (!validUserId(session.user_id)) throw new Error('准备账号登录返回身份或会话不符');
+  validateIdentity(session, account);
+  if (!validSessionToken(session.api_token)) throw new Error('准备账号登录返回身份或会话不符');
+}
+
+/** Verify a UUID before using it in a request path.
+ * @param value - Returned identity.
+ */
+function validUserId(value) {
+  return typeof value === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+}
+
+/** Require both configured identity fields to match.
+ * @param session - Login result.
+ * @param account - Expected account.
+ */
+function validateIdentity(session, account) {
+  if (session.username !== account.username) throw new Error('准备账号登录返回身份或会话不符');
+  validateRegisteredId(session.user_id, account.userId);
+}
+
+/** Compare the optional pre-registered ID.
+ * @param actual - Returned ID.
+ * @param registered - Optional configured ID.
+ */
+function validateRegisteredId(actual, registered) {
+  if (registered !== undefined && registered !== actual) throw new Error('准备账号登录返回身份或会话不符');
 }
 
 /** Reject malformed authorization tokens without logging them.
  * @param token - Service token object.
  */
 function validSessionToken(token) {
-  return /^Bearer$/i.test(token?.token_type) && typeof token?.access_token === 'string'
-    && Boolean(token.access_token) && !/[\r\n]/.test(token.access_token);
+  if (!/^Bearer$/i.test(token?.token_type)) return false;
+  return validAccessToken(token.access_token);
+}
+
+/** Require a nonempty, single-line access token.
+ * @param value - Access token.
+ */
+function validAccessToken(value) {
+  if (typeof value !== 'string') return false;
+  return Boolean(value) && !/[\r\n]/.test(value);
+}
+
+/** Verify the management response belongs to the requested wallet and currency.
+ * @param result - Returned balance.
+ * @param userId - Current wallet ID.
+ */
+function validatePreparedBalance(result, userId) {
+  const fields = [[result.wallet_id, userId], [result.currency_name, 'coin'],
+    [Number(result.balance), Number(initialCoinBalance)]];
+  if (!fields.every(([actual, expected]) => actual === expected)) throw new Error('设置测试金币返回钱包、币种或余额不符');
 }
 
 /** Require exactly one coin balance matching the requested preparation.
@@ -129,7 +214,40 @@ function validSessionToken(token) {
  */
 function validateCoins(wallet) {
   const coins = Array.isArray(wallet.currencies) ? wallet.currencies.filter(currency => currency?.code === 'coin') : [];
+  requireCoinBalance(coins);
+}
+
+/** Check the unique selected coin balance.
+ * @param coins - Matching currencies.
+ */
+function requireCoinBalance(coins) {
   if (coins.length !== 1 || Number(coins[0].balance) !== Number(initialCoinBalance)) {
     throw new Error('核对测试金币失败，实际余额不是 10000');
   }
+}
+
+/** Keep management writes on their fixed endpoint.
+ * @param client - Business client.
+ * @param path - Request path.
+ * @param method - Request method.
+ * @param body - JSON payload.
+ * @param headers - Request credentials.
+ */
+function accountRequest(client, path, method, body, headers) {
+  if (path.endsWith('/set_balance/testing')) return setTestingBalance(path, body, headers['X-Testing-Api-Token']);
+  return businessRequest(client, path, method, body, headers.Authorization);
+}
+
+/** Validate a credential's password after its username.
+ * @param password - Configured password.
+ */
+function requirePassword(password) {
+  if (!validPassword(password)) throw new Error('测试账号凭据无效');
+}
+
+/** Keep the original nonempty UI password restrictions.
+ * @param value - Password string.
+ */
+function validPasswordText(value) {
+  return Boolean(value) && value.length <= 20 && !/[\r\n\0]/.test(value);
 }

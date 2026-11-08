@@ -45,100 +45,169 @@ async function run() {
   const poolFile = process.env.CLRN_TEST_ACCOUNT_POOL
     || join(common, 'clrn-test-accounts', 'accounts.json');
   // 2. 凭据只从本机文件读取，不打印密码，也不将凭据写入测试报告。
-  let accounts;
+  const accounts = await readAccounts(poolFile);
+  validatePool(accounts);
+  const locks = join(dirname(poolFile), 'locks');
+  await mkdir(locks, { recursive: true, mode: 0o700 });
+  validateUsernames(accounts);
+  const { selected, lock } = await selectAccount(accounts, locks);
+  try { await runSelectedAccount(selected, lock); }
+  finally { await rm(lock, { recursive: true, force: true }); }
+}
+
+/** Read credentials without printing parser or filesystem diagnostics.
+ * @param poolFile - Shared pool file.
+ */
+async function readAccounts(poolFile) {
   try {
-    accounts = JSON.parse(await readFile(poolFile, 'utf8')).accounts;
+    return JSON.parse(await readFile(poolFile, 'utf8')).accounts;
   } catch {
     throw new Error('测试账号池不可读取，请先准备本机 staging 测试账号');
   }
-  if (!Array.isArray(accounts) || !accounts.length
-    || accounts.some(account => typeof account.username !== 'string' || !account.username
-      || typeof account.password !== 'string' || !account.password
-      // H5 密码框最多接收 20 个字符；更长的密码虽然可走 API 登录，界面会截断。
-      || account.password.length > 20 || /[\r\n\0]/.test(account.password)
-      || typeof account.userId !== 'string' || !account.userId)
-    || new Set(accounts.map(account => account.username.toLowerCase())).size !== accounts.length) {
+}
+
+/** Validate shape before reading credential fields.
+ * @param accounts - Parsed pool.
+ */
+function validatePool(accounts) {
+  if (!Array.isArray(accounts) || !accounts.length) throw new Error('测试账号池为空、配置不完整、密码不兼容 H5 或包含重复用户名');
+  validatePoolEntries(accounts);
+}
+
+/** Check entries before comparing normalized usernames.
+ * @param accounts - Nonempty account array.
+ */
+function validatePoolEntries(accounts) {
+  if (accounts.some(account => !validPoolEntry(account))) throw new Error('测试账号池为空、配置不完整、密码不兼容 H5 或包含重复用户名');
+  if (new Set(accounts.map(account => account.username.toLowerCase())).size !== accounts.length) {
     throw new Error('测试账号池为空、配置不完整、密码不兼容 H5 或包含重复用户名');
   }
+  validateLocalPartition(accounts);
+}
 
+/** Require the account identity and compatible credentials.
+ * @param account - Pool entry.
+ */
+function validPoolEntry(account) {
+  return nonemptyString(account.username) && validPoolPassword(account.password) && nonemptyString(account.userId);
+}
+
+/** Check string fields without coercing unknown values.
+ * @param value - Credential field.
+ */
+function nonemptyString(value) {
+  return typeof value === 'string' && Boolean(value);
+}
+
+/** Preserve H5 length and control-character restrictions.
+ * @param value - Configured password.
+ */
+function validPoolPassword(value) {
+  if (!nonemptyString(value)) return false;
+  return value.length <= 20 && !/[\r\n\0]/.test(value);
+}
+
+/** Prevent local worktrees from using the CI-only partition.
+ * @param accounts - Validated local pool.
+ */
+function validateLocalPartition(accounts) {
   // 自定义账号池也使用旁边的 locks；共享账号时必须指定相同的账号池文件。
   if (accounts.some(account => ciAccounts.includes(account.username.toLowerCase()))) {
     throw new Error('本机账号池禁止使用 CLRN 的 CI 专用账号，避免绕过 GitHub 账号锁');
   }
-  const locks = join(dirname(poolFile), 'locks');
-  await mkdir(locks, { recursive: true, mode: 0o700 });
+}
+
+/** Validate names before acquiring any account lock.
+ * @param accounts - Validated pool.
+ */
+function validateUsernames(accounts) {
   for (const account of accounts) {
     if (!/^[a-zA-Z0-9.]{6,30}$/.test(account.username)) {
       throw new Error('测试账号池包含非法用户名');
     }
   }
+}
 
-  // 3. 不能先判断目录不存在再创建，否则两个进程会同时选中同一个账号。
-  let selected;
-  let lock;
+/** Acquire exactly one account using atomic mkdir.
+ * @param accounts - Validated pool.
+ * @param locks - Shared lock directory.
+ */
+async function selectAccount(accounts, locks) {
   for (const account of accounts) {
     const candidate = join(locks, account.username.toLowerCase());
-    try {
-      await mkdir(candidate, { mode: 0o700 });
-      selected = account;
-      lock = candidate;
-      break;
-    } catch (error) {
-      // EEXIST 表示此账号正在被占用；权限或磁盘错误则应立即报错。
-      if (error.code !== 'EEXIST') throw new Error('测试账号占用锁创建失败', { cause: error });
-    }
+    if (await tryAccountLock(candidate)) return { selected: account, lock: candidate };
   }
-  if (!selected) {
-    throw new Error('测试账号全部被占用；若上轮进程被强制终止，请确认它已结束后清理账号池 locks 中对应的目录');
+  throw new Error('测试账号全部被占用；若上轮进程被强制终止，请确认它已结束后清理账号池 locks 中对应的目录');
+}
+
+/** Treat only an existing lock as an occupied account.
+ * @param candidate - Atomic lock directory.
+ */
+async function tryAccountLock(candidate) {
+  try { await mkdir(candidate, { mode: 0o700 }); return true; }
+  catch (error) {
+    if (error.code !== 'EEXIST') throw new Error('测试账号占用锁创建失败', { cause: error });
+    return false;
+  }
+}
+
+/** Prepare the locked account before launching the caller's command.
+ * @param selected - Exclusive account.
+ * @param lock - Owned lock directory.
+ */
+async function runSelectedAccount(selected, lock) {
+  // owner.json 只记录进程号和工作目录，方便排查残留锁，不保存密码。
+  await writeFile(join(lock, 'owner.json'), JSON.stringify({ pid: process.pid, cwd: process.cwd() }), { mode: 0o600 });
+  const session = await prepareTestAccountCoins(selected, await readTestingApiToken());
+  await prepareTestAccountRooms(session);
+  console.error('已核对本轮账号金币余额为 10000');
+  // 4. 三种测试都通过环境变量读取账号；只修改子进程的配置。
+  const env = {
+    ...process.env,
+    E2E_TEST_USERNAME: selected.username, E2E_TEST_PASSWORD: selected.password,
+    E2E_CREATION_USERNAME: selected.username, E2E_CREATION_PASSWORD: selected.password,
+    VISUAL_USERNAME: selected.username, VISUAL_PASSWORD: selected.password,
+  };
+  // 显式创建账号状态会覆盖用户名；使用池账号时走真实登录流程。
+  delete env.E2E_CREATION_STORAGE_STATE_FILE;
+  console.error(`本轮使用独立 staging 测试账号：${selected.username}`);
+  // 5. 直接执行参数而非拼接 shell 字符串，保留参数边界和调用者的工作目录。
+  const grouped = process.platform !== 'win32';
+  const child = spawn(args[0], args.slice(1), { env, stdio: 'inherit', detached: grouped });
+  const signals = ['SIGINT', 'SIGTERM', 'SIGHUP'];
+  const handlers = signals.map(signal => {
+    /** 将退出信号转发给测试命令及其后代进程，避免任务结束后仍使用账号。 */
+    const handler = () => {
+      try {
+        // npm/pnpm 会再启动测试进程，转发到进程组，避免退出后仍继续使用账号。
+        signalCommand(child, grouped, signal);
+      } catch (error) {
+        if (error.code !== 'ESRCH') throw error;
+      }
+    };
+    process.on(signal, handler);
+    return handler;
+  });
+  try {
+    // 使用测试命令的退出码，让调用者和 CI 能识别真正的测试失败。
+    process.exitCode = await new Promise((resolve, reject) => {
+      child.once('error', () => reject(new Error('测试命令启动失败')));
+      child.once('exit', (code, signal) => resolve(code ?? (signal === 'SIGINT' ? 130 : 143)));
+    });
+  } finally {
+    signals.forEach((signal, index) => process.removeListener(signal, handlers[index]));
   }
 
-  try {
-    // owner.json 只记录进程号和工作目录，方便排查残留锁，不保存密码。
-    await writeFile(join(lock, 'owner.json'), JSON.stringify({ pid: process.pid, cwd: process.cwd() }), { mode: 0o600 });
-    const session = await prepareTestAccountCoins(selected, await readTestingApiToken());
-    await prepareTestAccountRooms(session);
-    console.error('已核对本轮账号金币余额为 10000');
-    // 4. 三种测试都通过环境变量读取账号；只修改子进程的配置。
-    const env = {
-      ...process.env,
-      E2E_TEST_USERNAME: selected.username, E2E_TEST_PASSWORD: selected.password,
-      E2E_CREATION_USERNAME: selected.username, E2E_CREATION_PASSWORD: selected.password,
-      VISUAL_USERNAME: selected.username, VISUAL_PASSWORD: selected.password,
-    };
-    // 显式创建账号状态会覆盖用户名；使用池账号时走真实登录流程。
-    delete env.E2E_CREATION_STORAGE_STATE_FILE;
-    console.error(`本轮使用独立 staging 测试账号：${selected.username}`);
-    // 5. 直接执行参数而非拼接 shell 字符串，保留参数边界和调用者的工作目录。
-    const grouped = process.platform !== 'win32';
-    const child = spawn(args[0], args.slice(1), { env, stdio: 'inherit', detached: grouped });
-    const signals = ['SIGINT', 'SIGTERM', 'SIGHUP'];
-    const handlers = signals.map(signal => {
-      /** 将退出信号转发给测试命令及其后代进程，避免任务结束后仍使用账号。 */
-      const handler = () => {
-        try {
-          // npm/pnpm 会再启动测试进程，转发到进程组，避免退出后仍继续使用账号。
-          if (grouped && child.pid) process.kill(-child.pid, signal);
-          else child.kill(signal);
-        } catch (error) {
-          if (error.code !== 'ESRCH') throw error;
-        }
-      };
-      process.on(signal, handler);
-      return handler;
-    });
-    try {
-      // 使用测试命令的退出码，让调用者和 CI 能识别真正的测试失败。
-      process.exitCode = await new Promise((resolve, reject) => {
-        child.once('error', () => reject(new Error('测试命令启动失败')));
-        child.once('exit', (code, signal) => resolve(code ?? (signal === 'SIGINT' ? 130 : 143)));
-      });
-    } finally {
-      signals.forEach((signal, index) => process.removeListener(signal, handlers[index]));
-    }
-  } finally {
-    // 6. 只有我们取得的锁会被删除，不会清理其他任务的占用记录。
-    await rm(lock, { recursive: true, force: true });
-  }
+}
+
+/** Forward a signal to the entire test process group when available.
+ * @param child - Test command process.
+ * @param grouped - Whether the command has its own process group.
+ * @param signal - Signal to forward.
+ */
+function signalCommand(child, grouped, signal) {
+  if (grouped && child.pid) process.kill(-child.pid, signal);
+  else child.kill(signal);
 }
 
 run().catch(error => {

@@ -20,9 +20,7 @@ function forwardedValue(node, unwrap) {
   if (!parent) return undefined;
   if (unwrap(parent) !== parent) return parent;
   if (['ArrayExpression', 'SpreadElement', 'AwaitExpression', 'LogicalExpression'].includes(parent.type)) return parent;
-  if (parent.type === 'MemberExpression' && parent.object === node) return parent;
-  if (parent.type === 'Property' && parent.value === node && parent.parent.type === 'ObjectExpression') return parent.parent;
-  return forwardedResult(node, parent);
+  return forwardedContainer(node, parent) || forwardedResult(node, parent);
 }
 
 /**
@@ -33,6 +31,14 @@ function forwardedValue(node, unwrap) {
 function forwardedResult(node, parent) {
   if (parent.type === 'ConditionalExpression' && parent.test !== node) return parent;
   if (parent.type === 'SequenceExpression' && parent.expressions.at(-1) === node) return parent;
+  return returnedFunction(node, parent);
+}
+
+/** Follow arrow expression bodies and explicit return statements.
+ * @param node - Current value.
+ * @param parent - Consumer node.
+ */
+function returnedFunction(node, parent) {
   if (parent.type === 'ArrowFunctionExpression' && parent.body === node) return parent;
   if (parent.type !== 'ReturnStatement') return undefined;
   let owner = parent.parent;
@@ -47,9 +53,8 @@ function forwardedResult(node, parent) {
 export function writeOwner(node) {
   const parent = node.parent;
   if (!parent) return undefined;
-  if (parent.type === 'Property' && parent.value === node) return writeOwner(parent.parent);
-  if (['ArrayPattern', 'RestElement'].includes(parent.type)) return writeOwner(parent);
-  if (parent.type === 'AssignmentPattern' && parent.left === node) return writeOwner(parent);
+  const container = writeContainer(node, parent);
+  if (container) return writeOwner(container);
   return parent.left === node ? parent : undefined;
 }
 
@@ -70,9 +75,10 @@ export function aliasPattern(node) {
  */
 export function safeValueUse(node) {
   const parent = node.parent;
-  if (['ExpressionStatement', 'BinaryExpression', 'TSTypeQuery', 'TSQualifiedName'].includes(parent?.type)) return true;
-  if (parent?.type === 'UnaryExpression') return parent.operator !== 'delete';
-  if (parent?.type === 'TemplateLiteral') return parent.parent.type !== 'TaggedTemplateExpression';
+  if (!parent) return false;
+  if (['ExpressionStatement', 'BinaryExpression', 'TSTypeQuery', 'TSQualifiedName'].includes(parent.type)) return true;
+  if (parent.type === 'UnaryExpression') return parent.operator !== 'delete';
+  if (parent.type === 'TemplateLiteral') return parent.parent.type !== 'TaggedTemplateExpression';
   return scalarPosition(node, parent);
 }
 
@@ -85,6 +91,34 @@ function scalarPosition(node, parent) {
   if (!parent) return false;
   if (parent.test === node || parent.discriminant === node) return true;
   if (parent.type === 'MemberExpression') return parent.property === node;
+  return scalarProperty(node, parent);
+}
+
+/** Follow member receivers and object property values.
+ * @param node - Current value.
+ * @param parent - Consumer node.
+ */
+function forwardedContainer(node, parent) {
+  if (parent.type === 'MemberExpression' && parent.object === node) return parent;
+  if (parent.type === 'Property' && parent.value === node && parent.parent.type === 'ObjectExpression') return parent.parent;
+  return undefined;
+}
+
+/** Identify pattern wrappers without following reads in keys or defaults.
+ * @param node - Actual write target.
+ * @param parent - Direct parent.
+ */
+function writeContainer(node, parent) {
+  if (parent.type === 'Property' && parent.value === node) return parent.parent;
+  if (['ArrayPattern', 'RestElement'].includes(parent.type)) return parent;
+  return parent.type === 'AssignmentPattern' && parent.left === node ? parent : undefined;
+}
+
+/** Recognize property keys and discarded comma values.
+ * @param node - Current reference.
+ * @param parent - Direct consumer.
+ */
+function scalarProperty(node, parent) {
   if (parent.type === 'Property') return parent.key === node && !parent.shorthand;
   return parent.type === 'SequenceExpression' && parent.expressions.at(-1) !== node;
 }

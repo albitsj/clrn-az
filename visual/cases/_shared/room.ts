@@ -16,7 +16,7 @@ const ROOM_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-
 async function visualAccount(page: Page) {
   const raw = await page.evaluate(() => localStorage.getItem('save.user.origin.data.from.server.key'));
   const auth = raw ? JSON.parse(raw) : null;
-  if (!ROOM_ID_PATTERN.test(auth?.user_id || '') || !auth?.api_token?.access_token || !auth?.username) {
+  if (!validVisualAuth(auth)) {
     throw new Error('视觉测试登录态缺少有效用户 ID 或 API token');
   }
   return {
@@ -34,8 +34,7 @@ async function visualAccount(page: Page) {
 async function readDiamondBalance(client: NetworkClient, account: Account): Promise<number> {
   const body = await businessRequest<{ currencies: { code: string; balance: string }[] }>(
     client, `/v10/wallet/${account.userId}`, 'PUT', { currencies: ['diamond'] }, account.authorization);
-  const diamond = body.result?.currencies?.find((item: { code: string }) => item.code === 'diamond');
-  const balance = Number(diamond?.balance);
+  const balance = diamondBalance(body.result);
   if (!Number.isFinite(balance)) throw new Error('视觉测试账号钻石余额无效');
   return balance;
 }
@@ -59,8 +58,7 @@ async function ensureBalance(client: NetworkClient, account: Account): Promise<v
   if (!canTopUpVisualAccount(account.username)) {
     throw new Error('仅允许为本轮使用的固定视觉测试账号自动补钻');
   }
-  const token = process.env.TESTING_API_TOKEN?.trim();
-  if (!token) throw new Error('账号不足 10 钻；需要 TESTING_API_TOKEN 为 staging 测试账号补钻');
+  const token = testingToken();
   const body = await setTestingBalance<{ wallet_id: string; currency_name: string; balance: string }>(
     `/public/v1/wallet/${account.userId}/set_balance/testing`, { currency_name: 'diamond', balance: '60' }, token);
   validateTopup(body.result, account.userId);
@@ -86,10 +84,7 @@ export async function createPrivateGameRoom(
   await page.locator(`[data-testid="game-type-button-${gameType}"]:visible`).last().click();
   await expect(page.locator('[data-testid="base-create-room-screen"]:visible')).toBeVisible();
   await page.locator('[data-testid="room-name-input"]:visible').last().fill('TestRoom');
-  if (optionalFeatures) {
-    await page.locator('[data-testid="advanced-options-button"]:visible').last().click();
-    await page.locator('[data-testid="BlindsEnableFlipSwitch"]:visible').last().click();
-  }
+  await configureRoomFeatures(page, optionalFeatures);
   const responsePromise = page.waitForResponse(response =>
     response.request().method() === 'POST'
     && new URL(response.url()).pathname === '/v3/pay_action/do', { timeout: 60_000 });
@@ -122,7 +117,9 @@ export async function deletePrivateGameRoom(room: RoomSession): Promise<void> {
  * @param userId - Current account ID.
  */
 function validateTopup(result: { wallet_id: string; currency_name: string; balance: string }, userId: string): void {
-  if (result?.wallet_id !== userId || result?.currency_name !== 'diamond' || Number(result?.balance) !== 60) {
+  if (!result) throw new Error('staging 测试账号补钻结果无效');
+  const fields = [[result.wallet_id, userId], [result.currency_name, 'diamond'], [Number(result.balance), 60]];
+  if (!fields.every(([actual, expected]) => actual === expected)) {
     throw new Error('staging 测试账号补钻结果无效');
   }
 }
@@ -133,9 +130,105 @@ function validateTopup(result: { wallet_id: string; currency_name: string; balan
  * @param gameType - Static game name.
  */
 function createdRoomId(response: Response, body: { ok?: boolean; result?: { room_id?: string } }, gameType: string): string {
-  const roomId = body?.result?.room_id;
-  if (!response.ok() || body?.ok !== true || !ROOM_ID_PATTERN.test(roomId || '')) {
+  const roomId = responseRoomId(body);
+  if (!validCreatedResponse(response, body, roomId)) {
     throw new Error(`${gameType} 房间创建失败：HTTP ${response.status()}，无有效建房成功响应`);
   }
   return roomId!;
+}
+
+type VisualAuth = { user_id: string; username: string; api_token: { token_type: string; access_token: string } };
+
+/** Check identity separately from credentials before using the parsed session.
+ * @param auth - Persisted login data.
+ */
+function validVisualAuth(auth: VisualAuth | null): auth is VisualAuth {
+  if (!ROOM_ID_PATTERN.test(visualUserId(auth))) return false;
+  return Boolean(visualToken(auth)) && Boolean(visualUsername(auth));
+}
+
+/** Read the optional stored identity with the original empty fallback.
+ * @param auth - Persisted login data.
+ */
+function visualUserId(auth: VisualAuth | null): string {
+  return auth?.user_id || '';
+}
+
+/** Read the optional stored token.
+ * @param auth - Persisted login data.
+ */
+function visualToken(auth: VisualAuth | null): string | undefined {
+  return auth?.api_token?.access_token;
+}
+
+/** Read the optional stored username.
+ * @param auth - Persisted login data.
+ */
+function visualUsername(auth: VisualAuth | null): string | undefined {
+  return auth?.username;
+}
+
+/** Select the requested currency before validating its numeric balance.
+ * @param result - Wallet result.
+ */
+function diamondBalance(result: { currencies: { code: string; balance: string }[] } | undefined): number {
+  const diamond = result?.currencies?.find(item => item.code === 'diamond');
+  return currencyBalance(diamond);
+}
+
+/** Preserve Number conversion of a missing currency balance.
+ * @param currency - Selected currency.
+ */
+function currencyBalance(currency: { balance: string } | undefined): number {
+  return Number(currency?.balance);
+}
+
+/** Require the testing token only when a permitted account needs a top-up. */
+function testingToken(): string {
+  const token = process.env.TESTING_API_TOKEN?.trim();
+  if (!token) throw new Error('账号不足 10 钻；需要 TESTING_API_TOKEN 为 staging 测试账号补钻');
+  return token;
+}
+
+/** Enable the optional room controls in the existing UI order.
+ * @param page - Current page.
+ * @param enabled - Whether the scenario requests optional features.
+ */
+async function configureRoomFeatures(page: Page, enabled: boolean): Promise<void> {
+  if (!enabled) return;
+  await page.locator('[data-testid="advanced-options-button"]:visible').last().click();
+  await page.locator('[data-testid="BlindsEnableFlipSwitch"]:visible').last().click();
+}
+
+/** Read the optional room identity from the creation response.
+ * @param body - Parsed response.
+ */
+function responseRoomId(body: { result?: { room_id?: string } }): string | undefined {
+  return body?.result?.room_id;
+}
+
+/** Require successful HTTP and business status before accepting an ID.
+ * @param response - Actual browser response.
+ * @param body - Parsed response.
+ * @param roomId - Returned identity.
+ */
+function validCreatedResponse(response: Response, body: { ok?: boolean }, roomId: string | undefined): boolean {
+  if (!response.ok()) return false;
+  return successfulRoomBody(body, roomId);
+}
+
+/** Verify the business success flag and UUID.
+ * @param body - Parsed response.
+ * @param roomId - Returned identity.
+ */
+function successfulRoomBody(body: { ok?: boolean }, roomId: string | undefined): boolean {
+  if (body?.ok !== true) return false;
+  return validRoomId(roomId);
+}
+
+/** Apply the original missing-ID fallback before testing the UUID pattern.
+ * @param roomId - Returned identity.
+ */
+function validRoomId(roomId: string | undefined): boolean {
+  return ROOM_ID_PATTERN.test(roomId || '');
 }

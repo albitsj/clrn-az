@@ -160,8 +160,18 @@ export async function checkLint(tool, report = false) {
   if (report) { console.log(JSON.stringify(actual, null, 2)); return; }
   const baselinePath = tool === 'dependency-cruiser' ? 'quality/legacy-cycles.json' : 'quality/legacy-lint.json';
   const entries = JSON.parse(readFileSync(resolve(repository, baselinePath), 'utf8'));
-  if (entries.some(entry => !entry.reason?.trim() || !migratable.has(entry.rule))) throw new Error('迁移清单含无原因或不可豁免的规则。');
+  validateEntries(entries);
   await validateHistory(entries, baselinePath, tool);
+  reportComparison(tool, actual, entries, baselinePath);
+}
+
+/** Report new and stale findings after validating migration history.
+ * @param tool - Current tool.
+ * @param actual - Current diagnostics.
+ * @param entries - Historical entries.
+ * @param baselinePath - History file path.
+ */
+function reportComparison(tool, actual, entries, baselinePath) {
   const { added, stale } = compareFindings(actual, entries.filter(entry => entry.tool === tool));
   for (const entry of added) console.error(`新增违规：${JSON.stringify(entry)}`);
   for (const entry of stale) console.error(`删除已失效迁移项：${JSON.stringify(entry)}`);
@@ -171,4 +181,11 @@ export async function checkLint(tool, report = false) {
 
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
   await checkLint(process.argv[2], process.argv.includes('--report'));
+}
+
+/** Require a migration reason and a supported rule for every historical entry.
+ * @param entries - Historical migration entries.
+ */
+function validateEntries(entries) {
+  if (entries.some(entry => !entry.reason?.trim() || !migratable.has(entry.rule))) throw new Error('迁移清单含无原因或不可豁免的规则。');
 }

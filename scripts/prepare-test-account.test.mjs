@@ -26,10 +26,7 @@ function network(context, replies = [session, prepared, wallet]) {
     if (selection) return selection;
     calls.push({ url, ...options, body: JSON.parse(options.body) });
     const reply = replies[calls.length - 1];
-    if (reply instanceof Error) throw reply;
-    if (reply instanceof Response) return reply;
-    assert.ok(reply, '不允许额外网络请求');
-    return Response.json({ ok: true, result: reply });
+    return fixtureResponse(reply);
   });
   return calls;
 }
@@ -152,3 +149,13 @@ test('本机只读取指定命名空间和名称的 Secret，缺失或格式错�
     await assert.rejects(readTestingApiToken({}, file), /缺少 TESTING_API_TOKEN/);
   }
 });
+
+/** Resolve one fixture while preserving explicit failures and unexpected-call checks.
+ * @param reply - Ordered response fixture.
+ */
+function fixtureResponse(reply) {
+  if (reply instanceof Error) throw reply;
+  if (reply instanceof Response) return reply;
+  assert.ok(reply, '不允许额外网络请求');
+  return Response.json({ ok: true, result: reply });
+}

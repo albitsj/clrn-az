@@ -43,20 +43,34 @@ export class MitmdumpProcess {
   async waitUntilReady(checkStatus: () => Promise<unknown>): Promise<void> {
     const deadline = Date.now() + STARTUP_TIMEOUT_MS;
     while (true) {
-      if (this.startupError || !this.isRunning) {
-        const reason = this.startupError?.message || this.diagnostics;
-        throw new Error(`mitmproxy 启动失败；请安装 e2e/mitmproxy/requirements.txt。\n${reason}`);
-      }
+      this.assertRunning();
       try {
         await checkStatus();
         return;
       } catch {
-        if (Date.now() >= deadline) {
-          throw new Error(`mitmproxy 启动超时。\n${this.diagnostics}`);
-        }
-        await delay(STARTUP_POLL_MS);
+        await this.waitForNextProbe(deadline);
       }
     }
+  }
+
+  /** Report early process failure before probing. */
+  private assertRunning(): void {
+    if (this.startupError || !this.isRunning) {
+      throw new Error(`mitmproxy 启动失败；请安装 e2e/mitmproxy/requirements.txt。\n${this.failureReason()}`);
+    }
+  }
+
+  /** Prefer the spawn error to captured process output. */
+  private failureReason(): string {
+    return this.startupError?.message || this.diagnostics;
+  }
+
+  /** Enforce the original probe deadline and polling interval.
+   * @param deadline - Absolute startup deadline.
+   */
+  private async waitForNextProbe(deadline: number): Promise<void> {
+    if (Date.now() >= deadline) throw new Error(`mitmproxy 启动超时。\n${this.diagnostics}`);
+    await delay(STARTUP_POLL_MS);
   }
 
   /** 终止代理并等待退出，超过清理期限后强制结束进程。 */
@@ -87,8 +101,7 @@ export class MitmdumpProcess {
 export function startMitmdump(port: number, directory: string, token: string,
   addonPath = path.resolve(__dirname, '../mitmproxy/network_faults.py'),
   environment: NodeJS.ProcessEnv = process.env): MitmdumpProcess {
-  const executable = process.env.MITMDUMP_PATH || process.env.E2E_MITMDUMP_PATH
-    || path.resolve(__dirname, '../.venv/bin/mitmdump');
+  const executable = mitmdumpExecutable();
   const child = spawn(executable, [
     '--listen-host', '127.0.0.1',
     '--listen-port', String(port),
@@ -102,4 +115,10 @@ export function startMitmdump(port: number, directory: string, token: string,
     stdio: ['ignore', 'pipe', 'pipe'],
   });
   return new MitmdumpProcess(child);
+}
+
+/** Resolve the existing executable override precedence. */
+function mitmdumpExecutable(): string {
+  return process.env.MITMDUMP_PATH || process.env.E2E_MITMDUMP_PATH
+    || path.resolve(__dirname, '../.venv/bin/mitmdump');
 }

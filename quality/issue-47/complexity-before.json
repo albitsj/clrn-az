@@ -1,0 +1,3481 @@
+[
+  {
+    "file": "e2e/helpers/game-scenes.ts",
+    "line": 2,
+    "column": 57,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "e2e/helpers/game-scenes.ts",
+    "line": 15,
+    "column": 8,
+    "function": "Function 'restoreTable'",
+    "complexity": 5
+  },
+  {
+    "file": "e2e/helpers/mitmproxy-client.ts",
+    "line": 22,
+    "column": 3,
+    "function": "Constructor",
+    "complexity": 1
+  },
+  {
+    "file": "e2e/helpers/mitmproxy-client.ts",
+    "line": 32,
+    "column": 3,
+    "function": "Method 'command'",
+    "complexity": 2
+  },
+  {
+    "file": "e2e/helpers/mitmproxy-client.ts",
+    "line": 33,
+    "column": 42,
+    "function": "Arrow function",
+    "complexity": 3
+  },
+  {
+    "file": "e2e/helpers/mitmproxy-client.ts",
+    "line": 45,
+    "column": 19,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "e2e/helpers/mitmproxy-client.ts",
+    "line": 48,
+    "column": 35,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "e2e/helpers/mitmproxy-client.ts",
+    "line": 50,
+    "column": 31,
+    "function": "Arrow function",
+    "complexity": 3
+  },
+  {
+    "file": "e2e/helpers/mitmproxy-client.ts",
+    "line": 63,
+    "column": 36,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "e2e/helpers/mitmproxy-client.ts",
+    "line": 69,
+    "column": 3,
+    "function": "Method 'status'",
+    "complexity": 1
+  },
+  {
+    "file": "e2e/helpers/mitmproxy-client.ts",
+    "line": 77,
+    "column": 3,
+    "function": "Method 'inject'",
+    "complexity": 1
+  },
+  {
+    "file": "e2e/helpers/mitmproxy-client.ts",
+    "line": 82,
+    "column": 3,
+    "function": "Method 'enableVisualFixtures'",
+    "complexity": 1
+  },
+  {
+    "file": "e2e/helpers/mitmproxy-client.ts",
+    "line": 87,
+    "column": 3,
+    "function": "Method 'clear'",
+    "complexity": 1
+  },
+  {
+    "file": "e2e/helpers/mitmproxy-process.ts",
+    "line": 13,
+    "column": 25,
+    "function": "Class field initializer",
+    "complexity": 1
+  },
+  {
+    "file": "e2e/helpers/mitmproxy-process.ts",
+    "line": 20,
+    "column": 3,
+    "function": "Constructor",
+    "complexity": 3
+  },
+  {
+    "file": "e2e/helpers/mitmproxy-process.ts",
+    "line": 25,
+    "column": 42,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "e2e/helpers/mitmproxy-process.ts",
+    "line": 30,
+    "column": 29,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "e2e/helpers/mitmproxy-process.ts",
+    "line": 31,
+    "column": 39,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "e2e/helpers/mitmproxy-process.ts",
+    "line": 31,
+    "column": 65,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "e2e/helpers/mitmproxy-process.ts",
+    "line": 35,
+    "column": 3,
+    "function": "Getter 'isRunning'",
+    "complexity": 2
+  },
+  {
+    "file": "e2e/helpers/mitmproxy-process.ts",
+    "line": 43,
+    "column": 3,
+    "function": "Async method 'waitUntilReady'",
+    "complexity": 8
+  },
+  {
+    "file": "e2e/helpers/mitmproxy-process.ts",
+    "line": 63,
+    "column": 3,
+    "function": "Async method 'stop'",
+    "complexity": 3
+  },
+  {
+    "file": "e2e/helpers/mitmproxy-process.ts",
+    "line": 69,
+    "column": 35,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "e2e/helpers/mitmproxy-process.ts",
+    "line": 87,
+    "column": 8,
+    "function": "Function 'startMitmdump'",
+    "complexity": 5
+  },
+  {
+    "file": "e2e/helpers/mitmproxy-session.test.mjs",
+    "line": 16,
+    "column": 1,
+    "function": "Function 'session'",
+    "complexity": 2
+  },
+  {
+    "file": "e2e/helpers/mitmproxy-session.test.mjs",
+    "line": 18,
+    "column": 47,
+    "function": "Async arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "e2e/helpers/mitmproxy-session.test.mjs",
+    "line": 19,
+    "column": 42,
+    "function": "Async arrow function",
+    "complexity": 2
+  },
+  {
+    "file": "e2e/helpers/mitmproxy-session.test.mjs",
+    "line": 23,
+    "column": 49,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "e2e/helpers/mitmproxy-session.test.mjs",
+    "line": 24,
+    "column": 77,
+    "function": "Async arrow function",
+    "complexity": 2
+  },
+  {
+    "file": "e2e/helpers/mitmproxy-session.test.mjs",
+    "line": 28,
+    "column": 67,
+    "function": "Async arrow function",
+    "complexity": 2
+  },
+  {
+    "file": "e2e/helpers/mitmproxy-session.test.mjs",
+    "line": 35,
+    "column": 88,
+    "function": "Async arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "e2e/helpers/mitmproxy-session.test.mjs",
+    "line": 40,
+    "column": 47,
+    "function": "Async arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "e2e/helpers/mitmproxy-session.test.mjs",
+    "line": 40,
+    "column": 77,
+    "function": "Arrow function",
+    "complexity": 2
+  },
+  {
+    "file": "e2e/helpers/mitmproxy-session.test.mjs",
+    "line": 51,
+    "column": 81,
+    "function": "Async arrow function",
+    "complexity": 3
+  },
+  {
+    "file": "e2e/helpers/mitmproxy-session.test.mjs",
+    "line": 54,
+    "column": 49,
+    "function": "Async arrow function",
+    "complexity": 2
+  },
+  {
+    "file": "e2e/helpers/mitmproxy-session.test.mjs",
+    "line": 58,
+    "column": 66,
+    "function": "Async method 'prepare'",
+    "complexity": 2
+  },
+  {
+    "file": "e2e/helpers/mitmproxy-session.test.mjs",
+    "line": 61,
+    "column": 17,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "e2e/helpers/mitmproxy-session.test.mjs",
+    "line": 67,
+    "column": 77,
+    "function": "Async arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "e2e/helpers/mitmproxy-session.test.mjs",
+    "line": 71,
+    "column": 47,
+    "function": "Async arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "e2e/helpers/mitmproxy-session.test.mjs",
+    "line": 71,
+    "column": 86,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "e2e/helpers/mitmproxy-session.test.mjs",
+    "line": 80,
+    "column": 93,
+    "function": "Async arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "e2e/helpers/mitmproxy-session.test.mjs",
+    "line": 83,
+    "column": 49,
+    "function": "Async arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "e2e/helpers/mitmproxy-session.test.mjs",
+    "line": 83,
+    "column": 70,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "e2e/helpers/mitmproxy-session.test.mjs",
+    "line": 88,
+    "column": 89,
+    "function": "Async arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "e2e/helpers/mitmproxy-session.test.mjs",
+    "line": 91,
+    "column": 45,
+    "function": "Async arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "e2e/helpers/mitmproxy-session.ts",
+    "line": 10,
+    "column": 1,
+    "function": "Async function 'unusedPort'",
+    "complexity": 3
+  },
+  {
+    "file": "e2e/helpers/mitmproxy-session.ts",
+    "line": 12,
+    "column": 45,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "e2e/helpers/mitmproxy-session.ts",
+    "line": 18,
+    "column": 45,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "e2e/helpers/mitmproxy-session.ts",
+    "line": 19,
+    "column": 24,
+    "function": "Arrow function",
+    "complexity": 2
+  },
+  {
+    "file": "e2e/helpers/mitmproxy-session.ts",
+    "line": 29,
+    "column": 8,
+    "function": "Async function 'withMitmproxy'",
+    "complexity": 9
+  },
+  {
+    "file": "e2e/helpers/mitmproxy-session.ts",
+    "line": 41,
+    "column": 42,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "e2e/helpers/mitmproxy-session.ts",
+    "line": 54,
+    "column": 40,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "e2e/helpers/zhajinhua-scenes.ts",
+    "line": 8,
+    "column": 8,
+    "function": "Function 'restoreTable'",
+    "complexity": 3
+  },
+  {
+    "file": "eslint.config.mjs",
+    "line": 16,
+    "column": 1,
+    "function": "Function 'hasFetchProperty'",
+    "complexity": 3
+  },
+  {
+    "file": "eslint.config.mjs",
+    "line": 19,
+    "column": 14,
+    "function": "Arrow function",
+    "complexity": 2
+  },
+  {
+    "file": "eslint.config.mjs",
+    "line": 28,
+    "column": 1,
+    "function": "Function 'replacesFetch'",
+    "complexity": 6
+  },
+  {
+    "file": "eslint.config.mjs",
+    "line": 49,
+    "column": 3,
+    "function": "Method 'create'",
+    "complexity": 1
+  },
+  {
+    "file": "eslint.config.mjs",
+    "line": 55,
+    "column": 5,
+    "function": "Function 'check'",
+    "complexity": 3
+  },
+  {
+    "file": "eslint.config.mjs",
+    "line": 62,
+    "column": 5,
+    "function": "Function 'pureRoutingSource'",
+    "complexity": 6
+  },
+  {
+    "file": "eslint.config.mjs",
+    "line": 84,
+    "column": 3,
+    "function": "Method 'create'",
+    "complexity": 1
+  },
+  {
+    "file": "eslint.config.mjs",
+    "line": 90,
+    "column": 5,
+    "function": "Function 'report'",
+    "complexity": 1
+  },
+  {
+    "file": "eslint.config.mjs",
+    "line": 98,
+    "column": 5,
+    "function": "Function 'checkResponsePattern'",
+    "complexity": 1
+  },
+  {
+    "file": "eslint.config.mjs",
+    "line": 106,
+    "column": 5,
+    "function": "Function 'checkPattern'",
+    "complexity": 5
+  },
+  {
+    "file": "eslint.config.mjs",
+    "line": 116,
+    "column": 5,
+    "function": "Function 'checkObjectPattern'",
+    "complexity": 5
+  },
+  {
+    "file": "eslint.config.mjs",
+    "line": 129,
+    "column": 5,
+    "function": "Function 'checkWrites'",
+    "complexity": 1
+  },
+  {
+    "file": "eslint.config.mjs",
+    "line": 130,
+    "column": 36,
+    "function": "Arrow function",
+    "complexity": 5
+  },
+  {
+    "file": "eslint.config.mjs",
+    "line": 139,
+    "column": 5,
+    "function": "Function 'checkLoop'",
+    "complexity": 1
+  },
+  {
+    "file": "eslint.config.mjs",
+    "line": 149,
+    "column": 7,
+    "function": "Method 'VariableDeclarator'",
+    "complexity": 1
+  },
+  {
+    "file": "eslint.config.mjs",
+    "line": 156,
+    "column": 7,
+    "function": "Method 'AssignmentPattern'",
+    "complexity": 1
+  },
+  {
+    "file": "eslint.config.mjs",
+    "line": 163,
+    "column": 7,
+    "function": "Method 'MemberExpression'",
+    "complexity": 3
+  },
+  {
+    "file": "eslint.config.mjs",
+    "line": 170,
+    "column": 7,
+    "function": "Method 'NewExpression'",
+    "complexity": 2
+  },
+  {
+    "file": "eslint.config.mjs",
+    "line": 177,
+    "column": 7,
+    "function": "Method 'AssignmentExpression'",
+    "complexity": 1
+  },
+  {
+    "file": "eslint.config.mjs",
+    "line": 185,
+    "column": 7,
+    "function": "Method 'CallExpression'",
+    "complexity": 6
+  },
+  {
+    "file": "eslint.config.mjs",
+    "line": 270,
+    "column": 1,
+    "function": "Function 'definesProperty'",
+    "complexity": 3
+  },
+  {
+    "file": "eslint.config.mjs",
+    "line": 280,
+    "column": 1,
+    "function": "Function 'setsGlobalProperty'",
+    "complexity": 3
+  },
+  {
+    "file": "eslint.config.mjs",
+    "line": 287,
+    "column": 1,
+    "function": "Function 'routingPattern'",
+    "complexity": 4
+  },
+  {
+    "file": "lint-lines.mjs",
+    "line": 13,
+    "column": 37,
+    "function": "Arrow function",
+    "complexity": 4
+  },
+  {
+    "file": "scripts/account-network-fixture.mjs",
+    "line": 14,
+    "column": 41,
+    "function": "Async arrow function",
+    "complexity": 10
+  },
+  {
+    "file": "scripts/account-network-fixture.mjs",
+    "line": 41,
+    "column": 1,
+    "function": "Function 'reply'",
+    "complexity": 5
+  },
+  {
+    "file": "scripts/android-game-complexity.mjs",
+    "line": 9,
+    "column": 8,
+    "function": "Async function 'checkAndroidGameComplexity'",
+    "complexity": 6
+  },
+  {
+    "file": "scripts/android-game-complexity.mjs",
+    "line": 21,
+    "column": 27,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/android-game-complexity.mjs",
+    "line": 28,
+    "column": 1,
+    "function": "Function 'functionMeasurements'",
+    "complexity": 2
+  },
+  {
+    "file": "scripts/android-game-complexity.mjs",
+    "line": 30,
+    "column": 41,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/android-game-complexity.mjs",
+    "line": 30,
+    "column": 89,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/android-game-complexity.test.mjs",
+    "line": 13,
+    "column": 1,
+    "function": "Function 'temporaryProject'",
+    "complexity": 3
+  },
+  {
+    "file": "scripts/android-game-complexity.test.mjs",
+    "line": 15,
+    "column": 20,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/android-game-complexity.test.mjs",
+    "line": 31,
+    "column": 1,
+    "function": "Async function 'diagnostics'",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/android-game-complexity.test.mjs",
+    "line": 33,
+    "column": 41,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/android-game-complexity.test.mjs",
+    "line": 38,
+    "column": 46,
+    "function": "Async arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/android-game-complexity.test.mjs",
+    "line": 44,
+    "column": 47,
+    "function": "Async arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/android-game-complexity.test.mjs",
+    "line": 59,
+    "column": 63,
+    "function": "Async arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/android-game-complexity.test.mjs",
+    "line": 64,
+    "column": 55,
+    "function": "Arrow function",
+    "complexity": 2
+  },
+  {
+    "file": "scripts/android-game-complexity.test.mjs",
+    "line": 86,
+    "column": 32,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/ci-accounts.mjs",
+    "line": 5,
+    "column": 62,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/ci-accounts.mjs",
+    "line": 19,
+    "column": 8,
+    "function": "Function 'allocateCiAccount'",
+    "complexity": 8
+  },
+  {
+    "file": "scripts/ci-accounts.mjs",
+    "line": 32,
+    "column": 8,
+    "function": "Function 'androidAccountMatrix'",
+    "complexity": 7
+  },
+  {
+    "file": "scripts/ci-accounts.mjs",
+    "line": 35,
+    "column": 72,
+    "function": "Arrow function",
+    "complexity": 2
+  },
+  {
+    "file": "scripts/ci-accounts.mjs",
+    "line": 63,
+    "column": 49,
+    "function": "Arrow function",
+    "complexity": 2
+  },
+  {
+    "file": "scripts/ci-accounts.mjs",
+    "line": 64,
+    "column": 20,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/ci-accounts.mjs",
+    "line": 64,
+    "column": 45,
+    "function": "Arrow function",
+    "complexity": 2
+  },
+  {
+    "file": "scripts/ci-accounts.mjs",
+    "line": 65,
+    "column": 23,
+    "function": "Arrow function",
+    "complexity": 2
+  },
+  {
+    "file": "scripts/ci-accounts.mjs",
+    "line": 68,
+    "column": 51,
+    "function": "Arrow function",
+    "complexity": 3
+  },
+  {
+    "file": "scripts/ci-accounts.mjs",
+    "line": 81,
+    "column": 8,
+    "function": "Function 'ciAccountCredentials'",
+    "complexity": 17
+  },
+  {
+    "file": "scripts/ci-accounts.mjs",
+    "line": 96,
+    "column": 37,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/ci-accounts.mjs",
+    "line": 99,
+    "column": 47,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/ci-accounts.test.mjs",
+    "line": 9,
+    "column": 56,
+    "function": "Arrow function",
+    "complexity": 3
+  },
+  {
+    "file": "scripts/ci-accounts.test.mjs",
+    "line": 10,
+    "column": 52,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/ci-accounts.test.mjs",
+    "line": 13,
+    "column": 73,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/ci-accounts.test.mjs",
+    "line": 14,
+    "column": 53,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/ci-accounts.test.mjs",
+    "line": 17,
+    "column": 45,
+    "function": "Arrow function",
+    "complexity": 2
+  },
+  {
+    "file": "scripts/ci-accounts.test.mjs",
+    "line": 19,
+    "column": 41,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/ci-accounts.test.mjs",
+    "line": 23,
+    "column": 48,
+    "function": "Arrow function",
+    "complexity": 2
+  },
+  {
+    "file": "scripts/ci-accounts.test.mjs",
+    "line": 24,
+    "column": 48,
+    "function": "Arrow function",
+    "complexity": 2
+  },
+  {
+    "file": "scripts/ci-accounts.test.mjs",
+    "line": 25,
+    "column": 48,
+    "function": "Arrow function",
+    "complexity": 2
+  },
+  {
+    "file": "scripts/ci-accounts.test.mjs",
+    "line": 26,
+    "column": 21,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/ci-accounts.test.mjs",
+    "line": 26,
+    "column": 80,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/ci-accounts.test.mjs",
+    "line": 28,
+    "column": 19,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/ci-accounts.test.mjs",
+    "line": 31,
+    "column": 52,
+    "function": "Arrow function",
+    "complexity": 3
+  },
+  {
+    "file": "scripts/ci-accounts.test.mjs",
+    "line": 43,
+    "column": 47,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/ci-accounts.test.mjs",
+    "line": 50,
+    "column": 97,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/ci-accounts.test.mjs",
+    "line": 53,
+    "column": 41,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/ci-accounts.test.mjs",
+    "line": 60,
+    "column": 64,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/ci-accounts.test.mjs",
+    "line": 96,
+    "column": 39,
+    "function": "Arrow function",
+    "complexity": 2
+  },
+  {
+    "file": "scripts/ci-accounts.test.mjs",
+    "line": 99,
+    "column": 51,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/ci-accounts.test.mjs",
+    "line": 105,
+    "column": 20,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/ci-accounts.test.mjs",
+    "line": 106,
+    "column": 67,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/ci-accounts.test.mjs",
+    "line": 107,
+    "column": 20,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/ci-accounts.test.mjs",
+    "line": 111,
+    "column": 38,
+    "function": "Arrow function",
+    "complexity": 5
+  },
+  {
+    "file": "scripts/ci-accounts.test.mjs",
+    "line": 114,
+    "column": 38,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/ci-accounts.test.mjs",
+    "line": 117,
+    "column": 46,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/ci-accounts.test.mjs",
+    "line": 118,
+    "column": 65,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/ci-accounts.test.mjs",
+    "line": 118,
+    "column": 87,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/ci-accounts.test.mjs",
+    "line": 120,
+    "column": 36,
+    "function": "Arrow function",
+    "complexity": 2
+  },
+  {
+    "file": "scripts/ci-accounts.test.mjs",
+    "line": 136,
+    "column": 36,
+    "function": "Arrow function",
+    "complexity": 2
+  },
+  {
+    "file": "scripts/ci-accounts.test.mjs",
+    "line": 139,
+    "column": 38,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/ci-accounts.test.mjs",
+    "line": 142,
+    "column": 20,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/ci-accounts.test.mjs",
+    "line": 143,
+    "column": 20,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/configure-ci-account.mjs",
+    "line": 18,
+    "column": 81,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/lint-duplicates.mjs",
+    "line": 14,
+    "column": 8,
+    "function": "Function 'intersectBaselines'",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/lint-duplicates.mjs",
+    "line": 16,
+    "column": 22,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/lint-duplicates.mjs",
+    "line": 17,
+    "column": 26,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/lint-duplicates.mjs",
+    "line": 26,
+    "column": 8,
+    "function": "Function 'runJscpd'",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/lint-duplicates.mjs",
+    "line": 38,
+    "column": 8,
+    "function": "Function 'historicalClones'",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/lint-duplicates.mjs",
+    "line": 49,
+    "column": 8,
+    "function": "Function 'checkDuplicates'",
+    "complexity": 3
+  },
+  {
+    "file": "scripts/lint-ratchet.mjs",
+    "line": 20,
+    "column": 8,
+    "function": "Function 'finding'",
+    "complexity": 2
+  },
+  {
+    "file": "scripts/lint-ratchet.mjs",
+    "line": 31,
+    "column": 8,
+    "function": "Function 'findingKey'",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/lint-ratchet.mjs",
+    "line": 42,
+    "column": 8,
+    "function": "Function 'compareFindings'",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/lint-ratchet.mjs",
+    "line": 45,
+    "column": 37,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/lint-ratchet.mjs",
+    "line": 46,
+    "column": 39,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/lint-ratchet.mjs",
+    "line": 55,
+    "column": 8,
+    "function": "Function 'assertOnlyShrinks'",
+    "complexity": 3
+  },
+  {
+    "file": "scripts/lint-ratchet.mjs",
+    "line": 56,
+    "column": 44,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/lint-ratchet.mjs",
+    "line": 57,
+    "column": 33,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/lint-ratchet.mjs",
+    "line": 58,
+    "column": 26,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/lint-ratchet.mjs",
+    "line": 65,
+    "column": 8,
+    "function": "Async function 'eslintFindings'",
+    "complexity": 2
+  },
+  {
+    "file": "scripts/lint-ratchet.mjs",
+    "line": 67,
+    "column": 33,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/lint-ratchet.mjs",
+    "line": 67,
+    "column": 64,
+    "function": "Arrow function",
+    "complexity": 3
+  },
+  {
+    "file": "scripts/lint-ratchet.mjs",
+    "line": 78,
+    "column": 8,
+    "function": "Function 'ruffFindings'",
+    "complexity": 5
+  },
+  {
+    "file": "scripts/lint-ratchet.mjs",
+    "line": 83,
+    "column": 48,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/lint-ratchet.mjs",
+    "line": 93,
+    "column": 8,
+    "function": "Function 'dependencyFindings'",
+    "complexity": 6
+  },
+  {
+    "file": "scripts/lint-ratchet.mjs",
+    "line": 100,
+    "column": 60,
+    "function": "Arrow function",
+    "complexity": 2
+  },
+  {
+    "file": "scripts/lint-ratchet.mjs",
+    "line": 102,
+    "column": 92,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/lint-ratchet.mjs",
+    "line": 105,
+    "column": 41,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/lint-ratchet.mjs",
+    "line": 115,
+    "column": 8,
+    "function": "Function 'assertInitialFindings'",
+    "complexity": 2
+  },
+  {
+    "file": "scripts/lint-ratchet.mjs",
+    "line": 125,
+    "column": 8,
+    "function": "Async function 'historicalFindings'",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/lint-ratchet.mjs",
+    "line": 142,
+    "column": 1,
+    "function": "Async function 'validateHistory'",
+    "complexity": 3
+  },
+  {
+    "file": "scripts/lint-ratchet.mjs",
+    "line": 149,
+    "column": 46,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/lint-ratchet.mjs",
+    "line": 157,
+    "column": 8,
+    "function": "Async function 'checkLint'",
+    "complexity": 10
+  },
+  {
+    "file": "scripts/lint-ratchet.mjs",
+    "line": 163,
+    "column": 26,
+    "function": "Arrow function",
+    "complexity": 3
+  },
+  {
+    "file": "scripts/lint-ratchet.mjs",
+    "line": 165,
+    "column": 73,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/lint-shell.mjs",
+    "line": 5,
+    "column": 41,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/lint.test.mjs",
+    "line": 17,
+    "column": 1,
+    "function": "Async function 'lintSource'",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/lint.test.mjs",
+    "line": 22,
+    "column": 44,
+    "function": "Async arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/lint.test.mjs",
+    "line": 34,
+    "column": 46,
+    "function": "Async arrow function",
+    "complexity": 2
+  },
+  {
+    "file": "scripts/lint.test.mjs",
+    "line": 42,
+    "column": 37,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/lint.test.mjs",
+    "line": 46,
+    "column": 28,
+    "function": "Async arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/lint.test.mjs",
+    "line": 48,
+    "column": 35,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/lint.test.mjs",
+    "line": 51,
+    "column": 48,
+    "function": "Async arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/lint.test.mjs",
+    "line": 61,
+    "column": 35,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/lint.test.mjs",
+    "line": 64,
+    "column": 34,
+    "function": "Async arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/lint.test.mjs",
+    "line": 70,
+    "column": 35,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/lint.test.mjs",
+    "line": 73,
+    "column": 54,
+    "function": "Async arrow function",
+    "complexity": 2
+  },
+  {
+    "file": "scripts/lint.test.mjs",
+    "line": 76,
+    "column": 48,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/lint.test.mjs",
+    "line": 78,
+    "column": 50,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/lint.test.mjs",
+    "line": 84,
+    "column": 64,
+    "function": "Async arrow function",
+    "complexity": 2
+  },
+  {
+    "file": "scripts/lint.test.mjs",
+    "line": 85,
+    "column": 43,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/lint.test.mjs",
+    "line": 86,
+    "column": 29,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/lint.test.mjs",
+    "line": 87,
+    "column": 29,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/measure-quality.mjs",
+    "line": 33,
+    "column": 56,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/network-reference.mjs",
+    "line": 7,
+    "column": 8,
+    "function": "Function 'referenceTarget'",
+    "complexity": 2
+  },
+  {
+    "file": "scripts/network-reference.mjs",
+    "line": 18,
+    "column": 1,
+    "function": "Function 'forwardedValue'",
+    "complexity": 9
+  },
+  {
+    "file": "scripts/network-reference.mjs",
+    "line": 33,
+    "column": 1,
+    "function": "Function 'forwardedResult'",
+    "complexity": 10
+  },
+  {
+    "file": "scripts/network-reference.mjs",
+    "line": 47,
+    "column": 8,
+    "function": "Function 'writeOwner'",
+    "complexity": 8
+  },
+  {
+    "file": "scripts/network-reference.mjs",
+    "line": 60,
+    "column": 8,
+    "function": "Function 'aliasPattern'",
+    "complexity": 5
+  },
+  {
+    "file": "scripts/network-reference.mjs",
+    "line": 71,
+    "column": 8,
+    "function": "Function 'safeValueUse'",
+    "complexity": 7
+  },
+  {
+    "file": "scripts/network-reference.mjs",
+    "line": 84,
+    "column": 1,
+    "function": "Function 'scalarPosition'",
+    "complexity": 8
+  },
+  {
+    "file": "scripts/network-syntax.mjs",
+    "line": 14,
+    "column": 8,
+    "function": "Function 'writeTargets'",
+    "complexity": 9
+  },
+  {
+    "file": "scripts/network-syntax.mjs",
+    "line": 18,
+    "column": 42,
+    "function": "Arrow function",
+    "complexity": 2
+  },
+  {
+    "file": "scripts/network-syntax.mjs",
+    "line": 34,
+    "column": 1,
+    "function": "Function 'dataProperty'",
+    "complexity": 10
+  },
+  {
+    "file": "scripts/network-syntax.mjs",
+    "line": 37,
+    "column": 71,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/network-syntax.mjs",
+    "line": 53,
+    "column": 1,
+    "function": "Function 'dataKey'",
+    "complexity": 5
+  },
+  {
+    "file": "scripts/network-syntax.mjs",
+    "line": 61,
+    "column": 8,
+    "function": "Function 'unwrap'",
+    "complexity": 3
+  },
+  {
+    "file": "scripts/network-syntax.mjs",
+    "line": 69,
+    "column": 8,
+    "function": "Function 'stringKey'",
+    "complexity": 7
+  },
+  {
+    "file": "scripts/network-syntax.mjs",
+    "line": 79,
+    "column": 8,
+    "function": "Function 'propertyName'",
+    "complexity": 5
+  },
+  {
+    "file": "scripts/network-syntax.mjs",
+    "line": 87,
+    "column": 8,
+    "function": "Function 'syntaxContext'",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/network-syntax.mjs",
+    "line": 92,
+    "column": 3,
+    "function": "Function 'binding'",
+    "complexity": 4
+  },
+  {
+    "file": "scripts/network-syntax.mjs",
+    "line": 101,
+    "column": 3,
+    "function": "Function 'unshadowed'",
+    "complexity": 4
+  },
+  {
+    "file": "scripts/network-syntax.mjs",
+    "line": 108,
+    "column": 3,
+    "function": "Function 'origin'",
+    "complexity": 5
+  },
+  {
+    "file": "scripts/network-syntax.mjs",
+    "line": 119,
+    "column": 3,
+    "function": "Function 'childOrigin'",
+    "complexity": 3
+  },
+  {
+    "file": "scripts/network-syntax.mjs",
+    "line": 128,
+    "column": 3,
+    "function": "Function 'dataBinding'",
+    "complexity": 9
+  },
+  {
+    "file": "scripts/network-syntax.mjs",
+    "line": 133,
+    "column": 38,
+    "function": "Arrow function",
+    "complexity": 2
+  },
+  {
+    "file": "scripts/network-syntax.mjs",
+    "line": 139,
+    "column": 63,
+    "function": "Arrow function",
+    "complexity": 2
+  },
+  {
+    "file": "scripts/network-syntax.mjs",
+    "line": 150,
+    "column": 3,
+    "function": "Function 'referenceSafety'",
+    "complexity": 3
+  },
+  {
+    "file": "scripts/network-syntax.mjs",
+    "line": 151,
+    "column": 51,
+    "function": "Arrow function",
+    "complexity": 4
+  },
+  {
+    "file": "scripts/network-syntax.mjs",
+    "line": 153,
+    "column": 16,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/network-syntax.mjs",
+    "line": 164,
+    "column": 3,
+    "function": "Function 'project'",
+    "complexity": 8
+  },
+  {
+    "file": "scripts/network-syntax.mjs",
+    "line": 182,
+    "column": 3,
+    "function": "Function 'projectObject'",
+    "complexity": 5
+  },
+  {
+    "file": "scripts/network-syntax.mjs",
+    "line": 183,
+    "column": 53,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/network-syntax.mjs",
+    "line": 185,
+    "column": 43,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/network-syntax.mjs",
+    "line": 198,
+    "column": 3,
+    "function": "Function 'projectArray'",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/network-syntax.mjs",
+    "line": 199,
+    "column": 44,
+    "function": "Arrow function",
+    "complexity": 4
+  },
+  {
+    "file": "scripts/network-syntax.mjs",
+    "line": 210,
+    "column": 3,
+    "function": "Function 'safeReference'",
+    "complexity": 9
+  },
+  {
+    "file": "scripts/network-syntax.mjs",
+    "line": 227,
+    "column": 3,
+    "function": "Function 'safeCall'",
+    "complexity": 8
+  },
+  {
+    "file": "scripts/network-syntax.mjs",
+    "line": 234,
+    "column": 44,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/network-syntax.mjs",
+    "line": 245,
+    "column": 3,
+    "function": "Function 'safeAliases'",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/network-syntax.mjs",
+    "line": 247,
+    "column": 34,
+    "function": "Arrow function",
+    "complexity": 7
+  },
+  {
+    "file": "scripts/network-syntax.mjs",
+    "line": 264,
+    "column": 3,
+    "function": "Function 'dataMutation'",
+    "complexity": 3
+  },
+  {
+    "file": "scripts/network-syntax.mjs",
+    "line": 267,
+    "column": 51,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/network-syntax.mjs",
+    "line": 274,
+    "column": 3,
+    "function": "Function 'pureData'",
+    "complexity": 2
+  },
+  {
+    "file": "scripts/network-syntax.mjs",
+    "line": 282,
+    "column": 3,
+    "function": "Function 'dataValue'",
+    "complexity": 9
+  },
+  {
+    "file": "scripts/network-syntax.mjs",
+    "line": 300,
+    "column": 3,
+    "function": "Function 'primitiveValue'",
+    "complexity": 10
+  },
+  {
+    "file": "scripts/network-syntax.mjs",
+    "line": 313,
+    "column": 3,
+    "function": "Function 'arrayValue'",
+    "complexity": 2
+  },
+  {
+    "file": "scripts/network-syntax.mjs",
+    "line": 314,
+    "column": 43,
+    "function": "Arrow function",
+    "complexity": 2
+  },
+  {
+    "file": "scripts/network-syntax.mjs",
+    "line": 322,
+    "column": 3,
+    "function": "Function 'objectValue'",
+    "complexity": 8
+  },
+  {
+    "file": "scripts/network-syntax.mjs",
+    "line": 337,
+    "column": 3,
+    "function": "Function 'pureUpdate'",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/network-syntax.mjs",
+    "line": 338,
+    "column": 42,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/network-syntax.mjs",
+    "line": 346,
+    "column": 3,
+    "function": "Function 'pureWrite'",
+    "complexity": 2
+  },
+  {
+    "file": "scripts/network-syntax.mjs",
+    "line": 348,
+    "column": 70,
+    "function": "Arrow function",
+    "complexity": 2
+  },
+  {
+    "file": "scripts/network-syntax.mjs",
+    "line": 357,
+    "column": 3,
+    "function": "Function 'purePattern'",
+    "complexity": 3
+  },
+  {
+    "file": "scripts/network-syntax.mjs",
+    "line": 362,
+    "column": 69,
+    "function": "Arrow function",
+    "complexity": 2
+  },
+  {
+    "file": "scripts/prepare-test-account-rooms.mjs",
+    "line": 14,
+    "column": 1,
+    "function": "Async function 'request'",
+    "complexity": 2
+  },
+  {
+    "file": "scripts/prepare-test-account-rooms.mjs",
+    "line": 28,
+    "column": 1,
+    "function": "Function 'recoverable'",
+    "complexity": 7
+  },
+  {
+    "file": "scripts/prepare-test-account-rooms.mjs",
+    "line": 37,
+    "column": 8,
+    "function": "Async function 'prepareTestAccountRooms'",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/prepare-test-account-rooms.mjs",
+    "line": 47,
+    "column": 1,
+    "function": "Async function 'prepareRooms'",
+    "complexity": 8
+  },
+  {
+    "file": "scripts/prepare-test-account-rooms.mjs",
+    "line": 72,
+    "column": 1,
+    "function": "Function 'ownedRoom'",
+    "complexity": 4
+  },
+  {
+    "file": "scripts/prepare-test-account-rooms.mjs",
+    "line": 80,
+    "column": 1,
+    "function": "Function 'idleTestRoom'",
+    "complexity": 6
+  },
+  {
+    "file": "scripts/prepare-test-account-rooms.mjs",
+    "line": 89,
+    "column": 1,
+    "function": "Function 'validateSession'",
+    "complexity": 5
+  },
+  {
+    "file": "scripts/prepare-test-account-rooms.mjs",
+    "line": 98,
+    "column": 1,
+    "function": "Function 'validateHouse'",
+    "complexity": 4
+  },
+  {
+    "file": "scripts/prepare-test-account-rooms.mjs",
+    "line": 109,
+    "column": 1,
+    "function": "Function 'validateRoomList'",
+    "complexity": 3
+  },
+  {
+    "file": "scripts/prepare-test-account-rooms.test.mjs",
+    "line": 17,
+    "column": 1,
+    "function": "Function 'network'",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/prepare-test-account-rooms.test.mjs",
+    "line": 19,
+    "column": 65,
+    "function": "Async arrow function",
+    "complexity": 4
+  },
+  {
+    "file": "scripts/prepare-test-account-rooms.test.mjs",
+    "line": 31,
+    "column": 42,
+    "function": "Async arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/prepare-test-account-rooms.test.mjs",
+    "line": 34,
+    "column": 41,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/prepare-test-account-rooms.test.mjs",
+    "line": 38,
+    "column": 46,
+    "function": "Async arrow function",
+    "complexity": 3
+  },
+  {
+    "file": "scripts/prepare-test-account-rooms.test.mjs",
+    "line": 44,
+    "column": 43,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/prepare-test-account-rooms.test.mjs",
+    "line": 59,
+    "column": 38,
+    "function": "Async arrow function",
+    "complexity": 2
+  },
+  {
+    "file": "scripts/prepare-test-account-rooms.test.mjs",
+    "line": 69,
+    "column": 55,
+    "function": "Async arrow function",
+    "complexity": 3
+  },
+  {
+    "file": "scripts/prepare-test-account-rooms.test.mjs",
+    "line": 89,
+    "column": 48,
+    "function": "Async arrow function",
+    "complexity": 2
+  },
+  {
+    "file": "scripts/prepare-test-account-rooms.test.mjs",
+    "line": 101,
+    "column": 48,
+    "function": "Async arrow function",
+    "complexity": 5
+  },
+  {
+    "file": "scripts/prepare-test-account-rooms.test.mjs",
+    "line": 106,
+    "column": 40,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/prepare-test-account-rooms.test.mjs",
+    "line": 107,
+    "column": 11,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/prepare-test-account-rooms.test.mjs",
+    "line": 108,
+    "column": 11,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/prepare-test-account-rooms.test.mjs",
+    "line": 108,
+    "column": 76,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/prepare-test-account-rooms.test.mjs",
+    "line": 112,
+    "column": 68,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/prepare-test-account-rooms.test.mjs",
+    "line": 119,
+    "column": 45,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/prepare-test-account-rooms.test.mjs",
+    "line": 120,
+    "column": 74,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/prepare-test-account-rooms.test.mjs",
+    "line": 121,
+    "column": 62,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/prepare-test-account.mjs",
+    "line": 13,
+    "column": 8,
+    "function": "Async function 'readTestingApiToken'",
+    "complexity": 10
+  },
+  {
+    "file": "scripts/prepare-test-account.mjs",
+    "line": 20,
+    "column": 66,
+    "function": "Arrow function",
+    "complexity": 3
+  },
+  {
+    "file": "scripts/prepare-test-account.mjs",
+    "line": 42,
+    "column": 1,
+    "function": "Async function 'requestJson'",
+    "complexity": 4
+  },
+  {
+    "file": "scripts/prepare-test-account.mjs",
+    "line": 60,
+    "column": 8,
+    "function": "Async function 'prepareTestAccountCoins'",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/prepare-test-account.mjs",
+    "line": 71,
+    "column": 1,
+    "function": "Async function 'prepareCoins'",
+    "complexity": 4
+  },
+  {
+    "file": "scripts/prepare-test-account.mjs",
+    "line": 93,
+    "column": 1,
+    "function": "Function 'canReadLocalToken'",
+    "complexity": 2
+  },
+  {
+    "file": "scripts/prepare-test-account.mjs",
+    "line": 101,
+    "column": 1,
+    "function": "Function 'validateAccount'",
+    "complexity": 10
+  },
+  {
+    "file": "scripts/prepare-test-account.mjs",
+    "line": 112,
+    "column": 1,
+    "function": "Function 'validateSession'",
+    "complexity": 7
+  },
+  {
+    "file": "scripts/prepare-test-account.mjs",
+    "line": 122,
+    "column": 1,
+    "function": "Function 'validSessionToken'",
+    "complexity": 6
+  },
+  {
+    "file": "scripts/prepare-test-account.mjs",
+    "line": 130,
+    "column": 1,
+    "function": "Function 'validateCoins'",
+    "complexity": 4
+  },
+  {
+    "file": "scripts/prepare-test-account.mjs",
+    "line": 131,
+    "column": 86,
+    "function": "Arrow function",
+    "complexity": 2
+  },
+  {
+    "file": "scripts/prepare-test-account.test.mjs",
+    "line": 22,
+    "column": 1,
+    "function": "Function 'network'",
+    "complexity": 2
+  },
+  {
+    "file": "scripts/prepare-test-account.test.mjs",
+    "line": 24,
+    "column": 65,
+    "function": "Async arrow function",
+    "complexity": 4
+  },
+  {
+    "file": "scripts/prepare-test-account.test.mjs",
+    "line": 37,
+    "column": 56,
+    "function": "Async arrow function",
+    "complexity": 3
+  },
+  {
+    "file": "scripts/prepare-test-account.test.mjs",
+    "line": 41,
+    "column": 35,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/prepare-test-account.test.mjs",
+    "line": 63,
+    "column": 59,
+    "function": "Async arrow function",
+    "complexity": 2
+  },
+  {
+    "file": "scripts/prepare-test-account.test.mjs",
+    "line": 72,
+    "column": 38,
+    "function": "Async arrow function",
+    "complexity": 3
+  },
+  {
+    "file": "scripts/prepare-test-account.test.mjs",
+    "line": 84,
+    "column": 39,
+    "function": "Async arrow function",
+    "complexity": 2
+  },
+  {
+    "file": "scripts/prepare-test-account.test.mjs",
+    "line": 100,
+    "column": 42,
+    "function": "Async arrow function",
+    "complexity": 3
+  },
+  {
+    "file": "scripts/prepare-test-account.test.mjs",
+    "line": 116,
+    "column": 61,
+    "function": "Async arrow function",
+    "complexity": 3
+  },
+  {
+    "file": "scripts/prepare-test-account.test.mjs",
+    "line": 122,
+    "column": 75,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/prepare-test-account.test.mjs",
+    "line": 134,
+    "column": 47,
+    "function": "Async arrow function",
+    "complexity": 2
+  },
+  {
+    "file": "scripts/prepare-test-account.test.mjs",
+    "line": 141,
+    "column": 59,
+    "function": "Async arrow function",
+    "complexity": 2
+  },
+  {
+    "file": "scripts/prepare-test-account.test.mjs",
+    "line": 143,
+    "column": 20,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/quality-history.mjs",
+    "line": 11,
+    "column": 8,
+    "function": "Function 'previousRevision'",
+    "complexity": 7
+  },
+  {
+    "file": "scripts/quality-history.mjs",
+    "line": 30,
+    "column": 8,
+    "function": "Function 'historicalFile'",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/quality-history.mjs",
+    "line": 39,
+    "column": 8,
+    "function": "Function 'sourceSnapshot'",
+    "complexity": 3
+  },
+  {
+    "file": "scripts/quality-history.mjs",
+    "line": 43,
+    "column": 18,
+    "function": "Arrow function",
+    "complexity": 3
+  },
+  {
+    "file": "scripts/quality-projection.test.mjs",
+    "line": 21,
+    "column": 1,
+    "function": "Async function 'networkMessages'",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/quality-projection.test.mjs",
+    "line": 23,
+    "column": 43,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/quality-projection.test.mjs",
+    "line": 24,
+    "column": 41,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/quality-projection.test.mjs",
+    "line": 33,
+    "column": 1,
+    "function": "Async function 'assertMatrix'",
+    "complexity": 5
+  },
+  {
+    "file": "scripts/quality-projection.test.mjs",
+    "line": 38,
+    "column": 38,
+    "function": "Arrow function",
+    "complexity": 2
+  },
+  {
+    "file": "scripts/quality-projection.test.mjs",
+    "line": 46,
+    "column": 1,
+    "function": "Function 'assertTypeScript'",
+    "complexity": 2
+  },
+  {
+    "file": "scripts/quality-projection.test.mjs",
+    "line": 59,
+    "column": 49,
+    "function": "Arrow function",
+    "complexity": 2
+  },
+  {
+    "file": "scripts/quality-projection.test.mjs",
+    "line": 64,
+    "column": 49,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/quality-projection.test.mjs",
+    "line": 68,
+    "column": 66,
+    "function": "Async arrow function",
+    "complexity": 2
+  },
+  {
+    "file": "scripts/quality-projection.test.mjs",
+    "line": 82,
+    "column": 42,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/quality-projection.test.mjs",
+    "line": 86,
+    "column": 52,
+    "function": "Async arrow function",
+    "complexity": 4
+  },
+  {
+    "file": "scripts/quality-projection.test.mjs",
+    "line": 107,
+    "column": 52,
+    "function": "Async arrow function",
+    "complexity": 2
+  },
+  {
+    "file": "scripts/quality-projection.test.mjs",
+    "line": 120,
+    "column": 54,
+    "function": "Async arrow function",
+    "complexity": 3
+  },
+  {
+    "file": "scripts/quality-projection.test.mjs",
+    "line": 146,
+    "column": 50,
+    "function": "Async arrow function",
+    "complexity": 3
+  },
+  {
+    "file": "scripts/quality-projection.test.mjs",
+    "line": 169,
+    "column": 68,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/quality-projection.test.mjs",
+    "line": 174,
+    "column": 66,
+    "function": "Async arrow function",
+    "complexity": 2
+  },
+  {
+    "file": "scripts/quality-projection.test.mjs",
+    "line": 182,
+    "column": 42,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/quality-projection.test.mjs",
+    "line": 186,
+    "column": 48,
+    "function": "Async arrow function",
+    "complexity": 5
+  },
+  {
+    "file": "scripts/quality-projection.test.mjs",
+    "line": 210,
+    "column": 57,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/quality-projection.test.mjs",
+    "line": 215,
+    "column": 54,
+    "function": "Async arrow function",
+    "complexity": 6
+  },
+  {
+    "file": "scripts/quality-projection.test.mjs",
+    "line": 237,
+    "column": 55,
+    "function": "Async arrow function",
+    "complexity": 3
+  },
+  {
+    "file": "scripts/quality-projection.test.mjs",
+    "line": 255,
+    "column": 37,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/quality-projection.test.mjs",
+    "line": 277,
+    "column": 1,
+    "function": "Async function 'assertCleanMatrix'",
+    "complexity": 2
+  },
+  {
+    "file": "scripts/quality-projection.test.mjs",
+    "line": 284,
+    "column": 54,
+    "function": "Async arrow function",
+    "complexity": 5
+  },
+  {
+    "file": "scripts/quality-projection.test.mjs",
+    "line": 298,
+    "column": 42,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/quality-projection.test.mjs",
+    "line": 305,
+    "column": 52,
+    "function": "Async arrow function",
+    "complexity": 2
+  },
+  {
+    "file": "scripts/quality-projection.test.mjs",
+    "line": 329,
+    "column": 37,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/quality-projection.test.mjs",
+    "line": 337,
+    "column": 48,
+    "function": "Async arrow function",
+    "complexity": 2
+  },
+  {
+    "file": "scripts/quality-projection.test.mjs",
+    "line": 348,
+    "column": 35,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/quality-projection.test.mjs",
+    "line": 357,
+    "column": 62,
+    "function": "Async arrow function",
+    "complexity": 5
+  },
+  {
+    "file": "scripts/quality-projection.test.mjs",
+    "line": 379,
+    "column": 39,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/quality-projection.test.mjs",
+    "line": 389,
+    "column": 15,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/quality-routing.test.mjs",
+    "line": 16,
+    "column": 1,
+    "function": "Async function 'lint'",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/quality-routing.test.mjs",
+    "line": 18,
+    "column": 43,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/quality-routing.test.mjs",
+    "line": 26,
+    "column": 1,
+    "function": "Async function 'assertRoutingGate'",
+    "complexity": 2
+  },
+  {
+    "file": "scripts/quality-routing.test.mjs",
+    "line": 28,
+    "column": 68,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/quality-routing.test.mjs",
+    "line": 34,
+    "column": 50,
+    "function": "Async arrow function",
+    "complexity": 3
+  },
+  {
+    "file": "scripts/quality-routing.test.mjs",
+    "line": 47,
+    "column": 57,
+    "function": "Async arrow function",
+    "complexity": 3
+  },
+  {
+    "file": "scripts/quality-routing.test.mjs",
+    "line": 59,
+    "column": 60,
+    "function": "Async arrow function",
+    "complexity": 2
+  },
+  {
+    "file": "scripts/quality-routing.test.mjs",
+    "line": 77,
+    "column": 69,
+    "function": "Arrow function",
+    "complexity": 3
+  },
+  {
+    "file": "scripts/quality-routing.test.mjs",
+    "line": 88,
+    "column": 1,
+    "function": "Async function 'networkMessages'",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/quality-routing.test.mjs",
+    "line": 89,
+    "column": 56,
+    "function": "Arrow function",
+    "complexity": 3
+  },
+  {
+    "file": "scripts/quality-routing.test.mjs",
+    "line": 93,
+    "column": 64,
+    "function": "Async arrow function",
+    "complexity": 6
+  },
+  {
+    "file": "scripts/quality-routing.test.mjs",
+    "line": 117,
+    "column": 53,
+    "function": "Async arrow function",
+    "complexity": 3
+  },
+  {
+    "file": "scripts/quality-routing.test.mjs",
+    "line": 141,
+    "column": 50,
+    "function": "Async arrow function",
+    "complexity": 3
+  },
+  {
+    "file": "scripts/quality-routing.test.mjs",
+    "line": 155,
+    "column": 54,
+    "function": "Async arrow function",
+    "complexity": 3
+  },
+  {
+    "file": "scripts/quality-routing.test.mjs",
+    "line": 170,
+    "column": 72,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/quality-routing.test.mjs",
+    "line": 176,
+    "column": 47,
+    "function": "Async arrow function",
+    "complexity": 3
+  },
+  {
+    "file": "scripts/quality-routing.test.mjs",
+    "line": 186,
+    "column": 72,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/quality.test.mjs",
+    "line": 17,
+    "column": 44,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/quality.test.mjs",
+    "line": 19,
+    "column": 37,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/quality.test.mjs",
+    "line": 20,
+    "column": 26,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/quality.test.mjs",
+    "line": 21,
+    "column": 20,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/quality.test.mjs",
+    "line": 24,
+    "column": 20,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/quality.test.mjs",
+    "line": 27,
+    "column": 47,
+    "function": "Async arrow function",
+    "complexity": 2
+  },
+  {
+    "file": "scripts/quality.test.mjs",
+    "line": 34,
+    "column": 36,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/quality.test.mjs",
+    "line": 48,
+    "column": 1,
+    "function": "Async function 'diagnostics'",
+    "complexity": 2
+  },
+  {
+    "file": "scripts/quality.test.mjs",
+    "line": 50,
+    "column": 43,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/quality.test.mjs",
+    "line": 51,
+    "column": 41,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/quality.test.mjs",
+    "line": 54,
+    "column": 52,
+    "function": "Async arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/quality.test.mjs",
+    "line": 55,
+    "column": 54,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/quality.test.mjs",
+    "line": 63,
+    "column": 48,
+    "function": "Async arrow function",
+    "complexity": 2
+  },
+  {
+    "file": "scripts/quality.test.mjs",
+    "line": 79,
+    "column": 54,
+    "function": "Async arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/quality.test.mjs",
+    "line": 88,
+    "column": 69,
+    "function": "Async arrow function",
+    "complexity": 4
+  },
+  {
+    "file": "scripts/quality.test.mjs",
+    "line": 116,
+    "column": 47,
+    "function": "Async arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/quality.test.mjs",
+    "line": 134,
+    "column": 1,
+    "function": "Async function 'assertResponseGate'",
+    "complexity": 3
+  },
+  {
+    "file": "scripts/quality.test.mjs",
+    "line": 146,
+    "column": 63,
+    "function": "Async arrow function",
+    "complexity": 4
+  },
+  {
+    "file": "scripts/quality.test.mjs",
+    "line": 167,
+    "column": 57,
+    "function": "Arrow function",
+    "complexity": 2
+  },
+  {
+    "file": "scripts/quality.test.mjs",
+    "line": 177,
+    "column": 51,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/quality.test.mjs",
+    "line": 182,
+    "column": 62,
+    "function": "Async arrow function",
+    "complexity": 8
+  },
+  {
+    "file": "scripts/quality.test.mjs",
+    "line": 213,
+    "column": 63,
+    "function": "Async arrow function",
+    "complexity": 6
+  },
+  {
+    "file": "scripts/quality.test.mjs",
+    "line": 236,
+    "column": 57,
+    "function": "Async arrow function",
+    "complexity": 2
+  },
+  {
+    "file": "scripts/quality.test.mjs",
+    "line": 260,
+    "column": 50,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/quality.test.mjs",
+    "line": 261,
+    "column": 54,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/quality.test.mjs",
+    "line": 266,
+    "column": 52,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/quality.test.mjs",
+    "line": 269,
+    "column": 42,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/quality.test.mjs",
+    "line": 276,
+    "column": 20,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/quality.test.mjs",
+    "line": 277,
+    "column": 20,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/quality.test.mjs",
+    "line": 278,
+    "column": 20,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/quality.test.mjs",
+    "line": 279,
+    "column": 26,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/quality.test.mjs",
+    "line": 286,
+    "column": 1,
+    "function": "Function 'temporaryProject'",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/quality.test.mjs",
+    "line": 288,
+    "column": 20,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/quality.test.mjs",
+    "line": 298,
+    "column": 1,
+    "function": "Function 'putSource'",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/quality.test.mjs",
+    "line": 308,
+    "column": 1,
+    "function": "Function 'cruise'",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/quality.test.mjs",
+    "line": 315,
+    "column": 62,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/quality.test.mjs",
+    "line": 336,
+    "column": 67,
+    "function": "Arrow function",
+    "complexity": 2
+  },
+  {
+    "file": "scripts/quality.test.mjs",
+    "line": 355,
+    "column": 50,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/quality.test.mjs",
+    "line": 357,
+    "column": 52,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/quality.test.mjs",
+    "line": 364,
+    "column": 26,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/quality.test.mjs",
+    "line": 366,
+    "column": 20,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/quality.test.mjs",
+    "line": 371,
+    "column": 42,
+    "function": "Async arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/source-files.mjs",
+    "line": 13,
+    "column": 8,
+    "function": "Function 'sourceFiles'",
+    "complexity": 2
+  },
+  {
+    "file": "scripts/source-files.mjs",
+    "line": 16,
+    "column": 42,
+    "function": "Arrow function",
+    "complexity": 5
+  },
+  {
+    "file": "scripts/staging-deployment.mjs",
+    "line": 7,
+    "column": 8,
+    "function": "Function 'validateDeployment'",
+    "complexity": 9
+  },
+  {
+    "file": "scripts/staging-deployment.mjs",
+    "line": 21,
+    "column": 8,
+    "function": "Function 'readDeploymentRecord'",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/staging-deployment.test.mjs",
+    "line": 8,
+    "column": 39,
+    "function": "Arrow function",
+    "complexity": 2
+  },
+  {
+    "file": "scripts/staging-deployment.test.mjs",
+    "line": 13,
+    "column": 22,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/staging-deployment.test.mjs",
+    "line": 17,
+    "column": 27,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/test-local.mjs",
+    "line": 5,
+    "column": 41,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/with-test-account.mjs",
+    "line": 39,
+    "column": 1,
+    "function": "Async function 'run'",
+    "complexity": 14
+  },
+  {
+    "file": "scripts/with-test-account.mjs",
+    "line": 55,
+    "column": 30,
+    "function": "Arrow function",
+    "complexity": 8
+  },
+  {
+    "file": "scripts/with-test-account.mjs",
+    "line": 60,
+    "column": 37,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/with-test-account.mjs",
+    "line": 65,
+    "column": 29,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/with-test-account.mjs",
+    "line": 115,
+    "column": 41,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/with-test-account.mjs",
+    "line": 117,
+    "column": 26,
+    "function": "Arrow function",
+    "complexity": 5
+  },
+  {
+    "file": "scripts/with-test-account.mjs",
+    "line": 131,
+    "column": 62,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/with-test-account.mjs",
+    "line": 132,
+    "column": 32,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/with-test-account.mjs",
+    "line": 133,
+    "column": 43,
+    "function": "Arrow function",
+    "complexity": 3
+  },
+  {
+    "file": "scripts/with-test-account.mjs",
+    "line": 136,
+    "column": 39,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/with-test-account.mjs",
+    "line": 144,
+    "column": 19,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/with-test-account.test.mjs",
+    "line": 19,
+    "column": 1,
+    "function": "Async function 'fixture'",
+    "complexity": 2
+  },
+  {
+    "file": "scripts/with-test-account.test.mjs",
+    "line": 23,
+    "column": 38,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/with-test-account.test.mjs",
+    "line": 27,
+    "column": 14,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/with-test-account.test.mjs",
+    "line": 39,
+    "column": 1,
+    "function": "Function 'launch'",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/with-test-account.test.mjs",
+    "line": 46,
+    "column": 33,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/with-test-account.test.mjs",
+    "line": 47,
+    "column": 33,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/with-test-account.test.mjs",
+    "line": 48,
+    "column": 54,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/with-test-account.test.mjs",
+    "line": 49,
+    "column": 20,
+    "function": "Async arrow function",
+    "complexity": 3
+  },
+  {
+    "file": "scripts/with-test-account.test.mjs",
+    "line": 63,
+    "column": 1,
+    "function": "Async function 'hold'",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/with-test-account.test.mjs",
+    "line": 79,
+    "column": 62,
+    "function": "Async arrow function",
+    "complexity": 2
+  },
+  {
+    "file": "scripts/with-test-account.test.mjs",
+    "line": 107,
+    "column": 55,
+    "function": "Async arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/with-test-account.test.mjs",
+    "line": 114,
+    "column": 50,
+    "function": "Async arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/with-test-account.test.mjs",
+    "line": 123,
+    "column": 59,
+    "function": "Async arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/with-test-account.test.mjs",
+    "line": 131,
+    "column": 44,
+    "function": "Async arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/with-test-account.test.mjs",
+    "line": 143,
+    "column": 70,
+    "function": "Async arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/with-test-account.test.mjs",
+    "line": 144,
+    "column": 59,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/with-test-account.test.mjs",
+    "line": 146,
+    "column": 51,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/with-test-account.test.mjs",
+    "line": 147,
+    "column": 37,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/with-test-account.test.mjs",
+    "line": 152,
+    "column": 20,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/with-test-account.test.mjs",
+    "line": 153,
+    "column": 34,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/with-test-account.test.mjs",
+    "line": 158,
+    "column": 41,
+    "function": "Async arrow function",
+    "complexity": 2
+  },
+  {
+    "file": "scripts/with-test-account.test.mjs",
+    "line": 170,
+    "column": 38,
+    "function": "Async arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/with-test-account.test.mjs",
+    "line": 183,
+    "column": 44,
+    "function": "Async arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "visual/cases/_shared/room.test.ts",
+    "line": 9,
+    "column": 50,
+    "function": "Async arrow function",
+    "complexity": 5
+  },
+  {
+    "file": "visual/cases/_shared/room.test.ts",
+    "line": 11,
+    "column": 88,
+    "function": "Async arrow function",
+    "complexity": 2
+  },
+  {
+    "file": "visual/cases/_shared/room.test.ts",
+    "line": 28,
+    "column": 37,
+    "function": "Async arrow function",
+    "complexity": 2
+  },
+  {
+    "file": "visual/cases/_shared/room.test.ts",
+    "line": 30,
+    "column": 88,
+    "function": "Async arrow function",
+    "complexity": 2
+  },
+  {
+    "file": "visual/cases/_shared/room.ts",
+    "line": 16,
+    "column": 1,
+    "function": "Async function 'visualAccount'",
+    "complexity": 10
+  },
+  {
+    "file": "visual/cases/_shared/room.ts",
+    "line": 17,
+    "column": 38,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "visual/cases/_shared/room.ts",
+    "line": 34,
+    "column": 1,
+    "function": "Async function 'readDiamondBalance'",
+    "complexity": 5
+  },
+  {
+    "file": "visual/cases/_shared/room.ts",
+    "line": 37,
+    "column": 74,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "visual/cases/_shared/room.ts",
+    "line": 47,
+    "column": 8,
+    "function": "Async function 'ensureRoomBalance'",
+    "complexity": 1
+  },
+  {
+    "file": "visual/cases/_shared/room.ts",
+    "line": 57,
+    "column": 1,
+    "function": "Async function 'ensureBalance'",
+    "complexity": 5
+  },
+  {
+    "file": "visual/cases/_shared/room.ts",
+    "line": 67,
+    "column": 24,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "visual/cases/_shared/room.ts",
+    "line": 77,
+    "column": 8,
+    "function": "Async function 'createPrivateGameRoom'",
+    "complexity": 4
+  },
+  {
+    "file": "visual/cases/_shared/room.ts",
+    "line": 93,
+    "column": 57,
+    "function": "Arrow function",
+    "complexity": 2
+  },
+  {
+    "file": "visual/cases/_shared/room.ts",
+    "line": 97,
+    "column": 22,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "visual/cases/_shared/room.ts",
+    "line": 97,
+    "column": 37,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "visual/cases/_shared/room.ts",
+    "line": 111,
+    "column": 8,
+    "function": "Async function 'deletePrivateGameRoom'",
+    "complexity": 2
+  },
+  {
+    "file": "visual/cases/_shared/room.ts",
+    "line": 124,
+    "column": 1,
+    "function": "Function 'validateTopup'",
+    "complexity": 7
+  },
+  {
+    "file": "visual/cases/_shared/room.ts",
+    "line": 135,
+    "column": 1,
+    "function": "Function 'createdRoomId'",
+    "complexity": 8
+  },
+  {
+    "file": "visual/cases/game-record/proxy.ts",
+    "line": 17,
+    "column": 3,
+    "function": "Constructor",
+    "complexity": 1
+  },
+  {
+    "file": "visual/cases/game-record/proxy.ts",
+    "line": 19,
+    "column": 3,
+    "function": "Getter 'server'",
+    "complexity": 1
+  },
+  {
+    "file": "visual/cases/game-record/proxy.ts",
+    "line": 25,
+    "column": 3,
+    "function": "Method 'command'",
+    "complexity": 1
+  },
+  {
+    "file": "visual/cases/game-record/proxy.ts",
+    "line": 35,
+    "column": 3,
+    "function": "Method 'configure'",
+    "complexity": 2
+  },
+  {
+    "file": "visual/cases/game-record/proxy.ts",
+    "line": 43,
+    "column": 3,
+    "function": "Method 'mode'",
+    "complexity": 2
+  },
+  {
+    "file": "visual/cases/game-record/proxy.ts",
+    "line": 47,
+    "column": 3,
+    "function": "Method 'release'",
+    "complexity": 1
+  },
+  {
+    "file": "visual/cases/game-record/proxy.ts",
+    "line": 49,
+    "column": 3,
+    "function": "Method 'status'",
+    "complexity": 1
+  },
+  {
+    "file": "visual/cases/game-record/proxy.ts",
+    "line": 58,
+    "column": 3,
+    "function": "Async method 'recordProxy'",
+    "complexity": 1
+  },
+  {
+    "file": "visual/cases/game-record/proxy.ts",
+    "line": 59,
+    "column": 37,
+    "function": "Async arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "visual/cases/private-room/scenarios.ts",
+    "line": 8,
+    "column": 42,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "visual/cases/texas-holdem/proxy.ts",
+    "line": 12,
+    "column": 3,
+    "function": "Constructor",
+    "complexity": 1
+  },
+  {
+    "file": "visual/cases/texas-holdem/proxy.ts",
+    "line": 14,
+    "column": 3,
+    "function": "Getter 'server'",
+    "complexity": 1
+  },
+  {
+    "file": "visual/cases/texas-holdem/proxy.ts",
+    "line": 16,
+    "column": 3,
+    "function": "Method 'status'",
+    "complexity": 1
+  },
+  {
+    "file": "visual/cases/texas-holdem/proxy.ts",
+    "line": 24,
+    "column": 3,
+    "function": "Method 'replayTexas'",
+    "complexity": 1
+  },
+  {
+    "file": "visual/cases/texas-holdem/proxy.ts",
+    "line": 28,
+    "column": 3,
+    "function": "Method 'configureHallView'",
+    "complexity": 1
+  },
+  {
+    "file": "visual/cases/texas-holdem/proxy.ts",
+    "line": 32,
+    "column": 3,
+    "function": "Method 'configureGuestView'",
+    "complexity": 1
+  },
+  {
+    "file": "visual/cases/texas-holdem/proxy.ts",
+    "line": 39,
+    "column": 3,
+    "function": "Method 'configureUI'",
+    "complexity": 1
+  },
+  {
+    "file": "visual/cases/texas-holdem/proxy.ts",
+    "line": 46,
+    "column": 3,
+    "function": "Method 'configureNewRecords'",
+    "complexity": 1
+  },
+  {
+    "file": "visual/cases/texas-holdem/proxy.ts",
+    "line": 50,
+    "column": 3,
+    "function": "Method 'releaseTexas'",
+    "complexity": 1
+  },
+  {
+    "file": "visual/cases/texas-holdem/proxy.ts",
+    "line": 59,
+    "column": 8,
+    "function": "Async function 'withTexasProxy'",
+    "complexity": 1
+  },
+  {
+    "file": "visual/cases/texas-holdem/proxy.ts",
+    "line": 60,
+    "column": 36,
+    "function": "Async arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "visual/cases/texas-holdem/proxy.ts",
+    "line": 70,
+    "column": 8,
+    "function": "Function 'texasProxyOptions'",
+    "complexity": 1
+  },
+  {
+    "file": "visual/cases/texas-holdem/proxy.ts",
+    "line": 83,
+    "column": 3,
+    "function": "Async method 'mitmproxy'",
+    "complexity": 1
+  },
+  {
+    "file": "visual/cases/texas-holdem/room.ts",
+    "line": 12,
+    "column": 8,
+    "function": "Function 'createTexasRoom'",
+    "complexity": 2
+  },
+  {
+    "file": "visual/cases/texas-holdem/room.ts",
+    "line": 20,
+    "column": 8,
+    "function": "Async function 'enterTexasRoom'",
+    "complexity": 1
+  },
+  {
+    "file": "visual/scenarios.ts",
+    "line": 93,
+    "column": 1,
+    "function": "Function 'withGroup'",
+    "complexity": 1
+  },
+  {
+    "file": "visual/scenarios.ts",
+    "line": 94,
+    "column": 25,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "visual/scenarios.ts",
+    "line": 117,
+    "column": 1,
+    "function": "Function 'parseLocaleFilter'",
+    "complexity": 5
+  },
+  {
+    "file": "visual/scenarios.ts",
+    "line": 123,
+    "column": 48,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "visual/scenarios.ts",
+    "line": 126,
+    "column": 17,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "visual/scenarios.ts",
+    "line": 127,
+    "column": 40,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "visual/scenarios.ts",
+    "line": 131,
+    "column": 59,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "visual/scenarios.ts",
+    "line": 142,
+    "column": 8,
+    "function": "Function 'getActiveLocales'",
+    "complexity": 3
+  },
+  {
+    "file": "visual/scenarios.ts",
+    "line": 147,
+    "column": 34,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "visual/scenarios.ts",
+    "line": 158,
+    "column": 8,
+    "function": "Function 'scenarioLabel'",
+    "complexity": 3
+  },
+  {
+    "file": "visual/scenarios.ts",
+    "line": 175,
+    "column": 1,
+    "function": "Function 'buildScenario'",
+    "complexity": 6
+  },
+  {
+    "file": "visual/scenarios.ts",
+    "line": 206,
+    "column": 1,
+    "function": "Function 'buildLocaleViewportScenarios'",
+    "complexity": 12
+  },
+  {
+    "file": "visual/scenarios.ts",
+    "line": 207,
+    "column": 38,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "visual/scenarios.ts",
+    "line": 358,
+    "column": 8,
+    "function": "Function 'buildScenarios'",
+    "complexity": 3
+  },
+  {
+    "file": "visual/scenarios.ts",
+    "line": 361,
+    "column": 46,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "visual/scenarios.ts",
+    "line": 362,
+    "column": 34,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "visual/scenarios.ts",
+    "line": 366,
+    "column": 33,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "visual/scenarios.ts",
+    "line": 375,
+    "column": 8,
+    "function": "Function 'pageCountForViewport'",
+    "complexity": 2
+  },
+  {
+    "file": "visual/scenarios.ts",
+    "line": 379,
+    "column": 12,
+    "function": "Arrow function",
+    "complexity": 2
+  },
+  {
+    "file": "visual/scenarios.ts",
+    "line": 388,
+    "column": 8,
+    "function": "Function 'expectedScenarioCount'",
+    "complexity": 2
+  },
+  {
+    "file": "visual/src/support/requestError.ts",
+    "line": 5,
+    "column": 8,
+    "function": "Function 'requestErrorSummary'",
+    "complexity": 2
+  },
+  {
+    "file": "visual/test-account.ts",
+    "line": 14,
+    "column": 8,
+    "function": "Function 'getVisualDeviceId'",
+    "complexity": 3
+  },
+  {
+    "file": "visual/test-account.ts",
+    "line": 24,
+    "column": 8,
+    "function": "Function 'getVisualTestAccount'",
+    "complexity": 6
+  },
+  {
+    "file": "visual/test-account.ts",
+    "line": 39,
+    "column": 8,
+    "function": "Function 'canTopUpVisualAccount'",
+    "complexity": 7
+  },
+  {
+    "file": "visual/visual-suite.ts",
+    "line": 7,
+    "column": 8,
+    "function": "Function 'getVisualSuite'",
+    "complexity": 7
+  },
+  {
+    "file": "visual/visual-suite.ts",
+    "line": 20,
+    "column": 8,
+    "function": "Function 'selectVisualSuite'",
+    "complexity": 2
+  },
+  {
+    "file": "visual/visual-suite.ts",
+    "line": 22,
+    "column": 36,
+    "function": "Arrow function",
+    "complexity": 4
+  }
+]

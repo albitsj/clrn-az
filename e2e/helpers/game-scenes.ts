@@ -12,7 +12,23 @@ export type TableOptions = 'standard' | 'observer' | 'full' | 'full-pots' | 'che
  * @param table - 登记的桌面布局或操作分支。
  * @param part - 发牌动画分两次选择状态和手牌，保持原有采样时序。
  */
-export function restoreTable(street: Street = 'preflop', opponent = false,
-  table: TableOptions = 'standard', part: 'all' | 'without-hand' | 'hand' = 'all') {
-  return { scene: 'table', street, opponent, table, part };
+export function restoreTable(street?: Street, opponent?: boolean,
+  table?: TableOptions, part?: 'all' | 'without-hand' | 'hand') {
+  return { ...tableDefaults(street, opponent), ...tableDetails(table, part) };
+}
+
+/** Resolve the street and turn defaults.
+ * @param street - Requested street.
+ * @param opponent - Opponent turn.
+ */
+function tableDefaults(street: Street = 'preflop', opponent = false) {
+  return { scene: 'table', street, opponent };
+}
+
+/** Resolve the presentation and animation defaults.
+ * @param table - Layout.
+ * @param part - Animation part.
+ */
+function tableDetails(table: TableOptions = 'standard', part: 'all' | 'without-hand' | 'hand' = 'all') {
+  return { table, part };
 }
