@@ -72,23 +72,32 @@ export function recordSnapshots(device: AndroidDevice, scenario: VisualScenario,
       if (!['delete_confirm', 'delete_blocked', 'delete_failure', 'list_failure', 'detail_failure'].includes(state)) {
         await waitAbsent(device, { res: 'android:id/message' });
       }
-      const masks: ScreenshotMask[] = [];
-      let assertLoading: (() => Promise<void>) | undefined;
-      if (['loading', 'pagination_loading'].includes(state)) {
-        const spinner = await device.info({ clazz: 'android.widget.ProgressBar' });
-        masks.push({ ...spinner.bounds, reason: '加载场景仅遮罩已断言存在的旋转进度图案' });
-        if (state === 'pagination_loading') {
-          /** 原生请求保留真实截止时间；每帧确认仍在加载，不能把超时后的空白当加载态。 */
-          assertLoading = async () => {
-            const current = await device.info({ res: 'pull-up-activity-indicator' });
-            expect(current.bounds).toEqual(spinner.bounds);
-          };
-        }
-      }
+      const { masks, assertLoading } = await recordLoadingMask(device, state);
       await compareScreenshot(device, `${scenario.locale}-${scenario.pageLabel.replaceAll('_', '-')}-${state.replaceAll('_', '-')}`,
         testInfo, masks, assertLoading);
     },
     /** 检查所有声明的状态确实执行。 */
     complete: () => expect(index).toBe(states.length),
   };
+}
+
+/** 对已断言存在的加载控件遮罩，分页时每帧核对控件仍然存在。
+ * @param device - 当前设备。
+ * @param state - 业务状态。
+ */
+async function recordLoadingMask(device: AndroidDevice, state: string) {
+  const masks: ScreenshotMask[] = [];
+  let assertLoading: (() => Promise<void>) | undefined;
+  if (['loading', 'pagination_loading'].includes(state)) {
+    const spinner = await device.info({ clazz: 'android.widget.ProgressBar' });
+    masks.push({ ...spinner.bounds, reason: '加载场景仅遮罩已断言存在的旋转进度图案' });
+    if (state === 'pagination_loading') {
+      /** 原生请求保留真实截止时间；每帧确认仍在加载，不能把超时后的空白当加载态。 */
+      assertLoading = async () => {
+        const current = await device.info({ res: 'pull-up-activity-indicator' });
+        expect(current.bounds).toEqual(spinner.bounds);
+      };
+    }
+  }
+  return { masks, assertLoading };
 }

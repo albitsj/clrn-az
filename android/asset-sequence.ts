@@ -45,25 +45,7 @@ export async function captureAssetSequence(device: AndroidDevice, name: string, 
   let screens: Buffer[] = [];
   let timeline: Buffer[] = [];
   let visible: { frame: Buffer; index: number; distance: number }[] = [];
-  for (let attempt = 0; attempt < 2; attempt++) {
-    const pending = implementation._send('motionFrames');
-    await setTimeout(300);
-    await trigger();
-    screens = (await pending).map(frame => Buffer.from(frame.png, 'base64'));
-    timeline = screens.map(crop);
-    expect(timeline.length).toBeGreaterThanOrEqual(10);
-    expect(samePixels(before, timeline[0]), `${name} 必须在采样开始后播放`).toBe(true);
-    visible = timeline.map((frame, index) => ({ frame, index, distance: frameColorDistance(before, frame) }))
-      .filter(item => item.distance > 2);
-    if (visible.length >= 2 || attempt) break;
-    // 消息到达后短时采样可能先于原生素材绘制；保留原画面，再重新触发同一效果。
-    await info.attach(`${name}-首次未显示`, { body: screens.at(-1)!, contentType: 'image/png' });
-    await setTimeout(2500);
-    await gameConnected(device, 2_000);
-    beforeScreen = await gameScreenshot(device);
-    expect(samePixels(before, crop(beforeScreen)), `${name} 重新触发前须恢复静态画面`).toBe(true);
-    before = crop(beforeScreen);
-  }
+  await sample();
   expect(visible.length, `${name} 必须在屏幕上实际出现`).toBeGreaterThanOrEqual(2);
   const peak = visible.reduce((best, item) => item.distance > best.distance ? item : best);
   const changed = visible.reduce((best, item) => frameColorDistance(peak.frame, item.frame)
@@ -73,22 +55,62 @@ export async function captureAssetSequence(device: AndroidDevice, name: string, 
   await info.attach(`${name}-timeline`, { body: JSON.stringify({ peak: peak.index, changed: changed.index,
     distances: timeline.map(frame => frameColorDistance(before, frame)) }), contentType: 'application/json' });
   for (const [phase, frame] of [['start', before], ['peak', peak.frame], ['changed', changed.frame]] as const) {
+    await compareAssetPhase(phase, frame);
+  }
+  await setTimeout(2500);
+  expect(samePixels(before, crop(await gameScreenshot(device))), `${name} 须播放结束并恢复画面`).toBe(true);
+  if (flightRegion) await captureFlight(flightRegion);
+
+  /** 只在首轮未出现足够真实帧时重新触发一次，不扩大重试。 */
+  async function sample(): Promise<void> {
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const pending = implementation._send('motionFrames');
+      await setTimeout(300);
+      await trigger();
+      screens = (await pending).map(frame => Buffer.from(frame.png, 'base64'));
+      timeline = screens.map(crop);
+      expect(timeline.length).toBeGreaterThanOrEqual(10);
+      expect(samePixels(before, timeline[0]), `${name} 必须在采样开始后播放`).toBe(true);
+      visible = timeline.map((frame, index) => ({ frame, index, distance: frameColorDistance(before, frame) }))
+        .filter(item => item.distance > 2);
+      if ([visible.length >= 2, Boolean(attempt)].some(Boolean)) break;
+      // 消息到达后短时采样可能先于原生素材绘制；保留原画面，再重新触发同一效果。
+      await info.attach(`${name}-首次未显示`, { body: screens.at(-1)!, contentType: 'image/png' });
+      await setTimeout(2500);
+      await gameConnected(device, 2_000);
+      beforeScreen = await gameScreenshot(device);
+      expect(samePixels(before, crop(beforeScreen)), `${name} 重新触发前须恢复静态画面`).toBe(true);
+      before = crop(beforeScreen);
+    }
+  }
+  /** 比较素材外观，飞行相位另行锁定位置。
+   * @param phase - 真实相位名称。
+   * @param frame - 当前相位图。
+   */
+  async function compareAssetPhase(phase: string, frame: Buffer): Promise<void> {
     const file = `${name}-${phase}.png`;
     await info.attach(file, { body: frame, contentType: 'image/png' });
     if (info.config.updateSnapshots === 'all') expect(frame).toMatchSnapshot(file);
     else {
       const reference = readFileSync(info.snapshotPath(file));
       // 飞行道具在接收者身上经过的时刻可变；颜色构成锁定素材，下面的飞行区域另锁定位置。
-      const compare = flightRegion && phase !== 'start' ? framePaletteDistance : frameColorDistance;
+      const compare = assetComparator(phase);
       expect(Math.min(...(phase === 'start' ? [before] : visible.map(item => item.frame))
         .map(candidate => compare(candidate, reference))),
       `${name} ${phase} 视觉回归`)
         .toBeLessThanOrEqual(15);
     }
   }
-  await setTimeout(2500);
-  expect(samePixels(before, crop(await gameScreenshot(device))), `${name} 须播放结束并恢复画面`).toBe(true);
-  if (flightRegion) {
+  /** 飞行中的素材允许配色比较，起点仍逐像素比较。
+   * @param phase - 当前相位。
+   */
+  function assetComparator(phase: string) {
+    return flightRegion && phase !== 'start' ? framePaletteDistance : frameColorDistance;
+  }
+  /** 独立锁定道具经过目标路线的真实位置。
+   * @param flightRegion - 飞行路线。
+   */
+  async function captureFlight(flightRegion: ScreenshotBounds): Promise<void> {
     /**
      * 裁切道具经过的中途路线，独立锁定飞行轨迹。
      * @param bytes - 原生完整屏幕 PNG。
@@ -105,11 +127,18 @@ export async function captureAssetSequence(device: AndroidDevice, name: string, 
     expect(frameColorDistance(farthest.frame, alternate.frame), `${name} 飞行位置必须变化`).toBeGreaterThan(1);
     for (const [phase, frame] of [['start', flightStart], ['peak', farthest.frame],
       ['changed', alternate.frame]] as const) {
+      await compareFlightPhase(phase, frame);
+    }
+    /** 对飞行首帧和真实移动相位分别比较已审查位置。
+     * @param phase - 飞行相位。
+     * @param frame - 实际画面。
+     */
+    async function compareFlightPhase(phase: string, frame: Buffer): Promise<void> {
       const file = `${name}-flight-${phase}.png`;
       await info.attach(file, { body: frame, contentType: 'image/png' });
       if (info.config.updateSnapshots === 'all') expect(frame).toMatchSnapshot(file);
       else {
-        const references = [file, ...(flightPhaseAnchors[file] || [])]
+        const references = [file, ...registeredFlightAnchors(file)]
           .map(anchor => readFileSync(info.snapshotPath(anchor)));
         expect(Math.min(...(phase === 'start' ? [flightStart] : moving.map(item => item.frame))
           .flatMap(candidate => references.map(reference => frameColorDistance(candidate, reference)))),
@@ -119,3 +148,8 @@ export async function captureAssetSequence(device: AndroidDevice, name: string, 
     }
   }
 }
+
+/** 只使用明确登记的飞行位置锚点。
+ * @param file - 当前基准名称。
+ */
+function registeredFlightAnchors(file: string): string[] { return flightPhaseAnchors[file] || []; }

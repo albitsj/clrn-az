@@ -73,7 +73,8 @@ test('最小遮罩只忽略明确区域，遮罩外布局缺陷、尺寸变化�
   const expected = maskScreenshot(PNG.sync.write(original), [mask]);
   for (const [x, accepted] of [[10, true], [40, false]]) {
     const changed = PNG.sync.read(PNG.sync.write(original));
-    for (let y = 10; y < 20; y++) for (let column = x; column < x + 10; column++) {
+    for (let pixel = 0; pixel < 100; pixel++) {
+      const y = 10 + Math.floor(pixel / 10), column = x + pixel % 10;
       changed.data.fill(0, (y * 100 + column) * 4, (y * 100 + column) * 4 + 3);
     }
     assert.equal(samePixels(maskScreenshot(PNG.sync.write(changed), [mask]), expected), accepted);

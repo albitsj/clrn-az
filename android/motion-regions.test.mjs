@@ -16,9 +16,10 @@ const regions = [{ x: 0, y: 0, width: 4, height: 4 }, { x: 4, y: 0, width: 4, he
  */
 function frame(left, right, outside = 255) {
   const picture = new PNG({ width: 8, height: 8 });
-  for (let y = 0; y < 8; y++) for (let x = 0; x < 8; x++) {
+  for (let pixel = 0; pixel < 64; pixel++) {
+    const y = Math.floor(pixel / 8), x = pixel % 8;
     const offset = (y * 8 + x) * 4;
-    picture.data.fill(y < 4 ? x < 4 ? left : right : outside, offset, offset + 3);
+    picture.data.fill([[left, right], [outside, outside]][Math.floor(y / 4)][Math.floor(x / 4)], offset, offset + 3);
     picture.data[offset + 3] = 255;
   }
   return PNG.sync.write(picture);
@@ -40,6 +41,9 @@ test('独立闪烁可分时匹配，静态区域和每个玩家区域都不能�
 
 test('动画分区不能重叠或越界，完整帧尺寸变化仍导致失败', () => {
   assert.throws(() => motionParts(frame(0, 255), [regions[0], regions[0]]), /不能重叠/);
+  for (const width of [-1, 0, 1.5, undefined, Symbol('invalid width')]) {
+    assert.throws(() => motionParts(frame(0, 255), [{ ...regions[0], width }]), /超出实际截图/);
+  }
   assert.throws(() => motionParts(frame(0, 255), [{ x: 7, y: 7, width: 2, height: 2 }]), /超出/);
   assert.equal(samePixels(frame(0, 255), PNG.sync.write(new PNG({ width: 9, height: 8 }))), false);
 });

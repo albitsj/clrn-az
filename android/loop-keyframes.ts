@@ -1,3 +1,4 @@
+import { withDefault } from './animation-transition-options';
 import { requireEnglishAnimation } from './animation-locale';
 import { readFileSync } from 'node:fs';
 import { expect, type TestInfo } from '@playwright/test';
@@ -36,25 +37,20 @@ export async function captureLoopKeyframes(device: AndroidDevice, name: string, 
   regions: ScreenshotBounds[], maxAttempts = 1): Promise<void> {
   requireEnglishAnimation();
   expect(regions.length).toBeGreaterThan(0);
-  const implementation = (device as unknown as { _connection: { toImpl(device: AndroidDevice): {
-    _send(method: string): Promise<NativeFrame[]> } } })._connection.toImpl(device);
-  const timeline: NativeFrame[] = [];
-  const pictures: Buffer[][] = [];
-  for (let attempt = 0; attempt < maxAttempts; attempt++) {
-    const samples = await implementation._send('motionFrames');
-    expect(samples.length).toBeGreaterThanOrEqual(10);
-    timeline.push(...samples);
-    pictures.push(...samples.map(frame => motionParts(Buffer.from(frame.png, 'base64'), regions).regions));
-    if (regions.every((_, index) => {
+  const { timeline, pictures } = await collectKeyframes(device, regions, maxAttempts,
+    pictures => regions.every((_, index) => {
       const levels = pictures.map(parts => brightness(parts[index]));
       return Math.max(...levels) - Math.min(...levels) > 0.5;
-    })) break;
-  }
+    }));
   await testInfo.attach(`${name}-timeline`, {
     body: JSON.stringify(timeline.map(({ capturedAt }) => capturedAt)), contentType: 'application/json',
   });
   await testInfo.attach(`${name}-regions`, { body: JSON.stringify(regions), contentType: 'application/json' });
-  for (const index of regions.keys()) {
+  for (const index of regions.keys()) await compareRegion(index);
+  /** 比较单个脉动控件的真实明暗相位。
+   * @param index - 控件序号。
+   */
+  async function compareRegion(index: number): Promise<void> {
     const frames = pictures.map(parts => parts[index]);
     const phases = frames.map((frame, position) => ({ frame, position, light: brightness(frame) }));
     const dark = phases.reduce((best, item) => item.light < best.light ? item : best);
@@ -88,21 +84,21 @@ export async function captureLoopKeyframes(device: AndroidDevice, name: string, 
  * @param phaseAnchors - 随机循环中经审查的额外真实相位截图。
  */
 export async function captureMovingKeyframes(device: AndroidDevice, name: string, testInfo: TestInfo,
-  regions: ScreenshotBounds[], distanceLimit = 18,
-  compareDistance: (left: Buffer, right: Buffer) => number = frameColorDistance,
-  maxAttempts = 1, phaseAnchors: string[] = []): Promise<void> {
+  regions: ScreenshotBounds[], distanceLimit?: number,
+  compareDistance?: (left: Buffer, right: Buffer) => number,
+  maxAttempts?: number, phaseAnchors?: string[]): Promise<void> {
   requireEnglishAnimation();
   expect(regions.length).toBeGreaterThan(0);
-  const implementation = (device as unknown as { _connection: { toImpl(device: AndroidDevice): {
-    _send(method: string): Promise<NativeFrame[]> } } })._connection.toImpl(device);
-  const pictures: Buffer[][] = [];
-  for (let attempt = 0; attempt < maxAttempts; attempt++) {
-    const timeline = await implementation._send('motionFrames');
-    expect(timeline.length).toBeGreaterThanOrEqual(10);
-    pictures.push(...timeline.map(frame => motionParts(Buffer.from(frame.png, 'base64'), regions).regions));
-    if (regions.every((_, index) => pictures.some(parts => frameColorDistance(parts[index], pictures[0][index]) > 1))) break;
-  }
-  for (const index of regions.keys()) {
+  const limit = withDefault(distanceLimit, 18);
+  const compare = withDefault(compareDistance, frameColorDistance);
+  const anchors = withDefault(phaseAnchors, []);
+  const { pictures } = await collectKeyframes(device, regions, withDefault(maxAttempts, 1),
+    pictures => regions.every((_, index) => pictures.some(parts => frameColorDistance(parts[index], pictures[0][index]) > 1)));
+  for (const index of regions.keys()) await compareRegion(index);
+  /** 比较单个移动控件的首帧和最远真实相位。
+   * @param index - 控件序号。
+   */
+  async function compareRegion(index: number): Promise<void> {
     const frames = pictures.map(parts => parts[index]);
     const first = frames[0];
     const distances = frames.map(frame => frameColorDistance(first, frame));
@@ -113,9 +109,9 @@ export async function captureMovingKeyframes(device: AndroidDevice, name: string
       await testInfo.attach(file, { body: selected, contentType: 'image/png' });
       if (testInfo.config.updateSnapshots === 'all') expect(selected).toMatchSnapshot(file);
       else {
-        const references = [file, ...phaseAnchors].map(anchor => readFileSync(testInfo.snapshotPath(anchor)));
-        expect(Math.min(...references.flatMap(reference => frames.map(frame => compareDistance(frame, reference)))),
-          `${name} 第 ${index + 1} 个控件的${phase}相位须匹配基准`).toBeLessThanOrEqual(distanceLimit);
+        const references = [file, ...anchors].map(anchor => readFileSync(testInfo.snapshotPath(anchor)));
+        expect(Math.min(...references.flatMap(reference => frames.map(frame => compare(frame, reference)))),
+          `${name} 第 ${index + 1} 个控件的${phase}相位须匹配基准`).toBeLessThanOrEqual(limit);
       }
     }
   }
@@ -146,4 +142,25 @@ export async function captureConcurrentMotion(frames: Buffer[], name: string, te
         `${name} ${phase} 视觉回归`).toBeLessThanOrEqual(18);
     }
   }
+}
+
+/** 连续采样原始窗口，直到每个控件达到调用方的运动条件。
+ * @param device - 当前设备。
+ * @param regions - 真实控件范围。
+ * @param maxAttempts - 原有采样窗口上限。
+ * @param complete - 明暗或位置变化判定。
+ */
+async function collectKeyframes(device: AndroidDevice, regions: ScreenshotBounds[], maxAttempts: number,
+  complete: (pictures: Buffer[][]) => boolean) {
+  const implementation = (device as unknown as { _connection: { toImpl(device: AndroidDevice): {
+    _send(method: string): Promise<NativeFrame[]> } } })._connection.toImpl(device);
+  const timeline: NativeFrame[] = [], pictures: Buffer[][] = [];
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    const samples = await implementation._send('motionFrames');
+    expect(samples.length).toBeGreaterThanOrEqual(10);
+    timeline.push(...samples);
+    pictures.push(...samples.map(frame => motionParts(Buffer.from(frame.png, 'base64'), regions).regions));
+    if (complete(pictures)) break;
+  }
+  return { timeline, pictures };
 }

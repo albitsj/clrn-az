@@ -1,0 +1,319 @@
+{
+  "issue": 48,
+  "baselineRevision": "cb680d8bc6e074ce714ba9ff170c0d1429439369",
+  "metric": "ESLint 10.12.0 classic complexity; max:0 reports every function, including nested callbacks, constructors, accessors, defaults, optional chains and short-circuit expressions",
+  "limits": {
+    "androidTestsAndSupport": 3,
+    "gateTestsAndFixtures": 3,
+    "independentToolsAndRootConfig": 6
+  },
+  "beforeFunctions": 334,
+  "beforeOverLimit": 34,
+  "afterFunctions": 468,
+  "afterOverLimit": 0,
+  "reportCommand": "node scripts/android-animation-complexity.mjs --report",
+  "beforeMeasurement": "Unmodified HEAD sources copied to an isolated temporary directory; parsed using the same ESLint parser and classic rule, with max:0 only for reporting.",
+  "beforeSources": [
+    {
+      "file": "eslint.config.mjs",
+      "sha256": "563d0a61dc19e7bd70564eb3bed682e3821c1d0b4f743583d72e6f088c4e3444"
+    },
+    {
+      "file": "scripts/android-game-complexity.mjs",
+      "sha256": "f5b95b44886e0d0236fdc31a56ae541a0d4c087c31c35cd81a3b8be3388367d6"
+    },
+    {
+      "file": "android/animation-assets.ts",
+      "sha256": "840817386d563f133adf3e083f6c490559a884a56ec0d20b916d775678708168"
+    },
+    {
+      "file": "android/animation-baselines.test.mjs",
+      "sha256": "54cde2c1e52c6154e0839ce2d6c95604f2aff7d45739bb356b77fd7e752f7feb"
+    },
+    {
+      "file": "android/animation-locale.test.mjs",
+      "sha256": "954b90ef64c68af9083d7621cd23a762231cca3a8245aae6408a8cedf9bf55de"
+    },
+    {
+      "file": "android/animation-locale.ts",
+      "sha256": "b295ee979062e4a2526b42de2001d51be232ae123bd8f9682c73877b0f84406f"
+    },
+    {
+      "file": "android/animation-transition.test.mjs",
+      "sha256": "a4d1005e34f366cc3264853f3f8b5997351f7e2d3c8996003499a07db844dbdd"
+    },
+    {
+      "file": "android/animation-transition.ts",
+      "sha256": "f8746059ee5d4d1ed884c09e4778a81b2307fea8e9155086260f3ed8f17e156c"
+    },
+    {
+      "file": "android/asset-sequence.test.mjs",
+      "sha256": "45010f511d9f6a3dc07b5ef50c125f689eca2428eb5a450c0b44f7dae784954a"
+    },
+    {
+      "file": "android/asset-sequence.ts",
+      "sha256": "5e60bb03d4c239d534aba4bbc95de2693677f06170ebc90e35eca61e0b27e25f"
+    },
+    {
+      "file": "android/caret-mask.test.mjs",
+      "sha256": "aef1fa66870194f4c6991e928ddcced8fb2661c0afdcb850da7a7f77a9a77203"
+    },
+    {
+      "file": "android/caret-mask.ts",
+      "sha256": "982409c5ed08e8d5cf5f5b341c790d747fa9e99dacb19d80bb366e360f19533a"
+    },
+    {
+      "file": "android/launch-artwork.ts",
+      "sha256": "326f53bf00357ea03abe8ba1fb3892e3bd5d45b1f36140e21cfbaa8b404df216"
+    },
+    {
+      "file": "android/loop-animation.test.mjs",
+      "sha256": "aba11701c2d913c71782bb2875027e829273efa4a1aa0dd0918ab384b838f484"
+    },
+    {
+      "file": "android/loop-animation.ts",
+      "sha256": "bc29d6a498aec7539becb1480ab8626aa821183bfe17ca5c86207516af06ead6"
+    },
+    {
+      "file": "android/loop-keyframes.ts",
+      "sha256": "ecfcc38598c21dce6d5c63ee14df02f4618bdc150351496baeafcfbdb63c3af5"
+    },
+    {
+      "file": "android/motion-regions.test.mjs",
+      "sha256": "d56e565694c4b6b1c52321d5d463c5ec75f595fca213c12c5f400218743170ea"
+    },
+    {
+      "file": "android/motion-regions.ts",
+      "sha256": "fd67f20ff4122bf6622977051cbda18b0132213c808ce13dc671a924b9d4e231"
+    },
+    {
+      "file": "android/record-extra.ts",
+      "sha256": "a71e2f0fbc54039d161409b8ada824b9b2afa3b89273fd0d05ce74b6a1d9519e"
+    },
+    {
+      "file": "android/record-navigation.ts",
+      "sha256": "fe6e9f5f1e1fe05b4060968e86d1edb4659db4acba4063ed369c197c08a8b3ab"
+    },
+    {
+      "file": "android/record-states.ts",
+      "sha256": "93c0432da4b9271c279cf2e67543d0c043b7812dc81d964033b8924a9b39d104"
+    },
+    {
+      "file": "android/recorded-transitions.test.mjs",
+      "sha256": "776712d38c6aab932d22d564fa9fc1f8ed69f30beef379b4aeb42d9c5ae98331"
+    },
+    {
+      "file": "android/screenshot-comparison.ts",
+      "sha256": "7d6cb30e2dcb9b2752dca4ec0ab735ed56ce0c6191a9b7d1612dcb6a63d92584"
+    },
+    {
+      "file": "android/screenshot-policy.test.mjs",
+      "sha256": "20d5f1a8e30908901c819b99ca1a411567231a4cac9e1d1c85b5b0ca41a04bff"
+    },
+    {
+      "file": "android/screenshot.ts",
+      "sha256": "fecc86e22af245843c315962f0070fd6a04be37079f10443120ba0ba6cf5ada0"
+    },
+    {
+      "file": "android/scroll-end.ts",
+      "sha256": "e6f6123aae14463f606dc4a186ef2558deadb4de3fa56c19c421631c7ff11c4a"
+    },
+    {
+      "file": "android/video-frames.test.mjs",
+      "sha256": "ac2491814026f097f65d3dcad1fb223109b43bd232cade308b93d8f2e2862e16"
+    },
+    {
+      "file": "android/video-frames.ts",
+      "sha256": "34e8f7d585fecf7b710d0df9f3c1cf648f28c1fcf314274cd164ca00fc3956bc"
+    },
+    {
+      "file": "android/video-motion.test.mjs",
+      "sha256": "d324205c90f2b3172a714cf8f6f82008e465ff2927b1fcca10f7e7d44676bc3a"
+    },
+    {
+      "file": "android/video-motion.ts",
+      "sha256": "da14dcca16cfe8c396a4c589f7604c8610c76d8660356edf6a6f4036f0f4f4b6"
+    }
+  ],
+  "afterSources": [
+    {
+      "file": "eslint.config.mjs",
+      "sha256": "c899e64d9db8d7670a4d7d294d0cb08e45f65b87d7ee016dd4bce4190170a5a3"
+    },
+    {
+      "file": "scripts/android-game-complexity.mjs",
+      "sha256": "bb3877e70b07d54dfe7036d050eebd2616114be2b5aa6c7e33e512197eb6d52e"
+    },
+    {
+      "file": "android/animation-assets.ts",
+      "sha256": "2fb20c9beaccc71cf77bad5c13d2843b6dd6a6dc090c898d7693410165788d32"
+    },
+    {
+      "file": "android/animation-baselines.test.mjs",
+      "sha256": "c4734ae6ab295a2e355703202113e9b2a1caa292f08b06f305fa46b0ff5f07b9"
+    },
+    {
+      "file": "android/animation-locale.test.mjs",
+      "sha256": "954b90ef64c68af9083d7621cd23a762231cca3a8245aae6408a8cedf9bf55de"
+    },
+    {
+      "file": "android/animation-locale.ts",
+      "sha256": "0cffda8dd1409fc9a79c8e6d36b4e767a40ee3e33999fbf93367d554eaf0d530"
+    },
+    {
+      "file": "android/animation-transition-capture.ts",
+      "sha256": "537882428522ba9b52cf221f36193b10dd23755df7317d39e16e52877c247d6c"
+    },
+    {
+      "file": "android/animation-transition-comparison.ts",
+      "sha256": "2ed74dbc2fab0e068e9afc73789b01fe0f7c30c1d3b4ab4077db7f8478235a8d"
+    },
+    {
+      "file": "android/animation-transition-metrics.ts",
+      "sha256": "7aaafdd22016bc20a1d4c7abeebb3694e988e27b0e9a3fcfbe7750d497383852"
+    },
+    {
+      "file": "android/animation-transition-options.ts",
+      "sha256": "68aa00bd21165930a8113f2196457275b99940ef36cc070e4b6bb74b64800341"
+    },
+    {
+      "file": "android/animation-transition.test.mjs",
+      "sha256": "f18970779c8f9e89e133c467e3d496c942da675ee38f7a8ee133dd574cf6b17b"
+    },
+    {
+      "file": "android/animation-transition.ts",
+      "sha256": "adf8dd804bf49921d12f11dc0f54a7799a7d8b0b1d7fddaf28502379105c66d1"
+    },
+    {
+      "file": "android/asset-sequence.test.mjs",
+      "sha256": "45010f511d9f6a3dc07b5ef50c125f689eca2428eb5a450c0b44f7dae784954a"
+    },
+    {
+      "file": "android/asset-sequence.ts",
+      "sha256": "cedd123b97d7cc7ccf5d467d6768957e5c44dcda7bedc426e36156d1002f72fd"
+    },
+    {
+      "file": "android/caret-mask.test.mjs",
+      "sha256": "aef1fa66870194f4c6991e928ddcced8fb2661c0afdcb850da7a7f77a9a77203"
+    },
+    {
+      "file": "android/caret-mask.ts",
+      "sha256": "ce7c28d0781cda9c18fb84bed152aa15a2d82e7a8e7b9b65045b884397ed310e"
+    },
+    {
+      "file": "android/launch-artwork.ts",
+      "sha256": "128f1c36edebdfc1b484eabbfdc1cbdaa47fe012ba425aeac435cac483eab248"
+    },
+    {
+      "file": "android/loop-animation.test.mjs",
+      "sha256": "59542647ad8313ec5a97d13e9502aece478b08fa27c7e977b155fc3eee21109a"
+    },
+    {
+      "file": "android/loop-animation.ts",
+      "sha256": "c1b97c80b33639940aaddaa02081cbba620bcbda92f6aa5be8b491b3eea790d5"
+    },
+    {
+      "file": "android/loop-keyframes.test.mjs",
+      "sha256": "3ab39a3a6660421c28024d617cb2d47e7d33d844ccd492e24857ee2a41e60135"
+    },
+    {
+      "file": "android/loop-keyframes.ts",
+      "sha256": "db6fc74978363bb5a7559dfe6953aa39d9c669ea42c2a5b7f1b6b3311e006767"
+    },
+    {
+      "file": "android/motion-regions.test.mjs",
+      "sha256": "e6e313005a8601b37ccdf694a28d15a74762bc46347074ec2452f7f3fb5bd8aa"
+    },
+    {
+      "file": "android/motion-regions.ts",
+      "sha256": "fb8f5e0d0422bf069bf76fb7f4979043729f33da40812007f6bd3d0450b0b283"
+    },
+    {
+      "file": "android/record-extra.ts",
+      "sha256": "a71e2f0fbc54039d161409b8ada824b9b2afa3b89273fd0d05ce74b6a1d9519e"
+    },
+    {
+      "file": "android/record-navigation.ts",
+      "sha256": "9f03d4d2540a1d25d8fd2b772060c470afa480840c94823460606297c11e7ea4"
+    },
+    {
+      "file": "android/record-states.ts",
+      "sha256": "93c0432da4b9271c279cf2e67543d0c043b7812dc81d964033b8924a9b39d104"
+    },
+    {
+      "file": "android/recorded-transitions.test.mjs",
+      "sha256": "776712d38c6aab932d22d564fa9fc1f8ed69f30beef379b4aeb42d9c5ae98331"
+    },
+    {
+      "file": "android/screenshot-comparison.ts",
+      "sha256": "7d6cb30e2dcb9b2752dca4ec0ab735ed56ce0c6191a9b7d1612dcb6a63d92584"
+    },
+    {
+      "file": "android/screenshot-policy.test.mjs",
+      "sha256": "b125a264e4694dd812f5cf3df6592244d9b89b91dc4a31d2f472582c7dbc630f"
+    },
+    {
+      "file": "android/screenshot.ts",
+      "sha256": "c69f666e992fd374181d39c679611926c501aa08647314cf0beabd89b40f51f0"
+    },
+    {
+      "file": "android/scroll-end.ts",
+      "sha256": "9c3a4a9c730be8d1dd06ea18e18afc7a79e456d622a0e80d7305637edaa8c8cf"
+    },
+    {
+      "file": "android/video-frames.test.mjs",
+      "sha256": "534154b8f7f49f80084d3b7591856517ab2b76a62764395e2c62e2fcf4895d87"
+    },
+    {
+      "file": "android/video-frames.ts",
+      "sha256": "2df51bd2f649e20ee78e680cba080d12c37a05e1537564668a7ec44ae9e79bea"
+    },
+    {
+      "file": "android/video-motion.test.mjs",
+      "sha256": "d324205c90f2b3172a714cf8f6f82008e465ff2927b1fcca10f7e7d44676bc3a"
+    },
+    {
+      "file": "android/video-motion.ts",
+      "sha256": "eefe1e287a105574df81c7839c3aa090a15d9f42f94fdbf543d5b71044fe158e"
+    },
+    {
+      "file": "scripts/android-animation-complexity-fixture.mjs",
+      "sha256": "6910a6e4e8f755aeef1f151245d78caacf575b1075815be0d6a8688343b94937"
+    },
+    {
+      "file": "scripts/android-animation-complexity.mjs",
+      "sha256": "b30db28e402b9e0c2a5c44c58a382dd5ed475c49b7e159ed38c22f654d26d127"
+    },
+    {
+      "file": "scripts/android-animation-complexity.test.mjs",
+      "sha256": "e69bf9e9de21553ae64279c05c3862ffb7d45a4353940165430350d50407dc31"
+    },
+    {
+      "file": "scripts/android-animation-scope.mjs",
+      "sha256": "0b32c90f797b310b7b38e8ff58b4b4fe307979242cb05e2a1628f6d44868f057"
+    }
+  ],
+  "highValueChanges": [
+    {
+      "function": "captureNativeTransition",
+      "before": 33,
+      "after": 1
+    },
+    {
+      "function": "captureAssetSequence",
+      "before": 14,
+      "after": 3
+    },
+    {
+      "function": "screenshotMasks",
+      "before": 12,
+      "after": 2
+    },
+    {
+      "function": "motionParts regions.map callback",
+      "before": 11,
+      "after": 3
+    }
+  ],
+  "legacyEntriesRemoved": 4
+}

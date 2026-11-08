@@ -47,8 +47,9 @@ function recording(options = {}) {
        */
       adb: (...args) => {
         events.push(args);
-        if (args[0] === 'pull' && options.pullFailure) throw new Error('pull unavailable');
-        if (args[0] === 'shell' && options.cleanupFailure) throw new Error('cleanup unavailable');
+        const failures = { pull: options.pullFailure, shell: options.cleanupFailure };
+        const messages = { pull: 'pull unavailable', shell: 'cleanup unavailable' };
+        if (failures[args[0]]) throw new Error(messages[args[0]]);
       },
     },
   });
@@ -58,7 +59,7 @@ function recording(options = {}) {
       const previous = process.env.ANDROID_SERIAL;
       process.env.ANDROID_SERIAL = 'emulator-6666';
       try {
-        return await recordNativeVideoFrames('rule-enter', { x: 130, y: 330, width: 460, height: 610 },
+        return await recordNativeVideoFrames('rule-enter', options.region || { x: 130, y: 330, width: 460, height: 610 },
           async () => {
             events.push('trigger');
             if (options.triggerFailure) throw options.triggerFailure;
@@ -116,4 +117,24 @@ test('解码失败时原片已经保存，不重复附加或覆盖解码错误',
   await assert.rejects(scene.run(), error => error === failure);
   assert.equal(scene.events.filter(event => event[0] === 'attach').length, 1);
   assert.equal(scene.events.filter(event => event[0] === 'pull').length, 1);
+});
+
+
+test('延迟边界解析后才解码，完成解码后再清理设备原片', async () => {
+  const scene = recording({ /** 模拟录制完成后才可查询的控件边界。 */ region: async () => {
+    await Promise.resolve();
+    return { x: 130, y: 330, width: 460, height: 610 };
+  } });
+  assert.equal((await scene.run()).length, 20);
+  assert.deepEqual(scene.events.at(-1).slice(0, 3), ['shell', 'rm', '-f']);
+  assert.ok(scene.events.indexOf('ffmpeg') < scene.events.length - 1);
+});
+
+test('延迟边界失败仍传播同一错误，保留已附原片并完成清理', async () => {
+  const failure = new Error('dialog layout unavailable');
+  const scene = recording({ /** 模拟录制完成后才可查询的控件边界。 */ region: async () => { throw failure; } });
+  await assert.rejects(scene.run(), error => error === failure);
+  assert.equal(scene.events.filter(event => event[0] === 'attach').length, 1);
+  assert.equal(scene.events.includes('ffmpeg'), false);
+  assert.deepEqual(scene.events.at(-1).slice(0, 3), ['shell', 'rm', '-f']);
 });

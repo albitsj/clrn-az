@@ -35,29 +35,57 @@ export async function verifyLoopAnimation(device: AndroidDevice, name: string, t
     body: JSON.stringify(regions), contentType: 'application/json',
   });
   await testInfo.attach(`${name}-motion-masks`, { body: JSON.stringify(masks), contentType: 'application/json' });
-  const takeScreenshot = options.takeScreenshot || (() => gameScreenshot(device));
+  const { takeScreenshot, timeoutMs } = loopSettings(device, options);
   const firstFrame = await takeScreenshot();
   const first = motionParts(firstFrame, regions).regions;
   const moved = regions.map(() => false);
   let changedFrame: Buffer | undefined;
   let lastFrame = firstFrame;
-  const deadline = Date.now() + (options.timeoutMs || 4000);
+  const deadline = Date.now() + timeoutMs;
   const intervals = [137, 263, 181, 347, 223, 389];
   let sample = 0;
   try {
-    while (Date.now() < deadline && moved.some(value => !value)) {
+    while (needsSample(deadline, moved)) {
       // 交错间隔避免截图耗时刚好与 1 秒箭头周期同相，导致动画误判为静止。
       await setTimeout(intervals[sample++ % intervals.length]);
       lastFrame = await takeScreenshot();
       const changed = changedMotionRegions(first, motionParts(lastFrame, regions).regions);
-      if (changed.some(Boolean) && !changedFrame) changedFrame = lastFrame;
+      changedFrame = firstChangedFrame(changedFrame, lastFrame, changed);
       changed.forEach((value, index) => { if (value) moved[index] = true; });
     }
     expect(moved, '每个动画区域都应相对首帧发生可见像素变化')
       .toEqual(regions.map(() => true));
   } finally {
+    await attachFrames();
+  }
+  /** 即使采样断言失败仍保存首帧、首次变化和末帧。 */
+  async function attachFrames(): Promise<void> {
     await testInfo.attach(`${name}-motion-first`, { body: firstFrame, contentType: 'image/png' });
     if (changedFrame) await testInfo.attach(`${name}-motion-changed`, { body: changedFrame, contentType: 'image/png' });
     await testInfo.attach(`${name}-motion-last`, { body: lastFrame, contentType: 'image/png' });
   }
+}
+
+/** 保留原有选项的 truthy 默认语义。
+ * @param device - 当前设备。
+ * @param options - 调用方选项。
+ */
+function loopSettings(device: AndroidDevice, options: { takeScreenshot?: () => Promise<Buffer>; timeoutMs?: number }) {
+  return { takeScreenshot: options.takeScreenshot || (() => gameScreenshot(device)), timeoutMs: options.timeoutMs || 4000 };
+}
+/** 在截止前继续寻找尚未变化的区域。
+ * @param deadline - 截止时间。
+ * @param moved - 每个区域是否运动。
+ */
+function needsSample(deadline: number, moved: boolean[]): boolean {
+  return Date.now() < deadline && moved.some(value => !value);
+}
+/** 只记录首次观察到变化的完整帧。
+ * @param first - 已记录帧。
+ * @param current - 当前帧。
+ * @param changed - 本次区域变化。
+ */
+function firstChangedFrame(first: Buffer | undefined, current: Buffer, changed: boolean[]): Buffer | undefined {
+  if (first) return first;
+  return changed.some(Boolean) ? current : undefined;
 }

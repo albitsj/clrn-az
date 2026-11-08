@@ -25,9 +25,18 @@ export async function scrollToEnd(device: AndroidDevice, list: AndroidSelector, 
       expect(current.y + current.height).toBeLessThanOrEqual(bounds.y + bounds.height);
       expect(current, '等待滑动后的页脚位置稳定').toEqual(before);
     }).toPass({ timeout: 10_000, intervals: [300] });
-    unchanged = JSON.stringify(previous) === JSON.stringify(settled) ? unchanged + 1 : 0;
+    unchanged = unchangedCount(previous, settled, unchanged);
     if (unchanged === 2) return;
     previous = settled;
   }
   throw new Error('真实滑动未能抵达稳定的列表末尾。');
+}
+
+/** 统计连续不移动的真实页脚。
+ * @param previous - 前次边界。
+ * @param settled - 本次稳定边界。
+ * @param count - 现有连续次数。
+ */
+function unchangedCount(previous: unknown, settled: unknown, count: number): number {
+  return JSON.stringify(previous) === JSON.stringify(settled) ? count + 1 : 0;
 }

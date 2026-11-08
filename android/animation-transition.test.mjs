@@ -38,9 +38,15 @@ async function compare(frames, scene = { name, start, end, width, height }) {
      * @param file - 基准文件名。
      */
     snapshotPath: file => `${snapshots}${file}` };
+  /** 保持调用方入口的无接收者调用语义。 */
+  const trigger = () => {
+    const action = scene.trigger;
+    if (action) return action();
+  };
   await captureNativeTransition(device, scene.name, info,
-    { x: 0, y: 0, width: scene.width, height: scene.height }, () => {},
-    [], [], 0, 'motionFrames', undefined, undefined, scene.anchors || []);
+    { x: 0, y: 0, width: scene.width, height: scene.height }, trigger,
+    [], [], 0, 'motionFrames', scene.inspectFrames, scene.afterReady, scene.anchors || [],
+    [], [], [], undefined, scene.observe);
 }
 
 test('真实俱乐部菜单中途关键帧通过转场视觉回归', async () => {
@@ -254,7 +260,8 @@ async function compareRecordedVideo(sceneName, timeline, dynamicRegion = false) 
   const sceneStart = readFileSync(`${snapshots}${sceneName}-start.png`);
   const sceneEnd = readFileSync(`${snapshots}${sceneName}-end.png`);
   const size = PNG.sync.read(sceneStart);
-  const region = { x: dynamicRegion ? 17 : 0, y: dynamicRegion ? 23 : 0,
+  const offset = dynamicRegion ? { x: 17, y: 23 } : { x: 0, y: 0 };
+  const region = { ...offset,
     width: size.width, height: size.height };
   let triggered = false, resolutions = 0;
   /** 在入场触发后读取控件边界，模拟弹窗在初始屏幕中尚不存在。 */
@@ -287,7 +294,7 @@ async function compareRecordedVideo(sceneName, timeline, dynamicRegion = false) 
      */
     snapshotPath: file => `${snapshots}${file}` };
   await captureNativeTransition(device, sceneName, info,
-    dynamicRegion ? resolveRegion : region,
+    recordingRegion(),
     /** 模拟真实入口，边界必须等此操作之后才能读取。 */ () => { stages.push('tap'); triggered = true; },
     [], [], 0, 'videoFrames', undefined, undefined, [], [], [], [],
     /** 模拟录屏完成后的延迟解码；只替换外部录屏接口，仍执行完整首尾及中途像素比较。
@@ -301,9 +308,11 @@ async function compareRecordedVideo(sceneName, timeline, dynamicRegion = false) 
       assert.deepEqual(typeof recordedRegion === 'function' ? await recordedRegion() : recordedRegion, region);
       return timeline;
     }, event => stages.push(event));
+  /** 入场前使用回调，已有边界直接传递。 */
+  function recordingRegion() { return dynamicRegion ? resolveRegion : region; }
   assert.deepEqual(stages, ['start-screenshot-start', 'start-screenshot-complete',
     'video-recording-start', 'recorder-ready', 'tap']);
-  assert.equal(resolutions, dynamicRegion ? 1 : 0, '同一转场的所有相位只能解析一次边界');
+  assert.equal(resolutions, Number(dynamicRegion), '同一转场的所有相位只能解析一次边界');
 }
 
 for (const phase of ['enter', 'exit']) {
@@ -356,4 +365,29 @@ test('录屏中的纯白饱和闪屏不能冒充滑动', async () => {
 /** 使用真实俱乐部转场验证延迟裁剪，不生成或替换任何正式截图基准。 */
 test('录屏完成后按实际边界裁切完整首尾截图，所有相位保持相同坐标', async () => {
   await compareRecordedVideo(name, [start, middle, end], true);
+});
+
+
+test('转场采集回调保持原来的无接收者语义及调用顺序', async () => {
+  const events = [];
+  await compare([start, middle, end], { name, start, end, width, height,
+    /** 点击回调继续以普通函数调用。 */
+    trigger: function () { assert.equal(this, undefined); events.push('trigger'); },
+    /** 检查的是同一组原始帧。
+     * @param frames - 实际采样。
+     */
+    inspectFrames: async function (frames) {
+      assert.equal(this, undefined);
+      assert.deepEqual(frames, [start, middle, end]);
+      events.push('inspect');
+    },
+    /** 业务就绪回调发生在原始帧检查之后。 */
+    afterReady: async function () { assert.equal(this, undefined); events.push('ready'); },
+    /** 阶段回调不能被绑定到内部参数对象。
+     * @param event - 采集阶段。
+     */
+    observe: function (event) { assert.equal(this, undefined); events.push(event); },
+  });
+  assert.deepEqual(events, ['start-screenshot-start', 'start-screenshot-complete', 'native-sampling-start',
+    'trigger', 'inspect', 'ready']);
 });

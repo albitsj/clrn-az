@@ -23,8 +23,8 @@ export async function verifyLaunchArtwork(frames: Buffer[], testInfo: TestInfo):
     const reds = [100, 200, 300, 400, 500].map(x => picture.data[(90 * picture.width + x) * 4]);
     const center = (90 * picture.width + 300) * 4;
     // 系统 Splash 是均匀蓝底，桌面与弹窗在这个位置没有应用插画的蓝色。
-    return picture.data[center] < 160 && picture.data[center + 1] >= 120
-      && picture.data[center + 2] >= 200 && Math.max(...reds) - Math.min(...reds) > 8;
+    return [picture.data[center] < 160, picture.data[center + 1] >= 120,
+      picture.data[center + 2] >= 200, Math.max(...reds) - Math.min(...reds) > 8].every(Boolean);
   };
   const first = artwork.find(isArtwork);
   expect(first, '必须看到应用自己的启动插画').toBeDefined();
