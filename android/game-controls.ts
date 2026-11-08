@@ -163,19 +163,40 @@ export async function gameConnected(device: AndroidDevice, stableMs?: number): P
 export async function gameTap(device: AndroidDevice, res: string, nativeInput = false): Promise<void> {
   console.log(`ANDROID > 游戏点击 ${res}`);
   await gameConnected(device);
-  let previous: ScreenshotBounds | undefined;
-  let node: NativeNode;
-  await expect(async () => {
-    node = await gameReady(device, res);
-    const before = previous;
-    previous = node.bounds;
-    expect(node.enabled).not.toBe(false);
-    expect(previous).toEqual(before);
-  }).toPass({ timeout: 45_000, intervals: [200] });
-  const { x, y, width, height } = node!.bounds;
+  const { x, y, width, height } = (await gameTapTarget(device, res)).bounds;
   const point = { x: Math.round(x + width / 2), y: Math.round(y + height / 2) };
   if (nativeInput) await device.input.tap(point);
   else adb('shell', 'input', 'tap', String(point.x), String(point.y));
+}
+
+/** 等待按钮连续两次可用且边界相同，供普通点击和动画采集共用。
+ * @param device - 专用模拟器连接。
+ * @param res - 真实入口 testID。
+ * @param observed - 可选的脱敏查询记录器。
+ */
+export async function gameTapTarget(device: AndroidDevice, res: string,
+  observed?: (node: NativeNode | undefined) => void): Promise<NativeNode> {
+  let previous: ScreenshotBounds | undefined;
+  let node: NativeNode | undefined;
+  await expect(async () => {
+    node = (await gameNodes(device)).find(candidate => candidate.res === res);
+    observed?.(node);
+    const before = previous;
+    previous = actionableBounds(node);
+    expect(node, `${res} 应可见`).toBeDefined();
+    expect(node!.enabled).not.toBe(false);
+    expect(previous).toEqual(before);
+  }).toPass({ timeout: 45_000, intervals: [200] });
+  return node!;
+}
+
+/** 禁用或消失的节点打断连续稳定状态。
+ * @param node - 当前可见目标。
+ */
+function actionableBounds(node: NativeNode | undefined): ScreenshotBounds | undefined {
+  if (!node) return undefined;
+  if (node.enabled === false) return undefined;
+  return { ...node.bounds };
 }
 
 /** 检查原生边界的面积和屏幕交集。

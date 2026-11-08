@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
-const { flattenNodes, gameNodes, gameNodesWithin, gameSemanticText, gameTextWithin } = require('./game-controls.ts');
+const { flattenNodes, gameNodes, gameNodesWithin, gameSemanticText, gameTextWithin, gameTap, gameTapTarget } = require('./game-controls.ts');
 
 test('原生控件树保留重复 ID，忽略屏外历史面板但不忽略可见子节点', () => {
   const root = { bounds: { x: 0, y: 0, width: 720, height: 1280 }, children: [
@@ -90,4 +90,54 @@ test('命中第一个语义标记后立即停止，不读取后续兄弟子树',
   const unused = { bounds, /** 命中后不能继续访问此树。 */ get children() { throw new Error('unexpected traversal'); } };
   const root = { bounds, children: [{ res: 'target', text: '', bounds }, unused] };
   assert.equal(gameSemanticText(root, 'target'), '');
+});
+
+/** 按顺序提供真实树协议响应，验证稳定性等待，不替换被测轮询。
+ * @param states - 连续查询中的入口节点，undefined 表示消失。
+ */
+function targetSequence(states) {
+  let queries = 0;
+  const device = { _connection: { /** 返回原生查询边界。 */ toImpl: () => ({
+    /** 每次读取返回下一次布局状态。 */
+    _send: async () => {
+      const target = states[Math.min(queries++, states.length - 1)];
+      return { bounds: { x: 0, y: 0, width: 720, height: 1280 }, children: target ? [target] : [] };
+    },
+  }) } };
+  return { device, /** 已执行查询次数。 */ queries: () => queries };
+}
+
+const targetA = { res: 'entry', enabled: true, bounds: { x: 100, y: 300, width: 120, height: 40 } };
+const targetB = { ...targetA, bounds: { ...targetA.bounds, y: 400 } };
+for (const [condition, states] of [
+  ['布局改变', [targetA, targetB, targetB]],
+  ['禁用后恢复', [targetA, { ...targetA, enabled: false }, targetA, targetA]],
+  ['消失后恢复', [targetA, undefined, targetA, targetA]],
+]) {
+  test(`点击前${condition}必须重新获得连续两次可用且一致的边界`, async () => {
+    const scene = targetSequence(states);
+    const observations = [];
+    const result = await gameTapTarget(scene.device, 'entry', node => observations.push(node));
+    assert.deepEqual(result, states.at(-1));
+    assert.equal(scene.queries(), states.length);
+    assert.equal(observations.length, states.length);
+  });
+}
+
+test('未提供 enabled 的旧版节点保持兼容，仍须两次布局一致', async () => {
+  const target = { res: 'entry', bounds: targetA.bounds };
+  const scene = targetSequence([target, target]);
+  assert.deepEqual(await gameTapTarget(scene.device, 'entry'), target);
+  assert.equal(scene.queries(), 2);
+});
+
+test('普通点击也复用稳定性检查，只向最终节点中心发送一次输入', async () => {
+  const scene = targetSequence([targetA, targetA, targetB, targetB]);
+  const clicks = [];
+  scene.device.input = { /** 保存原生点击坐标。
+   * @param point - 真实入口中心。
+   */ tap: async point => clicks.push(point) };
+  await gameTap(scene.device, 'entry', true);
+  assert.equal(scene.queries(), 4);
+  assert.deepEqual(clicks, [{ x: 160, y: 420 }]);
 });

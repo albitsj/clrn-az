@@ -7,22 +7,22 @@ import { caretMask } from './caret-mask';
 
 export type ScreenshotMask = { x: number; y: number; width: number; height: number; reason: string };
 export type ScreenshotBounds = Omit<ScreenshotMask, 'reason'>;
-
-/**
- * 从两帧真实截图识别聚焦输入框的光标，保留原输入边界以适配键盘收起后的窗口位移。
+/** 从两帧真实截图识别聚焦输入框的光标，保留原输入边界以适配键盘收起后的窗口位移。
  * @param device - 专用模拟器连接。
+ * @param selector - 可选的精确输入框选择器。
+ * @param observed - 保留最后一组采样原图的诊断边界。
  */
-export async function focusedCaretMask(device: AndroidDevice) {
-  let input = await device.info({ clazz: 'android.widget.EditText', focused: true }).catch(() => undefined);
+export async function focusedCaretMask(device: AndroidDevice, selector: Parameters<AndroidDevice['info']>[0] = { clazz: 'android.widget.EditText', focused: true }, observed?: (sample: CaretSample) => void) {
+  let input = await device.info(selector).catch(() => undefined);
   if (input) {
     let before = await device.screenshot();
-    // 键盘转场会改变输入框边界；重建基准帧，并用不同采样间隔避免与光标周期重合。
     for (const delay of [137, 263, 419, 181, 347, 223, 389, 157, 293, 431, 199, 317]) {
       await setTimeout(delay);
       const after = await device.screenshot();
-      const current = await device.info({ clazz: 'android.widget.EditText', focused: true });
+      const current = await device.info(selector);
       const stable = current.text === input.text && JSON.stringify(current.bounds) === JSON.stringify(input.bounds);
       const mask = stable ? caretMask(before, after, input.bounds) : undefined;
+      observed?.({ before, after, input: current });
       if (mask) return { mask, input };
       before = after;
       input = current;
@@ -84,3 +84,5 @@ export function maskScreenshot(bytes: Buffer, masks: ScreenshotMask[]): Buffer {
   if (area > picture.width * picture.height * 0.12) throw new Error('动态遮罩超过截图面积的 12%，需要重新检查覆盖范围。');
   return PNG.sync.write(picture);
 }
+
+export type CaretSample = { before: Buffer; after: Buffer; input: Awaited<ReturnType<AndroidDevice['info']>> };

@@ -7,7 +7,7 @@ import { animateGamePanel, captureTimedLevelUp } from './game-panel-animation';
 import { closeGameMask } from './game-pregame';
 import { dismissKeyboard } from './keyboard';
 import { captureMovingKeyframes } from './loop-keyframes';
-import { focusedCaretMask } from './screenshot';
+import { gameInputCaret } from './game-input-caret';
 import { enableGameSetting, restoreTexas, texasEvents, type TexasContext } from './texas-support';
 
 /**
@@ -107,9 +107,7 @@ export async function texasHallVariants(context: TexasContext): Promise<void> {
     const { x, y, width, height } = node.bounds;
     adb('shell', 'input', 'tap', String(Math.round(x + width / 2)), String(Math.round(y + height / 2)));
   }
-  await device.fill({ res: 'report-pair-play-reason-input' }, 'Suspicious cooperation');
-  const caret = await focusedCaretMask(device);
-  expect(caret, '键盘可见时应检测到真实光标，不能遮掉整行文字').toBeDefined();
+  const caret = await gameInputCaret(device, 'report-pair-play-reason-input', 'Suspicious cooperation', context.animationInfo);
   await dismissKeyboard(device);
   const input = await device.info({ res: 'report-pair-play-reason-input' });
   expect(input.text).toBe('Suspicious cooperation');

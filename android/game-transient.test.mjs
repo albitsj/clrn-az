@@ -11,6 +11,7 @@ const { capturePredictionResult, captureToast } = require('./game-transient.ts')
 test('预测结果先开始原生采集再发送事件，缺少真实提示帧时仍然失败', async () => {
   const order = [];
   let finish;
+  let token;
   const device = { _connection: { /** 返回本测试的原生驱动替身。 */ toImpl: () => ({
     /** 记录原生采集开始时间，并等待回放事件。
      * @param method - 原生驱动方法。
@@ -18,11 +19,12 @@ test('预测结果先开始原生采集再发送事件，缺少真实提示帧�
      */
     _send: (method, parameters) => {
       assert.equal(method, 'transientFrames');
-      assert.deepEqual(parameters, { resource: 'bet-next-hand-result-amount' });
+      assert.equal(parameters.resource, 'bet-next-hand-result-amount');
+      token = parameters.readyToken;
       order.push('开始采集');
       return new Promise(resolve => { finish = resolve; });
     },
-  }) } };
+  }) } , /** 设备端确认已经开始监听本轮事件。 */ shell: async () => Buffer.from(token) };
   const attachments = [];
   const testInfo = {
     /** 记录失败时仍保留的采集元数据。
@@ -36,18 +38,22 @@ test('预测结果先开始原生采集再发送事件，缺少真实提示帧�
     return '+10';
   }), /提示可见时必须采集至少两帧真实屏幕/);
   assert.deepEqual(order, ['开始采集', '发送事件']);
-  assert.deepEqual(attachments, ['预测结果-frames']);
+  assert.deepEqual(attachments, ['预测结果-capture-window', '预测结果-frames']);
 });
 
 test('预测结果金额与回放事件不一致时拒绝截图', async () => {
   const marker = { text: '-10', bounds: { x: 170, y: 560, width: 380, height: 160 } };
   const frames = [0, 300].map(capturedAt => ({ before: marker, after: marker, panel: null,
     capturedAt, png: '' }));
+  let finish, token;
   const device = { _connection: { /** 返回固定结果帧。 */ toImpl: () => ({
-    /** 返回文字与预期金额不符的真实节点帧。 */ _send: async () => frames,
-  }) } };
+    /** 采集在事件发生后返回。
+     * @param _method - 原生方法。
+     * @param parameters - 当前采集身份。
+     */ _send: (_method, parameters) => { token = parameters.readyToken; return new Promise(resolve => { finish = resolve; }); },
+  }) }, /** 当前设备的就绪标记。 */ shell: async () => Buffer.from(token) };
   const testInfo = { /** 接受采集元数据。 */ attach: async () => {} };
-  await assert.rejects(capturePredictionResult(device, '预测结果', testInfo, [], async () => '+10'),
+  await assert.rejects(capturePredictionResult(device, '预测结果', testInfo, [], async () => { finish(frames); return '+10'; }),
     /预测结果金额必须与回放事件一致/);
 });
 

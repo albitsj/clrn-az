@@ -13,7 +13,6 @@ import { alignedVideoDistance, localMotionDistance,
   misplacedVideoFrame, preservesVideoColumns, videoThumbnail } from './video-motion';
 
 type NativeFrame = { capturedAt: number; png: string };
-
 /**
  * 局部画面平均色差；忽略编码差异，保留移动、缩放及透明度变化。
  * @param left - 第一张局部 PNG。
@@ -118,6 +117,7 @@ export function assertReviewedVideoMiddle(before: Buffer, after: Buffer,
  * @param startPhaseAnchors - 系统启动器布局不同但均已审查的起点画面。
  * @param startCompareMasks - 仅用于比较触发前桌面帧的系统动态图标区域；坐标相对截图裁切范围。
  * @param videoRecorder - 可替换的原生录屏采集器，供完整录屏路径回归测试使用。
+ * @param observe - 仅记录阶段时间，不执行设备查询或等待。
  */
 export async function captureNativeTransition(device: AndroidDevice, name: string, testInfo: TestInfo,
   region: AnimationRegion, trigger: () => unknown, masks: ScreenshotMask[] = [],
@@ -127,7 +127,8 @@ export async function captureNativeTransition(device: AndroidDevice, name: strin
   afterReady?: () => Promise<void>, videoPhaseAnchors: string[] = [],
   endCompareMasks: ScreenshotMask[] = [],
   startPhaseAnchors: string[] = [], startCompareMasks: ScreenshotMask[] = [],
-  videoRecorder: typeof recordNativeVideoFrames = recordNativeVideoFrames): Promise<void> {
+  videoRecorder: typeof recordNativeVideoFrames = recordNativeVideoFrames,
+  observe?: (event: string) => void): Promise<void> {
   requireEnglishAnimation();
   let resolvedRegion = typeof region === 'function' ? undefined : region;
   /** 只解析一次边界，录屏及完整首尾截图使用同一坐标，禁止回退到不完整的固定区域。 */
@@ -145,16 +146,20 @@ export async function captureNativeTransition(device: AndroidDevice, name: strin
     body: JSON.stringify(startCompareMasks), contentType: 'application/json',
   });
   // 入场之前弹窗尚不存在，保留完整起点，待真实边界就绪再裁切。
+  observeTransition(observe, 'start-screenshot-start');
   const originalBefore = await gameScreenshot(device);
+  observeTransition(observe, 'start-screenshot-complete');
   const implementation = (device as unknown as { _connection: { toImpl(device: AndroidDevice): {
     _send(method: string): Promise<NativeFrame[]> } } })._connection.toImpl(device);
   const timeout = new AbortController();
   let frames: NativeFrame[];
   if (samplingMethod === 'videoFrames') {
     if (requiredRegions.length) throw new Error('录屏转场需单独定义不含子区域的绘制范围。');
+    observeTransition(observe, 'video-recording-start');
     frames = (await videoRecorder(name, typeof region === 'function' ? resolveRegion : region, trigger, testInfo))
       .map((png, index) => ({ capturedAt: index * 33, png: png.toString('base64') }));
   } else {
+    observeTransition(observe, 'native-sampling-start');
     try {
       const pending = Promise.race([
         implementation._send(samplingMethod),
@@ -359,4 +364,12 @@ export async function captureTimedPrompt(device: AndroidDevice, name: string, te
         `${name} ${phase} 视觉回归`).toBeLessThanOrEqual(12);
     }
   }
+}
+
+/** 仅向可选记录器报告阶段时间，不改变采集顺序。
+ * @param observe - 调用方记录器。
+ * @param event - 固定阶段名。
+ */
+function observeTransition(observe: ((event: string) => void) | undefined, event: string): void {
+  observe?.(event);
 }

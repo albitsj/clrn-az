@@ -1,12 +1,9 @@
 import { expect, type TestInfo } from '@playwright/test';
-import { setTimeout } from 'node:timers/promises';
 import type { AndroidDevice } from 'playwright';
-import type { NativeNode } from './game-controls';
+import { collectTransientFrames, type TransientFrame as Frame } from './game-transient-session';
 import { subtractPanel } from './game-masks';
 import { samePixels } from './motion-regions';
 import { maskScreenshot, type ScreenshotMask } from './screenshot';
-
-type Frame = { before: NativeNode; after: NativeNode; panel: NativeNode | null; capturedAt: number; png: string };
 
 /**
  * 在设备上连续采集短时提示，先检查节点与真实位图，再编码传回；不延长提示或改变动画。
@@ -22,7 +19,7 @@ type Frame = { before: NativeNode; after: NativeNode; panel: NativeNode | null; 
 async function captureTransient(device: AndroidDevice, name: string, testInfo: TestInfo,
   backgroundMasks: ScreenshotMask[], resource: string, expectedText?: string,
   trigger?: () => Promise<string | void>, requirePanel?: boolean): Promise<void> {
-  const collected = await transientFrames(device, resource, expectedText, trigger);
+  const collected = await collectTransientFrames(device, resource, expectedText, trigger, { name, info: testInfo });
   const frames = collected.frames;
   expectedText = collected.expectedText;
   await testInfo.attach(`${name}-frames`, {
@@ -92,35 +89,6 @@ export async function capturePredictionResult(device: AndroidDevice, name: strin
     if (!expected) throw new Error('预测结果必须指定预期金额。');
     return expected;
   });
-}
-
-/** 在触发前启动原生采集，保留超时、错误传播及控制器清理。
- * @param device - 原生设备。
- * @param resource - 提示标记。
- * @param expectedText - 调用方预期文字。
- * @param trigger - 真实事件触发器。
- */
-async function transientFrames(device: AndroidDevice, resource: string, expectedText?: string,
-  trigger?: () => Promise<string | void>): Promise<{ frames: Frame[]; expectedText?: string }> {
-  const implementation = (device as unknown as {
-    _connection: {
-      toImpl(device: AndroidDevice): {
-        _send(method: string, params: { resource: string }): Promise<Frame[]>
-      }
-    }
-  })._connection.toImpl(device);
-  const timeout = new AbortController();
-  let frames: Frame[];
-  const pending = implementation._send('transientFrames', { resource });
-  pending.catch(() => undefined);
-  try {
-    expectedText = await trigger?.() || expectedText;
-    frames = await Promise.race([
-      pending,
-      setTimeout(30_000, undefined, { signal: timeout.signal }).then(() => { throw new Error('原生短时截图采集超时。'); }),
-    ]);
-  } finally { timeout.abort(); }
-  return { frames, expectedText };
 }
 
 /** 每帧都校验前后文字。
