@@ -4,6 +4,7 @@ import type { AndroidDevice } from 'playwright';
 import { gameNodes } from './game-controls';
 import { motionParts, samePixels } from './motion-regions';
 import { maskScreenshot, type ScreenshotMask } from './screenshot';
+import { challengeFrames, type ChallengeFrame } from './game-animation-sampling';
 
 /**
  * 比牌的四个高亮框各自循环闪烁，按各自相位比较，不遮掉其中的玩家内容。
@@ -30,20 +31,21 @@ export async function captureChallengeAnimation(device: AndroidDevice, name: str
   const moving = regions.map(() => false);
   const matchingFrames: Buffer[] = [];
   let latest: Buffer | undefined;
-  const state: ChallengeState = { stableSince: Date.now(), started: Date.now() };
+  const state: ChallengeState = { stableSince: 0, started: Infinity, capturedAt: 0, backgroundMatches: false };
   try {
     await expect(async () => {
-      const original = await device.screenshot();
-      latest = maskScreenshot(original, masks);
-      const parts = motionParts(latest, regions);
-      updateChallengeState(state, parts, latest, original);
-      recordMotion(parts, state.previous, moving);
-      state.previous = parts;
-      matchChallengeParts(parts, expected, matched, matchingFrames, original);
-      expect(moving, '四个选择框应实际闪烁').toEqual([true, true, true, true]);
-      expect(Date.now() - state.started).toBeGreaterThanOrEqual(4000);
-      expect(Date.now() - state.stableSince, '动画之外的像素须连续稳定两秒').toBeGreaterThanOrEqual(2000);
-    }).toPass({ timeout: 30_000, intervals: [100] });
+      // 先在设备连续采集，再编码和比较，避免 screencap 往返及 PNG 比较漏掉闪烁相位。
+      for (const frame of await challengeFrames(device)) {
+        latest = maskScreenshot(frame.original, masks);
+        const parts = motionParts(latest, regions);
+        updateChallengeState(state, parts, latest, frame);
+        recordMotion(parts, state.previous, moving);
+        state.previous = parts;
+        state.backgroundMatches = matchingBackground(parts, expected);
+        if (state.backgroundMatches) matchChallengeParts(parts, expected, matched, matchingFrames, frame.original);
+      }
+      assertChallengeSamples(state, moving, matched, reference);
+    }).toPass({ timeout: 30_000, intervals: [137, 263, 181, 347] });
     expect((await gameNodes(device)).filter(node => node.res === 'challenge_player_selector').map(node => node.bounds))
       .toEqual(selectors.map(node => node.bounds));
     await testInfo.attach(`${name}-original`, { body: state.best!.original, contentType: 'image/png' });
@@ -58,7 +60,8 @@ export async function captureChallengeAnimation(device: AndroidDevice, name: str
 
 type Parts = ReturnType<typeof motionParts>;
 type ChallengeState = {
-  stableSince: number; started: number; previous?: Parts; stabilityReference?: Buffer;
+  stableSince: number; started: number; capturedAt: number; backgroundMatches: boolean;
+  previous?: Parts; stabilityReference?: Buffer;
   best?: { bytes: Buffer; original: Buffer; score: number };
 };
 
@@ -66,15 +69,18 @@ type ChallengeState = {
  * @param state - 当前采集状态。
  * @param parts - 实际画面分区。
  * @param bytes - 当前遮罩图。
- * @param original - 当前原图。
+ * @param frame - 当前原图及设备实际采集时刻。
  */
-function updateChallengeState(state: ChallengeState, parts: Parts, bytes: Buffer, original: Buffer): void {
+function updateChallengeState(state: ChallengeState, parts: Parts, bytes: Buffer, frame: ChallengeFrame): void {
+  expect(frame.capturedAt, '原生帧时间必须严格递增').toBeGreaterThan(state.capturedAt);
+  state.started = Math.min(state.started, frame.capturedAt);
+  state.capturedAt = frame.capturedAt;
   if (!state.stabilityReference || !samePixels(parts.outside, state.stabilityReference)) {
-    state.stableSince = Date.now();
+    state.stableSince = frame.capturedAt;
     state.stabilityReference = parts.outside;
     state.best = undefined;
   }
-  selectBestChallengeFrame(state, parts, bytes, original);
+  selectBestChallengeFrame(state, parts, bytes, frame.original);
 }
 
 /** 选择当前稳定背景下高亮面积最大的真实帧。
@@ -107,14 +113,34 @@ function recordMotion(parts: Parts, previous: Parts | undefined, moving: boolean
  */
 function matchChallengeParts(parts: Parts, expected: Parts | undefined, matched: boolean[], frames: Buffer[], original: Buffer): void {
   if (!expected) return;
-  expect(samePixels(parts.outside, expected.outside), '动画之外的全部像素必须匹配基准').toBe(true);
   parts.regions.forEach((part, index) => {
     if (!matched[index] && samePixels(part, expected.regions[index])) {
       matched[index] = true;
       frames[index] = original;
     }
   });
-  expect(matched, '四位玩家及高亮框必须各自在真实帧中完整匹配基准').toEqual([true, true, true, true]);
+}
+
+/** 检查同一真实帧的全部非动画像素，禁止用错误背景积累玩家匹配证据。
+ * @param parts - 当前真实帧分区。
+ * @param expected - 比较模式的已审查基准。
+ */
+function matchingBackground(parts: Parts, expected: Parts | undefined): boolean {
+  return !expected || samePixels(parts.outside, expected.outside);
+}
+
+/** 使用设备时间验证实际观察窗口，编码或比较耗时不能充当稳定时间。
+ * @param state - 当前设备采样状态。
+ * @param moving - 各玩家真实运动证据。
+ * @param matched - 各玩家完整像素匹配证据。
+ * @param reference - 是否显式生成基准。
+ */
+function assertChallengeSamples(state: ChallengeState, moving: boolean[], matched: boolean[], reference: boolean): void {
+  expect(state.backgroundMatches, '动画之外的全部像素必须匹配基准').toBe(true);
+  if (!reference) expect(matched, '四位玩家及高亮框必须各自在真实帧中完整匹配基准').toEqual([true, true, true, true]);
+  expect(moving, '四个选择框应实际闪烁').toEqual([true, true, true, true]);
+  expect(state.capturedAt - state.started).toBeGreaterThanOrEqual(4000);
+  expect(state.capturedAt - state.stableSince, '动画之外的像素须连续稳定两秒').toBeGreaterThanOrEqual(2000);
 }
 
 /** 三语言完整比较；只在英文报告附加独立的玩家相位帧。
