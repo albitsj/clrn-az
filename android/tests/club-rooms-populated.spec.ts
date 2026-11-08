@@ -26,9 +26,7 @@ if (group === 'all' || group === 'social') {
         const masks = await screenshotMasks(device, scenario, backgroundBanner);
         await compareScreenshot(device, `${locale}-signed-in-club-rooms-populated`, testInfo, masks);
         const status = await proxy.command<{ requests: Record<string, number> }>('native/club-rooms');
-        for (const path of ['/v10/club', '/v10/clubs', '/v2/building/rooms']) {
-          if (!(status.requests[path] > 0)) throw new Error(`有数据牌局场景未经过 mitmproxy：${path}`);
-        }
+        assertClubRequests(status.requests);
       } catch (error) {
         await captureFailure(device, testInfo);
         throw error;
@@ -45,4 +43,13 @@ if (group === 'all' || group === 'social') {
       }
     });
   });
+}
+
+/** 每条原有接口都必须经过本轮代理。
+ * @param requests - 代理记录的真实请求计数。
+ */
+function assertClubRequests(requests: Record<string, number>): void {
+  for (const path of ['/v10/club', '/v10/clubs', '/v2/building/rooms']) {
+    if (!(requests[path] > 0)) throw new Error(`有数据牌局场景未经过 mitmproxy：${path}`);
+  }
 }

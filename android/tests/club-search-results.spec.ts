@@ -1,3 +1,4 @@
+import { androidLocale } from './support/selection';
 /** 经专用模拟器代理验证俱乐部搜索命中结果，并比较独立原生截图基准。 */
 import { expect, test } from '@playwright/test';
 import type { AndroidDevice } from 'playwright';
@@ -5,7 +6,7 @@ import { artifacts, compareScreenshot, launchApplication, waitForHall } from '..
 import { dismissKeyboard } from '../keyboard';
 import { selectLanguage, signIn, tap } from '../navigation';
 import { withAndroidProxy } from '../proxy';
-import { captureFailure } from '../diagnostics';
+import { captureDeviceFailure, closeDevice } from './support/lifecycle';
 
 type ClubSearchStatus = { active: boolean; searchRequests: number; detailsRequests: number };
 
@@ -17,7 +18,7 @@ test('俱乐部搜索命中固定结果并显示原生卡片', async ({}, testIn
     try {
       device = await launchApplication();
       await waitForHall(device);
-      await selectLanguage(device, process.env.ANDROID_LOCALE || 'en');
+      await selectLanguage(device, androidLocale());
       await signIn(device);
       await tap(device, 'club-tab');
       await device.wait({ res: 'club-tab-screen' });
@@ -41,10 +42,10 @@ test('俱乐部搜索命中固定结果并显示原生卡片', async ({}, testIn
       expect(status.searchRequests, '原生界面应发出一次搜索请求').toBe(1);
       expect(status.detailsRequests, '原生界面应读取一次命中俱乐部资料').toBe(1);
       await dismissKeyboard(device);
-      const locale = process.env.ANDROID_LOCALE || 'en';
+      const locale = androidLocale();
       await compareScreenshot(device, `${locale}-signed-in-club-search-result`, testInfo);
     } catch (error) {
-      if (device) await captureFailure(device, testInfo);
+      await captureDeviceFailure(device, testInfo);
       throw error;
     } finally {
       try {
@@ -54,7 +55,7 @@ test('俱乐部搜索命中固定结果并显示原生卡片', async ({}, testIn
           }))
           .catch(error => testInfo.attach('club-search-status-error', { body: String(error), contentType: 'text/plain' }));
         await testInfo.attach('build-info', { path: `${artifacts}/build-info.json`, contentType: 'application/json' });
-      } finally { await device?.close(); }
+      } finally { await closeDevice(device); }
     }
   });
 });

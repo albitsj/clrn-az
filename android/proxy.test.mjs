@@ -32,10 +32,7 @@ function session(context, failCommand = () => undefined) {
     commands.push(command);
     const failure = failCommand(command);
     if (failure) throw failure;
-    if (command === 'shell getprop ro.kernel.qemu') return '1\n';
-    if (command === 'shell id -u') return '0\n';
-    if (command === 'shell settings get global http_proxy') return 'null\n';
-    return '';
+    return commandOutput(command);
   });
   context.mock.method(childProcess, 'spawn', (_executable, _argumentsList, options) => {
     fixtureEnvironment = options.env;
@@ -143,3 +140,11 @@ test('正文成功但代理设置恢复失败仍然失败，不能误报视觉�
   session(context, command => command === 'shell settings put global http_proxy :0' ? failure : undefined);
   await assert.rejects(withAndroidProxy(async () => 'completed'), error => error === failure);
 });
+
+/** 离线设备属性表；其余命令成功且无输出。
+ * @param command - 已验证的 adb 参数。
+ */
+function commandOutput(command) {
+  return ({ 'shell getprop ro.kernel.qemu': '1\n', 'shell id -u': '0\n',
+    'shell settings get global http_proxy': 'null\n' })[command] ?? '';
+}

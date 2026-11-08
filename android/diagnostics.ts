@@ -18,8 +18,7 @@ export async function captureFailure(device: AndroidDevice, testInfo: TestInfo):
   }).catch(() => undefined);
   try {
     const filename = testInfo.outputPath('runtime.log');
-    const hostLog = process.env.GITHUB_ACTIONS === 'true'
-      ? await readFile(path.join(tmpdir(), `adb.${process.getuid!()}.log`), 'utf8').catch(() => '') : '';
+    const hostLog = await hostAdbLog();
     const logs = [adb('logcat', '-d', '-b', 'all', '*:E'), hostLog,
       adb('logcat', '-d', '-b', 'all', 'adbd:I', 'init:I', 'lmkd:I', 'lowmemorykiller:I', '*:S'),
       adb('shell', 'cat', '/proc/meminfo'),
@@ -43,4 +42,11 @@ export async function captureFailure(device: AndroidDevice, testInfo: TestInfo):
   } catch (error) {
     await testInfo.attach('hierarchy-error', { body: String(error), contentType: 'text/plain' }).catch(() => undefined);
   }
+}
+
+/** CI 上附带主机 adbd 日志；读取失败仍保留设备端诊断。
+ */
+async function hostAdbLog(): Promise<string> {
+  return process.env.GITHUB_ACTIONS === 'true'
+    ? await readFile(path.join(tmpdir(), `adb.${process.getuid!()}.log`), 'utf8').catch(() => '') : '';
 }

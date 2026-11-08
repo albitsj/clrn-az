@@ -7,10 +7,19 @@ import { androidGameFiles, androidGameTools, androidGameChecks } from './android
  * @param args - --report 输出每个函数的 classic complexity。
  */
 export async function checkAndroidGameComplexity(args = []) {
+  return checkAndroidComplexity(args, [...androidGameFiles, ...androidGameTools, ...androidGameChecks], 'Android 玩法');
+}
+
+/** 复用生产 ESLint 的定向门禁和逐函数报告，不接受历史豁免。
+ * @param args - 可选的 --report。
+ * @param files - 本范围的实现、工具和检查路径。
+ * @param label - 门禁的业务名称。
+ */
+export async function checkAndroidComplexity(args, files, label) {
   const report = args.includes('--report');
   const overrideConfig = report ? { rules: { complexity: ['error', { max: 0, variant: 'classic' }] } } : undefined;
   const eslint = new ESLint({ allowInlineConfig: false, overrideConfig });
-  const results = await eslint.lintFiles([...androidGameFiles, ...androidGameTools, ...androidGameChecks]);
+  const results = await eslint.lintFiles(files);
   if (report) {
     console.log(JSON.stringify(results.flatMap(functionMeasurements), null, 2));
     return;
@@ -18,8 +27,8 @@ export async function checkAndroidGameComplexity(args = []) {
   const formatter = await eslint.loadFormatter('stylish');
   const output = formatter.format(results);
   if (output) console.error(output);
-  if (results.some(result => result.errorCount > 0)) throw new Error('Android 玩法复杂度门禁失败。');
-  console.log('Android 玩法复杂度门禁通过：测试及辅助实现 ≤3，独立工具/根配置 ≤6。');
+  if (results.some(result => result.errorCount > 0)) throw new Error(`${label}复杂度门禁失败。`);
+  console.log(`${label}复杂度门禁通过：测试及辅助实现 ≤3，独立工具/根配置 ≤6。`);
 }
 
 /** 从 ESLint 原生诊断取得逐函数数据；解析失败必须阻断测量。

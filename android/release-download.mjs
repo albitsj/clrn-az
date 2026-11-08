@@ -22,7 +22,22 @@ function githubFailure(error, attempt) {
  * @param args - 传给 gh 的只读查询或下载参数。
  * @param options - 可替换的命令执行、等待与日志接口，供离线回归验证。
  */
-export async function readGitHub(args, { execute = execFileSync, wait = setTimeout, report = console.warn } = {}) {
+export async function readGitHub(args, options = {}) {
+  return retryGitHub(args, githubOptions(options));
+}
+
+/** 保留各接口的独立默认值。
+ * @param options - 离线可替换接口。
+ */
+function githubOptions({ execute = execFileSync, wait = setTimeout, report = console.warn }) {
+  return { execute, wait, report };
+}
+
+/** 在原有次数和退避间隔内执行只读命令。
+ * @param args - gh 参数。
+ * @param interfaces - 已解析的命令、等待及日志接口。
+ */
+async function retryGitHub(args, { execute, wait, report }) {
   for (let attempt = 0; ; attempt++) {
     try {
       return execute('gh', args, { encoding: 'utf8', maxBuffer: 32 * 1024 * 1024,

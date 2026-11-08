@@ -39,11 +39,14 @@ test('拒绝生产包、错误应用、提交、版本和不匹配的附件摘�
   assert.throws(() => validateBuildInformation(information, release,
     `${information.applicationCommit.slice(0, 12)}${'a'.repeat(28)}`), /不匹配/);
   for (const change of [
-    { environment: 'production' }, { platform: 'ios' }, { applicationId: 'another.app' },
+    { schemaVersion: 2 }, { environment: 'production' }, { platform: 'ios' }, { applicationId: 'another.app' },
     { applicationCommit: 'a'.repeat(40) }, { buildNumber: 1 }, { releaseTag: 'other' },
     { architectures: ['arm64-v8a'] }, { signing: 'production' },
+    { package: undefined }, { package: { ...information.package, name: 'other.apk' } },
+    { package: { ...information.package, size: content.length + 1 } },
+    { package: { ...information.package, sha256: 'invalid' } },
     { package: { ...information.package, sha256: '0'.repeat(64) } },
-  ]) assert.throws(() => validateBuildInformation({ ...information, ...change }, release), /不匹配/);
+  ]) assert.throws(() => validateBuildInformation({ ...information, ...change }, release, information.applicationCommit), /不匹配/);
 });
 
 test('实际文件校验能识别截断与等长内容篡改', async () => {

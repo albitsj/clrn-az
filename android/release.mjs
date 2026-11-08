@@ -15,10 +15,8 @@ const releasePattern = /^android-staging-(\d+)-([a-f0-9]{12})$/;
  * @param tag - 当前部署记录中的标签。
  */
 export function validateRelease(selected, tag) {
-  if (selected?.draft || !selected?.published_at || !releasePattern.test(selected.tag_name)
-    || selected.tag_name !== tag || !selected.body?.includes('<!-- android-staging schema=1 -->')) {
-    throw new Error('部署记录指定的 Android Staging Release 无效或尚未发布。');
-  }
+  if (!publishedRelease(selected)) throw new Error('部署记录指定的 Android Staging Release 无效或尚未发布。');
+  if (!releaseIdentity(selected, tag)) throw new Error('部署记录指定的 Android Staging Release 无效或尚未发布。');
   for (const name of ['build-info.json', packageName]) {
     const assets = selected.assets.filter(asset => asset.name === name && asset.state === 'uploaded');
     if (assets.length !== 1 || assets[0].size <= 0) throw new Error(`Release 附件缺失或无效：${name}`);
@@ -35,18 +33,12 @@ export function validateRelease(selected, tag) {
 export function validateBuildInformation(information, release, expectedCommit) {
   const match = releasePattern.exec(release.tag_name);
   const asset = release.assets.find(item => item.name === packageName);
-  if (!match || information.schemaVersion !== 1 || information.platform !== 'android'
-    || information.environment !== 'staging' || information.applicationId !== applicationId
-    || information.releaseTag !== release.tag_name || !/^[a-f0-9]{40}$/.test(information.applicationCommit)
-    || information.applicationCommit !== expectedCommit
-    || !information.applicationCommit.startsWith(match[2]) || information.buildNumber !== Number(match[1])
-    || information.signing !== 'visual-staging-testing-only'
-    || !['x86_64', 'arm64-v8a'].every(value => information.architectures?.includes(value))
-    || information.package?.name !== packageName || information.package.size !== asset?.size
-    || !/^[a-f0-9]{64}$/.test(information.package.sha256)
-    || (asset.digest && asset.digest !== `sha256:${information.package.sha256}`)) {
-    throw new Error('Release 构建信息不匹配，拒绝安装。');
-  }
+  const invalid = 'Release 构建信息不匹配，拒绝安装。';
+  if (!match) throw new Error(invalid);
+  if (!buildIdentity(information, release)) throw new Error(invalid);
+  if (!commitIdentity(information, match, expectedCommit)) throw new Error(invalid);
+  if (!['x86_64', 'arm64-v8a'].every(value => information.architectures?.includes(value))) throw new Error(invalid);
+  if (!packageIdentity(information.package, asset)) throw new Error(invalid);
   return information;
 }
 
@@ -74,3 +66,55 @@ export async function readVerifiedBuild(directory) {
   await verifyPackage(`${directory}/${packageName}`, information);
   return information;
 }
+
+/** 先验证发布状态，避免空 Release 被当成有效元数据。
+ * @param selected - GitHub Release。
+ */
+function publishedRelease(selected) {
+  return !selected?.draft && Boolean(selected?.published_at);
+}
+
+/** 标签和 schema 必须属于部署记录。
+ * @param selected - 已发布的 Release。
+ * @param tag - 部署标签。
+ */
+function releaseIdentity(selected, tag) {
+  return releasePattern.test(selected.tag_name) && selected.tag_name === tag
+    && Boolean(selected.body?.includes('<!-- android-staging schema=1 -->'));
+}
+
+/** 对固定平台、签名及环境逐字段校验。
+ * @param information - 构建信息。
+ * @param release - 当前 Release。
+ */
+function buildIdentity(information, release) {
+  const expected = { schemaVersion: 1, platform: 'android', environment: 'staging', applicationId,
+    releaseTag: release.tag_name, signing: 'visual-staging-testing-only' };
+  return Object.entries(expected).every(([key, value]) => information[key] === value);
+}
+
+/** 完整提交须同时匹配部署和标签前缀，构建号须匹配标签。
+ * @param information - 构建信息。
+ * @param match - 已解析的发布标签。
+ * @param expectedCommit - 部署提交。
+ */
+function commitIdentity(information, match, expectedCommit) {
+  if (!/^[a-f0-9]{40}$/.test(information.applicationCommit) || information.applicationCommit !== expectedCommit) return false;
+  return information.applicationCommit.startsWith(match[2]) && information.buildNumber === Number(match[1]);
+}
+
+/** 附件大小、名称及可选 GitHub 摘要均须匹配。
+ * @param candidate - 构建中的 APK 信息。
+ * @param asset - GitHub 附件。
+ */
+function packageIdentity(candidate, asset) {
+  if (candidate?.name !== packageName || candidate.size !== asset?.size) return false;
+  if (!/^[a-f0-9]{64}$/.test(candidate.sha256)) return false;
+  return digestIdentity(candidate.sha256, asset);
+}
+
+/** GitHub 提供摘要时必须逐字匹配。
+ * @param sha256 - 已验证格式的 APK 摘要。
+ * @param asset - GitHub 附件。
+ */
+function digestIdentity(sha256, asset) { return !asset.digest || asset.digest === `sha256:${sha256}`; }
