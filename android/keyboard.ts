@@ -1,6 +1,6 @@
 import type { AndroidDevice } from 'playwright';
 import { expect } from '@playwright/test';
-import { adb } from './device';
+import { adb } from './device-command';
 
 /**
  * 收起真实输入法，并等待窗口完成隐藏，避免后续滑动变成键盘手势输入。
