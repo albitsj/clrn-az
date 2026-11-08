@@ -3,6 +3,7 @@
 import asyncio
 import importlib.util
 import json
+from itertools import product
 import os
 from pathlib import Path
 import sys
@@ -11,7 +12,7 @@ from unittest.mock import patch
 from mitmproxy import http, websocket
 from wsproto.frame_protocol import Opcode
 from test_network_faults import flow
-from test_response_overrides_integration import HOSTS, METADATA, METADATA_QUERIES, upstream_result
+from test_response_overrides_integration import HOSTS, passthrough_urls, upstream_result
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / 'android'))
@@ -50,88 +51,99 @@ class NativeReplayTests(unittest.IsolatedAsyncioTestCase):
             proxy('unknown')
 
     async def test_all_native_modes_preserve_candidates_health_errors_and_preflight(self):
-        urls = [f'https://api.shafayouxi.org{path}?{query}' for path in METADATA
-                for query in METADATA_QUERIES]
-        urls += [f'https://{host}/node/v1/status?{query}' for host in HOSTS
-                 for query in ('', 'failed', 'non-json', 'gzip')]
         for game, records in (('', False), ('texas-holdem', False), ('zhajinhua', False), ('', True)):
             addon = proxy(game, records)
-            for url in urls:
-                for method in ('GET', 'POST', 'OPTIONS'):
-                    with self.subTest(game=game, records=records, url=url, method=method):
-                        request = flow(url, method)
-                        await addon.request(request)
-                        self.assertIsNone(request.response)
-                        self.assertIsNone(request.error)
-                        status, headers, raw = upstream_result(url, method)
-                        request.response = http.Response.make(status, raw, headers)
-                        before = request.response.get_state()
-                        addon.response(request)
-                        self.assertEqual(request.response.get_state(), before)
+            for url, method in product(passthrough_urls('https'), ('GET', 'POST', 'OPTIONS')):
+                with self.subTest(game=game, records=records, url=url, method=method):
+                    await self.assert_native_passthrough(addon, url, method)
+
+    async def assert_native_passthrough(self, addon, url, method):
+        request = flow(url, method)
+        await addon.request(request)
+        self.assertIsNone(request.response)
+        self.assertIsNone(request.error)
+        status, headers, raw = upstream_result(url, method)
+        request.response = http.Response.make(status, raw, headers)
+        before = request.response.get_state()
+        addon.response(request)
+        self.assertEqual(request.response.get_state(), before)
+
+    def arm_room(self, addon, game):
+        # 房间归属已由真实建房响应确认；不重新实现现有建房契约测试。
+        if game == 'texas-holdem':
+            addon.game.texas.arm_created_room(ROOM, SELF)
+        else:
+            addon.game.created_room_id = ROOM
+
+    def end_previous(self, addon, previous):
+        if previous:
+            addon.websocket_end(previous)
+            previous.websocket.timestamp_end = 123
 
     async def test_node_switch_replays_only_current_room_on_confirmed_connection(self):
         for game, stream in (('texas-holdem', 'texas_holdem'), ('zhajinhua', 'zhajinhua')):
             addon = proxy(game)
-            replay = addon.game.texas if game == 'texas-holdem' else addon.game.replay
-            # 房间归属已由真实建房响应确认；不重新实现现有建房契约测试。
-            if game == 'texas-holdem':
-                replay.arm_created_room(ROOM, SELF)
-            else:
-                addon.game.created_room_id = ROOM
+            self.arm_room(addon, game)
             previous = None
-            channel = f'{stream}>{ROOM}#{SELF}'
-            other_channel = f'{stream}>{OTHER}#{SELF}'
             for host in HOSTS:
                 with self.subTest(game=game, host=host):
-                    if previous:
-                        addon.websocket_end(previous)
-                        previous.websocket.timestamp_end = 123
-                    socket = flow(f'https://{host}/v2/centrifugo/connection/websocket')
-                    socket.websocket = websocket.WebSocketData()
-                    message(socket, [{'id': 1, 'method': 1, 'params': {'channel': channel}},
-                                     {'id': 2, 'method': 1, 'params': {'channel': other_channel}}])
-                    addon.websocket_message(socket)
-                    command = flow(f'http://test-mitmproxy.invalid/{game.split("-")[0]}/replay', 'POST',
-                                   json.dumps({'roomId': ROOM, 'scene': {'scene': 'table'}}).encode(),
-                                   'test-token')
-                    with patch('mitmproxy.ctx.master', create=True) as master:
-                        await addon.request(command)
-                        self.assertEqual(command.response.status_code, 400, '订阅确认前不得回放')
-                        master.commands.call.assert_not_called()
-                        message(socket, [{'id': 1, 'result': {}}, {'id': 2, 'result': {}}], False)
-                        addon.websocket_message(socket)
-                        command.response = None
-                        await addon.request(command)
-                        self.assertEqual(command.response.status_code, 200)
-                        master.commands.call.assert_called_once()
-                        args = master.commands.call.call_args.args
-                        self.assertEqual(args[:3], ('inject.websocket', socket, True))
-                        published = json.loads(args[3])['result']
-                        self.assertEqual(published['channel'], channel)
-                        queue = published['data']['data']['queue']
-                        self.assertEqual(queue[0]['event'], 'room_status')
-                        self.assertEqual(queue[1]['status']['seats'][0]['player']['player_id'], SELF)
-                        self.assertEqual(queue[-1]['event'], 'hand_analyse' if game == 'texas-holdem' else 'table_status')
-                        for body, token, expected in (
-                                ({'roomId': ROOM, 'data': {'stream': stream, 'queue': []}}, 'test-token', 400),
-                                ({'roomId': ROOM, 'scene': {'scene': 'missing'}}, 'test-token', 400),
-                                ({'roomId': ROOM, 'scene': {'scene': 'table', 'queue': []}}, 'test-token', 400),
-                                ({'roomId': ROOM, 'scene': {'scene': 'table'}}, None, 403)):
-                            invalid = flow(command.request.pretty_url, 'POST', json.dumps(body).encode(), token)
-                            await addon.request(invalid)
-                            self.assertEqual(invalid.response.status_code, expected)
-                            self.assertEqual(master.commands.call.call_count, 1)
-                        foreign = flow(command.request.pretty_url, 'POST', json.dumps({
-                            'roomId': OTHER, 'scene': {'scene': 'table'}}).encode(), 'test-token')
-                        await addon.request(foreign)
-                        self.assertEqual(foreign.response.status_code, 400)
-                        self.assertEqual(master.commands.call.call_count, 1)
-                    other_push = {'result': {'type': 0, 'channel': other_channel, 'data': {}}}
-                    untouched = message(socket, [other_push], False)
-                    addon.websocket_message(socket)
-                    self.assertFalse(untouched.dropped)
-                    self.assertEqual(json.loads(untouched.content), other_push)
-                    previous = socket
+                    self.end_previous(addon, previous)
+                    previous = await self.assert_socket_replay(addon, game, stream, host)
+
+    async def assert_socket_replay(self, addon, game, stream, host):
+        channel = f'{stream}>{ROOM}#{SELF}'
+        other_channel = f'{stream}>{OTHER}#{SELF}'
+        socket = flow(f'https://{host}/v2/centrifugo/connection/websocket')
+        socket.websocket = websocket.WebSocketData()
+        message(socket, [{'id': 1, 'method': 1, 'params': {'channel': channel}},
+                         {'id': 2, 'method': 1, 'params': {'channel': other_channel}}])
+        addon.websocket_message(socket)
+        command = flow(f'http://test-mitmproxy.invalid/{game.split("-")[0]}/replay', 'POST',
+                       json.dumps({'roomId': ROOM, 'scene': {'scene': 'table'}}).encode(), 'test-token')
+        with patch('mitmproxy.ctx.master', create=True) as master:
+            await addon.request(command)
+            self.assertEqual(command.response.status_code, 400, '订阅确认前不得回放')
+            master.commands.call.assert_not_called()
+            message(socket, [{'id': 1, 'result': {}}, {'id': 2, 'result': {}}], False)
+            addon.websocket_message(socket)
+            command.response = None
+            await addon.request(command)
+            self.assertEqual(command.response.status_code, 200)
+            self.assert_injection(master, socket, channel, game)
+            await self.assert_invalid_replays(addon, command, master, stream)
+        other_push = {'result': {'type': 0, 'channel': other_channel, 'data': {}}}
+        untouched = message(socket, [other_push], False)
+        addon.websocket_message(socket)
+        self.assertFalse(untouched.dropped)
+        self.assertEqual(json.loads(untouched.content), other_push)
+        return socket
+
+    def assert_injection(self, master, socket, channel, game):
+        master.commands.call.assert_called_once()
+        args = master.commands.call.call_args.args
+        self.assertEqual(args[:3], ('inject.websocket', socket, True))
+        published = json.loads(args[3])['result']
+        self.assertEqual(published['channel'], channel)
+        queue = published['data']['data']['queue']
+        self.assertEqual(queue[0]['event'], 'room_status')
+        self.assertEqual(queue[1]['status']['seats'][0]['player']['player_id'], SELF)
+        self.assertEqual(queue[-1]['event'], 'hand_analyse' if game == 'texas-holdem' else 'table_status')
+
+    async def assert_invalid_replays(self, addon, command, master, stream):
+        for body, token, expected in (
+                ({'roomId': ROOM, 'data': {'stream': stream, 'queue': []}}, 'test-token', 400),
+                ({'roomId': ROOM, 'scene': {'scene': 'missing'}}, 'test-token', 400),
+                ({'roomId': ROOM, 'scene': {'scene': 'table', 'queue': []}}, 'test-token', 400),
+                ({'roomId': ROOM, 'scene': {'scene': 'table'}}, None, 403)):
+            invalid = flow(command.request.pretty_url, 'POST', json.dumps(body).encode(), token)
+            await addon.request(invalid)
+            self.assertEqual(invalid.response.status_code, expected)
+            self.assertEqual(master.commands.call.call_count, 1)
+        foreign = flow(command.request.pretty_url, 'POST', json.dumps({
+            'roomId': OTHER, 'scene': {'scene': 'table'}}).encode(), 'test-token')
+        await addon.request(foreign)
+        self.assertEqual(foreign.response.status_code, 400)
+        self.assertEqual(master.commands.call.call_count, 1)
 
     async def test_network_diagnostics_are_authenticated_read_only_and_keep_failures(self):
         addon = proxy()

@@ -4,6 +4,7 @@ from contextlib import contextmanager
 import gzip
 import http.client
 import json
+from itertools import product
 import os
 from pathlib import Path
 import socket
@@ -23,6 +24,38 @@ METADATA = ('/public/v12/metadata/servers', '/public/v13/metadata/servers')
 METADATA_QUERIES = ('', 'without-64', 'failed', 'non-json', 'gzip', 'api-error', 'changed-contract', 'empty')
 
 
+def metadata_servers(parsed):
+    servers = {host: f'address-{index}' for index, host in enumerate(HOSTS)}
+    if parsed.query == 'without-64':
+        servers.pop(HOSTS[0])
+    return servers
+
+
+def upstream_body(parsed):
+    if parsed.path in METADATA:
+        servers = metadata_servers(parsed)
+        servers = list(servers) if '/v12/' in parsed.path else servers
+        return {'ok': True, 'new_envelope': 42, 'result': {'servers': servers, 'new_field': True}}
+    return health_body(parsed.hostname)
+
+
+def health_body(host):
+    return {'backend_delay': 1065 if host == HOSTS[0] else 37,
+            'server_load': 'normal', 'new_health': True}
+
+
+def upstream_status(parsed):
+    return 503 if parsed.query == 'failed' or parsed.hostname == HOSTS[2] else 200
+
+
+def upstream_bytes(body, query, headers):
+    raw = b'<html>Bad Gateway</html>' if query == 'non-json' else json.dumps(body).encode()
+    if query == 'gzip':
+        raw = gzip.compress(raw, mtime=0)
+        headers['Content-Encoding'] = 'gzip'
+    return raw
+
+
 def upstream_result(url, method):
     """构造与客户端选线输入相同的响应，不在测试中重写应用的选线算法。"""
     parsed = urlsplit(url)
@@ -31,28 +64,19 @@ def upstream_result(url, method):
                'Access-Control-Allow-Headers': 'authorization', 'Vary': 'Origin'}
     if method == 'OPTIONS':
         return 204, headers, b''
-    if parsed.path in METADATA:
-        servers = {host: f'address-{index}' for index, host in enumerate(HOSTS)}
-        if parsed.query == 'without-64':
-            servers.pop(HOSTS[0])
-        if '/v12/' in parsed.path:
-            servers = list(servers)
-        body = {'ok': True, 'new_envelope': 42, 'result': {'servers': servers, 'new_field': True}}
-    else:
-        body = {'backend_delay': 1065 if parsed.hostname == HOSTS[0] else 37,
-                'server_load': 'normal', 'new_health': True}
-    if parsed.query == 'api-error':
-        body = {'ok': False, 'error': 'auth'}
-    elif parsed.query == 'changed-contract':
-        body = {'ok': True, 'result': []}
-    elif parsed.query == 'empty':
-        body = {'ok': True, 'result': {'servers': {}}}
-    status = 503 if parsed.query == 'failed' or parsed.hostname == HOSTS[2] else 200
-    raw = b'<html>Bad Gateway</html>' if parsed.query == 'non-json' else json.dumps(body).encode()
-    if parsed.query == 'gzip':
-        raw = gzip.compress(raw, mtime=0)
-        headers['Content-Encoding'] = 'gzip'
-    return status, headers, raw
+    overrides = {'api-error': {'ok': False, 'error': 'auth'},
+                 'changed-contract': {'ok': True, 'result': []},
+                 'empty': {'ok': True, 'result': {'servers': {}}}}
+    body = overrides.get(parsed.query, upstream_body(parsed))
+    return upstream_status(parsed), headers, upstream_bytes(body, parsed.query, headers)
+
+
+def passthrough_urls(scheme):
+    urls = [f'{scheme}://api.shafayouxi.org{path}?{query}'
+            for path, query in product(METADATA, METADATA_QUERIES)]
+    urls += [f'{scheme}://{host}/node/v1/status?{query}'
+             for host, query in product(HOSTS, ('', 'failed', 'non-json', 'gzip'))]
+    return urls
 
 
 class Upstream(BaseHTTPRequestHandler):
@@ -91,40 +115,66 @@ def fetch(port, url, method='GET', body=None):
         client.close()
 
 
+def startup_ready(port, url, method, body):
+    try:
+        status, _, _ = fetch(port, url, method, body)
+        if status != 200:
+            raise OSError(f'Startup returned {status}')
+        return True
+    except OSError:
+        return False
+
+
+def check_startup_failure(process, logs, deadline):
+    if process.poll() is not None or time.monotonic() >= deadline:
+        logs.seek(0)
+        raise AssertionError('Service startup failed: ' + logs.read().decode()[-4000:])
+
+
+def wait_for_startup(process, logs, port, url, method, body):
+    deadline = time.monotonic() + 15
+    while not startup_ready(port, url, method, body):
+        check_startup_failure(process, logs, deadline)
+        time.sleep(0.1)
+
+
+def stop_process(process):
+    process.terminate()
+    try:
+        process.wait(timeout=5)
+    except subprocess.TimeoutExpired:
+        process.kill()
+        process.wait(timeout=5)
+
+
 @contextmanager
 def running(command, port, url, environment, method='GET', body=None):
     """有界等待真实服务启动；失败时保留子进程日志，所有退出路径清理。"""
     with tempfile.TemporaryFile() as logs:
         process = subprocess.Popen(command, cwd=ROOT, env=environment, stdout=logs, stderr=logs)
         try:
-            deadline = time.monotonic() + 15
-            while True:
-                try:
-                    status, _, _ = fetch(port, url, method, body)
-                    if status != 200:
-                        raise OSError(f'Startup returned {status}')
-                    break
-                except OSError:
-                    if process.poll() is not None or time.monotonic() >= deadline:
-                        logs.seek(0)
-                        raise AssertionError('Service startup failed: ' + logs.read().decode()[-4000:])
-                    time.sleep(0.1)
+            wait_for_startup(process, logs, port, url, method, body)
             yield
         finally:
-            process.terminate()
-            try:
-                process.wait(timeout=5)
-            except subprocess.TimeoutExpired:
-                process.kill()
-                process.wait(timeout=5)
+            stop_process(process)
+
+
+@contextmanager
+def local_upstream():
+    upstream = ThreadingHTTPServer(('127.0.0.1', 0), Upstream)
+    worker = threading.Thread(target=upstream.serve_forever, daemon=True)
+    worker.start()
+    try:
+        yield upstream
+    finally:
+        upstream.shutdown()
+        upstream.server_close()
+        worker.join(timeout=5)
 
 
 class LiveOverrideTests(unittest.TestCase):
     def test_all_addons_preserve_live_upstream_responses(self):
-        upstream = ThreadingHTTPServer(('127.0.0.1', 0), Upstream)
-        worker = threading.Thread(target=upstream.serve_forever, daemon=True)
-        worker.start()
-        try:
+        with local_upstream() as upstream:
             for addon in ('e2e/mitmproxy/network_faults.py',
                           'visual/cases/club/mitmproxy/addon.py',
                           'visual/cases/texas-holdem/mitmproxy/addon.py',
@@ -132,16 +182,9 @@ class LiveOverrideTests(unittest.TestCase):
                           'visual/cases/game-record/mitmproxy/addon.py'):
                 with self.subTest(addon=addon):
                     self.check_addon(upstream.server_port, addon)
-            for game, records in (('', 'false'), ('texas-holdem', 'false'),
-                                  ('zhajinhua', 'false'), ('', 'true')):
-                with self.subTest(native_game=game, records=records):
-                    self.check_addon(upstream.server_port, 'android/proxy-addon.py', {
-                        'ANDROID_SCENE': game or ('records' if records == 'true' else 'pages'),
-                    })
-        finally:
-            upstream.shutdown()
-            upstream.server_close()
-            worker.join(timeout=5)
+            for scene in ('pages', 'texas-holdem', 'zhajinhua', 'records'):
+                with self.subTest(native_scene=scene):
+                    self.check_addon(upstream.server_port, 'android/proxy-addon.py', {'ANDROID_SCENE': scene})
 
     def check_addon(self, upstream_port, addon, native=None):
         port = free_port()
@@ -154,40 +197,41 @@ class LiveOverrideTests(unittest.TestCase):
                  '--mode', f'upstream:http://127.0.0.1:{upstream_port}', '--set', f'confdir={directory}',
                  '--set', 'connection_strategy=lazy', '--set', 'flow_detail=0', '-s', str(ROOT / addon)],
                 port, 'http://test-mitmproxy.invalid/status', environment):
-            # 登录准备（未启用业务场景）及正常视觉都不覆盖选线。
-            if native is None:
-                self.assert_passthrough(port)
-                self.assertEqual(fetch(port, 'http://test-mitmproxy.invalid/scenario', 'POST',
-                                       {'scenario': 'visual-stable'})[0], 200)
+            self.assert_addon_responses(port, native)
+
+    def assert_addon_responses(self, port, native):
+        # 登录准备（未启用业务场景）及正常视觉都不覆盖选线。
+        if native is None:
             self.assert_passthrough(port)
-            if native is not None:
-                for path, expected in (
-                        ('/public/v10/profile/country', {'countryPhoneCode': '86'}),
-                        ('/v2/room/disallow-rule/reminder', {'enable': False, 'message': ''}),
-                        ('/public/v1/hall_matching/available.json', {'available_url_version': ['v3']})):
-                    status, headers, raw = fetch(port, 'http://api.shafayouxi.org' + path)
-                    self.assertEqual(status, 200)
-                    self.assertEqual(headers['content-type'], 'application/json')
-                    self.assertEqual(json.loads(raw), {'ok': True, 'result': expected})
-                status, _, raw = fetch(port, 'http://api.shafayouxi.org/v10/alipay_order/goods')
-                self.assertEqual(status, 200)
-                self.assertEqual(len(json.loads(raw)['result']), 7)
-                self.assertEqual(fetch(port, 'http://api.shafayouxi.org/v10/alipay_order', 'POST', {})[0], 403)
+            self.assertEqual(fetch(port, 'http://test-mitmproxy.invalid/scenario', 'POST',
+                                   {'scenario': 'visual-stable'})[0], 200)
+        self.assert_passthrough(port)
+        if native is not None:
+            self.assert_native_fixtures(port)
+
+    def assert_native_fixtures(self, port):
+        for path, expected in (
+                ('/public/v10/profile/country', {'countryPhoneCode': '86'}),
+                ('/v2/room/disallow-rule/reminder', {'enable': False, 'message': ''}),
+                ('/public/v1/hall_matching/available.json', {'available_url_version': ['v3']})):
+            status, headers, raw = fetch(port, 'http://api.shafayouxi.org' + path)
+            self.assertEqual(status, 200)
+            self.assertEqual(headers['content-type'], 'application/json')
+            self.assertEqual(json.loads(raw), {'ok': True, 'result': expected})
+        status, _, raw = fetch(port, 'http://api.shafayouxi.org/v10/alipay_order/goods')
+        self.assertEqual(status, 200)
+        self.assertEqual(len(json.loads(raw)['result']), 7)
+        self.assertEqual(fetch(port, 'http://api.shafayouxi.org/v10/alipay_order', 'POST', {})[0], 403)
 
     def assert_passthrough(self, port):
-        urls = [f'http://api.shafayouxi.org{path}?{query}' for path in METADATA
-                for query in METADATA_QUERIES]
-        urls += [f'http://{host}/node/v1/status?{query}' for host in HOSTS
-                 for query in ('', 'failed', 'non-json', 'gzip')]
-        for url in urls:
-            for method in ('GET', 'POST', 'OPTIONS'):
-                with self.subTest(url=url, method=method):
-                    status, headers, raw = fetch(port, url, method)
-                    expected_status, expected_headers, expected_raw = upstream_result(url, method)
-                    self.assertEqual(status, expected_status)
-                    self.assertEqual(raw, expected_raw, '必须保留所有候选、健康指标、错误和原始压缩字节')
-                    for key, value in expected_headers.items():
-                        self.assertEqual(headers[key.lower()], value)
+        for url, method in product(passthrough_urls('http'), ('GET', 'POST', 'OPTIONS')):
+            with self.subTest(url=url, method=method):
+                status, headers, raw = fetch(port, url, method)
+                expected_status, expected_headers, expected_raw = upstream_result(url, method)
+                self.assertEqual(status, expected_status)
+                self.assertEqual(raw, expected_raw, '必须保留所有候选、健康指标、错误和原始压缩字节')
+                for key, value in expected_headers.items():
+                    self.assertEqual(headers[key.lower()], value)
 
 
 if __name__ == '__main__':
