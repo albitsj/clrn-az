@@ -31,17 +31,49 @@ def game(self_id):
 def fixture(path, method, content, room_id, self_id):
     if not room_id or not self_id:
         return None
-    if method == 'GET' and path == f'/v1/game_log/room/{room_id}/settlement':
-        return {'settlements': [{'user_id': player_id, 'buy_in_amount': 1000,
-                                'game_round_amount': 10, 'settlement_amount': 180 if index == 0 else -180}
-                               for index, player_id in enumerate([self_id, *PLAYER_IDS])]}
-    if method != 'PUT':
-        return None
-    body = json.loads(content or b'{}')
-    if path == '/v1/game_log/room/game_amount' and body.get('room_ids') == [room_id]:
-        return {'results': [{'room_id': room_id, 'game_amount': 1}]}
-    if path == f'/v1/game_log/room/{room_id}/game' and body.get('game_numbers') == [1]:
-        return {'results': [{'game_id': GAME_ID}]}
-    if path == f'/v1/game_log/user/{self_id}/games' and body.get('game_ids') == [GAME_ID]:
-        return {'results': [game(self_id)]}
+    return room_fixture(path, method, content, room_id, self_id)
+
+
+def room_fixture(path, method, content, room_id, self_id):
+    if (method, path) == ('GET', f'/v1/game_log/room/{room_id}/settlement'):
+        return {'settlements': settlement_rows(self_id)}
+    if method == 'PUT':
+        return put_fixture(path, request_body(content), room_id, self_id)
     return None
+
+
+def settlement_rows(self_id):
+    return [{'user_id': player_id, 'buy_in_amount': 1000, 'game_round_amount': 10,
+             'settlement_amount': 180 if index == 0 else -180}
+            for index, player_id in enumerate([self_id, *PLAYER_IDS])]
+
+
+def put_fixture(path, body, room_id, self_id):
+    routes = {
+        '/v1/game_log/room/game_amount': ('room_ids', [room_id], amount_result),
+        f'/v1/game_log/room/{room_id}/game': ('game_numbers', [1], games_result),
+        f'/v1/game_log/user/{self_id}/games': ('game_ids', [GAME_ID], replay_result),
+    }
+    route = routes.get(path)
+    return matching_result(route, body, room_id, self_id) if route else None
+
+
+def matching_result(route, body, room_id, self_id):
+    key, expected, result = route
+    return result(room_id, self_id) if body.get(key) == expected else None
+
+
+def amount_result(room_id, self_id):
+    return {'results': [{'room_id': room_id, 'game_amount': 1}]}
+
+
+def games_result(room_id, self_id):
+    return {'results': [{'game_id': GAME_ID}]}
+
+
+def replay_result(room_id, self_id):
+    return {'results': [game(self_id)]}
+
+
+def request_body(content):
+    return json.loads(content or b'{}')

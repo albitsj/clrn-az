@@ -61,7 +61,7 @@ jobs:
           QUALITY_BASE_REV: ${{ github.event.pull_request.base.sha || github.event.before }}
       - name: Python 代理单元测试
         run: |
-          .venv/bin/python -m unittest discover -s scripts -p 'test_check_e2e_complexity.py'
+          .venv/bin/python -m unittest discover -s scripts -p 'test_check_*complexity.py'
           python -m unittest discover -s android -p 'test_*.py'
           python -m pip install -r e2e/mitmproxy/requirements.txt
           for directory in e2e/mitmproxy visual/cases/club/mitmproxy visual/cases/game-record/mitmproxy visual/cases/texas-holdem/mitmproxy visual/cases/zhajinhua/mitmproxy; do
