@@ -1,12 +1,14 @@
+import { prepareSignedInAnimation } from './support/lifecycle';
+import { configureEnglishAnimation } from './support/selection';
 /** 通过真实原生入口验证转场；搜索确认框按实际布局保留完整弹窗。 */
 import { expect, test } from '@playwright/test';
 import type { AndroidDevice } from 'playwright';
 import { adb, applicationId, compareScreenshot, launchApplication, waitForHall, waitForStagingNotice } from '../device';
-import { captureFailure } from '../diagnostics';
+import { captureDeviceFailure, closeDevice } from './support/lifecycle';
 import { captureNativeTransition } from '../animation-transition';
 import { verifyLaunchArtwork } from '../launch-artwork';
 import { withAndroidProxy } from '../proxy';
-import { signIn, navigateScenario, tap, reveal } from '../navigation';
+import { navigateScenario, tap, reveal } from '../navigation';
 import { androidScenarios } from '../scenarios';
 import { screenshotMasks } from '../screenshot';
 import { verifyLoopAnimation } from '../loop-animation';
@@ -16,9 +18,7 @@ import { waitAbsent } from '../native-state';
 import { captureMovingKeyframes, framePaletteDistance } from '../loop-keyframes';
 
 test('native launch artwork and staging notice appear on a real app start', async ({}, testInfo) => {
-  test.skip(!['all', 'guest'].includes(process.env.ANDROID_GROUP || 'all')
-    || (process.env.ANDROID_LOCALE || 'en') !== 'en', '启动动画只在英文游客任务采集一次');
-  test.setTimeout(420_000);
+  configureEnglishAnimation('guest', '启动动画只在英文游客任务采集一次', 420_000);
   await withAndroidProxy(async () => {
     let device: AndroidDevice | undefined;
     try {
@@ -46,22 +46,19 @@ test('native launch artwork and staging notice appear on a real app start', asyn
         [{ x: 0, y: 780, width: 580, height: 105, reason: 'Pixel Launcher 底部图标在启动前自行微调' }]);
       await waitForStagingNotice(device);
     } catch (error) {
-      if (device) await captureFailure(device, testInfo);
+      await captureDeviceFailure(device, testInfo);
       throw error;
-    } finally { await device?.close(); }
+    } finally { await closeDevice(device); }
   });
 });
 
 test('native account stack slides in and out', async ({}, testInfo) => {
-  test.skip(!['all', 'account'].includes(process.env.ANDROID_GROUP || 'all')
-    || (process.env.ANDROID_LOCALE || 'en') !== 'en', '原生导航转场只在英文账号任务采集一次');
-  test.setTimeout(420_000);
+  configureEnglishAnimation('account', '原生导航转场只在英文账号任务采集一次', 420_000);
   await withAndroidProxy(async () => {
     let device: AndroidDevice | undefined;
     try {
       device = await launchApplication({ gameDriver: true, enableSystemAnimations: true });
-      await waitForHall(device);
-      await signIn(device);
+      await prepareSignedInAnimation(device);
       await tap(device, 'settings-tab');
       await reveal(device, { res: 'account-security' });
       const entry = await device.info({ res: 'account-security' });
@@ -78,14 +75,12 @@ test('native account stack slides in and out', async ({}, testInfo) => {
       const exit = () => adb('shell', 'input', 'keyevent', 'KEYCODE_BACK');
       await captureNativeTransition(device, 'native-stack-exit', testInfo, region, exit);
       await gameReady(device, 'account-security');
-    } finally { await device?.close(); }
+    } finally { await closeDevice(device); }
   });
 });
 
 test('guest search confirmation animates into and out of the Android screen', async ({}, testInfo) => {
-  test.skip(!['all', 'guest'].includes(process.env.ANDROID_GROUP || 'all')
-    || (process.env.ANDROID_LOCALE || 'en') !== 'en', '短时动画只在英文游客任务采集一次');
-  test.setTimeout(300_000);
+  configureEnglishAnimation('guest', '短时动画只在英文游客任务采集一次', 300_000);
   await withAndroidProxy(async () => {
     let device: AndroidDevice | undefined;
     try {
@@ -119,20 +114,17 @@ test('guest search confirmation animates into and out of the Android screen', as
         String(Math.round(cancel.bounds.y + cancel.bounds.height / 2)));
       await captureNativeTransition(device, 'search-confirmation-exit', testInfo, region,
         pressCancel, [], [], 0, 'videoFrames');
-    } finally { await device?.close(); }
+    } finally { await closeDevice(device); }
   });
 });
 
 test('hall matching spinner animates while the real waiting dialog is visible', async ({}, testInfo) => {
-  test.skip(!['all', 'social'].includes(process.env.ANDROID_GROUP || 'all')
-    || (process.env.ANDROID_LOCALE || 'en') !== 'en', '匹配动画只在英文社交任务采集一次');
-  test.setTimeout(420_000);
+  configureEnglishAnimation('social', '匹配动画只在英文社交任务采集一次', 420_000);
   await withAndroidProxy(async () => {
     let device: AndroidDevice | undefined;
     try {
       device = await launchApplication({ gameDriver: true, enableSystemAnimations: true });
-      await waitForHall(device);
-      await signIn(device);
+      await prepareSignedInAnimation(device);
       const hall = androidScenarios('en', 'social').find(scenario => scenario.pageLabel === 'signed_in_hall');
       expect(hall).toBeDefined();
       await navigateScenario(device, hall!);
@@ -154,20 +146,17 @@ test('hall matching spinner animates while the real waiting dialog is visible', 
       await compareScreenshot(device, 'en-hall-matching', testInfo, masks, undefined, capture);
       await tap(device, 'quick-start-room-cancel');
       await waitAbsent(device, { res: 'game-matching-loading-view' });
-    } finally { await device?.close(); }
+    } finally { await closeDevice(device); }
   }, 'matching');
 });
 
 test('club more menu fades into and out of the Android screen', async ({}, testInfo) => {
-  test.skip(!['all', 'social'].includes(process.env.ANDROID_GROUP || 'all')
-    || (process.env.ANDROID_LOCALE || 'en') !== 'en', '俱乐部动画只在英文社交任务采集一次');
-  test.setTimeout(420_000);
+  configureEnglishAnimation('social', '俱乐部动画只在英文社交任务采集一次', 420_000);
   await withAndroidProxy(async () => {
     let device: AndroidDevice | undefined;
     try {
       device = await launchApplication({ gameDriver: true, enableSystemAnimations: true });
-      await waitForHall(device);
-      await signIn(device);
+      await prepareSignedInAnimation(device);
       const club = androidScenarios('en', 'social').find(scenario => scenario.pageLabel === 'signed_in_club');
       expect(club).toBeDefined();
       await navigateScenario(device, club!);
@@ -190,20 +179,17 @@ test('club more menu fades into and out of the Android screen', async ({}, testI
       await captureNativeTransition(device, 'club-rooms-empty-enter', testInfo,
         { x: 100, y: 420, width: 520, height: 200 }, pressRoomsTab);
       await device.wait({ res: 'club-rooms-empty-view' });
-    } finally { await device?.close(); }
+    } finally { await closeDevice(device); }
   });
 });
 
 test('private room game picker slides into and out of the Android screen', async ({}, testInfo) => {
-  test.skip(!['all', 'rooms'].includes(process.env.ANDROID_GROUP || 'all')
-    || (process.env.ANDROID_LOCALE || 'en') !== 'en', '选玩法动画只在英文房间任务采集一次');
-  test.setTimeout(420_000);
+  configureEnglishAnimation('rooms', '选玩法动画只在英文房间任务采集一次', 420_000);
   await withAndroidProxy(async () => {
     let device: AndroidDevice | undefined;
     try {
       device = await launchApplication({ gameDriver: true, enableSystemAnimations: true });
-      await waitForHall(device);
-      await signIn(device);
+      await prepareSignedInAnimation(device);
       const detail = androidScenarios('en', 'rooms').find(scenario => scenario.pageLabel === 'signed_in_private_room_detail');
       expect(detail).toBeDefined();
       await navigateScenario(device, detail!);
@@ -219,20 +205,17 @@ test('private room game picker slides into and out of the Android screen', async
       const pressBack = () => adb('shell', 'input', 'keyevent', 'KEYCODE_BACK');
       await captureNativeTransition(device, 'game-picker-exit', testInfo, region, pressBack,
         [], [], 0, 'videoFrames');
-    } finally { await device?.close(); }
+    } finally { await closeDevice(device); }
   });
 });
 
 test('private room invite sheet slides into and out of the Android screen', async ({}, testInfo) => {
-  test.skip(!['all', 'rooms'].includes(process.env.ANDROID_GROUP || 'all')
-    || (process.env.ANDROID_LOCALE || 'en') !== 'en', '邀请好友动画只在英文房间任务采集一次');
-  test.setTimeout(420_000);
+  configureEnglishAnimation('rooms', '邀请好友动画只在英文房间任务采集一次', 420_000);
   await withAndroidProxy(async () => {
     let device: AndroidDevice | undefined;
     try {
       device = await launchApplication({ gameDriver: true, enableSystemAnimations: true });
-      await waitForHall(device);
-      await signIn(device);
+      await prepareSignedInAnimation(device);
       // 私人房标签直接呈现当前房间详情；建房入口会进入空房页面。
       await tap(device, 'private-room-tab');
       // 首次进入会显示“邀请好友”新手引导，先通过真实完成按钮关闭。
@@ -257,6 +240,6 @@ test('private room invite sheet slides into and out of the Android screen', asyn
         String(Math.round(cancel.bounds.x + cancel.bounds.width / 2)),
         String(Math.round(cancel.bounds.y + cancel.bounds.height / 2)));
       await captureNativeTransition(device, 'invite-friends-exit', testInfo, region, pressCancel);
-    } finally { await device?.close(); }
+    } finally { await closeDevice(device); }
   }, 'invitable');
 });

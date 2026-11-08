@@ -5,4 +5,4 @@ export const androidGameFiles = [
   'android/zhajinhua-gameplay*.{js,jsx,mjs,cjs,ts,tsx,mts,cts}',
 ];
 export const androidGameTools = ['eslint.config.mjs', 'scripts/android-game-*.mjs'];
-export const androidGameChecks = ['scripts/android-game-*.test.mjs'];
+export const androidGameChecks = ['scripts/android-game-*.test.mjs', 'scripts/android-complexity-*.mjs'];

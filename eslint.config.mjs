@@ -4,6 +4,7 @@ import jsdoc from 'eslint-plugin-jsdoc';
 import tsdoc from 'eslint-plugin-tsdoc';
 import tseslint from 'typescript-eslint';
 import globals from 'globals';
+import { androidNavigationFiles, androidNavigationTools, androidNavigationChecks } from './scripts/android-navigation-scope.mjs';
 import { androidGameFiles, androidGameTools, androidGameChecks } from './scripts/android-game-scope.mjs';
 
 import { unwrap, stringKey, propertyName, syntaxContext, writeTargets } from './scripts/network-syntax.mjs';
@@ -251,13 +252,13 @@ export default [
     // 新门禁只约束本检出目录；只读历史快照继续使用其已归档的 10 分测量口径。
     // 当前 lint/check/pre-commit/CI 及独立门禁均在本目录检查，仍强制 3/6。
     basePath: import.meta.dirname,
-    files: androidGameTools,
+    files: [...androidGameTools, ...androidNavigationTools],
     linterOptions: { noInlineConfig: true },
     rules: { complexity: ['error', { max: 6, variant: 'classic' }] },
   },
   {
     basePath: import.meta.dirname,
-    files: [...androidGameFiles, ...androidGameChecks],
+    files: [...androidGameFiles, ...androidGameChecks, ...androidNavigationFiles, ...androidNavigationChecks],
     linterOptions: { noInlineConfig: true },
     rules: { complexity: ['error', { max: 3, variant: 'classic' }] },
   },

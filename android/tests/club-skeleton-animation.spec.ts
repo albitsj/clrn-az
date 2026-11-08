@@ -1,21 +1,20 @@
+import { prepareSignedInAnimation } from './support/lifecycle';
+import { englishGroup } from './support/selection';
 import { expect, test } from '@playwright/test';
 import type { AndroidDevice } from 'playwright';
-import { adb, launchApplication, waitForHall } from '../device';
+import { adb, launchApplication } from '../device';
 import { withAndroidProxy } from '../proxy';
-import { signIn } from '../navigation';
 import { gameNodes } from '../game-controls';
 import { captureLoopKeyframes } from '../loop-keyframes';
 
 test('every native club placeholder pulses while detail response is pending', async ({}, testInfo) => {
-  test.skip(!['all', 'social'].includes(process.env.ANDROID_GROUP || 'all')
-    || (process.env.ANDROID_LOCALE || 'en') !== 'en', '俱乐部骨架动画只在英文社交任务采集一次');
+  test.skip(!englishGroup('social'), '俱乐部骨架动画只在英文社交任务采集一次');
   test.setTimeout(420_000);
   await withAndroidProxy(async proxy => {
     let device: AndroidDevice | undefined;
     try {
       device = await launchApplication({ gameDriver: true, enableSystemAnimations: true });
-      await waitForHall(device);
-      await signIn(device);
+      await prepareSignedInAnimation(device);
       await expect.poll(async () => (await proxy.command<{ loaded: number }>('android/skeleton')).loaded,
         { timeout: 60_000 }).toBeGreaterThan(0);
       const initial = (await proxy.command<{ loaded: number }>('android/skeleton')).loaded;

@@ -17,7 +17,8 @@ export function nativeSelector(selector: string): AndroidSelector {
   if (!match) throw new Error(`原生端需要显式适配选择器：${selector}`);
   const [, operator, value] = match;
   const escaped = value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  return { res: operator === '=' ? value : new RegExp(operator === '^=' ? `^${escaped}.*` : `.*${escaped}$`) };
+  if (operator === '=') return { res: value };
+  return { res: edgePattern(operator, escaped) };
 }
 
 /**
@@ -30,9 +31,21 @@ export function androidScenarios(locale: string, group = 'all'): VisualScenario[
   return buildScenarios({ VISUAL_LOCALES: locale, VISUAL_SCOPE: 'full', VISUAL_SUITE: 'app' })
     .filter(scenario => scenario.viewport.label === 'mobile' && scenario.group !== 'game-record')
     .filter(scenario => !unavailablePages.some(page => page === scenario.pageLabel))
-    .filter(scenario => {
-      const selected = !scenario.signIn ? 'guest' : scenario.group === 'account' ? 'account'
-        : scenario.group === 'private-room' ? 'rooms' : ['wallet', 'help'].includes(scenario.group) ? 'wallet-help' : 'social';
-      return group === 'all' || group === selected;
-    });
+    .filter(scenario => group === 'all' || group === scenarioGroup(scenario));
+}
+
+/** 按共享页面的职责分组，游客优先于登录后业务组。
+ * @param scenario - 共用页面。
+ */
+function scenarioGroup(scenario: VisualScenario): string {
+  if (!scenario.signIn) return 'guest';
+  return ({ account: 'account', 'private-room': 'rooms', wallet: 'wallet-help', help: 'wallet-help' } as Record<string, string>)[scenario.group] || 'social';
+}
+
+/** 保留选择器前缀或后缀的字面字符。
+ * @param operator - CSS 匹配运算符。
+ * @param escaped - 已转义的 testID。
+ */
+function edgePattern(operator: string, escaped: string): RegExp {
+  return new RegExp(operator === '^=' ? `^${escaped}.*` : `.*${escaped}$`);
 }

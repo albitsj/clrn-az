@@ -1,0 +1,444 @@
+{
+  "issue": 49,
+  "baselineRevision": "cb680d8bc6e074ce714ba9ff170c0d1429439369",
+  "issueReferenceRevision": "7f4343fb4297a1391a038ca4a0fde6394802268e",
+  "metric": "ESLint 10.12.0 classic complexity; max:0 reports each function, constructor, accessor and nested callback independently, retaining defaults, optional chains and short-circuit increments",
+  "reportCommand": "node scripts/android-navigation-complexity.mjs --report",
+  "limits": {
+    "testAndSupport": 3,
+    "independentToolsAndRootConfig": 6
+  },
+  "beforeFunctions": 315,
+  "beforeOverLimit": 44,
+  "beforeAndroidOverLimit": 44,
+  "afterFunctions": 493,
+  "afterOverLimit": 0,
+  "beforeSources": [
+    {
+      "file": "android/playwright.config.ts",
+      "sha256": "b848c73908342cecb852e37f8c1f178d0625a6e0774bf9f9e7b180fb8a6c2b5c"
+    },
+    {
+      "file": "eslint.config.mjs",
+      "sha256": "563d0a61dc19e7bd70564eb3bed682e3821c1d0b4f743583d72e6f088c4e3444"
+    },
+    {
+      "file": "scripts/android-game-complexity.mjs",
+      "sha256": "f5b95b44886e0d0236fdc31a56ae541a0d4c087c31c35cd81a3b8be3388367d6"
+    },
+    {
+      "file": "android/build-driver.mjs",
+      "sha256": "36ece74f0198cb73cdb0cf76c95e0bf9579932148d8b3f891019ce9d2f93cd76"
+    },
+    {
+      "file": "android/device.test.mjs",
+      "sha256": "f052c858e9be62fcec9d60ad8603b07c9cec60dd28708a44b52f85b5977c78cf"
+    },
+    {
+      "file": "android/device.ts",
+      "sha256": "6a934508f541bb7fe149a65bde612a0473a16574c9ce8f66f61b216d43a41a10"
+    },
+    {
+      "file": "android/diagnostics.ts",
+      "sha256": "d718bb080ca14a50b831ad19f863868fdf3fdb8465e23347ba100d352fbf4e7b"
+    },
+    {
+      "file": "android/download-release.mjs",
+      "sha256": "d97c1d0f644a84bd59c8806ed173a6b2f3b824c2938ca20e3ebad1269d3d8e63"
+    },
+    {
+      "file": "android/fixtures.ts",
+      "sha256": "80a0c4f8d09eb7158d291c4cd4951a0c43e8b9916bbf6ca2c9e1538b83226664"
+    },
+    {
+      "file": "android/form-inputs.ts",
+      "sha256": "2cd5de3b83bcb731b0489b27b1fb90b45d86677f1fc31d7c6fd0ef86687af9cf"
+    },
+    {
+      "file": "android/keyboard.ts",
+      "sha256": "237ccf575c51f0c1db3bf8b4259a2ba3f40f1e33ca7dec0a9b368f9da9827f59"
+    },
+    {
+      "file": "android/native-state.ts",
+      "sha256": "d87d49de3e646eb862a87b8e7f8c4a4097d7a76a22a68bb816507c82a2c2a893"
+    },
+    {
+      "file": "android/navigation.ts",
+      "sha256": "bcb7d75561e9e9ee5cee07a06fc36b435d39ff8e7ce3481d9bed684622d998f0"
+    },
+    {
+      "file": "android/proxy.test.mjs",
+      "sha256": "e653b4569718576facf979b077f4cf954b5390adf338518cbf7610564b7023ff"
+    },
+    {
+      "file": "android/proxy.ts",
+      "sha256": "8df1b7a55e67640aeaa6e2c17ca1396fafcf7731eae1ea96ff41bb0bfd9873f6"
+    },
+    {
+      "file": "android/release-download.mjs",
+      "sha256": "9548bb5c56b4715c3acc76ea200ed973785d15be190057690a3b4269c249f2f4"
+    },
+    {
+      "file": "android/release-download.test.mjs",
+      "sha256": "56b60cb7640ae99940a623b08f8c4f5437a8112f0b8c4f0668b17d82b393c13e"
+    },
+    {
+      "file": "android/release.mjs",
+      "sha256": "742935284dfe3abb827c615b76e437223756876f9757239d41297fe07c6ac86c"
+    },
+    {
+      "file": "android/release.test.mjs",
+      "sha256": "652b50a1311de1aba449f42cb9cde64c6324d83ce931ef378efd6c8d381cc37e"
+    },
+    {
+      "file": "android/run-visual.mjs",
+      "sha256": "7ad4199f4711d9daa620812494366d28f0c16fa8adcc2a46c4c7503c4fd23749"
+    },
+    {
+      "file": "android/scenarios.test.mjs",
+      "sha256": "a1e0d09583260eabb6160c9014336c169f0fa71e1176e275dfc22959a7c81224"
+    },
+    {
+      "file": "android/scenarios.ts",
+      "sha256": "36a0499c85ff29a478f666367d7d3d194d859919b389cc1af962fa46e936e55f"
+    },
+    {
+      "file": "android/tests/animation-assets.spec.ts",
+      "sha256": "88371979e50383901aa85efa7d1cd02e8a976bd2db01843717eec141a67e6969"
+    },
+    {
+      "file": "android/tests/animation-transitions.spec.ts",
+      "sha256": "246e30d8767ae952dc0643f2b296402fc07d041cf8337d0bc6d5f616aadd773c"
+    },
+    {
+      "file": "android/tests/auth.spec.ts",
+      "sha256": "f6075b8e49d4d4b2765900d14bf394bb1e839f47df1031677e298bbd8507e33f"
+    },
+    {
+      "file": "android/tests/club-rooms-populated.spec.ts",
+      "sha256": "a77d98260c8d625ef91bb1cf42c107ed30067c067c34e879f9962b3c6dae7dc5"
+    },
+    {
+      "file": "android/tests/club-search-results.spec.ts",
+      "sha256": "4be6e0115162d513399f3527ac7779cc626b6d932339f2d6b1195f332b0a6216"
+    },
+    {
+      "file": "android/tests/club-skeleton-animation.spec.ts",
+      "sha256": "9cde9f00e00fc3daadd2c26ceafd46c4b5194e6d47359799f015afb038212631"
+    },
+    {
+      "file": "android/tests/games.spec.ts",
+      "sha256": "1d73f1a4c442f0f1a7c435ef15e088560d243a2f301f686d7dfe2bd9145b69f6"
+    },
+    {
+      "file": "android/tests/launch-branding.spec.ts",
+      "sha256": "a11599cb890b953aa51d23dec0a307a254eb72e5a3d9d80a735bcc918cc3e86c"
+    },
+    {
+      "file": "android/tests/launch-pages.spec.ts",
+      "sha256": "605128c1999db8980567e5fe4d488ac21af0e519246e41238b82becd2028b93a"
+    },
+    {
+      "file": "android/tests/network-selection.spec.ts",
+      "sha256": "ceaff4ae85ec386104ee188fd42cb6d22a40202bc261764bf43ddfc42c2da60f"
+    },
+    {
+      "file": "android/tests/parity.spec.ts",
+      "sha256": "0ac99c941c4e17ad0febb08762851458dc423143ad0fe53c8eee612c27c2835a"
+    },
+    {
+      "file": "android/tests/records.spec.ts",
+      "sha256": "fd8f1e6ba88c500aeb9071c71d35bfec9d0d7100e023b23bd9051a5db96968b4"
+    },
+    {
+      "file": "android/tests/slot-animation.spec.ts",
+      "sha256": "f1d8764d7509756d35f102e48fd1eb89a2e331f3ca2196128147c4551150f59c"
+    }
+  ],
+  "afterSources": [
+    {
+      "file": "android/playwright.config.ts",
+      "sha256": "b848c73908342cecb852e37f8c1f178d0625a6e0774bf9f9e7b180fb8a6c2b5c"
+    },
+    {
+      "file": "eslint.config.mjs",
+      "sha256": "cc32015a5058326d22fb683eb85e0073070dfb85403c2fc9211add278fd55528"
+    },
+    {
+      "file": "scripts/android-game-complexity.mjs",
+      "sha256": "aa2d0a755bef6ed900b35507e7ec0b1e139b839f64f2392dd9eb2454432f4e6e"
+    },
+    {
+      "file": "android/build-driver.mjs",
+      "sha256": "36ece74f0198cb73cdb0cf76c95e0bf9579932148d8b3f891019ce9d2f93cd76"
+    },
+    {
+      "file": "android/device-command.ts",
+      "sha256": "73c2a837c04bf58ffdb3d967833211b51a676d7caacb1fdea2853d7fa1a696d0"
+    },
+    {
+      "file": "android/device-launch.ts",
+      "sha256": "fa362ebacf8072eca534bc9a8adbbe8b4969a2823aa636a18fe1930865fd4853"
+    },
+    {
+      "file": "android/device-startup.ts",
+      "sha256": "4692f2f5d149908acc4f075905bc9c2d6ed09df9bac45320fdc9b5bb39f811c6"
+    },
+    {
+      "file": "android/device.test.mjs",
+      "sha256": "f052c858e9be62fcec9d60ad8603b07c9cec60dd28708a44b52f85b5977c78cf"
+    },
+    {
+      "file": "android/device.ts",
+      "sha256": "8544e35672b3e449fcac560a615099e2f5ddf4c6408a1c2bcd50e8a2a409d915"
+    },
+    {
+      "file": "android/diagnostics.ts",
+      "sha256": "681c067b8fa535ac7d0d01ee97c1df9f7fef7723d8615c2a187f84fa692334f9"
+    },
+    {
+      "file": "android/download-release.mjs",
+      "sha256": "d97c1d0f644a84bd59c8806ed173a6b2f3b824c2938ca20e3ebad1269d3d8e63"
+    },
+    {
+      "file": "android/fixtures.ts",
+      "sha256": "80a0c4f8d09eb7158d291c4cd4951a0c43e8b9916bbf6ca2c9e1538b83226664"
+    },
+    {
+      "file": "android/form-inputs.ts",
+      "sha256": "6804e03940181ee703b810ad266a3a37ac920fc0925eb76156dc9f2ccdd64bde"
+    },
+    {
+      "file": "android/keyboard.ts",
+      "sha256": "4bd3ad3743a080e24001bf9d0509bf0fc9f9b4d6ed55838ac7ebfc5f33438c06"
+    },
+    {
+      "file": "android/native-state.test.mjs",
+      "sha256": "28009a3f29a65d241434a5b2a70874c96a99a4af7b59da34eb39865d8dca6302"
+    },
+    {
+      "file": "android/native-state.ts",
+      "sha256": "4e219fcb8ac5327005bfc3e7280cd35374c7f913b0645f6cac512e75b168dd38"
+    },
+    {
+      "file": "android/navigation-picker.ts",
+      "sha256": "85b9895e63f608625f1c601409a70b09dde14c322c37ff3f457f043a519297f1"
+    },
+    {
+      "file": "android/navigation-reveal.ts",
+      "sha256": "b025939740b1e0997fd01a4955bec58266a2cfa82e80a802042ea6bbf349ae08"
+    },
+    {
+      "file": "android/navigation-scenario.ts",
+      "sha256": "43e4a4963e160ee38ca5d0855874bec237863e9610fe559e82a4f9f89cf4df3b"
+    },
+    {
+      "file": "android/navigation-tabs.ts",
+      "sha256": "0c6ae014278ec230c6bf8b8b12058274921012cd58df078be47cc7b7788e72ed"
+    },
+    {
+      "file": "android/navigation-tap.ts",
+      "sha256": "59040345435f7622d7e64ac46746c78345898c21dfd95ba034adc35ce7aa7b1b"
+    },
+    {
+      "file": "android/navigation.test.mjs",
+      "sha256": "45125d3e46de81b66e5819282e81819454cb0c7f0a767a854630e6ff0e994efb"
+    },
+    {
+      "file": "android/navigation.ts",
+      "sha256": "902692388bb486a6cbcf99c5032056e182f67a30f641b3a18ab0ae1aa051d3b8"
+    },
+    {
+      "file": "android/proxy.test.mjs",
+      "sha256": "69d5867e90ced07fa4e90044e719f351f1a2921a9e30e684017b92e5c7dfefa5"
+    },
+    {
+      "file": "android/proxy.ts",
+      "sha256": "f1f2c7142e465185df6cc1d071061903fb797d2692f7b1b8905be5625525461c"
+    },
+    {
+      "file": "android/release-download.mjs",
+      "sha256": "e1796e41e6375ac50797e85b101ca309552a7490923662b83618039479517f69"
+    },
+    {
+      "file": "android/release-download.test.mjs",
+      "sha256": "56b60cb7640ae99940a623b08f8c4f5437a8112f0b8c4f0668b17d82b393c13e"
+    },
+    {
+      "file": "android/release.mjs",
+      "sha256": "3cb64dc2753549573b2a88b1bc92a5035359b82af8b438752ac3f4aeb757123d"
+    },
+    {
+      "file": "android/release.test.mjs",
+      "sha256": "871c1b540b4082bb7f2eee61d8f769a4dcb88c2df8f5b668b323783515224c82"
+    },
+    {
+      "file": "android/run-visual.mjs",
+      "sha256": "7ad4199f4711d9daa620812494366d28f0c16fa8adcc2a46c4c7503c4fd23749"
+    },
+    {
+      "file": "android/scenarios.test.mjs",
+      "sha256": "5bd4041dd30ebffdcf926ec3cc7055b7f16db79f7a7517a113d17515127aa317"
+    },
+    {
+      "file": "android/scenarios.ts",
+      "sha256": "fe627275af013b5f11003f2d501f20e9ac66ee154dae83b8a386add713f1ea9c"
+    },
+    {
+      "file": "android/tests/animation-assets.spec.ts",
+      "sha256": "65542fe75eadaddbf2176eeb38226276bf553b01d308fc2104022c9bad8170fe"
+    },
+    {
+      "file": "android/tests/animation-transitions.spec.ts",
+      "sha256": "211754456a2c64a9413abf164812f832a59eca64df24fe9f8ede8cc749b8eb3e"
+    },
+    {
+      "file": "android/tests/auth.spec.ts",
+      "sha256": "1d57701a2650bfaa54baed17dafb5443247877ba8729c5f2a76b9e1e16a16b06"
+    },
+    {
+      "file": "android/tests/club-rooms-populated.spec.ts",
+      "sha256": "606b97a0387724b08409dae071631e2f9fcab3275df8e28b8127917f1f135fc2"
+    },
+    {
+      "file": "android/tests/club-search-results.spec.ts",
+      "sha256": "427fc7a212c4f3604418b9e6c31da6af85e10fd6dba51033f98c91aaab2d80b6"
+    },
+    {
+      "file": "android/tests/club-skeleton-animation.spec.ts",
+      "sha256": "d3774cdc765683e0280bc50099d739eac4aac362641f869a12628b582458c288"
+    },
+    {
+      "file": "android/tests/games.spec.ts",
+      "sha256": "38ca0c0423a2536db54f003306a4fd995f947d71917591b2345b0bb8f548d937"
+    },
+    {
+      "file": "android/tests/launch-branding.spec.ts",
+      "sha256": "8ccb9d89fca5b3eefd3095465c7403e32177dea49e4dd3f9297973a0d052f82d"
+    },
+    {
+      "file": "android/tests/launch-pages.spec.ts",
+      "sha256": "e8d7a7dd605f069a2c19c6d806b1ebc5b490d5d5f4cad188e4f31a103e87ee80"
+    },
+    {
+      "file": "android/tests/network-selection.spec.ts",
+      "sha256": "26979bc2db0332f44c84c40a94a3441f84900cb0151ac9cceab9227a6d37b628"
+    },
+    {
+      "file": "android/tests/parity.spec.ts",
+      "sha256": "342351bedaba246254b8711e64dfcf8288a972acff610e8b3f9571275bc32e22"
+    },
+    {
+      "file": "android/tests/records.spec.ts",
+      "sha256": "4d4518e7aeaa0eb788d3f7b37d449d40b17d4ea9f71d39ef6f95071a4c281e3c"
+    },
+    {
+      "file": "android/tests/slot-animation.spec.ts",
+      "sha256": "5c43a14b31603df45e7dfd90db7bba8e661a72ae00be57a7e62d8bd7bf3c9d47"
+    },
+    {
+      "file": "android/tests/support/auth-diagnostics.ts",
+      "sha256": "d8dd23ace9a6cec39625f87b3b0ad8cca6591cc099fc28c2886c01673ffa4317"
+    },
+    {
+      "file": "android/tests/support/games-capture.ts",
+      "sha256": "85438df17d63c8b290f1e07eeed3c4eb200fcfae3078d461b7108339db4331ff"
+    },
+    {
+      "file": "android/tests/support/games-case.ts",
+      "sha256": "7ae3250d946ce98cb00a9d42763cfcc26716f370e66b413678d659906781c05d"
+    },
+    {
+      "file": "android/tests/support/games-plan.test.mjs",
+      "sha256": "26a96cadf9a9cdb93dbe987ddc58ae3d8aea4c186327b15155f997095d209472"
+    },
+    {
+      "file": "android/tests/support/games-plan.ts",
+      "sha256": "135181cf95fd727027bbdfe3fad67b8576cf76e3a46a1a8955d15dba3d8b1d11"
+    },
+    {
+      "file": "android/tests/support/lifecycle.ts",
+      "sha256": "2323b1b14ac05be5cd837e73d54b5bf1aa5b215d8a8e87835500cd959377877d"
+    },
+    {
+      "file": "android/tests/support/records-case.ts",
+      "sha256": "e87015ab55f17480ab9b58ab43a87e67142cc30ae0f30a104d0412c11aa93a3a"
+    },
+    {
+      "file": "android/tests/support/selection.ts",
+      "sha256": "0d224dd1530e89556df2d7c44101fc0ef19e4ac24277c255554c0cefd4e0a89d"
+    },
+    {
+      "file": "scripts/android-complexity-fixture.mjs",
+      "sha256": "0c04847df77f599075f4423a8c4d23304dc5448320d45caf5c307967720bb638"
+    },
+    {
+      "file": "scripts/android-complexity-probes.mjs",
+      "sha256": "4f1e33d5913c45f5cf25983421a25c26bebf602bb321bdb5d1c43891d76d518e"
+    },
+    {
+      "file": "scripts/android-navigation-complexity.mjs",
+      "sha256": "6b13e68a4db62ab846fb3f4c0c980cdbb20dca96a6e045f4f827f3cbb87f5400"
+    },
+    {
+      "file": "scripts/android-navigation-complexity.test.mjs",
+      "sha256": "82354e7c8b0f8c914b12c5b330e5c93f00674bbd43c11f80cb682736cea6df37"
+    },
+    {
+      "file": "scripts/android-navigation-scope.mjs",
+      "sha256": "3854e4892a5e0f74f7af6d63be7f877a56f5eb639b4fb3d2c8f87283c83aed32"
+    }
+  ],
+  "highValueChanges": [
+    {
+      "before": {
+        "file": "android/tests/games.spec.ts",
+        "line": 53,
+        "complexity": 32
+      },
+      "after": [
+        "android/tests/games.spec.ts: test callback 1",
+        "android/tests/support/games-case.ts: runGameCase 3; helpers each ≤3"
+      ]
+    },
+    {
+      "before": {
+        "file": "android/navigation.ts",
+        "line": 145,
+        "function": "navigateScenario",
+        "complexity": 22
+      },
+      "after": {
+        "file": "android/navigation-scenario.ts",
+        "function": "navigateScenario",
+        "complexity": 3
+      }
+    },
+    {
+      "before": {
+        "file": "android/tests/records.spec.ts",
+        "line": 21,
+        "complexity": 21
+      },
+      "after": [
+        "android/tests/records.spec.ts: proxy callback 1",
+        "android/tests/support/records-case.ts: runRecordCase 3; helpers each ≤3"
+      ]
+    },
+    {
+      "before": {
+        "file": "android/release.mjs",
+        "function": "validateBuildInformation",
+        "complexity": 20
+      },
+      "after": {
+        "file": "android/release.mjs",
+        "line": 33,
+        "column": 8,
+        "function": "Function 'validateBuildInformation'",
+        "complexity": 6,
+        "limit": 6
+      }
+    }
+  ]
+}

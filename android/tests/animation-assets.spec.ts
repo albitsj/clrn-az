@@ -1,3 +1,4 @@
+import { englishGroup } from './support/selection';
 import path from 'node:path';
 import { test } from '@playwright/test';
 import baseline from '../animation-assets.json';
@@ -7,8 +8,7 @@ import { artifacts } from '../device';
 import { readVerifiedBuild } from '../release.mjs';
 
 test('published Android APK contains every reviewed animation asset', async () => {
-  test.skip(!['all', 'guest'].includes(process.env.ANDROID_GROUP || 'all')
-    || (process.env.ANDROID_LOCALE || 'en') !== 'en', '素材与应用语言无关，只在英文游客任务校验一次');
+  test.skip(!englishGroup('guest'), '素材与应用语言无关，只在英文游客任务校验一次');
   await readVerifiedBuild(artifacts);
   comparePackagedAnimations(path.join(artifacts, 'android-staging.apk'),
     baseline.assets as unknown as Record<string, [string, number]>);

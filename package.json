@@ -10,7 +10,7 @@
     "test": "node scripts/test-local.mjs",
     "test:android:collect": "playwright test --config android/playwright.config.ts --list > /dev/null",
     "check": "npm run lint && npm run typecheck && npm run test:android:collect && npm test",
-    "lint:js": "npm run lint:shared && npm run lint:android-games && node scripts/lint-ratchet.mjs eslint",
+    "lint:js": "npm run lint:shared && npm run lint:android-games && npm run lint:android:navigation && node scripts/lint-ratchet.mjs eslint",
     "lint:python": "npm run lint:python:lines && npm run lint:python:e2e && node scripts/lint-ratchet.mjs ruff",
     "lint:python:lines": "node scripts/lint-python-lines.mjs",
     "lint:python:e2e": "uv run --no-project --with radon==6.0.1 python scripts/check_e2e_complexity.py && uvx --from ruff==0.15.12 ruff check e2e/mitmproxy scripts/check_e2e_complexity.py scripts/test_check_e2e_complexity.py --config ruff.toml --config 'lint.mccabe.max-complexity=6' --no-cache --ignore-noqa",
@@ -21,7 +21,8 @@
     "lint:architecture": "node scripts/lint-ratchet.mjs dependency-cruiser",
     "lint:duplicates": "node scripts/lint-duplicates.mjs",
     "lint:android-games": "node scripts/android-game-complexity.mjs",
-    "lint:shared": "node scripts/shared-complexity.mjs"
+    "lint:shared": "node scripts/shared-complexity.mjs",
+    "lint:android:navigation": "node scripts/android-navigation-complexity.mjs"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
