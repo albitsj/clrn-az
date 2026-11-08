@@ -217,18 +217,6 @@
   },
   {
     "tool": "eslint",
-    "file": "scripts/account-network-fixture.mjs",
-    "rule": "complexity",
-    "line": 13,
-    "column": 41,
-    "endLine": 13,
-    "endColumn": 43,
-    "message": "Async arrow function has a complexity of 12. Maximum allowed is 10.",
-    "sourceHash": "b189f4399122fcb007ff7069aa4e6ae36df478cbd8b903f51cb5976fcc7a313e",
-    "reason": "既有原生界面、截图或测试工具控制流；本次不改变设备行为，修改时降低该处复杂度/嵌套，禁止恶化。"
-  },
-  {
-    "tool": "eslint",
     "file": "scripts/ci-accounts.mjs",
     "rule": "complexity",
     "line": 81,
@@ -241,54 +229,6 @@
   },
   {
     "tool": "eslint",
-    "file": "scripts/prepare-test-account-rooms.mjs",
-    "rule": "complexity",
-    "line": 32,
-    "column": 1,
-    "endLine": 32,
-    "endColumn": 21,
-    "message": "Function 'recoverable' has a complexity of 15. Maximum allowed is 10.",
-    "sourceHash": "3e1aed4e9616c5c711fdefb090377e88c50c47df1ba4fe6b2b5f32f59cac40f6",
-    "reason": "既有原生界面、截图或测试工具控制流；本次不改变设备行为，修改时降低该处复杂度/嵌套，禁止恶化。"
-  },
-  {
-    "tool": "eslint",
-    "file": "scripts/prepare-test-account-rooms.mjs",
-    "rule": "complexity",
-    "line": 44,
-    "column": 8,
-    "endLine": 44,
-    "endColumn": 46,
-    "message": "Async function 'prepareTestAccountRooms' has a complexity of 17. Maximum allowed is 10.",
-    "sourceHash": "17790954b6f02a3fd95df1be85600f5b230118539ecbbb3aa0fceb138d1ec6c2",
-    "reason": "既有原生界面、截图或测试工具控制流；本次不改变设备行为，修改时降低该处复杂度/嵌套，禁止恶化。"
-  },
-  {
-    "tool": "eslint",
-    "file": "scripts/prepare-test-account.mjs",
-    "rule": "complexity",
-    "line": 12,
-    "column": 8,
-    "endLine": 12,
-    "endColumn": 42,
-    "message": "Async function 'readTestingApiToken' has a complexity of 11. Maximum allowed is 10.",
-    "sourceHash": "7937202e543d63926b9f35f7ceea00e9ad3c76d629aa04c6958bd0fa41c93bbf",
-    "reason": "既有原生界面、截图或测试工具控制流；本次不改变设备行为，修改时降低该处复杂度/嵌套，禁止恶化。"
-  },
-  {
-    "tool": "eslint",
-    "file": "scripts/prepare-test-account.mjs",
-    "rule": "complexity",
-    "line": 67,
-    "column": 8,
-    "endLine": 67,
-    "endColumn": 46,
-    "message": "Async function 'prepareTestAccountCoins' has a complexity of 26. Maximum allowed is 10.",
-    "sourceHash": "3b93cdce439a44efbe0e6fe76eb9c47ef0e535ff5546a283586f5ffb3f6f76db",
-    "reason": "既有原生界面、截图或测试工具控制流；本次不改变设备行为，修改时降低该处复杂度/嵌套，禁止恶化。"
-  },
-  {
-    "tool": "eslint",
     "file": "scripts/with-test-account.mjs",
     "rule": "complexity",
     "line": 39,
@@ -297,30 +237,6 @@
     "endColumn": 19,
     "message": "Async function 'run' has a complexity of 14. Maximum allowed is 10.",
     "sourceHash": "bdd8dd311fd5f56403f6521df5bc89856a5b09e97d8cfe158f050fe54b1ee6b5",
-    "reason": "既有原生界面、截图或测试工具控制流；本次不改变设备行为，修改时降低该处复杂度/嵌套，禁止恶化。"
-  },
-  {
-    "tool": "eslint",
-    "file": "visual/cases/_shared/room.ts",
-    "rule": "complexity",
-    "line": 54,
-    "column": 8,
-    "endLine": 54,
-    "endColumn": 40,
-    "message": "Async function 'ensureRoomBalance' has a complexity of 14. Maximum allowed is 10.",
-    "sourceHash": "4616960966d424ce18da05c7bdf26928cc39a4c76e5dba7a85b1dee0295e119c",
-    "reason": "既有原生界面、截图或测试工具控制流；本次不改变设备行为，修改时降低该处复杂度/嵌套，禁止恶化。"
-  },
-  {
-    "tool": "eslint",
-    "file": "visual/cases/_shared/room.ts",
-    "rule": "complexity",
-    "line": 83,
-    "column": 8,
-    "endLine": 83,
-    "endColumn": 44,
-    "message": "Async function 'createPrivateGameRoom' has a complexity of 39. Maximum allowed is 10.",
-    "sourceHash": "b82f12c0b8f6a5fc1dc3f195c08e96353a76da78d1cfa91cb4485f656248a79e",
     "reason": "既有原生界面、截图或测试工具控制流；本次不改变设备行为，修改时降低该处复杂度/嵌套，禁止恶化。"
   },
   {

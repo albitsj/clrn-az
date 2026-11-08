@@ -1,4 +1,4 @@
-import { expect, request } from '@playwright/test';
+import { expect } from '@playwright/test';
 import type { AndroidDevice } from 'playwright';
 import type { Mitmproxy } from '../e2e/helpers/mitmproxy-client';
 import { ensureRoomBalance, type Account, type RoomSession } from '../visual/cases/_shared/room';
@@ -28,9 +28,7 @@ export async function createGameRoom(device: AndroidDevice, proxy: Mitmproxy,
   game: 'texas-holdem' | 'zhajinhua', onCreated: (room: RoomSession) => void, optionalFeatures?: boolean,
   observerConnection?: boolean): Promise<RoomSession> {
   const account = await roomAccount(proxy);
-  const api = await request.newContext();
-  try { await ensureRoomBalance(api, account); }
-  finally { await api.dispose(); }
+  await ensureRoomBalance(account);
   await submitRoomForm(device, game, optionalFeatures);
   let room: RoomSession | null = null;
   await expect(async () => {
@@ -80,9 +78,7 @@ async function submitRoomForm(device: AndroidDevice, game: 'texas-holdem' | 'zha
  */
 async function connectRoomObserver(room: RoomSession, observerConnection?: boolean): Promise<void> {
   if (observerConnection) {
-    const observerApi = await request.newContext();
-    try { await enterTexasRoom({ request: observerApi }, room!); }
-    finally { await observerApi.dispose(); }
+    await enterTexasRoom(room);
   }
 }
 
