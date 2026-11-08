@@ -265,30 +265,6 @@
   },
   {
     "tool": "ruff",
-    "file": "e2e/mitmproxy/replay_scenes.py",
-    "rule": "C901",
-    "line": 25,
-    "column": 5,
-    "endLine": 25,
-    "endColumn": 17,
-    "message": "`replay_scene` is too complex (12 > 10)",
-    "sourceHash": "8e029b0a507326b16f7a20b2563e4fb1bbcec450b477de181c8ea5a1ee017f94",
-    "reason": "登记 master 已有的代理/场景控制流；本轮只登记确切源码位置和超限值，后续修改时降低复杂度，不接受新增或恶化。"
-  },
-  {
-    "tool": "ruff",
-    "file": "e2e/mitmproxy/visual_fixtures.py",
-    "rule": "C901",
-    "line": 31,
-    "column": 9,
-    "endLine": 31,
-    "endColumn": 15,
-    "message": "`result` is too complex (14 > 10)",
-    "sourceHash": "9af8d0b859cbfe17d67036dfd74f270653388b54eb87e45b93302805b4e0de7f",
-    "reason": "登记 master 已有的代理/场景控制流；本轮只登记确切源码位置和超限值，后续修改时降低复杂度，不接受新增或恶化。"
-  },
-  {
-    "tool": "ruff",
     "file": "visual/cases/game-record/mitmproxy/addon.py",
     "rule": "C901",
     "line": 52,

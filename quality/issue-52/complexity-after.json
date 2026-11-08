@@ -1,0 +1,1778 @@
+[
+  {
+    "file": "e2e/mitmproxy/network_faults.py",
+    "line": 20,
+    "column": 1,
+    "function": "json_response",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/network_faults.py",
+    "line": 34,
+    "column": 5,
+    "function": "NetworkFaults.__init__",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/network_faults.py",
+    "line": 41,
+    "column": 5,
+    "function": "NetworkFaults.control",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/network_faults.py",
+    "line": 49,
+    "column": 5,
+    "function": "NetworkFaults.not_found",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/network_faults.py",
+    "line": 52,
+    "column": 5,
+    "function": "NetworkFaults.configure_scenario",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/network_faults.py",
+    "line": 62,
+    "column": 5,
+    "function": "NetworkFaults.parse_scenario",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/network_faults.py",
+    "line": 68,
+    "column": 5,
+    "function": "NetworkFaults.status",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/network_faults.py",
+    "line": 76,
+    "column": 5,
+    "function": "NetworkFaults.mock_existing_username",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/network_faults.py",
+    "line": 83,
+    "column": 5,
+    "function": "NetworkFaults.matches_fault",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/network_faults.py",
+    "line": 90,
+    "column": 5,
+    "function": "NetworkFaults.request",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/network_faults.py",
+    "line": 99,
+    "column": 5,
+    "function": "NetworkFaults.can_inject",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/network_faults.py",
+    "line": 102,
+    "column": 5,
+    "function": "NetworkFaults.handle_fault",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/network_faults.py",
+    "line": 108,
+    "column": 5,
+    "function": "NetworkFaults.should_delay",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/network_faults.py",
+    "line": 111,
+    "column": 5,
+    "function": "NetworkFaults.inject_fault",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/replay_scenes.py",
+    "line": 17,
+    "column": 1,
+    "function": "substitute_object",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/replay_scenes.py",
+    "line": 21,
+    "column": 1,
+    "function": "substitute_array",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/replay_scenes.py",
+    "line": 25,
+    "column": 1,
+    "function": "substitute_scalar",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/replay_scenes.py",
+    "line": 29,
+    "column": 1,
+    "function": "substitute",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/replay_scenes.py",
+    "line": 37,
+    "column": 1,
+    "function": "require_option",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/replay_scenes.py",
+    "line": 42,
+    "column": 1,
+    "function": "scene_parameters",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/replay_scenes.py",
+    "line": 52,
+    "column": 1,
+    "function": "table_parameters",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/replay_scenes.py",
+    "line": 59,
+    "column": 1,
+    "function": "validate_scene",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/replay_scenes.py",
+    "line": 66,
+    "column": 1,
+    "function": "validate_parameters",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/replay_scenes.py",
+    "line": 71,
+    "column": 1,
+    "function": "is_table_scene",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/replay_scenes.py",
+    "line": 75,
+    "column": 1,
+    "function": "table_data",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/replay_scenes.py",
+    "line": 83,
+    "column": 1,
+    "function": "event_data",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/replay_scenes.py",
+    "line": 90,
+    "column": 1,
+    "function": "replay_scene",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/response_overrides.py",
+    "line": 8,
+    "column": 1,
+    "function": "is_staging",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/response_overrides.py",
+    "line": 12,
+    "column": 1,
+    "function": "successful_response",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/response_overrides.py",
+    "line": 16,
+    "column": 1,
+    "function": "successful_body",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/response_overrides.py",
+    "line": 20,
+    "column": 1,
+    "function": "result_object",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/response_overrides.py",
+    "line": 27,
+    "column": 1,
+    "function": "write_response",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/response_overrides.py",
+    "line": 34,
+    "column": 1,
+    "function": "change_result",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/response_overrides.py",
+    "line": 44,
+    "column": 1,
+    "function": "patch_result",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/response_overrides.py",
+    "line": 56,
+    "column": 1,
+    "function": "patch_version",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/response_overrides.py",
+    "line": 57,
+    "column": 5,
+    "function": "patch_version.change",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/response_overrides.py",
+    "line": 65,
+    "column": 1,
+    "function": "valid_self",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/response_overrides.py",
+    "line": 69,
+    "column": 1,
+    "function": "is_profile_request",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/response_overrides.py",
+    "line": 75,
+    "column": 1,
+    "function": "includes_self",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/response_overrides.py",
+    "line": 79,
+    "column": 1,
+    "function": "known_profile_users",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/response_overrides.py",
+    "line": 85,
+    "column": 1,
+    "function": "prepare_profile_request",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/response_overrides.py",
+    "line": 98,
+    "column": 1,
+    "function": "prepare_profiles",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/response_overrides.py",
+    "line": 108,
+    "column": 1,
+    "function": "selected_profiles",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/response_overrides.py",
+    "line": 112,
+    "column": 1,
+    "function": "merged_profile",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/response_overrides.py",
+    "line": 116,
+    "column": 1,
+    "function": "patch_selected_profiles",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/response_overrides.py",
+    "line": 120,
+    "column": 5,
+    "function": "patch_selected_profiles.change",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/response_overrides.py",
+    "line": 130,
+    "column": 1,
+    "function": "profile_users",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/response_overrides.py",
+    "line": 137,
+    "column": 1,
+    "function": "patch_requested_profiles",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/response_overrides.py",
+    "line": 143,
+    "column": 1,
+    "function": "patch_profiles",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/table_scenes.py",
+    "line": 21,
+    "column": 1,
+    "function": "flag",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/table_scenes.py",
+    "line": 28,
+    "column": 1,
+    "function": "table_options",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/table_scenes.py",
+    "line": 37,
+    "column": 1,
+    "function": "table_positions",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/table_scenes.py",
+    "line": 41,
+    "column": 1,
+    "function": "table_pots",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/table_scenes.py",
+    "line": 46,
+    "column": 1,
+    "function": "player_base",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/table_scenes.py",
+    "line": 52,
+    "column": 1,
+    "function": "texas_player",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/table_scenes.py",
+    "line": 57,
+    "column": 1,
+    "function": "seat",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/table_scenes.py",
+    "line": 62,
+    "column": 1,
+    "function": "texas_seat",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/table_scenes.py",
+    "line": 68,
+    "column": 1,
+    "function": "texas_status",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/table_scenes.py",
+    "line": 79,
+    "column": 1,
+    "function": "own_events",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/table_scenes.py",
+    "line": 83,
+    "column": 1,
+    "function": "operating_player",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/table_scenes.py",
+    "line": 87,
+    "column": 1,
+    "function": "texas_queue",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/table_scenes.py",
+    "line": 99,
+    "column": 1,
+    "function": "without_hand",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/table_scenes.py",
+    "line": 103,
+    "column": 1,
+    "function": "queue_part",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/table_scenes.py",
+    "line": 111,
+    "column": 1,
+    "function": "texas_table",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/table_scenes.py",
+    "line": 124,
+    "column": 1,
+    "function": "zhajinhua_player",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/table_scenes.py",
+    "line": 129,
+    "column": 1,
+    "function": "zhajinhua_seat",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/table_scenes.py",
+    "line": 135,
+    "column": 1,
+    "function": "zhajinhua_status",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/table_scenes.py",
+    "line": 146,
+    "column": 1,
+    "function": "seen_hand",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/table_scenes.py",
+    "line": 151,
+    "column": 1,
+    "function": "zhajinhua_bets",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/table_scenes.py",
+    "line": 156,
+    "column": 1,
+    "function": "zhajinhua_table",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/table_scenes.py",
+    "line": 163,
+    "column": 1,
+    "function": "zhajinhua_queue",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_native_network.py",
+    "line": 29,
+    "column": 1,
+    "function": "message",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_native_network.py",
+    "line": 36,
+    "column": 1,
+    "function": "proxy",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_native_network.py",
+    "line": 43,
+    "column": 5,
+    "function": "NativeReplayTests.test_named_modes_are_exclusive_and_invalid_modes_fail",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_native_network.py",
+    "line": 53,
+    "column": 5,
+    "function": "NativeReplayTests.test_all_native_modes_preserve_candidates_health_errors_and_preflight",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_native_network.py",
+    "line": 60,
+    "column": 5,
+    "function": "NativeReplayTests.assert_native_passthrough",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_native_network.py",
+    "line": 71,
+    "column": 5,
+    "function": "NativeReplayTests.arm_room",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_native_network.py",
+    "line": 78,
+    "column": 5,
+    "function": "NativeReplayTests.end_previous",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_native_network.py",
+    "line": 83,
+    "column": 5,
+    "function": "NativeReplayTests.test_node_switch_replays_only_current_room_on_confirmed_connection",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_native_network.py",
+    "line": 93,
+    "column": 5,
+    "function": "NativeReplayTests.assert_socket_replay",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_native_network.py",
+    "line": 121,
+    "column": 5,
+    "function": "NativeReplayTests.assert_injection",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_native_network.py",
+    "line": 132,
+    "column": 5,
+    "function": "NativeReplayTests.assert_invalid_replays",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_native_network.py",
+    "line": 148,
+    "column": 5,
+    "function": "NativeReplayTests.test_network_diagnostics_are_authenticated_read_only_and_keep_failures",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_native_network.py",
+    "line": 166,
+    "column": 5,
+    "function": "NativeReplayTests.test_launch_hold_is_explicit_get_only_and_release_preserves_upstream",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_network_faults.py",
+    "line": 14,
+    "column": 1,
+    "function": "flow",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_network_faults.py",
+    "line": 27,
+    "column": 5,
+    "function": "NetworkFaultTests.setUp",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_network_faults.py",
+    "line": 31,
+    "column": 5,
+    "function": "NetworkFaultTests.configure",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_network_faults.py",
+    "line": 39,
+    "column": 5,
+    "function": "NetworkFaultTests.test_control_requires_token_and_valid_scenario",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_network_faults.py",
+    "line": 48,
+    "column": 5,
+    "function": "NetworkFaultTests.test_hall_delays_only_first_request_and_clear_restores_forwarding",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_network_faults.py",
+    "line": 64,
+    "column": 5,
+    "function": "NetworkFaultTests.test_delay_does_not_block_control_or_unrelated_requests",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_network_faults.py",
+    "line": 69,
+    "column": 9,
+    "function": "NetworkFaultTests.test_delay_does_not_block_control_or_unrelated_requests.delay",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_network_faults.py",
+    "line": 87,
+    "column": 5,
+    "function": "NetworkFaultTests.test_login_and_club_are_scoped_to_staging_and_matching_paths",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_network_faults.py",
+    "line": 107,
+    "column": 5,
+    "function": "NetworkFaultTests.test_login_keeps_existing_user_branch_without_counting_it_as_a_fault",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_network_faults.py",
+    "line": 124,
+    "column": 5,
+    "function": "NetworkFaultTests.test_normal_and_login_preparation_preserve_all_candidates_and_preflights",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_replay_scenes.py",
+    "line": 17,
+    "column": 1,
+    "function": "operating_status",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_replay_scenes.py",
+    "line": 21,
+    "column": 1,
+    "function": "named_settings",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_replay_scenes.py",
+    "line": 31,
+    "column": 5,
+    "function": "ReplaySceneTests.test_texas_table_event_order_cards_and_animation_split",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_replay_scenes.py",
+    "line": 47,
+    "column": 5,
+    "function": "ReplaySceneTests.test_table_variants_preserve_seat_counts",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_replay_scenes.py",
+    "line": 52,
+    "column": 5,
+    "function": "ReplaySceneTests.test_observer_has_no_self_or_hand",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_replay_scenes.py",
+    "line": 58,
+    "column": 5,
+    "function": "ReplaySceneTests.test_full_pots_preserve_amounts",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_replay_scenes.py",
+    "line": 62,
+    "column": 5,
+    "function": "ReplaySceneTests.test_table_variants_preserve_bet_controls",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_replay_scenes.py",
+    "line": 67,
+    "column": 5,
+    "function": "ReplaySceneTests.assert_bets",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_replay_scenes.py",
+    "line": 71,
+    "column": 5,
+    "function": "ReplaySceneTests.test_all_in_only_has_no_other_actions",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_replay_scenes.py",
+    "line": 75,
+    "column": 5,
+    "function": "ReplaySceneTests.test_zhajinhua_order_seen_cards",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_replay_scenes.py",
+    "line": 82,
+    "column": 5,
+    "function": "ReplaySceneTests.assert_zhajinhua",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_replay_scenes.py",
+    "line": 88,
+    "column": 5,
+    "function": "ReplaySceneTests.test_zhajinhua_room_status",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_replay_scenes.py",
+    "line": 93,
+    "column": 5,
+    "function": "ReplaySceneTests.test_all_named_events_are_isolated_and_bind_actual_self",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_replay_scenes.py",
+    "line": 98,
+    "column": 5,
+    "function": "ReplaySceneTests.assert_named_scene",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_replay_scenes.py",
+    "line": 108,
+    "column": 5,
+    "function": "ReplaySceneTests.test_unknown_scenes_and_arbitrary_protocol_payloads_are_rejected",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_replay_scenes.py",
+    "line": 115,
+    "column": 5,
+    "function": "ReplaySceneTests.test_unknown_table_and_player_action_parameters_are_rejected",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_replay_scenes.py",
+    "line": 122,
+    "column": 1,
+    "function": "event_name",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_response_overrides.py",
+    "line": 11,
+    "column": 5,
+    "function": "ResponseOverrideTests.metadata",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_response_overrides.py",
+    "line": 19,
+    "column": 5,
+    "function": "ResponseOverrideTests.test_version_keeps_new_fields_and_does_not_recreate_removed_fields",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_response_overrides.py",
+    "line": 29,
+    "column": 5,
+    "function": "ResponseOverrideTests.test_mixed_profiles_keep_current_account_real_and_only_add_requested_virtual_players",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_response_overrides_integration.py",
+    "line": 27,
+    "column": 1,
+    "function": "metadata_servers",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_response_overrides_integration.py",
+    "line": 34,
+    "column": 1,
+    "function": "upstream_body",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_response_overrides_integration.py",
+    "line": 42,
+    "column": 1,
+    "function": "health_body",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_response_overrides_integration.py",
+    "line": 47,
+    "column": 1,
+    "function": "upstream_status",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_response_overrides_integration.py",
+    "line": 51,
+    "column": 1,
+    "function": "upstream_bytes",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_response_overrides_integration.py",
+    "line": 59,
+    "column": 1,
+    "function": "upstream_result",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_response_overrides_integration.py",
+    "line": 74,
+    "column": 1,
+    "function": "passthrough_urls",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_response_overrides_integration.py",
+    "line": 83,
+    "column": 5,
+    "function": "Upstream.do_GET",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_response_overrides_integration.py",
+    "line": 95,
+    "column": 5,
+    "function": "Upstream.log_message",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_response_overrides_integration.py",
+    "line": 99,
+    "column": 1,
+    "function": "free_port",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_response_overrides_integration.py",
+    "line": 105,
+    "column": 1,
+    "function": "fetch",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_response_overrides_integration.py",
+    "line": 118,
+    "column": 1,
+    "function": "startup_ready",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_response_overrides_integration.py",
+    "line": 128,
+    "column": 1,
+    "function": "check_startup_failure",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_response_overrides_integration.py",
+    "line": 134,
+    "column": 1,
+    "function": "wait_for_startup",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_response_overrides_integration.py",
+    "line": 141,
+    "column": 1,
+    "function": "stop_process",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_response_overrides_integration.py",
+    "line": 151,
+    "column": 1,
+    "function": "running",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_response_overrides_integration.py",
+    "line": 163,
+    "column": 1,
+    "function": "local_upstream",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_response_overrides_integration.py",
+    "line": 176,
+    "column": 5,
+    "function": "LiveOverrideTests.test_all_addons_preserve_live_upstream_responses",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_response_overrides_integration.py",
+    "line": 189,
+    "column": 5,
+    "function": "LiveOverrideTests.check_addon",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_response_overrides_integration.py",
+    "line": 202,
+    "column": 5,
+    "function": "LiveOverrideTests.assert_addon_responses",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_response_overrides_integration.py",
+    "line": 212,
+    "column": 5,
+    "function": "LiveOverrideTests.assert_native_fixtures",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_response_overrides_integration.py",
+    "line": 226,
+    "column": 5,
+    "function": "LiveOverrideTests.assert_passthrough",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_selection_faults.py",
+    "line": 16,
+    "column": 1,
+    "function": "expected_hosts",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_selection_faults.py",
+    "line": 20,
+    "column": 1,
+    "function": "faults_health",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_selection_faults.py",
+    "line": 24,
+    "column": 1,
+    "function": "selection_sockets",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_selection_faults.py",
+    "line": 32,
+    "column": 5,
+    "function": "SelectionFaultTests.assert_upstream_unchanged",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_selection_faults.py",
+    "line": 39,
+    "column": 5,
+    "function": "SelectionFaultTests.test_explicit_faults_filter_real_metadata_and_only_fail_seoul_health",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_selection_faults.py",
+    "line": 44,
+    "column": 5,
+    "function": "SelectionFaultTests.assert_fault_scene",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_selection_faults.py",
+    "line": 50,
+    "column": 5,
+    "function": "SelectionFaultTests.assert_fault_metadata",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_selection_faults.py",
+    "line": 65,
+    "column": 5,
+    "function": "SelectionFaultTests.assert_server_values",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_selection_faults.py",
+    "line": 70,
+    "column": 5,
+    "function": "SelectionFaultTests.assert_fault_health",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_selection_faults.py",
+    "line": 79,
+    "column": 5,
+    "function": "SelectionFaultTests.test_faults_preserve_preflight_errors_and_unrelated_requests",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_selection_faults.py",
+    "line": 84,
+    "column": 5,
+    "function": "SelectionFaultTests.assert_preserved_requests",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_selection_faults.py",
+    "line": 102,
+    "column": 5,
+    "function": "SelectionFaultTests.test_ack_requires_matching_real_success_on_same_connection",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_selection_faults.py",
+    "line": 121,
+    "column": 5,
+    "function": "SelectionFaultTests.send_invalid_acks",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_selection_faults.py",
+    "line": 130,
+    "column": 5,
+    "function": "LiveSelectionFaultTests.test_real_native_proxy_serves_faults_and_preserves_healthy_upstream",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_selection_faults.py",
+    "line": 135,
+    "column": 5,
+    "function": "LiveSelectionFaultTests.check_scene",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_selection_faults.py",
+    "line": 147,
+    "column": 5,
+    "function": "LiveSelectionFaultTests.assert_live_metadata",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_selection_faults.py",
+    "line": 153,
+    "column": 5,
+    "function": "LiveSelectionFaultTests.assert_live_health",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_visual_fixtures.py",
+    "line": 14,
+    "column": 5,
+    "function": "VisualFixtureTests.request",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_visual_fixtures.py",
+    "line": 19,
+    "column": 5,
+    "function": "VisualFixtureTests.result",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_visual_fixtures.py",
+    "line": 27,
+    "column": 5,
+    "function": "VisualFixtureTests.test_country_halls_and_shop_keep_existing_contract",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_visual_fixtures.py",
+    "line": 38,
+    "column": 5,
+    "function": "VisualFixtureTests.test_read_only_lists",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_visual_fixtures.py",
+    "line": 50,
+    "column": 5,
+    "function": "VisualFixtureTests.test_check_in_rewards_and_timestamp",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_visual_fixtures.py",
+    "line": 57,
+    "column": 5,
+    "function": "VisualFixtureTests.test_read_endpoints_preserve_mutating_requests",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_visual_fixtures.py",
+    "line": 63,
+    "column": 5,
+    "function": "VisualFixtureTests.test_specialized_fixtures_keep_priority_and_real_room_creation",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_visual_fixtures.py",
+    "line": 70,
+    "column": 5,
+    "function": "VisualFixtureTests.test_real_auth_payment_and_room_boundaries_in_all_scenes",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_visual_fixtures.py",
+    "line": 74,
+    "column": 5,
+    "function": "VisualFixtureTests.assert_scene_boundaries",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_visual_fixtures.py",
+    "line": 82,
+    "column": 5,
+    "function": "VisualFixtureTests.test_unmatched_hosts_paths_preflight_and_third_party_boundaries",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/test_visual_fixtures.py",
+    "line": 93,
+    "column": 5,
+    "function": "VisualFixtureTests.assert_scene_passthrough",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/visual_fixtures.py",
+    "line": 16,
+    "column": 1,
+    "function": "load",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/visual_fixtures.py",
+    "line": 36,
+    "column": 1,
+    "function": "fixed_results",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/visual_fixtures.py",
+    "line": 49,
+    "column": 1,
+    "function": "matching_result",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/visual_fixtures.py",
+    "line": 56,
+    "column": 1,
+    "function": "route_payload",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/visual_fixtures.py",
+    "line": 60,
+    "column": 1,
+    "function": "is_chat",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/visual_fixtures.py",
+    "line": 64,
+    "column": 1,
+    "function": "is_feedback",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/visual_fixtures.py",
+    "line": 68,
+    "column": 1,
+    "function": "blocks_payment",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/visual_fixtures.py",
+    "line": 73,
+    "column": 5,
+    "function": "VisualFixtures.__init__",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/visual_fixtures.py",
+    "line": 78,
+    "column": 5,
+    "function": "VisualFixtures.result",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/visual_fixtures.py",
+    "line": 82,
+    "column": 5,
+    "function": "VisualFixtures.unmatched",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/visual_fixtures.py",
+    "line": 85,
+    "column": 5,
+    "function": "VisualFixtures.get_result",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/visual_fixtures.py",
+    "line": 91,
+    "column": 5,
+    "function": "VisualFixtures.get_path_result",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/visual_fixtures.py",
+    "line": 98,
+    "column": 5,
+    "function": "VisualFixtures.get_routes",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/visual_fixtures.py",
+    "line": 101,
+    "column": 5,
+    "function": "VisualFixtures.club_result",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/visual_fixtures.py",
+    "line": 108,
+    "column": 5,
+    "function": "VisualFixtures.put_result",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/visual_fixtures.py",
+    "line": 113,
+    "column": 5,
+    "function": "VisualFixtures.third_party_handler",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/visual_fixtures.py",
+    "line": 120,
+    "column": 5,
+    "function": "VisualFixtures.kill_chat",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/visual_fixtures.py",
+    "line": 123,
+    "column": 5,
+    "function": "VisualFixtures.feedback",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/visual_fixtures.py",
+    "line": 126,
+    "column": 5,
+    "function": "VisualFixtures.request",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/visual_fixtures.py",
+    "line": 131,
+    "column": 5,
+    "function": "VisualFixtures.staging_request",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "e2e/mitmproxy/visual_fixtures.py",
+    "line": 140,
+    "column": 5,
+    "function": "VisualFixtures.respond",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "scripts/check_e2e_complexity.py",
+    "line": 26,
+    "column": 5,
+    "function": "Decisions.visit_FunctionDef",
+    "complexity": 1,
+    "limit": 6
+  },
+  {
+    "file": "scripts/check_e2e_complexity.py",
+    "line": 34,
+    "column": 1,
+    "function": "function_complexity",
+    "complexity": 3,
+    "limit": 6
+  },
+  {
+    "file": "scripts/check_e2e_complexity.py",
+    "line": 43,
+    "column": 5,
+    "function": "Functions.__init__",
+    "complexity": 1,
+    "limit": 6
+  },
+  {
+    "file": "scripts/check_e2e_complexity.py",
+    "line": 49,
+    "column": 5,
+    "function": "Functions.visit_ClassDef",
+    "complexity": 1,
+    "limit": 6
+  },
+  {
+    "file": "scripts/check_e2e_complexity.py",
+    "line": 54,
+    "column": 5,
+    "function": "Functions.visit_FunctionDef",
+    "complexity": 1,
+    "limit": 6
+  },
+  {
+    "file": "scripts/check_e2e_complexity.py",
+    "line": 69,
+    "column": 1,
+    "function": "measure",
+    "complexity": 1,
+    "limit": 6
+  },
+  {
+    "file": "scripts/check_e2e_complexity.py",
+    "line": 75,
+    "column": 1,
+    "function": "scoped_files",
+    "complexity": 6,
+    "limit": 6
+  },
+  {
+    "file": "scripts/check_e2e_complexity.py",
+    "line": 85,
+    "column": 1,
+    "function": "scan",
+    "complexity": 4,
+    "limit": 6
+  },
+  {
+    "file": "scripts/check_e2e_complexity.py",
+    "line": 98,
+    "column": 1,
+    "function": "failures",
+    "complexity": 3,
+    "limit": 6
+  },
+  {
+    "file": "scripts/check_e2e_complexity.py",
+    "line": 102,
+    "column": 1,
+    "function": "check",
+    "complexity": 2,
+    "limit": 6
+  },
+  {
+    "file": "scripts/check_e2e_complexity.py",
+    "line": 111,
+    "column": 1,
+    "function": "main",
+    "complexity": 2,
+    "limit": 6
+  },
+  {
+    "file": "scripts/test_check_e2e_complexity.py",
+    "line": 15,
+    "column": 1,
+    "function": "branches",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "scripts/test_check_e2e_complexity.py",
+    "line": 20,
+    "column": 1,
+    "function": "complexities",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "scripts/test_check_e2e_complexity.py",
+    "line": 25,
+    "column": 5,
+    "function": "MeasurementTests.test_test_support_boundary_is_three",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "scripts/test_check_e2e_complexity.py",
+    "line": 31,
+    "column": 5,
+    "function": "MeasurementTests.test_independent_tool_boundary_is_six",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "scripts/test_check_e2e_complexity.py",
+    "line": 37,
+    "column": 5,
+    "function": "MeasurementTests.test_async_methods_and_lambdas_are_independent",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "scripts/test_check_e2e_complexity.py",
+    "line": 48,
+    "column": 5,
+    "function": "MeasurementTests.test_nested_function_does_not_accumulate_into_parent",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "scripts/test_check_e2e_complexity.py",
+    "line": 63,
+    "column": 5,
+    "function": "MeasurementTests.test_radon_decisions_and_no_assert",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "scripts/test_check_e2e_complexity.py",
+    "line": 80,
+    "column": 5,
+    "function": "MeasurementTests.test_nested_lambda_is_not_counted_twice",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "scripts/test_check_e2e_complexity.py",
+    "line": 86,
+    "column": 5,
+    "function": "GateTests.setUp",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "scripts/test_check_e2e_complexity.py",
+    "line": 91,
+    "column": 5,
+    "function": "GateTests.write",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "scripts/test_check_e2e_complexity.py",
+    "line": 96,
+    "column": 5,
+    "function": "GateTests.populate",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "scripts/test_check_e2e_complexity.py",
+    "line": 102,
+    "column": 5,
+    "function": "GateTests.run_gate",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "scripts/test_check_e2e_complexity.py",
+    "line": 106,
+    "column": 5,
+    "function": "GateTests.test_cli_accepts_boundary_and_rejects_overlimit",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "scripts/test_check_e2e_complexity.py",
+    "line": 114,
+    "column": 5,
+    "function": "GateTests.test_cli_tool_boundary",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "scripts/test_check_e2e_complexity.py",
+    "line": 123,
+    "column": 5,
+    "function": "GateTests.test_adjacent_and_nested_helpers_inherit_test_limit",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "scripts/test_check_e2e_complexity.py",
+    "line": 131,
+    "column": 5,
+    "function": "GateTests.test_nested_callback_cannot_hide_behind_noqa",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "scripts/test_check_e2e_complexity.py",
+    "line": 139,
+    "column": 5,
+    "function": "GateTests.test_lambda_and_async_callbacks_cannot_bypass_limit",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "scripts/test_check_e2e_complexity.py",
+    "line": 147,
+    "column": 5,
+    "function": "GateTests.test_parse_error_is_nonzero",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "scripts/test_check_e2e_complexity.py",
+    "line": 154,
+    "column": 5,
+    "function": "GateTests.test_missing_dependency_is_nonzero",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "scripts/test_check_e2e_complexity.py",
+    "line": 160,
+    "column": 5,
+    "function": "GateTests.test_missing_scope_is_nonzero",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "scripts/test_check_e2e_complexity.py",
+    "line": 165,
+    "column": 5,
+    "function": "GateTests.test_empty_support_scan_is_nonzero",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "scripts/test_check_e2e_complexity.py",
+    "line": 172,
+    "column": 5,
+    "function": "GateTests.test_report_contains_every_function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "scripts/test_check_e2e_complexity.py",
+    "line": 180,
+    "column": 5,
+    "function": "GateTests.prepare_npm_entry",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "scripts/test_check_e2e_complexity.py",
+    "line": 185,
+    "column": 5,
+    "function": "GateTests.npm_entry",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "scripts/test_check_e2e_complexity.py",
+    "line": 189,
+    "column": 5,
+    "function": "GateTests.test_actual_npm_entry_blocks_overlimit",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "scripts/test_check_e2e_complexity.py",
+    "line": 196,
+    "column": 5,
+    "function": "GateTests.test_actual_npm_entry_preserves_ruff_checks",
+    "complexity": 1,
+    "limit": 3
+  }
+]
