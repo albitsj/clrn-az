@@ -1,9 +1,10 @@
-import type { TestInfo } from '@playwright/test';
+import { expect, type TestInfo } from '@playwright/test';
 import type { AndroidDevice } from 'playwright';
 import { captureNativeTransition, captureTimedPrompt } from './animation-transition';
 import { adb } from './device';
-import { gameConnected, gameReady, gameTap } from './game-controls';
+import { gameConnected, gameMarker, gameReady, gameTap, gameTapTarget, type NativeNode } from './game-controls';
 import { preserveAnimationFailure } from './animation-diagnostics';
+import { preserveRulePanelState, tracePanelTarget, type PanelTrace } from './game-panel-diagnostics';
 import type { ScreenshotBounds, ScreenshotMask } from './screenshot';
 
 type SamplingMethod = 'motionFrames' | 'launchFrames' | 'videoFrames';
@@ -42,30 +43,107 @@ export async function animateGamePanel(device: AndroidDevice, game: 'texas-holde
   videoPhaseAnchors?: string[]): Promise<void> {
   if (!testInfo) { await gameTap(device, button); return; }
   phase = panelPhase(phase);
-  samplingMethod = panelSampling(game, samplingMethod);
-  await gameConnected(device);
-  const { bounds } = await gameReady(device, button);
-  /** 通过独立 ADB 连接点击真实牌桌控件，使驱动同时截取每一帧。 */
-  const press = () => adb('shell', 'input', 'tap',
-    String(Math.round(bounds.x + bounds.width / 2)),
-    String(Math.round(bounds.y + bounds.height / 2)));
+  samplingMethod = gamePanelSamplingMethod(game, name, phase, panelSampling(game, samplingMethod));
+  const transition = `${game}-${name}-${phase}`;
+  const trace: PanelTrace = { testID: button, events: [] };
+  /** 记录采集阶段，不在采样期间轮询完整控件树。
+   * @param event - 固定阶段名。
+   */
+  const observe = (event: string) => tracePanelTarget(trace, event);
   const startedAt = Date.now();
   try {
-    await captureNativeTransition(device, `${game}-${name}-${phase}`, testInfo, region, press,
-      masks, [], 0, gamePanelSamplingMethod(game, name, phase, samplingMethod), undefined, afterReady, videoPhaseAnchors);
+    await gameConnected(device);
+    observe('target-query-start');
+    const target = await gameTapTarget(device, button, node => tracePanelTarget(trace, 'target-query-result', node));
+    const press = panelPress(device, target, trace, liveRuleCheck(transition, samplingMethod));
+    await captureNativeTransition(device, transition, testInfo, region, press,
+      masks, [], 0, samplingMethod, undefined, afterReady, videoPhaseAnchors,
+      [], [], [], undefined, observe);
   } catch (error) {
-    await preservePanelFailure(`${game}-${name}-${phase}`, startedAt, testInfo);
+    await preservePanelFailure(transition, startedAt, testInfo);
+    await preserveRuleFailure(device, transition, testInfo);
     throw error;
+  } finally {
+    await attachRuleTrace(transition, testInfo, trace);
   }
 }
 
-/** 保存聊天入场失败的诊断。
+/** 录屏就绪后只核对一次规则入口，拒绝使用已移动、禁用或消失的旧坐标。
+ * @param device - 原生设备。
+ * @param target - 采集前已稳定的入口。
+ * @param trace - 当前点击的脱敏时间线。
+ * @param verify - 规则入场录屏路径才能即时查询；连续截图期间驱动正忙。
+ */
+function panelPress(device: AndroidDevice, target: NativeNode,
+  trace: PanelTrace, verify: boolean): () => Promise<void> {
+  return async () => {
+    tracePanelTarget(trace, 'trigger-ready', target);
+    if (verify) {
+      tracePanelTarget(trace, 'final-query-start');
+      const current = await gameMarker(device, trace.testID);
+      tracePanelTarget(trace, 'final-query-result', current || undefined);
+      assertRuleTarget(current, target);
+    }
+    const { x, y, width, height } = target.bounds;
+    const point = { x: Math.round(x + width / 2), y: Math.round(y + height / 2) };
+    trace.events.push({ event: 'tap', at: Date.now(), point });
+    adb('shell', 'input', 'tap', String(point.x), String(point.y));
+    tracePanelTarget(trace, 'tap-complete');
+  };
+}
+
+/** 核对一次即时节点；失败直接抛出，不重新点击或在录制中等待布局。
+ * @param current - 录屏启动后即时读取的节点。
+ * @param target - 录制前稳定的节点。
+ */
+function assertRuleTarget(current: NativeNode | null, target: NativeNode): void {
+  expect(current, '录屏就绪时规则入口仍应可见').not.toBeNull();
+  expect(current!.enabled, '录屏就绪时规则入口仍应可用').not.toBe(false);
+  expect(current!.bounds, '录屏准备期间规则入口不能移动，禁止使用旧坐标').toEqual(target.bounds);
+}
+
+/** 只在独立录屏期间核对规则入口，避免占用正在连续截图的同一驱动。
+ * @param name - 具体转场。
+ * @param method - 已固定的采样方式。
+ */
+function liveRuleCheck(name: string, method: SamplingMethod): boolean {
+  return name === 'zhajinhua-game-rule-enter' && method === 'videoFrames';
+}
+
+/** 规则入退场保存同一份定向诊断。
+ * @param name - 当前转场名。
+ */
+function ruleTransition(name: string): boolean { return name.startsWith('zhajinhua-game-rule-'); }
+
+/** 规则失败时读取脱敏现场，不覆盖原始错误。
+ * @param device - 专用模拟器。
+ * @param name - 当前动画。
+ * @param info - 独立测试报告。
+ */
+async function preserveRuleFailure(device: AndroidDevice, name: string, info: TestInfo): Promise<void> {
+  if (ruleTransition(name)) await preserveRulePanelState(device, name, info).catch(() => undefined);
+}
+
+/** 成败均保存规则入口时间线，供对照首次执行。
+ * @param name - 当前动画。
+ * @param info - 独立测试报告。
+ * @param trace - 只包含入口几何状态的时间线。
+ */
+async function attachRuleTrace(name: string, info: TestInfo, trace: PanelTrace): Promise<void> {
+  if (ruleTransition(name)) await info.attach(`${name}-input-trace`, {
+    body: JSON.stringify(trace), contentType: 'application/json',
+  }).catch(() => undefined);
+}
+
+/** 保存聊天入场与规则面板失败时的既有脱敏日志。
  * @param name - 动画名称。
  * @param startedAt - 开始时间。
  * @param info - 测试报告。
  */
 async function preservePanelFailure(name: string, startedAt: number, info: TestInfo): Promise<void> {
-  if (name === 'texas-holdem-chat-enter') await preserveAnimationFailure(name, startedAt, info).catch(() => undefined);
+  if (name === 'texas-holdem-chat-enter' || ruleTransition(name)) {
+    await preserveAnimationFailure(name, startedAt, info).catch(() => undefined);
+  }
 }
 
 /**

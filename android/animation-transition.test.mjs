@@ -250,6 +250,7 @@ test('录屏直接跳到终点不能冒充弹窗滑出', () => {
  * @param dynamicRegion - 使用带偏移的完整屏幕验证录屏后才解析的控件边界。
  */
 async function compareRecordedVideo(sceneName, timeline, dynamicRegion = false) {
+  const stages = [];
   const sceneStart = readFileSync(`${snapshots}${sceneName}-start.png`);
   const sceneEnd = readFileSync(`${snapshots}${sceneName}-end.png`);
   const size = PNG.sync.read(sceneStart);
@@ -287,7 +288,7 @@ async function compareRecordedVideo(sceneName, timeline, dynamicRegion = false) 
     snapshotPath: file => `${snapshots}${file}` };
   await captureNativeTransition(device, sceneName, info,
     dynamicRegion ? resolveRegion : region,
-    /** 模拟真实入口，边界必须等此操作之后才能读取。 */ () => { triggered = true; },
+    /** 模拟真实入口，边界必须等此操作之后才能读取。 */ () => { stages.push('tap'); triggered = true; },
     [], [], 0, 'videoFrames', undefined, undefined, [], [], [], [],
     /** 模拟录屏完成后的延迟解码；只替换外部录屏接口，仍执行完整首尾及中途像素比较。
      * @param _name - 转场名称。
@@ -295,11 +296,22 @@ async function compareRecordedVideo(sceneName, timeline, dynamicRegion = false) 
      * @param trigger - 录屏开始后点击入口。
      */
     async (_name, recordedRegion, trigger) => {
+      stages.push('recorder-ready');
       await trigger();
       assert.deepEqual(typeof recordedRegion === 'function' ? await recordedRegion() : recordedRegion, region);
       return timeline;
-    });
+    }, event => stages.push(event));
+  assert.deepEqual(stages, ['start-screenshot-start', 'start-screenshot-complete',
+    'video-recording-start', 'recorder-ready', 'tap']);
   assert.equal(resolutions, dynamicRegion ? 1 : 0, '同一转场的所有相位只能解析一次边界');
+}
+
+for (const phase of ['enter', 'exit']) {
+  test(`规则弹窗 ${phase} 保留真实首尾和中途画面比较及录屏先于点击的时间线`, async () => {
+    const sceneName = `zhajinhua-game-rule-${phase}`;
+    const frames = ['start', 'middle', 'end'].map(part => readFileSync(`${snapshots}${sceneName}-${part}.png`));
+    await compareRecordedVideo(sceneName, frames);
+  });
 }
 
 for (const [sceneName, brightness] of [['native-stack-enter', -10], ['game-picker-exit', -40],

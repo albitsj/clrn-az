@@ -1,5 +1,5 @@
 /** 录制真实 Android 转场，待弹窗布局可用后按同一边界解码关键帧。 */
-import { execFileSync, spawn } from 'node:child_process';
+import { execFileSync, spawn, type ChildProcess } from 'node:child_process';
 import { mkdirSync, readFileSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 import { setTimeout } from 'node:timers/promises';
@@ -33,6 +33,7 @@ export async function recordNativeVideoFrames(name: string, region: AnimationReg
     recorder.once('error', reject);
     recorder.once('close', code => code === 0 ? resolve() : reject(new Error(`Android 录屏失败：${error}`)));
   });
+  let attached = false;
   try {
     await Promise.race([setTimeout(1_000), finished.then(() => {
       throw new Error('Android 录屏在触发动画前意外结束。');
@@ -41,6 +42,7 @@ export async function recordNativeVideoFrames(name: string, region: AnimationReg
     await finished;
     adb('pull', remote, video);
     await testInfo.attach(`${name}-native-video`, { path: video, contentType: 'video/mp4' });
+    attached = true;
     const frames = path.join(directory, 'frames');
     mkdirSync(frames);
     const { x, y, width, height } = typeof region === 'function' ? await region() : region;
@@ -51,8 +53,34 @@ export async function recordNativeVideoFrames(name: string, region: AnimationReg
     const files = readdirSync(frames).filter(file => file.endsWith('.png')).sort();
     if (files.length < 20) throw new Error('原生录屏不足 20 帧，无法审查弹层转场。');
     return files.map(file => readFileSync(path.join(frames, file)));
+  } catch (failure) {
+    // 入口核对或点击失败时也先停录并保存原片，不能在 finally 中直接删除现场。
+    stopRecorder(recorder);
+    await finished.catch(() => undefined);
+    if (!attached) {
+      await preserveFailedVideo(name, remote, video, testInfo).catch(() => undefined);
+    }
+    throw failure;
   } finally {
-    if (!recorder.killed && recorder.exitCode === null) recorder.kill('SIGINT');
-    adb('shell', 'rm', '-f', remote);
+    stopRecorder(recorder);
+    try { adb('shell', 'rm', '-f', remote); } catch { /* 清理失败不能覆盖原始采集错误。 */ }
   }
+}
+
+/** 只向仍运行的录屏进程发送一次结束信号。
+ * @param recorder - 当前独立录屏进程。
+ */
+function stopRecorder(recorder: ChildProcess): void {
+  if (!recorder.killed && recorder.exitCode === null) recorder.kill('SIGINT');
+}
+
+/** 从失败录制中尽量保留原片，不用后续拉取或报告错误替换触发错误。
+ * @param name - 当前动画。
+ * @param remote - 模拟器上的原始录屏。
+ * @param video - 宿主附件路径。
+ * @param info - 本轮测试报告。
+ */
+async function preserveFailedVideo(name: string, remote: string, video: string, info: TestInfo): Promise<void> {
+  adb('pull', remote, video);
+  await info.attach(`${name}-native-video`, { path: video, contentType: 'video/mp4' });
 }

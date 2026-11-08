@@ -24,7 +24,9 @@ function panel(directory, failure, attach) {
     './game-controls': {
       /** 入口已可操作。 */ gameConnected: async () => {},
       /** 返回真实入口所需的设备边界。 */ gameReady: async () => ({ bounds: { x: 0, y: 0, width: 10, height: 10 } }),
+      /** 动画入口的两次布局查询已经一致。 */ gameTapTarget: async () => ({ bounds: { x: 0, y: 0, width: 10, height: 10 } }),
     },
+    './game-panel-diagnostics': require('./game-panel-diagnostics.ts'),
     './device': { /** 设备点击已完成。 */ adb: () => {} },
     './animation-transition': { /** 保留原入口的成功或失败，不更改其结果。 */
       captureNativeTransition: async () => { if (failure) throw failure; },
