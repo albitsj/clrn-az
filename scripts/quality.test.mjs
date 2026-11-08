@@ -52,12 +52,14 @@ async function diagnostics(source, rule, filePath = 'android/tests/quality-probe
 }
 
 test('真实 ESLint 阈值：复杂度 10、深度 3；行内禁用不能绕过', async () => {
+  // 通用复杂度阈值使用非 Android 路径；android/tests 已单独收紧为 3。
+  const filePath = 'e2e/tests/quality-probe.ts';
   const branches = Array.from({ length: 10 }, (_, i) => `if (n === ${i}) return ${i};`).join('\n');
-  assert.equal((await diagnostics(`// eslint-disable-next-line complexity\nfunction probe(n: number) { ${branches} return -1; }`, 'complexity')).length, 1);
+  assert.equal((await diagnostics(`// eslint-disable-next-line complexity\nfunction probe(n: number) { ${branches} return -1; }`, 'complexity', filePath)).length, 1);
   const nested = 'function probe(n: number) { if(n) { if(n) { if(n) { if(n) { return n; } } } } }';
   assert.equal((await diagnostics(nested, 'max-depth')).length, 1);
   assert.equal((await diagnostics('function probe(n: number) { if(n) { if(n) { if(n) { return n; } } } }', 'max-depth')).length, 0);
-  assert.equal((await diagnostics(`function probe(n: number) { ${branches.replace('if (n === 9) return 9;', '')} return -1; }`, 'complexity')).length, 0);
+  assert.equal((await diagnostics(`function probe(n: number) { ${branches.replace('if (n === 9) return 9;', '')} return -1; }`, 'complexity', filePath)).length, 0);
 });
 
 test('语法级响应伪造规则覆盖普通、可选、计算属性、别名和解构调用', async () => {

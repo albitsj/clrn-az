@@ -1,10 +1,10 @@
 import { expect, test } from '@playwright/test';
 import type { AndroidDevice } from 'playwright';
 import { PNG } from 'pngjs';
-import { adb, applicationId, artifacts, compareScreenshot, launchApplication, waitForHall } from '../device';
-import { captureFailure } from '../diagnostics';
-import { selectLanguage } from '../navigation';
 import { dismissKeyboard } from '../keyboard';
+import { adb, applicationId, artifacts, compareScreenshot, launchApplication, waitForHall } from '../device';
+import { captureDeviceFailure, closeDevice } from './support/lifecycle';
+import { selectLanguage } from '../navigation';
 import { gameMarker, gameReady, gameScreenshot } from '../game-controls';
 import { withAndroidProxy } from '../proxy';
 
@@ -60,12 +60,12 @@ test(`${locale} launch_branding full screen while initialization waits`, async (
       await proxy.command('android/launch-network', { hold: false });
       await device.wait({ res: 'settings-tab' }, { timeout: 120_000 });
     } catch (error) {
-      if (device) await captureFailure(device, testInfo);
+      await captureDeviceFailure(device, testInfo);
       throw error;
     } finally {
       await proxy.command('android/launch-network', { hold: false });
       await testInfo.attach('build-info', { path: `${artifacts}/build-info.json`, contentType: 'application/json' });
-      await device?.close();
+      await closeDevice(device);
     }
   });
 });

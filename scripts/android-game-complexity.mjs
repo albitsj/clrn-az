@@ -7,15 +7,15 @@ import { androidGameFiles, androidGameTools, androidGameChecks } from './android
  * @param args - --report 输出每个函数的 classic complexity。
  */
 export async function checkAndroidGameComplexity(args = []) {
-  return checkScopedComplexity([...androidGameFiles, ...androidGameTools, ...androidGameChecks], 'Android 玩法', args);
+  return checkAndroidComplexity(args, [...androidGameFiles, ...androidGameTools, ...androidGameChecks], 'Android 玩法');
 }
 
-/** 复用生产配置扫描独立文件范围，报告和失败语义由各门禁共享。
- * @param files - 明确的当前文件模式。
- * @param label - 范围的诊断名称。
- * @param args - 可选报告模式。
+/** 复用生产 ESLint 的定向门禁和逐函数报告，不接受历史豁免。
+ * @param args - 可选的 --report。
+ * @param files - 本范围的实现、工具和检查路径。
+ * @param label - 门禁的业务名称。
  */
-export async function checkScopedComplexity(files, label, args) {
+export async function checkAndroidComplexity(args, files, label) {
   const report = args.includes('--report');
   const overrideConfig = report ? { rules: { complexity: ['error', { max: 0, variant: 'classic' }] } } : undefined;
   const eslint = new ESLint({ allowInlineConfig: false, overrideConfig });

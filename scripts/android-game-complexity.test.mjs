@@ -1,8 +1,9 @@
-import { complexityContract } from './android-animation-complexity-fixture.mjs';
+import { registerComplexityChecks } from './android-complexity-probes.mjs';
 
-complexityContract({
-  name: '玩法', script: 'scripts/android-game-complexity.mjs', supportFile: 'android/game-probe.ts',
-  testFiles: ['android/game-controls.test.mjs', 'android/game-probe.ts', 'android/texas-probe.ts',
+registerComplexityChecks({
+  name: 'android-game', probe: 'android/game-probe.ts',
+  testPaths: ['android/game-controls.test.mjs', 'android/game-probe.ts', 'android/texas-probe.ts',
     'android/zhajinhua-gameplay-probe.ts', 'scripts/android-game-probe.test.mjs'],
-  toolFiles: ['scripts/android-game-probe.mjs', 'eslint.config.mjs'],
+  toolPaths: ['scripts/android-game-probe.mjs', 'eslint.config.mjs'],
+  fixturePaths: ['android/game-probe.ts', 'android/texas-probe.ts', 'android/zhajinhua-gameplay-probe.ts'],
 });

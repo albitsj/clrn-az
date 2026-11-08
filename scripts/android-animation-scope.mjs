@@ -7,4 +7,4 @@ export const androidAnimationFiles = [
   'scroll-end', 'video-frames', 'video-motion',
 ].map(prefix => `android/${prefix}*.{js,jsx,mjs,cjs,ts,tsx,mts,cts}`);
 export const androidAnimationTools = ['eslint.config.mjs', 'scripts/android-animation-*.mjs', 'scripts/android-game-complexity.mjs'];
-export const androidAnimationChecks = ['scripts/android-animation-*.test.mjs', 'scripts/android-animation-*-fixture.mjs'];
+export const androidAnimationChecks = ['scripts/android-animation-*.test.mjs', 'scripts/android-complexity-*.mjs'];

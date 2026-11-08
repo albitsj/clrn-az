@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import type { AndroidDevice } from 'playwright';
 import { PNG } from 'pngjs';
 import { adb, applicationId, artifacts, compareScreenshot, launchApplication, waitForHall } from '../device';
-import { captureFailure } from '../diagnostics';
+import { captureDeviceFailure, closeDevice } from './support/lifecycle';
 import { selectLanguage } from '../navigation';
 import { withAndroidProxy } from '../proxy';
 
@@ -34,11 +34,11 @@ test(`${locale} launch_staging_notice full screen`, async ({}, testInfo) => {
       };
       await compareScreenshot(device, `${locale}-launch-staging-notice`, testInfo, [], undefined, fullScreen);
     } catch (error) {
-      if (device) await captureFailure(device, testInfo);
+      await captureDeviceFailure(device, testInfo);
       throw error;
     } finally {
       await testInfo.attach('build-info', { path: `${artifacts}/build-info.json`, contentType: 'application/json' });
-      await device?.close();
+      await closeDevice(device);
     }
   });
 });

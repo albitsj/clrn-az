@@ -25,7 +25,7 @@ test('三种语言沿用相同的 Web 手机业务页面，渠道差异显式列
   for (const scenario of androidScenarios('en')) {
     assert.equal(scenario.viewport.label, 'mobile');
     nativeSelector(scenario.visualReadySelector);
-    if (scenario.visualGoneSelector) nativeSelector(scenario.visualGoneSelector);
+    assertGoneSelector(scenario);
   }
 });
 
@@ -45,7 +45,7 @@ test('动态区域遮罩保留区域外像素，拒绝掩盖整页', () => {
   const masked = PNG.sync.read(maskScreenshot(bytes, [{ x: 10, y: 20, width: 10, height: 10, reason: '日期' }]));
   for (let y = 0; y < 100; y++) for (let x = 0; x < 100; x++) {
     const pixel = [...masked.data.subarray((y * 100 + x) * 4, (y * 100 + x + 1) * 4)];
-    assert.deepEqual(pixel, x >= 10 && x < 20 && y >= 20 && y < 30 ? [230, 210, 235, 255] : [255, 255, 255, 255]);
+    assert.deepEqual(pixel, expectedPixel(x, y));
   }
   assert.throws(() => maskScreenshot(bytes, [{ x: 0, y: 0, width: 100, height: 100, reason: '错误范围' }]), /12%/);
 });
@@ -83,3 +83,23 @@ test('原生控件消失查询不把连接或驱动错误误认为成功', async
   } }, { res: 'ready' }), true);
   assert.equal(calls, 2);
 });
+
+/** 可选的消失选择器也必须显式适配。
+ * @param scenario - 共用场景。
+ */
+function assertGoneSelector(scenario) { if (scenario.visualGoneSelector) nativeSelector(scenario.visualGoneSelector); }
+
+/** 测试遮罩矩形内外的原始像素断言。
+ * @param x - 像素横坐标。
+ * @param y - 像素纵坐标。
+ */
+function expectedPixel(x, y) {
+  return inside(x, 10, 20) && inside(y, 20, 30) ? [230, 210, 235, 255] : [255, 255, 255, 255];
+}
+
+/** 半开区间与遮罩的像素边界一致。
+ * @param value - 坐标。
+ * @param start - 起点。
+ * @param end - 终点。
+ */
+function inside(value, start, end) { return value >= start && value < end; }

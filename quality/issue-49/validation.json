@@ -1,0 +1,205 @@
+{
+  "issue": 49,
+  "fullTestSuiteRun": false,
+  "nodeVersion": "v24.14.0",
+  "checks": [
+    {
+      "command": "QUALITY_BASE_REV=HEAD npm run lint:js",
+      "exitCode": 0,
+      "details": "现有 JS 入口包含两个定向复杂度门禁及精确历史 ESLint 门禁。"
+    },
+    {
+      "command": "npm run lint:android:navigation",
+      "exitCode": 0,
+      "details": "本范围全部测试、fixture、mock、回调及辅助实现 ≤3；独立通用工具及根配置 ≤6。"
+    },
+    {
+      "command": "npx tsc -p tsconfig.json --noEmit",
+      "exitCode": 0
+    },
+    {
+      "command": "node --import tsx --test android/device.test.mjs android/proxy.test.mjs android/release.test.mjs android/release-download.test.mjs android/scenarios.test.mjs android/native-state.test.mjs android/tests/support/games-plan.test.mjs scripts/android-game-complexity.test.mjs scripts/android-navigation-complexity.test.mjs",
+      "tests": 82,
+      "passed": 82,
+      "failed": 0,
+      "skipped": 0,
+      "exitCode": 0
+    },
+    {
+      "command": "node --import tsx --test android/navigation.test.mjs",
+      "tests": 2,
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0,
+      "exitCode": 0,
+      "details": "验证正常关闭五类浮层的顺序、九次 reveal 查询及八次滚动预算和原始错误传播。"
+    },
+    {
+      "command": "npx playwright test --config android/playwright.config.ts --list --reporter=json",
+      "exitCode": 0,
+      "collected": 107,
+      "details": "与重构前逐项核对文件、名称和顺序一致；仅收集，未运行设备。"
+    },
+    {
+      "command": "QUALITY_BASE_REV=HEAD node scripts/lint-ratchet.mjs dependency-cruiser",
+      "exitCode": 0,
+      "details": "无新增环，删除设备与键盘之间已消除的精确历史环。"
+    },
+    {
+      "command": "runJscpd(repository, temporaryOutput, [--baseline, intersectBaselines(initialRevision, HEAD), --fail-on-new-clones, 0])",
+      "exitCode": 0,
+      "newClones": 0,
+      "details": "使用既有 scripts/lint-duplicates.mjs 的固定版本与原生历史指纹交集；未扩大重复豁免。"
+    },
+    {
+      "command": "node lint-lines.mjs",
+      "exitCode": 0
+    },
+    {
+      "command": "git diff --check",
+      "exitCode": 0
+    }
+  ],
+  "thresholdProbes": {
+    "tests": "3 通过、4 失败",
+    "tools": "6 通过、7 失败",
+    "nestedCallbacks": true,
+    "constructorsAndAccessors": true,
+    "defaultParameters": true,
+    "optionalChains": true,
+    "shortCircuitExpressions": true,
+    "testSupportWithoutTestSuffix": true,
+    "noInlineDisable": true,
+    "isolatedTemporaryProjects": true,
+    "actualLintJsBlocksViolation": true,
+    "missingDependencyNonzero": true,
+    "parseFailureNonzero": true,
+    "parseFailureInReportNonzero": true
+  },
+  "integration": {
+    "entry": "npm run lint:android:navigation",
+    "existingCallChains": [
+      "npm run check → npm run lint → npm run lint:js",
+      "pre-commit repository-lint → npm run lint → npm run lint:js",
+      ".github/workflows/check.yml → pre-commit → repository-lint"
+    ],
+    "sharedChecks": "复用并抽取现有 Android 游戏门禁的检查器和探针注册，未新增流水线。"
+  },
+  "legacyEntriesRemoved": [
+    {
+      "file": "android/device.ts",
+      "line": 29,
+      "rule": "complexity",
+      "sourceHash": "395064b18cb173999b2d58b296c88648e84f12d3cfa3938bf6f25e549262df97"
+    },
+    {
+      "file": "android/device.ts",
+      "line": 107,
+      "rule": "complexity",
+      "sourceHash": "3c93d5dfb73719a80fb84c4411a6d08a8bb9420a198d8fafae584b1fe8f3068d"
+    },
+    {
+      "file": "android/native-state.ts",
+      "line": 9,
+      "rule": "complexity",
+      "sourceHash": "2b2d9be154c54f81df3d04eba7b581780ca79e83971b5bcb7486d1ed66bb647f"
+    },
+    {
+      "file": "android/navigation.ts",
+      "line": 18,
+      "rule": "complexity",
+      "sourceHash": "2ecdaf1f7f48aa8e7eedb37ca4c7855318a5a98ea957e9748a59e603c86e8ff1"
+    },
+    {
+      "file": "android/navigation.ts",
+      "line": 38,
+      "rule": "max-depth",
+      "sourceHash": "48703b2e569130a715d2b2465c5d92c68c2929c7c2a5919fcfcd8660755edacc"
+    },
+    {
+      "file": "android/navigation.ts",
+      "line": 99,
+      "rule": "complexity",
+      "sourceHash": "331f2424dd92f74104fa64a4723e8a742cf51e9bb0b158f204ce15a08fd3be4c"
+    },
+    {
+      "file": "android/navigation.ts",
+      "line": 145,
+      "rule": "complexity",
+      "sourceHash": "ba1cf7f54d11414b7be70a99633b7ae25a7e8185a0a25c0169a486ffbceefb2e"
+    },
+    {
+      "file": "android/navigation.ts",
+      "line": 180,
+      "rule": "max-depth",
+      "sourceHash": "7ff821a9c72b4f88bebc0d50a8c1648cefe880fd9bcf2f22130a10d7dba72c77"
+    },
+    {
+      "file": "android/release.mjs",
+      "line": 17,
+      "rule": "complexity",
+      "sourceHash": "40a873fe6215845df51f532d1dbf30fbf6e2df6b6cdeedce52f8d118b0f507e1"
+    },
+    {
+      "file": "android/release.mjs",
+      "line": 35,
+      "rule": "complexity",
+      "sourceHash": "f88703e9b09f4248a6a5c674abc413e1cf27f3cd6d26c37eab644df68cf74943"
+    },
+    {
+      "file": "android/tests/auth.spec.ts",
+      "line": 48,
+      "rule": "max-depth",
+      "sourceHash": "b1b883b1bd95e981435549fa469274df5338af8fc083f58737bfec199d434648"
+    },
+    {
+      "file": "android/tests/games.spec.ts",
+      "line": 53,
+      "rule": "complexity",
+      "sourceHash": "df020b66496ca36b892574a9829b86e8b8013501e585e727f1bb20f946aff064"
+    },
+    {
+      "file": "android/tests/records.spec.ts",
+      "line": 21,
+      "rule": "complexity",
+      "sourceHash": "045e2725a36a9ed3b0b97435a08dbd383d5faa762a6e0defd44548dbabd880f0"
+    },
+    {
+      "file": "android/tests/records.spec.ts",
+      "line": 103,
+      "rule": "max-depth",
+      "sourceHash": "7785dd3fc5988c67eac713027cb9089a6cd94dfebcf60910feb1b6e6c12a5005"
+    }
+  ],
+  "legacyCycleRemoved": [
+    "android/device.ts",
+    "android/keyboard.ts"
+  ],
+  "representativeDeviceRun": {
+    "status": "not-run",
+    "adbDevices": [],
+    "hostArchitecture": "arm64",
+    "environment": "staging",
+    "sha": "5cdbf9f90dd3c4c157f1ce789a5b859a56cbae12",
+    "deployed_at": "2026-11-08T16:23:29.144Z",
+    "release_tag": "android-staging-300001802-5cdbf9f90dd3",
+    "reason": "本机 adb devices -l 无已连接模拟器；固定 APK 的实时原生导航、代理和动画代表场景未执行。静态检查、离线单元测试及用例收集不能替代固定构建设备运行。",
+    "remainingScenarios": [
+      "native launch artwork and staging notice appear on a real app start",
+      "guest search confirmation animates into and out of the Android screen",
+      "Android Staging 登录与找回密码页面视觉回归",
+      "en / guest / search_sign_in_prompt",
+      "en / social / signed_in_club_rooms_populated",
+      "en / texas / signed_in_texas_pre_game_first",
+      "en / texas / signed_in_texas_game_table",
+      "en / game-record / signed_in_game_records_legacy",
+      "en / game-record / signed_in_game_records_v2"
+    ]
+  },
+  "reports": {
+    "before": "complexity-before.json",
+    "after": "complexity-after.json",
+    "sourceHashesAndSummary": "measurement.json",
+    "collection": "collected-cases.json"
+  }
+}
