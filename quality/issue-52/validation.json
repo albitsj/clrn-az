@@ -1,0 +1,80 @@
+{
+  "issue": 52,
+  "environment": {
+    "python": "3.12.12",
+    "radon": "6.0.1",
+    "ruff": "0.15.12",
+    "mitmproxy": "12.2.3",
+    "node": "24.14.0"
+  },
+  "checks": [
+    {
+      "command": "npm run lint:python",
+      "result": "pass; scoped Radon 3/6 and Ruff C901 6 plus ordinary repository Ruff/line checks; only two resolved scope entries removed from legacy-lint.json"
+    },
+    {
+      "command": ".venv/bin/python -m unittest discover -s scripts -p test_check_e2e_complexity.py -v",
+      "tests": 18,
+      "result": "pass"
+    },
+    {
+      "command": "PYTHONPATH=e2e/mitmproxy .venv/bin/python -m unittest discover -s e2e/mitmproxy -p 'test_*.py' -v",
+      "tests": 36,
+      "result": "pass; includes actual mitmdump subprocesses against a local HTTP upstream"
+    },
+    {
+      "command": "for directory in visual/cases/club/mitmproxy visual/cases/game-record/mitmproxy visual/cases/texas-holdem/mitmproxy visual/cases/zhajinhua/mitmproxy; do .venv/bin/python -m unittest discover -s \"$directory\" -p 'test_*.py' || exit $?; done",
+      "tests": 64,
+      "countsByDirectory": [
+        3,
+        10,
+        32,
+        19
+      ],
+      "result": "pass; direct consumers of response overrides and replay scenes only"
+    },
+    {
+      "command": "node --test scripts/lint-python-lines.test.mjs",
+      "tests": 16,
+      "result": "pass; existing Python static entry still rejects excess lines before Ruff"
+    },
+    {
+      "command": "npm run lint:duplicates",
+      "result": "pass; no new clone fingerprints"
+    },
+    {
+      "command": "PYTHONPATH=e2e/mitmproxy .venv/bin/python -m unittest test_response_overrides -v",
+      "tests": 2,
+      "result": "pass after preserving profile-selection exception boundaries in final review"
+    },
+    {
+      "command": "npm run lint:python:e2e",
+      "result": "pass on final source; 222 functions, zero excess; Ruff passes"
+    },
+    {
+      "command": "git diff --check",
+      "result": "pass"
+    }
+  ],
+  "negativeCases": [
+    "test/support complexity 3 passes, 4 fails; tool complexity 6 passes, 7 fails",
+    "ordinary/async functions, methods, nested classes, nested callbacks and lambdas measured independently",
+    "no_assert=True excludes asserts; Radon boolean/comprehension/exception decisions retained",
+    "adjacent helper.py and extracted/callback.py remain at limit 3 without a test filename",
+    "noqa cannot hide complexity or ordinary Ruff F401 findings",
+    "missing Radon with Python -S, invalid AST, missing mandatory paths, and empty support scan exit nonzero",
+    "real npm run lint:python:e2e fails on temporary complexity 4 support code"
+  ],
+  "payloadComparison": {
+    "baselineRevision": "02867078b9861f36c6575a9180ebe2563e46b72b",
+    "method": "Temporary git archive of baseline e2e/mitmproxy and visual/fixtures; evaluate baseline/current in separate Python subprocesses; compare complete JSON payloads after removing only sent_at/check_in_at clock fields",
+    "replayCases": 279,
+    "httpFixtureCases": 378,
+    "result": "identical"
+  },
+  "entryChain": "npm run lint:python:e2e -> npm run lint:python -> npm run lint -> existing pre-commit repository-lint hook -> existing Repository checks pre-commit step",
+  "ciChange": "Add checker unit tests to existing Python proxy test step; fixed Radon dependency added to requirements-dev.txt; no new workflow",
+  "fullSuiteRun": false,
+  "nativeDeviceRun": false,
+  "runtimeEvidence": "Real mitmdump 12.2.3 + local upstream integration passed; production AndroidVisualProxy contract tests passed. No fixed APK/device animation or visual run is claimed. This refactor preserves protocol payloads, native interaction semantics, timing and visual baselines."
+}

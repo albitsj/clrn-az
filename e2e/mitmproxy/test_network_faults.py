@@ -1,5 +1,6 @@
 import asyncio
 import json
+from itertools import product
 import os
 import unittest
 from unittest.mock import AsyncMock, patch
@@ -125,13 +126,12 @@ class NetworkFaultTests(unittest.IsolatedAsyncioTestCase):
                  '67.hk.api.staging.laiwan.shafayouxi.com', '68.kr.api.staging.laiwan.shafayouxi.com')
         for scenario in (None, 'visual-stable'):
             await self.configure(scenario)
-            for host in hosts:
-                for path in ('/public/v12/metadata/servers', '/public/v13/metadata/servers', '/node/v1/status'):
-                    for method in ('GET', 'OPTIONS'):
-                        request = flow(f'https://{host}{path}', method)
-                        await self.addon.request(request)
-                        self.assertIsNone(request.response)
-                        self.assertIsNone(request.error)
+            paths = ('/public/v12/metadata/servers', '/public/v13/metadata/servers', '/node/v1/status')
+            for host, path, method in product(hosts, paths, ('GET', 'OPTIONS')):
+                request = flow(f'https://{host}{path}', method)
+                await self.addon.request(request)
+                self.assertIsNone(request.response)
+                self.assertIsNone(request.error)
             self.assertEqual(self.addon.stabilized_requests, 0)
             self.assertEqual(self.addon.intercepted_requests, 0)
 

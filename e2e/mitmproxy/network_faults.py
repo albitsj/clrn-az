@@ -42,22 +42,31 @@ class NetworkFaults:
         if flow.request.headers.get("X-E2E-Control-Token") != self.token:
             flow.response = http.Response.make(403, b"Forbidden")
             return
-        path = urlsplit(flow.request.path).path
-        if flow.request.method == "POST" and path == "/scenario":
-            try:
-                scenario = json.loads(flow.request.content)["scenario"]
-                if scenario not in SCENARIOS:
-                    raise ValueError("Unknown scenario")
-            except (ValueError, KeyError, TypeError):
-                flow.response = http.Response.make(400, b"Invalid scenario")
-                return
-            self.scenario = scenario
-            if scenario is not None:
-                self.intercepted_requests = 0
-        elif flow.request.method != "GET" or path != "/status":
-            flow.response = http.Response.make(404, b"Not found")
-            return
-        flow.response = json_response(flow, {
+        routes = {("POST", "/scenario"): self.configure_scenario, ("GET", "/status"): self.status}
+        handler = routes.get((flow.request.method, urlsplit(flow.request.path).path), self.not_found)
+        flow.response = handler(flow)
+
+    def not_found(self, flow):
+        return http.Response.make(404, b"Not found")
+
+    def configure_scenario(self, flow):
+        try:
+            scenario = self.parse_scenario(flow.request.content)
+        except (ValueError, KeyError, TypeError):
+            return http.Response.make(400, b"Invalid scenario")
+        self.scenario = scenario
+        if scenario is not None:
+            self.intercepted_requests = 0
+        return self.status(flow)
+
+    def parse_scenario(self, content):
+        scenario = json.loads(content)["scenario"]
+        if scenario not in SCENARIOS:
+            raise ValueError("Unknown scenario")
+        return scenario
+
+    def status(self, flow):
+        return json_response(flow, {
             "scenario": self.scenario,
             "interceptedRequests": self.intercepted_requests,
             "proxiedRequests": self.proxied_requests,
@@ -83,14 +92,25 @@ class NetworkFaults:
             self.control(flow)
             return
         self.proxied_requests += 1
-        url = urlsplit(flow.request.path)
         # 故障注入放行 CORS 预检和非 staging 流量。
-        if flow.request.method == "OPTIONS" or not is_staging_api(flow.request.host):
-            return
+        if self.can_inject(flow.request):
+            await self.handle_fault(flow)
+
+    def can_inject(self, request):
+        return request.method != "OPTIONS" and is_staging_api(request.host)
+
+    async def handle_fault(self, flow):
+        url = urlsplit(flow.request.path)
         if self.mock_existing_username(flow, url.path) or not self.matches_fault(url):
             return
+        await self.inject_fault(flow)
+
+    def should_delay(self):
+        return self.scenario == "hall-timeout" and self.intercepted_requests == 1
+
+    async def inject_fault(self, flow):
         self.intercepted_requests += 1
-        if self.scenario == "hall-timeout" and self.intercepted_requests == 1:
+        if self.should_delay():
             # 异步延迟保证其他请求和控制接口仍可响应。
             await asyncio.sleep(12)
         if flow.killable:
