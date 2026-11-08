@@ -33,3 +33,5 @@ Actions 只需 `CLRN_CI_TEST_ACCOUNTS_V2`（安卓新 70 个账号）和 `TESTIN
 持续集成和本机共用同一准备逻辑；失败时停止测试，本机释放账号锁。详见 [余额准备](android/README.md#测试开始前的金币准备)。
 
 应用各工作分支 push 会发布独立测试 Release。CI、本机下载、定时和手动任务都只使用当前检出提交的 `deployments/staging.json`。测试应用 PR 时，应在测试 PR 的部署记录中固定该 Release 和完整应用提交。
+
+测试侧真实业务 API 的选线、重发策略与定向验证见 [网络模块说明](docs/business-network.md)。

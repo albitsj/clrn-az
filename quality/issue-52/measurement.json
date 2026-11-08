@@ -1,0 +1,171 @@
+{
+  "issue": 52,
+  "baselineRevision": "02867078b9861f36c6575a9180ebe2563e46b72b",
+  "metric": "Radon 6.0.1 decisions, no_assert=True; every function/async function/method/lambda independently; nested functions/classes/lambdas excluded from parent",
+  "scope": "All Python files recursively under e2e/mitmproxy (including new/extracted adjacent helpers); gate and its tests explicitly included",
+  "limits": {
+    "e2eTestsAndSupport": 3,
+    "gateTests": 3,
+    "independentChecker": 6,
+    "scopedRuffC901": 6
+  },
+  "beforeSupportFunctions": 68,
+  "beforeOverLimit": 31,
+  "beforeMaximum": 27,
+  "afterSupportFunctions": 185,
+  "afterTotalFunctionsIncludingGate": 222,
+  "afterSupportMaximum": 3,
+  "afterOverLimit": 0,
+  "afterGateMaximum": 6,
+  "reportCommand": "uv run --no-project --with radon==6.0.1 python scripts/check_e2e_complexity.py --report",
+  "beforeSources": [
+    {
+      "file": "e2e/mitmproxy/network_faults.py",
+      "beforeSha256": "df2d8b4dcbba301372b2cdfa620b01b7c16c4221d1a9f131ea213797284ce041"
+    },
+    {
+      "file": "e2e/mitmproxy/replay_scenes.py",
+      "beforeSha256": "a921b1eb006a34559b6991cc371285c2bcd7d00c2d0366a81f5a620b066cc213"
+    },
+    {
+      "file": "e2e/mitmproxy/response_overrides.py",
+      "beforeSha256": "cdbc1fc294df515457f76f48e0be18b44f4a7a478e683bdef93865ee79fc1efe"
+    },
+    {
+      "file": "e2e/mitmproxy/table_scenes.py",
+      "beforeSha256": "745468027cda92653db66ef2f464fbc6b1c4010fa7e3b90aae43d865ddc44fad"
+    },
+    {
+      "file": "e2e/mitmproxy/test_native_network.py",
+      "beforeSha256": "cdadd32467c8860e5118205d797a46b2d3d407c42c87cc3abc8bdf35a737d814"
+    },
+    {
+      "file": "e2e/mitmproxy/test_network_faults.py",
+      "beforeSha256": "b1f98cf64b0bfdae67298635e69a239feeebb8cfe25e88b45742c48b1398874c"
+    },
+    {
+      "file": "e2e/mitmproxy/test_replay_scenes.py",
+      "beforeSha256": "4aa982abe6b76a89257f9b119982890ebd8e34412376d54a50f11db4ff495f1b"
+    },
+    {
+      "file": "e2e/mitmproxy/test_response_overrides.py",
+      "beforeSha256": "736131e2f6ad630adb407b41919d58ca7638bab5c2846af02ab30f02f1f976cd"
+    },
+    {
+      "file": "e2e/mitmproxy/test_response_overrides_integration.py",
+      "beforeSha256": "43e929322fbaa27a4da6625b5aa9b8157e15e37c0ffe713966fc52edb68f59cd"
+    },
+    {
+      "file": "e2e/mitmproxy/test_selection_faults.py",
+      "beforeSha256": "00801ddca3f8f3da1e7de8ef56b33df8325e2bc800b0a601dcfbb5fe90296ef7"
+    },
+    {
+      "file": "e2e/mitmproxy/test_visual_fixtures.py",
+      "beforeSha256": "875a81d22a147640ddbaa37fe7235a03f17974e3a25dc0015e49e155c2baba08"
+    },
+    {
+      "file": "e2e/mitmproxy/visual_fixtures.py",
+      "beforeSha256": "3aa657d7e1779d96432cdc14624f391d74727890bc08e2c878951abab6b3cd42"
+    }
+  ],
+  "files": [
+    {
+      "file": "e2e/mitmproxy/network_faults.py",
+      "beforeFunctions": 6,
+      "beforeMaximum": 9,
+      "afterFunctions": 14,
+      "afterMaximum": 3
+    },
+    {
+      "file": "e2e/mitmproxy/replay_scenes.py",
+      "beforeFunctions": 2,
+      "beforeMaximum": 18,
+      "afterFunctions": 13,
+      "afterMaximum": 3
+    },
+    {
+      "file": "e2e/mitmproxy/response_overrides.py",
+      "beforeFunctions": 7,
+      "beforeMaximum": 12,
+      "afterFunctions": 22,
+      "afterMaximum": 3
+    },
+    {
+      "file": "e2e/mitmproxy/table_scenes.py",
+      "beforeFunctions": 3,
+      "beforeMaximum": 27,
+      "afterFunctions": 22,
+      "afterMaximum": 3
+    },
+    {
+      "file": "e2e/mitmproxy/test_native_network.py",
+      "beforeFunctions": 7,
+      "beforeMaximum": 8,
+      "afterFunctions": 13,
+      "afterMaximum": 3
+    },
+    {
+      "file": "e2e/mitmproxy/test_network_faults.py",
+      "beforeFunctions": 10,
+      "beforeMaximum": 5,
+      "afterFunctions": 10,
+      "afterMaximum": 3
+    },
+    {
+      "file": "e2e/mitmproxy/test_replay_scenes.py",
+      "beforeFunctions": 5,
+      "beforeMaximum": 15,
+      "afterFunctions": 17,
+      "afterMaximum": 3
+    },
+    {
+      "file": "e2e/mitmproxy/test_response_overrides.py",
+      "beforeFunctions": 3,
+      "beforeMaximum": 2,
+      "afterFunctions": 3,
+      "afterMaximum": 2
+    },
+    {
+      "file": "e2e/mitmproxy/test_response_overrides_integration.py",
+      "beforeFunctions": 9,
+      "beforeMaximum": 14,
+      "afterFunctions": 22,
+      "afterMaximum": 3
+    },
+    {
+      "file": "e2e/mitmproxy/test_selection_faults.py",
+      "beforeFunctions": 6,
+      "beforeMaximum": 9,
+      "afterFunctions": 17,
+      "afterMaximum": 3
+    },
+    {
+      "file": "e2e/mitmproxy/test_visual_fixtures.py",
+      "beforeFunctions": 6,
+      "beforeMaximum": 6,
+      "afterFunctions": 11,
+      "afterMaximum": 3
+    },
+    {
+      "file": "e2e/mitmproxy/visual_fixtures.py",
+      "beforeFunctions": 4,
+      "beforeMaximum": 21,
+      "afterFunctions": 21,
+      "afterMaximum": 3
+    },
+    {
+      "file": "scripts/check_e2e_complexity.py",
+      "beforeFunctions": 0,
+      "beforeMaximum": null,
+      "afterFunctions": 11,
+      "afterMaximum": 6
+    },
+    {
+      "file": "scripts/test_check_e2e_complexity.py",
+      "beforeFunctions": 0,
+      "beforeMaximum": null,
+      "afterFunctions": 26,
+      "afterMaximum": 3
+    }
+  ]
+}

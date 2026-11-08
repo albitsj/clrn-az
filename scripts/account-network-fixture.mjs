@@ -1,3 +1,4 @@
+import { selectionReply, testNode } from '../network/test-fixture.mjs';
 // 仅由分配器的子进程测试通过 --import 加载，不提供生产跳过余额准备的开关。
 import assert from 'node:assert/strict';
 import { appendFileSync, existsSync, readFileSync } from 'node:fs';
@@ -11,6 +12,8 @@ let username;
  * @param options - 请求方法、正文和认证头。
  */
 globalThis.fetch = async (url, options) => {
+  const selection = selectionReply(url, options);
+  if (selection) return selection;
   const body = options.body === undefined ? undefined : JSON.parse(options.body);
   const directory = dirname(process.env.GITHUB_ENV || process.env.CLRN_TEST_ACCOUNT_POOL);
   if (url.endsWith('/public/v10/user/login/username/password')) username = body.username;
@@ -21,12 +24,21 @@ globalThis.fetch = async (url, options) => {
   } else {
     assert.ok(existsSync(lock), '余额准备必须持有该账号的锁');
   }
-  assert.equal(new URL(url).origin, 'https://api.shafayouxi.org');
+  assert.equal(new URL(url).origin, url.endsWith('/set_balance/testing') ? 'https://api.shafayouxi.org' : testNode);
   assert.equal(options.redirect, 'error');
   const rejection = join(directory, 'reject-wallet');
   if (existsSync(rejection) && url.includes(readFileSync(rejection, 'utf8'))) {
     return new Response('private-token', { status: 401 });
   }
+  return reply(url, body, directory);
+};
+
+/** Return business fixtures after the account-lock checks.
+ * @param url - Current business URL.
+ * @param body - Parsed request body.
+ * @param directory - Current temporary account pool directory.
+ */
+function reply(url, body, directory) {
   if (url.endsWith('/public/v10/user/login/username/password')) {
     return Response.json({ ok: true, result: { user_id: userId, username,
       api_token: { token_type: 'Bearer', access_token: 'test-session' } } });
@@ -44,4 +56,4 @@ globalThis.fetch = async (url, options) => {
   }
   assert.equal(new URL(url).pathname, `/v10/wallet/${userId}`);
   return Response.json({ ok: true, result: { currencies: [{ code: 'coin', balance: '10000' }] } });
-};
+}
