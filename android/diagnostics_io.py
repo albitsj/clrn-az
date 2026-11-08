@@ -13,6 +13,8 @@ import sys
 import time
 from urllib.parse import quote
 
+from diagnostics_lifecycle import finish_group, group_members, wait_group_exit
+
 
 class Redactor:
     """Mask configured credentials and sensitive fields before they reach disk."""
@@ -86,7 +88,14 @@ def terminate(process):
         os.killpg(process.pid, signal.SIGKILL)
     except ProcessLookupError:
         pass
-    process.wait()
+    process.wait(timeout=2)
+
+
+def describe_group(process, report):
+    try:
+        report(f'pgid={process.pid}\n' + '\n'.join(group_members(process.pid)))
+    except (OSError, subprocess.SubprocessError):
+        report(f'pgid={process.pid} process snapshot unavailable')
 
 
 class _CaptureOutput:
@@ -132,21 +141,24 @@ class _CaptureOutput:
             self.report(self.pending.decode('utf-8', errors='replace'))
 
 
-def _interrupted_status(process, deadline, timeout, stop, report):
+def _interrupted_status(process, deadline, timeout, stop, report, stop_status=0):
     if stop is not None and stop.is_set():
+        report(f'phase=stop-requested pgid={process.pid}')
+        describe_group(process, report)
         terminate(process)
-        return 0
+        return stop_status
     if deadline is not None and time.monotonic() >= deadline:
         report(f'collector timeout after {timeout}s')
+        describe_group(process, report)
         terminate(process)
         return 124
     return None
 
 
-def _wait_for_exit(process, deadline, timeout, stop, report):
+def _wait_for_exit(process, deadline, timeout, stop, report, stop_status):
     # A child can close stdout while remaining alive: still enforce timeout/stop.
     while True:
-        status = _interrupted_status(process, deadline, timeout, stop, report)
+        status = _interrupted_status(process, deadline, timeout, stop, report, stop_status)
         if status is not None:
             return status
         try:
@@ -155,24 +167,75 @@ def _wait_for_exit(process, deadline, timeout, stop, report):
             pass
 
 
-def _collect_output(process, output, deadline, timeout, stop, report):
+def _collect_output(process, output, deadline, timeout, stop, report, exit_timeout, stop_status):
+    exited_at = None
     with selectors.DefaultSelector() as selector:
         selector.register(process.stdout, selectors.EVENT_READ)
         while selector.get_map():
-            status = _interrupted_status(process, deadline, timeout, stop, report)
+            status = _interrupted_status(process, deadline, timeout, stop, report, stop_status)
             if status is not None:
                 output.drain()
                 return status
+            if process.poll() is not None:
+                if exited_at is None:
+                    exited_at = time.monotonic()
+                if time.monotonic() - exited_at >= exit_timeout:
+                    report(f'phase=output-drain timeout after {exit_timeout}s pgid={process.pid}')
+                    describe_group(process, report)
+                    terminate(process)
+                    output.drain()
+                    return 124
             for key, _ in selector.select(0.1):
                 chunk = output.read()
                 if chunk == b'':
                     selector.unregister(key.fileobj)
                 elif chunk is not None:
                     output.consume(chunk)
-    return _wait_for_exit(process, deadline, timeout, stop, report)
+    return _wait_for_exit(process, deadline, timeout, stop, report, stop_status)
 
 
-def capture(command, log, timeout=5, stop=None, env=None):
+def _finish_capture_group(process, status, report):
+    try:
+        if not finish_group(process, report):
+            report(f'process_exit={status}; cleanup required SIGKILL')
+            return 124
+    except (OSError, subprocess.SubprocessError):
+        report(f'phase=process-cleanup failed pgid={process.pid}; killing group')
+        terminate(process)
+        return 124
+    return status
+
+
+def _register_capture(process, log, report):
+    directory = getattr(log, 'directory', None)
+    if directory is None:
+        return None
+    pidfile = directory / f'diagnostic-process-{process.pid}.pid'
+    try:
+        pidfile.write_text(str(process.pid))
+    except OSError:
+        report('diagnostic process registration unavailable')
+    return pidfile
+
+
+def _unregister_capture(process, paths, report):
+    # A native 124 (or an exited leader) says nothing about descendants.
+    # Keep recovery registrations until the entire group is confirmed gone.
+    try:
+        exited = wait_group_exit(process.pid)
+    except (OSError, subprocess.SubprocessError):
+        report(f'phase=process-cleanup unverified pgid={process.pid}; retaining registration')
+        return
+    if not exited:
+        report(f'phase=process-cleanup incomplete pgid={process.pid}; retaining registration')
+        describe_group(process, report)
+        return
+    for path in paths:
+        if path is not None:
+            path.unlink(missing_ok=True)
+
+
+def capture(command, log, timeout=5, stop=None, env=None, exit_timeout=2, stop_status=0, pidfile=None):
     """Stream output with bounded memory; return the native exit or 124/127."""
     def report(message):
         try:
@@ -187,9 +250,13 @@ def capture(command, log, timeout=5, stop=None, env=None):
         report(f'collector spawn failed: {type(error).__name__}: {error}')
         return 127
     deadline = time.monotonic() + timeout if timeout is not None else None
+    registration = _register_capture(process, log, report)
     try:
+        if pidfile is not None:
+            pidfile.write_text(str(process.pid))
         output = _CaptureOutput(process.stdout, report)
-        status = _collect_output(process, output, deadline, timeout, stop, report)
+        status = _collect_output(process, output, deadline, timeout, stop, report, exit_timeout, stop_status)
+        status = _finish_capture_group(process, status, report)
         output.finish()
         if status:
             report(f'collector exited with status {status}')
@@ -198,3 +265,4 @@ def capture(command, log, timeout=5, stop=None, env=None):
         process.stdout.close()
         if process.poll() is None:
             terminate(process)
+        _unregister_capture(process, (pidfile, registration), report)

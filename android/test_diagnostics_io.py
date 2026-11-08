@@ -118,15 +118,19 @@ time.sleep(30)
 
     def capture_with_shutdown_reads(self, read):
         """Keep a real ready pipe; control only reads after its group is killed."""
-        terminated = threading.Event()
+        stream = None
         real_read = os.read
 
         def terminate_and_enable(process):
+            nonlocal stream
             terminate(process)
-            terminated.set()
+            stream = process.stdout
 
         def read_after_termination(fd, size):
-            return read(size) if terminated.is_set() else real_read(fd, size)
+            # Process inspection opens other pipes; keep those reads real.
+            if stream is not None and not stream.closed and fd == stream.fileno():
+                return read(size)
+            return real_read(fd, size)
 
         with patch('diagnostics_io.terminate', side_effect=terminate_and_enable), \
                 patch('diagnostics_io.os.read', side_effect=read_after_termination):
