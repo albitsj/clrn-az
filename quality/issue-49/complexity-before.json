@@ -1,0 +1,2522 @@
+[
+  {
+    "file": "eslint.config.mjs",
+    "line": 16,
+    "column": 1,
+    "function": "Function 'hasFetchProperty'",
+    "complexity": 3,
+    "limit": 6
+  },
+  {
+    "file": "eslint.config.mjs",
+    "line": 19,
+    "column": 14,
+    "function": "Arrow function",
+    "complexity": 2,
+    "limit": 6
+  },
+  {
+    "file": "eslint.config.mjs",
+    "line": 28,
+    "column": 1,
+    "function": "Function 'replacesFetch'",
+    "complexity": 6,
+    "limit": 6
+  },
+  {
+    "file": "eslint.config.mjs",
+    "line": 49,
+    "column": 3,
+    "function": "Method 'create'",
+    "complexity": 1,
+    "limit": 6
+  },
+  {
+    "file": "eslint.config.mjs",
+    "line": 55,
+    "column": 5,
+    "function": "Function 'check'",
+    "complexity": 3,
+    "limit": 6
+  },
+  {
+    "file": "eslint.config.mjs",
+    "line": 62,
+    "column": 5,
+    "function": "Function 'pureRoutingSource'",
+    "complexity": 6,
+    "limit": 6
+  },
+  {
+    "file": "eslint.config.mjs",
+    "line": 84,
+    "column": 3,
+    "function": "Method 'create'",
+    "complexity": 1,
+    "limit": 6
+  },
+  {
+    "file": "eslint.config.mjs",
+    "line": 90,
+    "column": 5,
+    "function": "Function 'report'",
+    "complexity": 1,
+    "limit": 6
+  },
+  {
+    "file": "eslint.config.mjs",
+    "line": 98,
+    "column": 5,
+    "function": "Function 'checkResponsePattern'",
+    "complexity": 1,
+    "limit": 6
+  },
+  {
+    "file": "eslint.config.mjs",
+    "line": 106,
+    "column": 5,
+    "function": "Function 'checkPattern'",
+    "complexity": 5,
+    "limit": 6
+  },
+  {
+    "file": "eslint.config.mjs",
+    "line": 116,
+    "column": 5,
+    "function": "Function 'checkObjectPattern'",
+    "complexity": 5,
+    "limit": 6
+  },
+  {
+    "file": "eslint.config.mjs",
+    "line": 129,
+    "column": 5,
+    "function": "Function 'checkWrites'",
+    "complexity": 1,
+    "limit": 6
+  },
+  {
+    "file": "eslint.config.mjs",
+    "line": 130,
+    "column": 36,
+    "function": "Arrow function",
+    "complexity": 5,
+    "limit": 6
+  },
+  {
+    "file": "eslint.config.mjs",
+    "line": 139,
+    "column": 5,
+    "function": "Function 'checkLoop'",
+    "complexity": 1,
+    "limit": 6
+  },
+  {
+    "file": "eslint.config.mjs",
+    "line": 149,
+    "column": 7,
+    "function": "Method 'VariableDeclarator'",
+    "complexity": 1,
+    "limit": 6
+  },
+  {
+    "file": "eslint.config.mjs",
+    "line": 156,
+    "column": 7,
+    "function": "Method 'AssignmentPattern'",
+    "complexity": 1,
+    "limit": 6
+  },
+  {
+    "file": "eslint.config.mjs",
+    "line": 163,
+    "column": 7,
+    "function": "Method 'MemberExpression'",
+    "complexity": 3,
+    "limit": 6
+  },
+  {
+    "file": "eslint.config.mjs",
+    "line": 170,
+    "column": 7,
+    "function": "Method 'NewExpression'",
+    "complexity": 2,
+    "limit": 6
+  },
+  {
+    "file": "eslint.config.mjs",
+    "line": 177,
+    "column": 7,
+    "function": "Method 'AssignmentExpression'",
+    "complexity": 1,
+    "limit": 6
+  },
+  {
+    "file": "eslint.config.mjs",
+    "line": 185,
+    "column": 7,
+    "function": "Method 'CallExpression'",
+    "complexity": 6,
+    "limit": 6
+  },
+  {
+    "file": "eslint.config.mjs",
+    "line": 270,
+    "column": 1,
+    "function": "Function 'definesProperty'",
+    "complexity": 3,
+    "limit": 6
+  },
+  {
+    "file": "eslint.config.mjs",
+    "line": 280,
+    "column": 1,
+    "function": "Function 'setsGlobalProperty'",
+    "complexity": 3,
+    "limit": 6
+  },
+  {
+    "file": "eslint.config.mjs",
+    "line": 287,
+    "column": 1,
+    "function": "Function 'routingPattern'",
+    "complexity": 4,
+    "limit": 6
+  },
+  {
+    "file": "scripts/android-game-complexity.mjs",
+    "line": 9,
+    "column": 8,
+    "function": "Async function 'checkAndroidGameComplexity'",
+    "complexity": 6,
+    "limit": 6
+  },
+  {
+    "file": "scripts/android-game-complexity.mjs",
+    "line": 21,
+    "column": 27,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 6
+  },
+  {
+    "file": "scripts/android-game-complexity.mjs",
+    "line": 28,
+    "column": 1,
+    "function": "Function 'functionMeasurements'",
+    "complexity": 2,
+    "limit": 6
+  },
+  {
+    "file": "scripts/android-game-complexity.mjs",
+    "line": 30,
+    "column": 41,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 6
+  },
+  {
+    "file": "scripts/android-game-complexity.mjs",
+    "line": 30,
+    "column": 89,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 6
+  },
+  {
+    "file": "android/build-driver.mjs",
+    "line": 144,
+    "column": 19,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 6
+  },
+  {
+    "file": "android/device.test.mjs",
+    "line": 9,
+    "column": 52,
+    "function": "Async arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/device.test.mjs",
+    "line": 12,
+    "column": 20,
+    "function": "Arrow function",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "android/device.test.mjs",
+    "line": 16,
+    "column": 81,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/device.test.mjs",
+    "line": 27,
+    "column": 5,
+    "function": "Async method 'wait'",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "android/device.test.mjs",
+    "line": 35,
+    "column": 5,
+    "function": "Async method 'info'",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "android/device.test.mjs",
+    "line": 41,
+    "column": 5,
+    "function": "Async method 'tap'",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/device.test.mjs",
+    "line": 46,
+    "column": 5,
+    "function": "Async method 'fill'",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/device.test.mjs",
+    "line": 52,
+    "column": 86,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/device.test.mjs",
+    "line": 56,
+    "column": 52,
+    "function": "Async arrow function",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "android/device.test.mjs",
+    "line": 58,
+    "column": 47,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/device.test.mjs",
+    "line": 67,
+    "column": 7,
+    "function": "Async method 'wait'",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "android/device.test.mjs",
+    "line": 75,
+    "column": 7,
+    "function": "Async method 'info'",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/device.test.mjs",
+    "line": 82,
+    "column": 7,
+    "function": "Async method 'tap'",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/device.test.mjs",
+    "line": 93,
+    "column": 49,
+    "function": "Async arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/device.test.mjs",
+    "line": 98,
+    "column": 5,
+    "function": "Async method 'wait'",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/device.test.mjs",
+    "line": 102,
+    "column": 5,
+    "function": "Async method 'info'",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/device.test.mjs",
+    "line": 107,
+    "column": 5,
+    "function": "Async method 'tap'",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/device.test.mjs",
+    "line": 109,
+    "column": 60,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/device.test.mjs",
+    "line": 113,
+    "column": 53,
+    "function": "Async arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/device.test.mjs",
+    "line": 117,
+    "column": 42,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/device.test.mjs",
+    "line": 120,
+    "column": 5,
+    "function": "Async method 'wait'",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/device.test.mjs",
+    "line": 122,
+    "column": 5,
+    "function": "Async method 'info'",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/device.test.mjs",
+    "line": 124,
+    "column": 5,
+    "function": "Async method 'tap'",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/device.test.mjs",
+    "line": 126,
+    "column": 60,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/device.ts",
+    "line": 19,
+    "column": 8,
+    "function": "Function 'adb'",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "android/device.ts",
+    "line": 29,
+    "column": 8,
+    "function": "Async function 'launchApplication'",
+    "complexity": 19,
+    "limit": 3
+  },
+  {
+    "file": "android/device.ts",
+    "line": 71,
+    "column": 36,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/device.ts",
+    "line": 72,
+    "column": 41,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/device.ts",
+    "line": 72,
+    "column": 70,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/device.ts",
+    "line": 80,
+    "column": 75,
+    "function": "Async arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/device.ts",
+    "line": 88,
+    "column": 8,
+    "function": "Async function 'waitForStagingNotice'",
+    "complexity": 7,
+    "limit": 3
+  },
+  {
+    "file": "android/device.ts",
+    "line": 93,
+    "column": 89,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/device.ts",
+    "line": 107,
+    "column": 8,
+    "function": "Async function 'waitForHall'",
+    "complexity": 11,
+    "limit": 3
+  },
+  {
+    "file": "android/device.ts",
+    "line": 121,
+    "column": 81,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/device.ts",
+    "line": 122,
+    "column": 79,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/device.ts",
+    "line": 141,
+    "column": 8,
+    "function": "Async function 'compareScreenshot'",
+    "complexity": 8,
+    "limit": 3
+  },
+  {
+    "file": "android/device.ts",
+    "line": 142,
+    "column": 84,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/device.ts",
+    "line": 154,
+    "column": 25,
+    "function": "Async arrow function",
+    "complexity": 5,
+    "limit": 3
+  },
+  {
+    "file": "android/device.ts",
+    "line": 170,
+    "column": 93,
+    "function": "Async arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/diagnostics.ts",
+    "line": 13,
+    "column": 8,
+    "function": "Async function 'captureFailure'",
+    "complexity": 4,
+    "limit": 3
+  },
+  {
+    "file": "android/diagnostics.ts",
+    "line": 14,
+    "column": 45,
+    "function": "Async arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/diagnostics.ts",
+    "line": 18,
+    "column": 15,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/diagnostics.ts",
+    "line": 22,
+    "column": 94,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/diagnostics.ts",
+    "line": 27,
+    "column": 20,
+    "function": "Arrow function",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "android/diagnostics.ts",
+    "line": 32,
+    "column": 33,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/diagnostics.ts",
+    "line": 39,
+    "column": 59,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/diagnostics.ts",
+    "line": 44,
+    "column": 107,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/fixtures.ts",
+    "line": 11,
+    "column": 45,
+    "function": "Async arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/fixtures.ts",
+    "line": 12,
+    "column": 37,
+    "function": "Async arrow function",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "android/fixtures.ts",
+    "line": 23,
+    "column": 45,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/fixtures.ts",
+    "line": 23,
+    "column": 155,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/fixtures.ts",
+    "line": 32,
+    "column": 50,
+    "function": "Async arrow function",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "android/form-inputs.ts",
+    "line": 12,
+    "column": 8,
+    "function": "Async function 'fillScenarioInputs'",
+    "complexity": 8,
+    "limit": 3
+  },
+  {
+    "file": "android/form-inputs.ts",
+    "line": 13,
+    "column": 54,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/form-inputs.ts",
+    "line": 16,
+    "column": 57,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/form-inputs.ts",
+    "line": 18,
+    "column": 75,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/keyboard.ts",
+    "line": 9,
+    "column": 8,
+    "function": "Async function 'dismissKeyboard'",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/keyboard.ts",
+    "line": 11,
+    "column": 25,
+    "function": "Async arrow function",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "android/keyboard.ts",
+    "line": 16,
+    "column": 33,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/native-state.ts",
+    "line": 9,
+    "column": 8,
+    "function": "Async function 'exists'",
+    "complexity": 11,
+    "limit": 3
+  },
+  {
+    "file": "android/native-state.ts",
+    "line": 30,
+    "column": 8,
+    "function": "Async function 'waitAbsent'",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/native-state.ts",
+    "line": 31,
+    "column": 24,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/navigation.ts",
+    "line": 18,
+    "column": 8,
+    "function": "Async function 'reveal'",
+    "complexity": 12,
+    "limit": 3
+  },
+  {
+    "file": "android/navigation.ts",
+    "line": 34,
+    "column": 79,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/navigation.ts",
+    "line": 36,
+    "column": 85,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/navigation.ts",
+    "line": 43,
+    "column": 96,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/navigation.ts",
+    "line": 44,
+    "column": 60,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/navigation.ts",
+    "line": 60,
+    "column": 1,
+    "function": "Async function 'closeGamePicker'",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/navigation.ts",
+    "line": 71,
+    "column": 8,
+    "function": "Async function 'tap'",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "android/navigation.ts",
+    "line": 75,
+    "column": 25,
+    "function": "Async arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/navigation.ts",
+    "line": 84,
+    "column": 93,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/navigation.ts",
+    "line": 85,
+    "column": 81,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/navigation.ts",
+    "line": 86,
+    "column": 61,
+    "function": "Arrow function",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "android/navigation.ts",
+    "line": 99,
+    "column": 8,
+    "function": "Async function 'returnToTabs'",
+    "complexity": 12,
+    "limit": 3
+  },
+  {
+    "file": "android/navigation.ts",
+    "line": 103,
+    "column": 18,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/navigation.ts",
+    "line": 103,
+    "column": 51,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/navigation.ts",
+    "line": 104,
+    "column": 40,
+    "function": "Arrow function",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "android/navigation.ts",
+    "line": 145,
+    "column": 8,
+    "function": "Async function 'navigateScenario'",
+    "complexity": 22,
+    "limit": 3
+  },
+  {
+    "file": "android/navigation.ts",
+    "line": 150,
+    "column": 67,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/navigation.ts",
+    "line": 167,
+    "column": 78,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/navigation.ts",
+    "line": 217,
+    "column": 8,
+    "function": "Async function 'signIn'",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "android/navigation.ts",
+    "line": 233,
+    "column": 25,
+    "function": "Async arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/navigation.ts",
+    "line": 243,
+    "column": 8,
+    "function": "Async function 'selectLanguage'",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "android/proxy.test.mjs",
+    "line": 16,
+    "column": 1,
+    "function": "Function 'session'",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "android/proxy.test.mjs",
+    "line": 16,
+    "column": 44,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/proxy.test.mjs",
+    "line": 21,
+    "column": 64,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/proxy.test.mjs",
+    "line": 26,
+    "column": 90,
+    "function": "Arrow function",
+    "complexity": 6,
+    "limit": 3
+  },
+  {
+    "file": "android/proxy.test.mjs",
+    "line": 40,
+    "column": 85,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/proxy.test.mjs",
+    "line": 46,
+    "column": 21,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/proxy.test.mjs",
+    "line": 52,
+    "column": 77,
+    "function": "Async arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/proxy.test.mjs",
+    "line": 55,
+    "column": 20,
+    "function": "Arrow function",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "android/proxy.test.mjs",
+    "line": 60,
+    "column": 48,
+    "function": "Method 'environment'",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/proxy.test.mjs",
+    "line": 63,
+    "column": 56,
+    "function": "Async arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/proxy.test.mjs",
+    "line": 65,
+    "column": 50,
+    "function": "Async arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/proxy.test.mjs",
+    "line": 74,
+    "column": 41,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/proxy.test.mjs",
+    "line": 75,
+    "column": 41,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/proxy.test.mjs",
+    "line": 77,
+    "column": 42,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/proxy.test.mjs",
+    "line": 80,
+    "column": 53,
+    "function": "Async arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/proxy.test.mjs",
+    "line": 81,
+    "column": 42,
+    "function": "Arrow function",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "android/proxy.test.mjs",
+    "line": 82,
+    "column": 48,
+    "function": "Async arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/proxy.test.mjs",
+    "line": 83,
+    "column": 45,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/proxy.test.mjs",
+    "line": 99,
+    "column": 45,
+    "function": "Async arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/proxy.test.mjs",
+    "line": 100,
+    "column": 42,
+    "function": "Arrow function",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "android/proxy.test.mjs",
+    "line": 105,
+    "column": 48,
+    "function": "Async arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/proxy.test.mjs",
+    "line": 106,
+    "column": 41,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/proxy.test.mjs",
+    "line": 110,
+    "column": 66,
+    "function": "Async arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/proxy.test.mjs",
+    "line": 112,
+    "column": 44,
+    "function": "Arrow function",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "android/proxy.test.mjs",
+    "line": 113,
+    "column": 52,
+    "function": "Async arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/proxy.test.mjs",
+    "line": 113,
+    "column": 87,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/proxy.test.mjs",
+    "line": 115,
+    "column": 44,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/proxy.test.mjs",
+    "line": 119,
+    "column": 41,
+    "function": "Async arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/proxy.test.mjs",
+    "line": 122,
+    "column": 28,
+    "function": "Arrow function",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "android/proxy.test.mjs",
+    "line": 123,
+    "column": 50,
+    "function": "Async arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/proxy.test.mjs",
+    "line": 123,
+    "column": 80,
+    "function": "Arrow function",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "android/proxy.test.mjs",
+    "line": 132,
+    "column": 48,
+    "function": "Async arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/proxy.test.mjs",
+    "line": 136,
+    "column": 50,
+    "function": "Async arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/proxy.test.mjs",
+    "line": 136,
+    "column": 92,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/proxy.test.mjs",
+    "line": 141,
+    "column": 50,
+    "function": "Async arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/proxy.test.mjs",
+    "line": 143,
+    "column": 28,
+    "function": "Arrow function",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "android/proxy.test.mjs",
+    "line": 144,
+    "column": 50,
+    "function": "Async arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/proxy.test.mjs",
+    "line": 144,
+    "column": 73,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/proxy.ts",
+    "line": 11,
+    "column": 1,
+    "function": "Function 'removeReverse'",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "android/proxy.ts",
+    "line": 23,
+    "column": 1,
+    "function": "Async function 'configureProxy'",
+    "complexity": 9,
+    "limit": 3
+  },
+  {
+    "file": "android/proxy.ts",
+    "line": 65,
+    "column": 8,
+    "function": "Async function 'withAndroidProxy'",
+    "complexity": 10,
+    "limit": 3
+  },
+  {
+    "file": "android/proxy.ts",
+    "line": 85,
+    "column": 7,
+    "function": "Async method 'prepare'",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/proxy.ts",
+    "line": 103,
+    "column": 40,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/release-download.mjs",
+    "line": 14,
+    "column": 1,
+    "function": "Function 'githubFailure'",
+    "complexity": 3,
+    "limit": 6
+  },
+  {
+    "file": "android/release-download.mjs",
+    "line": 25,
+    "column": 8,
+    "function": "Async function 'readGitHub'",
+    "complexity": 10,
+    "limit": 6
+  },
+  {
+    "file": "android/release-download.mjs",
+    "line": 49,
+    "column": 8,
+    "function": "Async function 'downloadReleaseAssets'",
+    "complexity": 2,
+    "limit": 6
+  },
+  {
+    "file": "android/release-download.test.mjs",
+    "line": 16,
+    "column": 56,
+    "function": "Async arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/release-download.test.mjs",
+    "line": 17,
+    "column": 40,
+    "function": "Arrow function",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "android/release-download.test.mjs",
+    "line": 31,
+    "column": 51,
+    "function": "Async arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/release-download.test.mjs",
+    "line": 32,
+    "column": 38,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/release-download.test.mjs",
+    "line": 39,
+    "column": 103,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/release-download.test.mjs",
+    "line": 47,
+    "column": 45,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/release-download.test.mjs",
+    "line": 51,
+    "column": 45,
+    "function": "Async arrow function",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "android/release-download.test.mjs",
+    "line": 54,
+    "column": 40,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/release-download.test.mjs",
+    "line": 64,
+    "column": 53,
+    "function": "Async arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/release-download.test.mjs",
+    "line": 68,
+    "column": 60,
+    "function": "Arrow function",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "android/release.mjs",
+    "line": 17,
+    "column": 8,
+    "function": "Function 'validateRelease'",
+    "complexity": 12,
+    "limit": 6
+  },
+  {
+    "file": "android/release.mjs",
+    "line": 23,
+    "column": 49,
+    "function": "Arrow function",
+    "complexity": 2,
+    "limit": 6
+  },
+  {
+    "file": "android/release.mjs",
+    "line": 35,
+    "column": 8,
+    "function": "Function 'validateBuildInformation'",
+    "complexity": 20,
+    "limit": 6
+  },
+  {
+    "file": "android/release.mjs",
+    "line": 37,
+    "column": 42,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 6
+  },
+  {
+    "file": "android/release.mjs",
+    "line": 44,
+    "column": 45,
+    "function": "Arrow function",
+    "complexity": 2,
+    "limit": 6
+  },
+  {
+    "file": "android/release.mjs",
+    "line": 58,
+    "column": 8,
+    "function": "Async function 'verifyPackage'",
+    "complexity": 4,
+    "limit": 6
+  },
+  {
+    "file": "android/release.mjs",
+    "line": 69,
+    "column": 8,
+    "function": "Async function 'readVerifiedBuild'",
+    "complexity": 1,
+    "limit": 6
+  },
+  {
+    "file": "android/release.test.mjs",
+    "line": 25,
+    "column": 35,
+    "function": "Arrow function",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "android/release.test.mjs",
+    "line": 29,
+    "column": 22,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/release.test.mjs",
+    "line": 31,
+    "column": 20,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/release.test.mjs",
+    "line": 32,
+    "column": 20,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/release.test.mjs",
+    "line": 33,
+    "column": 20,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/release.test.mjs",
+    "line": 37,
+    "column": 38,
+    "function": "Arrow function",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "android/release.test.mjs",
+    "line": 39,
+    "column": 20,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/release.test.mjs",
+    "line": 46,
+    "column": 23,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/release.test.mjs",
+    "line": 49,
+    "column": 37,
+    "function": "Async arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/release.test.mjs",
+    "line": 64,
+    "column": 51,
+    "function": "Async arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/scenarios.test.mjs",
+    "line": 7,
+    "column": 44,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/scenarios.test.mjs",
+    "line": 12,
+    "column": 20,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/scenarios.test.mjs",
+    "line": 15,
+    "column": 42,
+    "function": "Arrow function",
+    "complexity": 4,
+    "limit": 3
+  },
+  {
+    "file": "android/scenarios.test.mjs",
+    "line": 16,
+    "column": 55,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/scenarios.test.mjs",
+    "line": 19,
+    "column": 22,
+    "function": "Arrow function",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "android/scenarios.test.mjs",
+    "line": 20,
+    "column": 40,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/scenarios.test.mjs",
+    "line": 20,
+    "column": 95,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/scenarios.test.mjs",
+    "line": 23,
+    "column": 60,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/scenarios.test.mjs",
+    "line": 32,
+    "column": 31,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/scenarios.test.mjs",
+    "line": 34,
+    "column": 20,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/scenarios.test.mjs",
+    "line": 34,
+    "column": 66,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/scenarios.test.mjs",
+    "line": 35,
+    "column": 73,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/scenarios.test.mjs",
+    "line": 36,
+    "column": 20,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/scenarios.test.mjs",
+    "line": 39,
+    "column": 33,
+    "function": "Arrow function",
+    "complexity": 7,
+    "limit": 3
+  },
+  {
+    "file": "android/scenarios.test.mjs",
+    "line": 50,
+    "column": 20,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/scenarios.test.mjs",
+    "line": 53,
+    "column": 31,
+    "function": "Arrow function",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "android/scenarios.test.mjs",
+    "line": 62,
+    "column": 44,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/scenarios.test.mjs",
+    "line": 66,
+    "column": 22,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/scenarios.test.mjs",
+    "line": 67,
+    "column": 76,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/scenarios.test.mjs",
+    "line": 68,
+    "column": 51,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/scenarios.test.mjs",
+    "line": 71,
+    "column": 41,
+    "function": "Async arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/scenarios.test.mjs",
+    "line": 74,
+    "column": 31,
+    "function": "Async method 'info'",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/scenarios.test.mjs",
+    "line": 75,
+    "column": 31,
+    "function": "Async method 'info'",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/scenarios.test.mjs",
+    "line": 77,
+    "column": 31,
+    "function": "Async method 'info'",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/scenarios.test.mjs",
+    "line": 78,
+    "column": 33,
+    "function": "Async method 'info'",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/scenarios.test.mjs",
+    "line": 80,
+    "column": 31,
+    "function": "Async method 'info'",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "android/scenarios.ts",
+    "line": 15,
+    "column": 8,
+    "function": "Function 'nativeSelector'",
+    "complexity": 4,
+    "limit": 3
+  },
+  {
+    "file": "android/scenarios.ts",
+    "line": 28,
+    "column": 8,
+    "function": "Function 'androidScenarios'",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "android/scenarios.ts",
+    "line": 31,
+    "column": 22,
+    "function": "Arrow function",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "android/scenarios.ts",
+    "line": 32,
+    "column": 22,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/scenarios.ts",
+    "line": 32,
+    "column": 53,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/scenarios.ts",
+    "line": 33,
+    "column": 22,
+    "function": "Arrow function",
+    "complexity": 6,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/animation-assets.spec.ts",
+    "line": 9,
+    "column": 80,
+    "function": "Async arrow function",
+    "complexity": 4,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/animation-transitions.spec.ts",
+    "line": 18,
+    "column": 98,
+    "function": "Async arrow function",
+    "complexity": 4,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/animation-transitions.spec.ts",
+    "line": 22,
+    "column": 35,
+    "function": "Async arrow function",
+    "complexity": 5,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/animation-transitions.spec.ts",
+    "line": 30,
+    "column": 33,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/animation-transitions.spec.ts",
+    "line": 35,
+    "column": 24,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/animation-transitions.spec.ts",
+    "line": 55,
+    "column": 69,
+    "function": "Async arrow function",
+    "complexity": 4,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/animation-transitions.spec.ts",
+    "line": 59,
+    "column": 35,
+    "function": "Async arrow function",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/animation-transitions.spec.ts",
+    "line": 71,
+    "column": 24,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/animation-transitions.spec.ts",
+    "line": 78,
+    "column": 23,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/animation-transitions.spec.ts",
+    "line": 85,
+    "column": 100,
+    "function": "Async arrow function",
+    "complexity": 4,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/animation-transitions.spec.ts",
+    "line": 89,
+    "column": 35,
+    "function": "Async arrow function",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/animation-transitions.spec.ts",
+    "line": 96,
+    "column": 30,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/animation-transitions.spec.ts",
+    "line": 100,
+    "column": 37,
+    "function": "Async arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/animation-transitions.spec.ts",
+    "line": 117,
+    "column": 30,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/animation-transitions.spec.ts",
+    "line": 126,
+    "column": 102,
+    "function": "Async arrow function",
+    "complexity": 4,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/animation-transitions.spec.ts",
+    "line": 130,
+    "column": 35,
+    "function": "Async arrow function",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/animation-transitions.spec.ts",
+    "line": 136,
+    "column": 67,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/animation-transitions.spec.ts",
+    "line": 149,
+    "column": 26,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/animation-transitions.spec.ts",
+    "line": 161,
+    "column": 86,
+    "function": "Async arrow function",
+    "complexity": 4,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/animation-transitions.spec.ts",
+    "line": 165,
+    "column": 35,
+    "function": "Async arrow function",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/animation-transitions.spec.ts",
+    "line": 171,
+    "column": 67,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/animation-transitions.spec.ts",
+    "line": 176,
+    "column": 28,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/animation-transitions.spec.ts",
+    "line": 183,
+    "column": 32,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/animation-transitions.spec.ts",
+    "line": 187,
+    "column": 32,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/animation-transitions.spec.ts",
+    "line": 197,
+    "column": 97,
+    "function": "Async arrow function",
+    "complexity": 4,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/animation-transitions.spec.ts",
+    "line": 201,
+    "column": 35,
+    "function": "Async arrow function",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/animation-transitions.spec.ts",
+    "line": 207,
+    "column": 68,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/animation-transitions.spec.ts",
+    "line": 212,
+    "column": 30,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/animation-transitions.spec.ts",
+    "line": 219,
+    "column": 28,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/animation-transitions.spec.ts",
+    "line": 226,
+    "column": 98,
+    "function": "Async arrow function",
+    "complexity": 4,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/animation-transitions.spec.ts",
+    "line": 230,
+    "column": 35,
+    "function": "Async arrow function",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/animation-transitions.spec.ts",
+    "line": 246,
+    "column": 33,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/animation-transitions.spec.ts",
+    "line": 248,
+    "column": 30,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/animation-transitions.spec.ts",
+    "line": 256,
+    "column": 30,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/auth.spec.ts",
+    "line": 6,
+    "column": 60,
+    "function": "Async arrow function",
+    "complexity": 5,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/auth.spec.ts",
+    "line": 38,
+    "column": 20,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/auth.spec.ts",
+    "line": 39,
+    "column": 19,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/auth.spec.ts",
+    "line": 41,
+    "column": 22,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/auth.spec.ts",
+    "line": 42,
+    "column": 19,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/auth.spec.ts",
+    "line": 56,
+    "column": 124,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/auth.spec.ts",
+    "line": 64,
+    "column": 115,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/club-rooms-populated.spec.ts",
+    "line": 14,
+    "column": 16,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/club-rooms-populated.spec.ts",
+    "line": 17,
+    "column": 86,
+    "function": "Async arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/club-rooms-populated.spec.ts",
+    "line": 18,
+    "column": 40,
+    "function": "Async arrow function",
+    "complexity": 4,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/club-rooms-populated.spec.ts",
+    "line": 37,
+    "column": 64,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/club-rooms-populated.spec.ts",
+    "line": 39,
+    "column": 27,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/club-rooms-populated.spec.ts",
+    "line": 40,
+    "column": 72,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/club-rooms-populated.spec.ts",
+    "line": 42,
+    "column": 27,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/club-search-results.spec.ts",
+    "line": 12,
+    "column": 49,
+    "function": "Async arrow function",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/club-search-results.spec.ts",
+    "line": 15,
+    "column": 38,
+    "function": "Async arrow function",
+    "complexity": 6,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/club-search-results.spec.ts",
+    "line": 52,
+    "column": 24,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/club-search-results.spec.ts",
+    "line": 55,
+    "column": 24,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/club-skeleton-animation.spec.ts",
+    "line": 9,
+    "column": 100,
+    "function": "Async arrow function",
+    "complexity": 4,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/club-skeleton-animation.spec.ts",
+    "line": 13,
+    "column": 38,
+    "function": "Async arrow function",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/club-skeleton-animation.spec.ts",
+    "line": 19,
+    "column": 34,
+    "function": "Async arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/club-skeleton-animation.spec.ts",
+    "line": 29,
+    "column": 22,
+    "function": "Arrow function",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/club-skeleton-animation.spec.ts",
+    "line": 32,
+    "column": 31,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/club-skeleton-animation.spec.ts",
+    "line": 34,
+    "column": 34,
+    "function": "Async arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/club-skeleton-animation.spec.ts",
+    "line": 37,
+    "column": 73,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/games.spec.ts",
+    "line": 20,
+    "column": 3,
+    "function": "Async method 'ownedRoom'",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/games.spec.ts",
+    "line": 31,
+    "column": 22,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/games.spec.ts",
+    "line": 51,
+    "column": 79,
+    "function": "Async arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/games.spec.ts",
+    "line": 53,
+    "column": 44,
+    "function": "Async arrow function",
+    "complexity": 32,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/games.spec.ts",
+    "line": 70,
+    "column": 63,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/games.spec.ts",
+    "line": 79,
+    "column": 130,
+    "function": "Async arrow function",
+    "complexity": 6,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/launch-branding.spec.ts",
+    "line": 13,
+    "column": 95,
+    "function": "Async arrow function",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/launch-branding.spec.ts",
+    "line": 16,
+    "column": 38,
+    "function": "Async arrow function",
+    "complexity": 4,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/launch-branding.spec.ts",
+    "line": 35,
+    "column": 34,
+    "function": "Async arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/launch-branding.spec.ts",
+    "line": 42,
+    "column": 28,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/launch-branding.spec.ts",
+    "line": 43,
+    "column": 28,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/launch-branding.spec.ts",
+    "line": 45,
+    "column": 39,
+    "function": "Async arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/launch-branding.spec.ts",
+    "line": 51,
+    "column": 35,
+    "function": "Async arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/launch-pages.spec.ts",
+    "line": 11,
+    "column": 74,
+    "function": "Async arrow function",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/launch-pages.spec.ts",
+    "line": 14,
+    "column": 35,
+    "function": "Async arrow function",
+    "complexity": 4,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/launch-pages.spec.ts",
+    "line": 29,
+    "column": 35,
+    "function": "Async arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/network-selection.spec.ts",
+    "line": 11,
+    "column": 54,
+    "function": "Arrow function",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/network-selection.spec.ts",
+    "line": 14,
+    "column": 38,
+    "function": "Async arrow function",
+    "complexity": 4,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/network-selection.spec.ts",
+    "line": 17,
+    "column": 42,
+    "function": "Async arrow function",
+    "complexity": 4,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/network-selection.spec.ts",
+    "line": 31,
+    "column": 16,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/parity.spec.ts",
+    "line": 9,
+    "column": 16,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/parity.spec.ts",
+    "line": 10,
+    "column": 99,
+    "function": "Async arrow function",
+    "complexity": 8,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/parity.spec.ts",
+    "line": 23,
+    "column": 38,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/parity.spec.ts",
+    "line": 26,
+    "column": 32,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/records.spec.ts",
+    "line": 17,
+    "column": 16,
+    "function": "Arrow function",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/records.spec.ts",
+    "line": 18,
+    "column": 80,
+    "function": "Async arrow function",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/records.spec.ts",
+    "line": 21,
+    "column": 45,
+    "function": "Async arrow function",
+    "complexity": 21,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/records.spec.ts",
+    "line": 65,
+    "column": 58,
+    "function": "Async arrow function",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/records.spec.ts",
+    "line": 145,
+    "column": 91,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/slot-animation.spec.ts",
+    "line": 15,
+    "column": 108,
+    "function": "Async arrow function",
+    "complexity": 4,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/slot-animation.spec.ts",
+    "line": 19,
+    "column": 38,
+    "function": "Async arrow function",
+    "complexity": 4,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/slot-animation.spec.ts",
+    "line": 25,
+    "column": 67,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/slot-animation.spec.ts",
+    "line": 36,
+    "column": 30,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/slot-animation.spec.ts",
+    "line": 57,
+    "column": 30,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/slot-animation.spec.ts",
+    "line": 69,
+    "column": 29,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/slot-animation.spec.ts",
+    "line": 83,
+    "column": 31,
+    "function": "Async arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/slot-animation.spec.ts",
+    "line": 86,
+    "column": 29,
+    "function": "Async arrow function",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/slot-animation.spec.ts",
+    "line": 94,
+    "column": 33,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "android/tests/slot-animation.spec.ts",
+    "line": 109,
+    "column": 31,
+    "function": "Arrow function",
+    "complexity": 1,
+    "limit": 3
+  }
+]
