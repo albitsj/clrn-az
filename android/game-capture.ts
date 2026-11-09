@@ -1,3 +1,4 @@
+import { preserveCaptureAlert } from './capture-alert-diagnostics';
 import type { TestInfo } from '@playwright/test';
 import { expect } from '@playwright/test';
 import type { AndroidDevice } from 'playwright';
@@ -39,7 +40,7 @@ export async function captureGame(device: AndroidDevice, name: string, testInfo:
   reconnectRetry?: boolean): Promise<void> {
   inputMasks = captureInputMasks(inputMasks);
   validateTrigger(transientMarker, triggerTransient);
-  const nodes = await captureNodes(device, transientMarker, expectedAlertMarker);
+  const nodes = await captureNodes(device, testInfo, name, transientMarker, expectedAlertMarker);
   const masks: ScreenshotMask[] = [...inputMasks];
   const panels = foregroundPanels(nodes);
   await testInfo.attach(`${name}-native-tree`, { body: JSON.stringify(nodes[0]), contentType: 'application/json' });
@@ -120,15 +121,17 @@ async function stablePanels(device: AndroidDevice, nodes: NativeNode[]): Promise
 
 /** 取得可截图树并校验目标提示和意外错误。
  * @param device - 原生设备。
+ * @param info - 当前尝试报告。
+ * @param name - 当前截图名。
  * @param marker - 短提示标记。
  * @param alert - 已由业务分支断言的特定提示。
  */
-async function captureNodes(device: AndroidDevice, marker?: string, alert?: string): Promise<NativeNode[]> {
+async function captureNodes(device: AndroidDevice, info: TestInfo, name: string, marker?: string, alert?: string): Promise<NativeNode[]> {
   if (alert) await gameReady(device, alert);
   else await gameConnected(device, 1_000);
   let nodes = await gameNodes(device);
   if (waitForPanels(marker)) nodes = await stablePanels(device, nodes);
-  assertAlerts(nodes, alert);
+  await assertCaptureAlerts(nodes, alert, info, name);
   return nodes;
 }
 
@@ -235,4 +238,18 @@ function transientHooks(device: AndroidDevice, transientMarker?: string): {
       `${transientMarker} 必须在截图前后可见`).toBeTruthy();
   };
   return { assertTransient, screenshot: /** 通过原生快速入口截取短提示。 */ () => gameScreenshot(device) };
+}
+
+/** 保留提示断言原始异常，在失败后保存已读现场。
+ * @param nodes - 原生树。
+ * @param alert - 允许的业务提示。
+ * @param info - 当前报告。
+ * @param name - 截图名。
+ */
+async function assertCaptureAlerts(nodes: NativeNode[], alert: string | undefined, info: TestInfo, name: string): Promise<void> {
+  try { assertAlerts(nodes, alert); }
+  catch (error) {
+    await preserveCaptureAlert(info, name, nodes);
+    throw error;
+  }
 }
