@@ -7,8 +7,11 @@ import { captureFailure } from './diagnostics';
 import { selectLanguage } from './navigation';
 
 export const locale = process.env.ANDROID_LOCALE || 'en';
-export const test = base.extend<{}, { application: { device: AndroidDevice; signedIn: boolean } }>({
-  application: [async ({}, use, workerInfo) => {
+export const test = base.extend<{}, { isolatedPasswordSession: boolean; application: { device: AndroidDevice; signedIn: boolean } }>({
+  // worker 选项参与会话分组，防止独立密码页继承前置输入页面的原生布局状态。
+  isolatedPasswordSession: [false, { scope: 'worker', option: true }],
+  application: [async ({ isolatedPasswordSession }, use, workerInfo) => {
+    if (isolatedPasswordSession) console.log('ANDROID > 密码页使用独立冷启动会话');
     await withAndroidProxy(async () => {
       console.log('ANDROID > 安装 APK 并启动原生驱动');
       const device = await launchApplication();
