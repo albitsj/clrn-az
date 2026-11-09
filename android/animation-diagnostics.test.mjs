@@ -6,13 +6,10 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
 import { runInNewContext } from 'node:vm';
-import ts from 'typescript';
+import { diagnosticSource, preserveAnimationFailure } from './diagnostics-test-support.mjs';
 
 const require = createRequire(import.meta.url);
-const { preserveAnimationFailure } = require('./animation-diagnostics.ts');
-const source = ts.transpileModule(readFileSync(new URL('./game-panel-animation.ts', import.meta.url), 'utf8'), {
-  compilerOptions: { module: ts.ModuleKind.CommonJS },
-}).outputText;
+const source = diagnosticSource('./game-panel-animation.ts');
 
 /** 在真实文件与附件边界运行完整面板函数，只替换设备和失败输入。
  * @param directory - 本轮已有采集日志的位置。
