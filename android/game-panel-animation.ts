@@ -4,6 +4,7 @@ import { captureNativeTransition, captureTimedPrompt } from './animation-transit
 import { adb } from './device';
 import { gameConnected, gameMarker, gameReady, gameTap, gameTapTarget, type NativeNode } from './game-controls';
 import { preserveAnimationFailure } from './animation-diagnostics';
+import { preserveRenderStatistics } from './render-diagnostics';
 import { preserveRulePanelState, tracePanelTarget, type PanelTrace } from './game-panel-diagnostics';
 import type { ScreenshotBounds, ScreenshotMask } from './screenshot';
 
@@ -124,13 +125,13 @@ async function preserveRuleFailure(device: AndroidDevice, name: string, info: Te
   if (ruleTransition(name)) await preserveRulePanelState(device, name, info).catch(() => undefined);
 }
 
-/** 成败均保存规则入口时间线，供对照首次执行。
+/** 成败均保存规则及聊天入口时间线，供对照首次执行。
  * @param name - 当前动画。
  * @param info - 独立测试报告。
  * @param trace - 只包含入口几何状态的时间线。
  */
 async function attachRuleTrace(name: string, info: TestInfo, trace: PanelTrace): Promise<void> {
-  if (ruleTransition(name)) await info.attach(`${name}-input-trace`, {
+  if (ruleTransition(name) || name === 'texas-holdem-chat-enter') await info.attach(`${name}-input-trace`, {
     body: JSON.stringify(trace), contentType: 'application/json',
   }).catch(() => undefined);
 }
@@ -143,6 +144,7 @@ async function attachRuleTrace(name: string, info: TestInfo, trace: PanelTrace):
 async function preservePanelFailure(name: string, startedAt: number, info: TestInfo): Promise<void> {
   if (name === 'texas-holdem-chat-enter' || ruleTransition(name)) {
     await preserveAnimationFailure(name, startedAt, info).catch(() => undefined);
+    await preserveRenderStatistics(name, info).catch(() => undefined);
   }
 }
 
