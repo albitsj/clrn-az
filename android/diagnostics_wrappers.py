@@ -7,7 +7,7 @@ import sys
 import threading
 
 from diagnostics_io import capture
-from diagnostics_lifecycle import failure, report, request_shutdown, signal_group, wait_emulator
+from diagnostics_lifecycle import failure, report, request_shutdown, wait_emulator
 
 
 SUFFIX = '.diagnostics-original'
@@ -88,13 +88,15 @@ def shutdown(command, diagnostics, timeout=10):
 
 
 def graceful_emulator_stop(diagnostics, finished, stopped):
-    """控制台关闭未完成时正常终止已登记的进程组，仍保留原生退出结果。"""
+    """先正常终止已登记主进程，保留关闭依赖；采集器继续严格回收整个进程组。"""
     log = diagnostics.logs['emulator']
     try:
         pid = int((diagnostics.directory / 'emulator-process.pid').read_text())
-        report(log, f'phase=emulator-shutdown graceful-stop pgid={pid}')
-        signal_group(pid, signal.SIGTERM)
-    except FileNotFoundError:
+        if os.getpgid(pid) != pid:
+            raise ValueError('Registered emulator is no longer a group leader')
+        report(log, f'phase=emulator-shutdown graceful-stop pid={pid}')
+        os.kill(pid, signal.SIGTERM)
+    except (FileNotFoundError, ProcessLookupError):
         # 原生采集器确认进程组退出后可能刚刚移除登记。
         pass
     except (OSError, ValueError) as error:
