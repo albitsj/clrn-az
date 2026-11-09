@@ -30,13 +30,26 @@ def contents(name):
     return ''.join(path.read_text() for path in sorted(DIRECTORY.glob(f'{name}.log*')))
 
 
+def checkpoint_marker(name):
+    """先验证并保存已采集的真实脱敏标记，不能要求有界日志无限保留旧行。"""
+    matches = [line for line in contents('logcat').splitlines() if name in line]
+    if not matches:
+        return False
+    observed = '\n'.join(matches)
+    assert '[REDACTED]' in observed, 'Marker did not prove secret filtering'
+    assert os.environ['DIAGNOSTICS_SMOKE_TOKEN'] not in observed, 'Unredacted marker'
+    # 保存原有脱敏行，不再次用环境凭据脱敏，以免掩盖采集器的真实过滤失败。
+    BoundedLog(DIRECTORY, 'smoke-markers', Redactor({})).write(observed)
+    return True
+
+
 def marker(name):
     """Wait for the streaming collector to observe a real Android log entry."""
     deadline = time.monotonic() + 30
     while time.monotonic() < deadline:
         command([*ADB, 'shell', 'log', '-p', 'i', '-t', 'CI_DIAGNOSTICS',
                  name + ' ' + os.environ['DIAGNOSTICS_SMOKE_TOKEN']])
-        if name in contents('logcat'):
+        if checkpoint_marker(name):
             return
         time.sleep(0.5)
     raise AssertionError(f'Logcat collector did not retain {name}')
@@ -86,10 +99,11 @@ def verify(case, outcome, cleanup_outcome):
     if case != 'init-failure':
         markers = ['CI_DIAG_BEFORE_RECONNECT', 'CI_DIAG_AFTER_RECONNECT'] if case == 'normal' else [
             'CI_DIAG_LIFECYCLE_READY']
+        observed = contents('logcat') + '\n' + contents('smoke-markers')
         for marker_name in markers:
-            assert marker_name in contents('logcat'), f'Missing {marker_name}'
+            assert marker_name in observed, f'Missing {marker_name}'
             assert any(marker_name in line and '[REDACTED]' in line
-                       for line in contents('logcat').splitlines()), 'Marker did not prove secret filtering'
+                       for line in observed.splitlines()), 'Marker did not prove secret filtering'
         assert 'test_exit=23' in contents('lifecycle'), 'Failed command exit missing'
     else:
         assert 'phase=test-start' not in contents('lifecycle'), 'Tests ran after failed initialization'
