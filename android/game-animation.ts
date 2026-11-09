@@ -35,7 +35,11 @@ export async function captureChallengeAnimation(device: AndroidDevice, name: str
   try {
     await expect(async () => {
       // 先在设备连续采集，再编码和比较，避免 screencap 往返及 PNG 比较漏掉闪烁相位。
-      for (const frame of await challengeFrames(device)) {
+      const frames = await challengeFrames(device);
+      // 在像素检查前保留设备时间戳，失败时仍可核对真实观察窗口。
+      await testInfo.attach(`${name}-sampling`, { body: JSON.stringify(frames.map(frame => frame.capturedAt)),
+        contentType: 'application/json' }).catch(() => undefined);
+      for (const frame of frames) {
         latest = maskScreenshot(frame.original, masks);
         const parts = motionParts(latest, regions);
         updateChallengeState(state, parts, latest, frame);

@@ -7,13 +7,14 @@ import { maskScreenshot, type ScreenshotBounds, type ScreenshotMask } from './sc
 type TransitionCapture = { device: AndroidDevice; name: string; region: AnimationRegion;
   trigger: () => unknown; info: TestInfo };
 
-/** 仅对有两次缺相位反例的老虎机退场使用原生区域采样，比较仍走原空间门禁。
+/** 对已证实录屏缺失中途帧的老虎机退场与拼三张聊天入场使用区域采样，保留原空间门禁。
  * @param context - 本次真实转场及完整比较区域。
  * @param recorder - 单元测试可替换外部设备录制边界。
  */
 export async function recordTransitionFrames(context: TransitionCapture, recorder?: typeof recordNativeVideoFrames):
 Promise<{ capturedAt: number; png: string }[]> {
-  if ((recorder && recorder !== recordNativeVideoFrames) || context.name !== 'slot-popup-exit') {
+  if ((recorder && recorder !== recordNativeVideoFrames)
+    || !['slot-popup-exit', 'zhajinhua-chat-enter'].includes(context.name)) {
     const record = recorder ?? recordNativeVideoFrames;
     return (await record(context.name, context.region, context.trigger, context.info))
       .map((png, index) => ({ capturedAt: index * 33, png: png.toString('base64') }));

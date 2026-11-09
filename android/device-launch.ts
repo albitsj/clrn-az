@@ -84,7 +84,7 @@ function uninstallPackage(pkg: string): void {
  */
 function verifyDriver(driver: string): void {
   const source = JSON.parse(readFileSync(path.join(driver, 'source.json'), 'utf8'));
-  if (source.revision !== '39e3553a4f283a41134d75d7e404484bd9e6865a' || source.patch !== 10) throw new Error('原生动画驱动构建身份无效。');
+  if (source.revision !== '39e3553a4f283a41134d75d7e404484bd9e6865a' || source.patch !== 11) throw new Error('原生动画驱动构建身份无效。');
 }
 
 /** 替换专用驱动包，保留固定构建验证。

@@ -4,7 +4,7 @@ import java.util.HashMap;
 // 用途：在真实 Java 编译器下执行生产驱动命令，模拟设备时钟及位图边界。
 public class AssetDriverTest {
   static long now, expectedDeadline;
-  static int live, maximum, screenshots, encodings;
+  static int live, maximum, screenshots, encodings, firstScreenshotDelay;
   static boolean failEncoding, continuousPanelMotion;
   static class JSONObject extends HashMap<String, Object> {
     public JSONObject put(String key, Object value) { super.put(key, value); return this; }
@@ -49,7 +49,7 @@ public class AssetDriverTest {
     }
   }
   static class Automation {
-    Bitmap takeScreenshot() { now += 8; screenshots++; return new Bitmap(720, 1280); }
+    Bitmap takeScreenshot() { now += 8 + (screenshots == 0 ? firstScreenshotDelay : 0); screenshots++; return new Bitmap(720, 1280); }
   }
   static class InstrumentationRegistry {
     static InstrumentationRegistry getInstrumentation() { return new InstrumentationRegistry(); }
@@ -66,17 +66,39 @@ public class AssetDriverTest {
     return new JSONObject().put("x", x).put("y", y).put("width", width).put("height", height);
   }
   static JSONObject capture(String method, JSONArray regions) throws Exception {
-    expectedDeadline = method.equals("panelFrames") ? 3200 : 4600;
+    expectedDeadline = method.equals("motionFrames") ? 0 : (method.equals("panelFrames") ? 3200 : 4600);
     JSONObject params = new JSONObject().put("regions", regions), response = new JSONObject();
     switch (method) {
       // ASSET_FRAME_COMMAND
+      // MOTION_FRAME_COMMAND
       default: throw new AssertionError("Missing command");
     }
     return response;
   }
   static JSONObject capture(JSONArray regions) throws Exception { return capture("assetFrames", regions); }
-  static void reset() { now = 0; live = maximum = screenshots = encodings = 0; failEncoding = continuousPanelMotion = false; }
+  static void reset() { now = 0; live = maximum = screenshots = encodings = firstScreenshotDelay = 0; failEncoding = continuousPanelMotion = false; }
+  static void verifyMotion() throws Exception {
+    for (int delay : new int[] {0, 700, 1500}) {
+      reset(); firstScreenshotDelay = delay;
+      JSONArray frames = capture("challengeFrames", new JSONArray()).getJSONArray("result");
+      int first = frames.getJSONObject(0).getInt("capturedAt");
+      int last = frames.getJSONObject(frames.length() - 1).getInt("capturedAt");
+      check(first == delay + 8, "First screenshot must retain its actual timestamp");
+      check(last - first >= 4000, "First screenshot latency consumed four-second observation window");
+      check(now < delay + 4800, "Collection must remain bounded after the first screenshot");
+      check(frames.length() <= 110 && maximum <= 110 * 720 * 1280, "Existing bitmap budget exceeded");
+      check(encodings == frames.length() && live == 0, "Encoding and cleanup must retain every frame");
+      for (int index = 1; index < frames.length(); index++)
+        check(frames.getJSONObject(index).getInt("capturedAt") > frames.getJSONObject(index - 1).getInt("capturedAt"), "Capture timestamps must increase");
+    }
+    reset(); firstScreenshotDelay = 700;
+    JSONArray frames = capture("motionFrames", new JSONArray()).getJSONArray("result");
+    check(frames.length() == 20 && now < 3200, "Ordinary motion sampling must retain its existing limits");
+    check(live == 0, "Ordinary motion sampling leaked bitmaps");
+    System.out.println("native motion first-frame latency, bounded window and cleanup passed");
+  }
   public static void main(String[] args) throws Exception {
+    if (args.length > 0) { verifyMotion(); return; }
     JSONArray regions = new JSONArray().put(region(0, 460, 180, 230)).put(region(120, 700, 220, 340));
     reset();
     JSONArray frames = capture(regions).getJSONArray("result");

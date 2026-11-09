@@ -81,6 +81,7 @@ function damaged(bytes, area) {
 test('连续采样覆盖历史漏采的真实闪烁相位，保留四个玩家的完整原始匹配帧', async () => {
   assert.equal(createHash('sha256').update(firstAttempt).digest('hex'), source.sha256);
   const report = await capture([firstAttempt, expected, firstAttempt, expected, firstAttempt, expected]);
+  assert.deepEqual(JSON.parse(report.get(`${name}-sampling`).body), [100, 1100, 2100, 3100, 4100, 5100]);
   const regions = JSON.parse(report.get(`${name}-animation-regions`).body);
   const reference = motionParts(expected, regions).regions;
   for (const player of [1, 2, 3, 4]) {
