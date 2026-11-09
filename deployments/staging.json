@@ -1,1 +1,1 @@
-{"environment":"staging","sha":"5d11c3e118f47538497cae30cca1799bd69d7977","deployed_at":"2026-11-08T19:33:30.077Z","release_tag":"android-staging-300001901-5d11c3e118f4"}
+{"environment":"staging","sha":"beea05ce1f1fa92c9bd3ad7ae5cc97000bce0a8f","deployed_at":"2026-11-09T07:03:54.473Z","release_tag":"android-staging-100002101-beea05ce1f1f","application":{"repository":"kevinanew/laiwan_react_native","branch":"staging-android-fix-password-layout","build_number":100002101,"channel":"branch"}}
