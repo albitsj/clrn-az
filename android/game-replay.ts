@@ -14,8 +14,21 @@ import { gameSession } from './game-room';
 export async function replay(proxy: Mitmproxy, game: 'texas' | 'zhajinhua', roomId: string, scene: unknown): Promise<void> {
   expect((await gameSession(proxy)).room?.roomId, '回放只能发送到本轮新建的私人房').toBe(roomId);
   await expect(async () => {
-    await proxy.command(`${game}/replay`, { roomId, scene });
+    const result = await proxy.command<{ replayedMessages?: number }>(`${game}/replay`, { roomId, scene });
+    tracePredictionReplay(game, scene, result);
   }).toPass({ timeout: 30_000, intervals: [500] });
+}
+
+/** 只记录缺帧场景的宿主时间及代理注入计数，不复制身份、连接或事件载荷。
+ * @param game - 当前回放玩法。
+ * @param scene - 仅检查固定场景名。
+ * @param result - 已有回放响应，不追加网络请求。
+ */
+function tracePredictionReplay(game: string, scene: unknown, result: { replayedMessages?: number }): void {
+  if ([game === 'texas', (scene as { scene?: string })?.scene === 'prediction-loss'].every(Boolean)) {
+    console.log('ANDROID PREDICTION REPLAY >', JSON.stringify({ at: Date.now(),
+      replayedMessages: Number(result.replayedMessages) }));
+  }
 }
 
 /**
