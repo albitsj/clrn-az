@@ -17,8 +17,8 @@ type SamplingMethod = 'motionFrames' | 'launchFrames' | 'videoFrames';
  */
 export function gamePanelSamplingMethod(game: 'texas-holdem' | 'zhajinhua', name: string,
   phase: 'enter' | 'exit', requested: SamplingMethod): SamplingMethod {
-  // 带入审核的短缩放/淡入可能落在两次 UiAutomation 截图之间，固定走现有连续录屏。
-  return [game === 'texas-holdem', name === 'buy-in-applications', phase === 'enter'].every(Boolean)
+  // 带入审核及聊天菜单再次入场的短动画会落在两次 UiAutomation 截图之间，固定连续录屏。
+  return [game === 'texas-holdem', ['buy-in-applications', 'chat-actions-return'].includes(name), phase === 'enter'].every(Boolean)
     ? 'videoFrames' : requested;
 }
 
