@@ -45,7 +45,8 @@ export async function captureChallengeAnimation(device: AndroidDevice, name: str
         if (state.backgroundMatches) matchChallengeParts(parts, expected, matched, matchingFrames, frame.original);
       }
       assertChallengeSamples(state, moving, matched, reference);
-    }).toPass({ timeout: 30_000, intervals: [137, 263, 181, 347] });
+    // 外层期限须覆盖原生响应等待及随后全部帧的像素校验。
+    }).toPass({ timeout: 120_000, intervals: [137, 263, 181, 347] });
     expect((await gameNodes(device)).filter(node => node.res === 'challenge_player_selector').map(node => node.bounds))
       .toEqual(selectors.map(node => node.bounds));
     await testInfo.attach(`${name}-original`, { body: state.best!.original, contentType: 'image/png' });

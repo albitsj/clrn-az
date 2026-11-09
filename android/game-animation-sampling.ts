@@ -15,7 +15,8 @@ export async function challengeFrames(device: AndroidDevice): Promise<ChallengeF
   try {
     const frames = await Promise.race([
       implementation._send('challengeFrames'),
-      setTimeout(30_000, undefined, { signal: timeout.signal }).then(() => { throw new Error('比牌原生连续采样超时。'); }),
+      // 连续位图采集后还需逐帧 PNG 编码及传输；CI 的完整响应会超过 30 秒。
+      setTimeout(60_000, undefined, { signal: timeout.signal }).then(() => { throw new Error('比牌原生连续采样超时。'); }),
     ]);
     expect(frames.length, '比牌原生采样至少返回三帧').toBeGreaterThanOrEqual(3);
     return frames.map(frame => ({ capturedAt: frame.capturedAt, original: Buffer.from(frame.png, 'base64') }));
