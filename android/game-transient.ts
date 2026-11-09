@@ -1,5 +1,6 @@
 import { expect, type TestInfo } from '@playwright/test';
 import type { AndroidDevice } from 'playwright';
+import { preserveAnimationFailure } from './animation-diagnostics';
 import { collectTransientFrames, type TransientFrame as Frame } from './game-transient-session';
 import { subtractPanel } from './game-masks';
 import { samePixels } from './motion-regions';
@@ -84,11 +85,17 @@ export async function captureToast(device: AndroidDevice, name: string, testInfo
  */
 export async function capturePredictionResult(device: AndroidDevice, name: string, testInfo: TestInfo,
   backgroundMasks: ScreenshotMask[], trigger: () => Promise<string | void>): Promise<void> {
-  await captureTransient(device, name, testInfo, backgroundMasks, 'bet-next-hand-result-amount', undefined, async () => {
-    const expected = await trigger();
-    if (!expected) throw new Error('预测结果必须指定预期金额。');
-    return expected;
-  });
+  const startedAt = Date.now();
+  try {
+    await captureTransient(device, name, testInfo, backgroundMasks, 'bet-next-hand-result-amount', undefined, async () => {
+      const expected = await trigger();
+      if (!expected) throw new Error('预测结果必须指定预期金额。');
+      return expected;
+    });
+  } catch (error) {
+    await preserveAnimationFailure(name, startedAt, testInfo).catch(() => undefined);
+    throw error;
+  }
 }
 
 /** 每帧都校验前后文字。

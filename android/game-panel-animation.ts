@@ -124,24 +124,24 @@ async function preserveRuleFailure(device: AndroidDevice, name: string, info: Te
   if (ruleTransition(name)) await preserveRulePanelState(device, name, info).catch(() => undefined);
 }
 
-/** 成败均保存规则入口时间线，供对照首次执行。
+/** 成败均保存规则及语音入口时间线，供对照首次执行。
  * @param name - 当前动画。
  * @param info - 独立测试报告。
  * @param trace - 只包含入口几何状态的时间线。
  */
 async function attachRuleTrace(name: string, info: TestInfo, trace: PanelTrace): Promise<void> {
-  if (ruleTransition(name)) await info.attach(`${name}-input-trace`, {
+  if (ruleTransition(name) || name === 'texas-holdem-voice-enter') await info.attach(`${name}-input-trace`, {
     body: JSON.stringify(trace), contentType: 'application/json',
   }).catch(() => undefined);
 }
 
-/** 保存聊天入场与规则面板失败时的既有脱敏日志。
+/** 保存聊天、语音入场与规则面板失败时的既有脱敏日志。
  * @param name - 动画名称。
  * @param startedAt - 开始时间。
  * @param info - 测试报告。
  */
 async function preservePanelFailure(name: string, startedAt: number, info: TestInfo): Promise<void> {
-  if (name === 'texas-holdem-chat-enter' || ruleTransition(name)) {
+  if (['texas-holdem-chat-enter', 'texas-holdem-voice-enter'].includes(name) || ruleTransition(name)) {
     await preserveAnimationFailure(name, startedAt, info).catch(() => undefined);
   }
 }

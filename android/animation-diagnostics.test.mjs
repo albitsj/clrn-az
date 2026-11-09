@@ -72,11 +72,16 @@ test('聊天首败立即固定现有脱敏日志，重试轮转后仍保留失�
       ['adb.log.1', 'host.log.1', 'lifecycle.log.1']);
     assert.equal(JSON.stringify(window).includes(directory), false);
     const count = attachments.size;
-    for (const args of [['texas-holdem', 'chat', 'exit'], ['zhajinhua', 'chat'], ['texas-holdem', 'voice']]) {
+    for (const args of [['texas-holdem', 'chat', 'exit'], ['zhajinhua', 'chat']]) {
       await assert.rejects(run(...args), error => error === failure);
     }
     await panel(directory, undefined, async () => { throw new Error('成功路径不应收集首败诊断'); })();
     assert.equal(attachments.size, count, '其他转场和正常采集不增加此项诊断');
+    await assert.rejects(run('texas-holdem', 'voice'), error => error === failure);
+    for (const file of originals.keys()) {
+      assert.deepEqual(attachments.get(`texas-holdem-voice-enter-diagnostics-${file}`), readFileSync(path.join(directory, file)));
+    }
+    assert.ok(attachments.has('texas-holdem-voice-enter-diagnostics-window'));
   } finally { rmSync(directory, { recursive: true, force: true }); }
 });
 
