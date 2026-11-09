@@ -10,12 +10,9 @@ import type { TestInfo } from '@playwright/test';
 import type { ScreenshotMask } from '../screenshot';
 import { verifyLoopAnimation } from '../loop-animation';
 
-const passwordTest = test.extend({ isolatedPasswordSession: true });
-
 for (const scenario of androidScenarios(locale, process.env.ANDROID_GROUP)
   .filter(item => item.pageLabel !== 'signed_in_club_rooms_populated')) {
-  const scenarioTest = englishPage(scenario, 'signed_in_reset_password') ? passwordTest : test;
-  scenarioTest(`${locale} / ${scenario.group} / ${scenario.pageLabel}`, async ({ application }, testInfo) => {
+  test(`${locale} / ${scenario.group} / ${scenario.pageLabel}`, async ({ application }, testInfo) => {
     testInfo.annotations.push({ type: 'web-scenario', description: scenario.label });
     await ensureSignedIn(application, scenario);
     const backgroundBanner = await navigateScenario(application.device, scenario);
