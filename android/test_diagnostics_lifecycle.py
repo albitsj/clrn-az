@@ -9,18 +9,49 @@ import sys
 import tempfile
 import time
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from ci_diagnostics import Collector, run, stop, stop_daemon
 from diagnostics_io import capture
 from diagnostics_lifecycle import group_members, request_shutdown, stop_captures, wait_emulator
-from diagnostics_wrappers import install_binaries, restore, shutdown
+from diagnostics_wrappers import graceful_emulator_stop, install_binaries, observe_shutdown_threads, restore, shutdown
 
 
 ROOT = Path(__file__).resolve().parent
 
 
 class LifecycleTests(unittest.TestCase):
+    def test_shutdown_wait_diagnostics_are_bounded_and_stop_after_exit(self):
+        finished = Mock()
+        finished.wait.side_effect = [False, False, True]
+        snapshot = subprocess.CompletedProcess([], 0, stdout='PID TID STAT WCHAN COMMAND\n' * 300)
+        with patch('diagnostics_wrappers.subprocess.run', return_value=snapshot) as probe:
+            observe_shutdown_threads(123, self.log, finished)
+        self.assertEqual(probe.call_count, 2)
+        self.assertEqual([call.args[0] for call in finished.wait.call_args_list], [0, 5, 10])
+        self.assertEqual(self.contents('cleanup').count('PID TID STAT WCHAN COMMAND'), 512)
+        self.assertFalse((self.directory / 'cleanup-failed').exists())
+
+    def test_shutdown_wait_probe_failure_does_not_change_cleanup_result(self):
+        finished = Mock()
+        finished.wait.side_effect = [False, True]
+        with patch('diagnostics_wrappers.subprocess.run', side_effect=OSError('probe unavailable')):
+            observe_shutdown_threads(123, self.log, finished)
+        self.assertIn('collection failed: OSError', self.contents('cleanup'))
+        self.assertFalse((self.directory / 'cleanup-failed').exists())
+
+    def test_shutdown_observer_start_failure_preserves_signal_and_deadline(self):
+        (self.directory / 'emulator-process.pid').write_text('123')
+        finished, stopped = Mock(), Mock()
+        finished.wait.return_value = True
+        with patch('diagnostics_wrappers.signal_group') as send, \
+                patch('diagnostics_wrappers.threading.Thread.start', side_effect=RuntimeError('unavailable')):
+            graceful_emulator_stop(self.diagnostics, finished, stopped)
+        send.assert_called_once_with(123, signal.SIGTERM)
+        finished.wait.assert_called_once_with(25)
+        stopped.set.assert_not_called()
+        self.assertFalse((self.directory / 'cleanup-failed').exists())
+
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory()
         self.addCleanup(self.temporary.cleanup)

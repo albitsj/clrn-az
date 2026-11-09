@@ -3,6 +3,7 @@
 import os
 from pathlib import Path
 import signal
+import subprocess
 import sys
 import threading
 
@@ -87,6 +88,23 @@ def shutdown(command, diagnostics, timeout=10):
     return result if result >= 0 else 128 - result
 
 
+def observe_shutdown_threads(pid, log, finished):
+    """Record bounded, argument-free wait states without affecting shutdown."""
+    from ci_diagnostics import best_effort
+
+    def snapshot():
+        result = subprocess.run(
+            ['ps', '-L', '-p', str(pid), '-o', 'pid,tid,stat,wchan:32,comm'],
+            capture_output=True, text=True, timeout=2, check=True)
+        report(log, 'phase=emulator-shutdown thread-waits\n' +
+               '\n'.join(result.stdout.splitlines()[:256]))
+
+    for delay in (0, 5, 10):
+        if finished.wait(delay):
+            return
+        best_effort(snapshot, log)
+
+
 def graceful_emulator_stop(diagnostics, finished, stopped):
     """控制台关闭未完成时正常终止已登记的进程组，仍保留原生退出结果。"""
     log = diagnostics.logs['emulator']
@@ -94,6 +112,9 @@ def graceful_emulator_stop(diagnostics, finished, stopped):
         pid = int((diagnostics.directory / 'emulator-process.pid').read_text())
         report(log, f'phase=emulator-shutdown graceful-stop pgid={pid}')
         signal_group(pid, signal.SIGTERM)
+        from ci_diagnostics import best_effort
+        best_effort(lambda: threading.Thread(
+            target=observe_shutdown_threads, args=(pid, log, finished), daemon=True).start(), log)
     except FileNotFoundError:
         # 原生采集器确认进程组退出后可能刚刚移除登记。
         pass
