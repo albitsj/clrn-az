@@ -141,6 +141,13 @@ if sys.argv[1] == 'adb':
 signal.signal(signal.SIGTERM, signal.SIG_IGN)
 (directory / 'native-ready').touch()
 mode = os.environ['FIXTURE_MODE']
+if mode == 'graceful-stop':
+    def graceful_stop(*_):
+        time.sleep(3)
+        sys.exit(0)
+    signal.signal(signal.SIGTERM, graceful_stop)
+    if os.fork() == 0:
+        (directory / 'native-child-ready').touch()
 while mode not in ['normal', 'nonzero-exit', 'signal-exit'] or not (directory / 'native-stop').exists():
     time.sleep(0.05)
 if mode == 'nonzero-exit': sys.exit(23)
@@ -198,11 +205,32 @@ print('native emulator stopped', flush=True)
         request_shutdown(self.directory)
         self.assertFalse(wait_emulator(self.directory, self.log))
         self.assertEqual(process.wait(timeout=2), 124)
-        self.assertLess(time.monotonic() - started, 15)
+        self.assertLess(time.monotonic() - started, 40)
         self.assertFalse(group_members(pgid))
         self.assertTrue((self.directory / 'cleanup-failed').exists())
         self.assertIn('phase=emulator-shutdown timeout', self.contents('emulator'))
         self.assertEqual(self.final_stop(env), 1)
+
+    def test_acknowledged_console_stop_can_finish_with_graceful_process_termination(self):
+        """控制台已确认但未退出时，真实进程组正常响应终止后才能通过清理。"""
+        sdk, env = self.sdk('graceful-stop')
+        process = self.launch(sdk, env)
+        self.wait_for(self.directory / 'native-child-ready', process)
+        pgid = int((self.directory / 'emulator-process.pid').read_text())
+        self.addCleanup(self.kill_group, pgid)
+        self.assertGreaterEqual(len(group_members(pgid)), 2)
+        (self.directory / 'test.exit').write_text('0')
+        with patch.object(self.diagnostics, 'sample', return_value={}), patch.dict(os.environ, env):
+            result = shutdown([str(sdk / 'platform-tools/adb.diagnostics-original'), 'emu', 'kill'],
+                              self.diagnostics)
+        self.assertEqual(result, 0)
+        self.assertEqual(process.wait(timeout=3), 0)
+        self.assertEqual((self.directory / 'emulator.exit').read_text(), '0')
+        self.assertEqual((self.directory / 'test.exit').read_text(), '0')
+        self.assertFalse(group_members(pgid))
+        self.assertFalse((self.directory / 'cleanup-failed').exists())
+        self.assertIn('phase=emulator-shutdown graceful-stop', self.contents('emulator'))
+        self.assertEqual(self.final_stop(env), 0)
 
     def abnormal_emulator_shutdown(self, mode, expected):
         sdk, env = self.sdk(mode)

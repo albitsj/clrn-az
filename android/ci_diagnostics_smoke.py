@@ -30,16 +30,50 @@ def contents(name):
     return ''.join(path.read_text() for path in sorted(DIRECTORY.glob(f'{name}.log*')))
 
 
+def checkpoint_marker(name):
+    """先验证并保存已采集的真实脱敏标记，不能要求有界日志无限保留旧行。"""
+    matches = [line for line in contents('logcat').splitlines() if name in line]
+    if not matches:
+        return False
+    observed = '\n'.join(matches)
+    assert '[REDACTED]' in observed, 'Marker did not prove secret filtering'
+    assert os.environ['DIAGNOSTICS_SMOKE_TOKEN'] not in observed, 'Unredacted marker'
+    # 保存原有脱敏行，不再次用环境凭据脱敏，以免掩盖采集器的真实过滤失败。
+    BoundedLog(DIRECTORY, 'smoke-markers', Redactor({})).write(observed)
+    return True
+
+
 def marker(name):
     """Wait for the streaming collector to observe a real Android log entry."""
     deadline = time.monotonic() + 30
     while time.monotonic() < deadline:
         command([*ADB, 'shell', 'log', '-p', 'i', '-t', 'CI_DIAGNOSTICS',
                  name + ' ' + os.environ['DIAGNOSTICS_SMOKE_TOKEN']])
-        if name in contents('logcat'):
+        if checkpoint_marker(name):
             return
         time.sleep(0.5)
     raise AssertionError(f'Logcat collector did not retain {name}')
+
+
+def diagnose_root_failure():
+    """Observe a failed root handshake without retrying it or accepting its exit."""
+    from ci_diagnostics import best_effort
+    log = BoundedLog(DIRECTORY, 'smoke-root-failure', Redactor())
+    probes = [
+        ('reconnect', [*ADB, 'wait-for-device'], 12),
+        ('root-state', [*ADB, 'shell',
+                        'getprop service.adb.root; getprop init.svc.adbd; '
+                        'getprop ro.debuggable; id; ps -A -o USER,PID,PPID,NAME | grep adbd'], 5),
+        ('daemon-log', [*ADB, 'logcat', '-b', 'all', '-d', '-t', '200',
+                        '-s', 'adbd:*', 'init:*'], 5),
+    ]
+    for label, arguments, timeout in probes:
+        def collect():
+            log.write(f'phase={label}')
+            result = subprocess.run(arguments, timeout=timeout, stdout=subprocess.PIPE,
+                                    stderr=subprocess.STDOUT, check=False)
+            log.write(f'exit={result.returncode}\n' + result.stdout.decode('utf-8', errors='replace'))
+        best_effort(collect, log)
 
 
 def exercise(case='normal'):
@@ -51,7 +85,12 @@ def exercise(case='normal'):
         # so a setup transport restart cannot prevent their fault injection.
         marker('CI_DIAG_BEFORE_RECONNECT')
         command([*ADB, 'logcat', '-c'])
-        command([*ADB, 'root'])
+        try:
+            command([*ADB, 'root'])
+        except Exception:
+            from ci_diagnostics import best_effort
+            best_effort(diagnose_root_failure)
+            raise
         command([*ADB, 'wait-for-device'])
         marker('CI_DIAG_AFTER_RECONNECT')
         assert 'CI_DIAG_BEFORE_RECONNECT' in contents('logcat'), 'Earlier log lost after restart'
@@ -86,10 +125,11 @@ def verify(case, outcome, cleanup_outcome):
     if case != 'init-failure':
         markers = ['CI_DIAG_BEFORE_RECONNECT', 'CI_DIAG_AFTER_RECONNECT'] if case == 'normal' else [
             'CI_DIAG_LIFECYCLE_READY']
+        observed = contents('logcat') + '\n' + contents('smoke-markers')
         for marker_name in markers:
-            assert marker_name in contents('logcat'), f'Missing {marker_name}'
+            assert marker_name in observed, f'Missing {marker_name}'
             assert any(marker_name in line and '[REDACTED]' in line
-                       for line in contents('logcat').splitlines()), 'Marker did not prove secret filtering'
+                       for line in observed.splitlines()), 'Marker did not prove secret filtering'
         assert 'test_exit=23' in contents('lifecycle'), 'Failed command exit missing'
     else:
         assert 'phase=test-start' not in contents('lifecycle'), 'Tests ran after failed initialization'
@@ -99,6 +139,9 @@ def verify(case, outcome, cleanup_outcome):
         assert 'phase=emulator-shutdown timeout' in contents('emulator'), 'Shutdown timeout not exercised'
     if case == 'retained-pipe':
         assert 'phase=output-drain timeout' in contents('emulator'), 'Pipe timeout not exercised'
+    if case == 'graceful-stop':
+        assert 'phase=emulator-shutdown graceful-stop' in contents('emulator'), 'Graceful stop not exercised'
+        assert 'emulator_exit=0' in contents('emulator'), 'Native emulator did not exit normally'
     secret = os.environ['DIAGNOSTICS_SMOKE_TOKEN']
     for path in DIRECTORY.glob('*.log*'):
         data = path.read_text()

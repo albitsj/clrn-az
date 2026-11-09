@@ -2,6 +2,7 @@ import { readFileSync, writeFileSync, mkdirSync, copyFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import path from 'node:path';
+import { assetFrameCommand } from './asset-driver.mjs';
 
 // 固定官方驱动源码；改进控件查询与真实截图采集，不修改被测 APK、绘制或游戏时钟。
 const revision = '39e3553a4f283a41134d75d7e404484bd9e6865a';
@@ -39,7 +40,7 @@ const patched = source
   }
 
   private static JSONObject tree(UiDevice device)`)
-  .replace('case "tree":', `case "launchFrames":
+  .replace('case "tree":', `${assetFrameCommand}case "launchFrames":
               // 启动画面跨过系统 Splash；边截屏边编码，持续记录应用插画与测试版提示。
               JSONArray launchFrames = new JSONArray();
               long launchDeadline = android.os.SystemClock.uptimeMillis() + 10000;
@@ -57,13 +58,15 @@ const patched = source
               }
               response.put("result", launchFrames);
               break;
+            case "challengeFrames":
             case "motionFrames":
               // 无须查询控件树，连续保存真实合成屏幕；JS 端在采样期间通过独立 ADB 点击。
               java.util.ArrayList<android.graphics.Bitmap> motionBitmaps = new java.util.ArrayList<>();
               JSONArray motionFrames = new JSONArray();
-              long motionDeadline = android.os.SystemClock.uptimeMillis() + 3200;
+              boolean challenge = method.equals("challengeFrames");
+              long motionDeadline = android.os.SystemClock.uptimeMillis() + (challenge ? 4600 : 3200);
               try {
-              while (android.os.SystemClock.uptimeMillis() < motionDeadline && motionBitmaps.size() < 20) {
+              while (android.os.SystemClock.uptimeMillis() < motionDeadline && motionBitmaps.size() < (challenge ? 110 : 20)) {
                   android.graphics.Bitmap motionFrame = InstrumentationRegistry.getInstrumentation().getUiAutomation().takeScreenshot();
                   if (motionFrame == null) throw new IllegalStateException("Native motion screenshot returned no bitmap");
                   motionBitmaps.add(motionFrame);
@@ -140,7 +143,7 @@ const patched = source
               response.put("result", found == null ? JSONObject.NULL : found);
               break;
             case "tree":`);
-if (!['setWaitForIdleTimeout(100)', 'if (child != null)', 'case "marker":', 'case "screen":', 'case "transientFrames":', 'case "motionFrames":', 'case "launchFrames":']
+if (!['setWaitForIdleTimeout(100)', 'if (child != null)', 'case "marker":', 'case "screen":', 'case "transientFrames":', 'case "challengeFrames":', 'case "motionFrames":', 'case "launchFrames":', 'case "assetFrames":', 'case "panelFrames":']
   .every(fragment => patched.includes(fragment))) throw new Error('原生驱动补丁没有完整应用。');
 writeFileSync(java, patched);
 const gradle = path.join(directory, 'build.gradle');
@@ -157,5 +160,5 @@ const output = path.resolve('.ttyctl/android-driver');
 mkdirSync(output, { recursive: true });
 copyFileSync(path.join(directory, 'app/build/outputs/apk/debug/app-debug.apk'), path.join(output, 'android-driver-target.apk'));
 copyFileSync(path.join(directory, 'app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk'), path.join(output, 'android-driver.apk'));
-writeFileSync(path.join(output, 'source.json'), JSON.stringify({ revision, patch: 7 }));
+writeFileSync(path.join(output, 'source.json'), JSON.stringify({ revision, patch: 10 }));
 console.log('原生控件驱动已构建，应用画面和动画保持原样。');

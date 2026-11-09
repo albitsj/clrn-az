@@ -4,6 +4,7 @@ import json
 import re
 import time
 from urllib.parse import urlsplit
+from profile_diagnostics import observe_profile_frame, room_profile_path
 
 METADATA_PATHS = ('/public/v12/metadata/servers', '/public/v13/metadata/servers')
 HEALTH_PATH = '/node/v1/status'
@@ -15,6 +16,8 @@ def diagnostic_path(request):
         return path
     if request.method == 'PUT' and re.fullmatch(r'/v10/wallet/[^/]+', path):
         return '/v10/wallet/{user}'
+    if room_profile_path(path):
+        return '/v10/texas_holdem/room/{room}/profile'
     return None
 
 
@@ -87,6 +90,7 @@ class NetworkSelection:
         message = flow.websocket.messages[-1]
         pending = flow.metadata.setdefault('network_selection_pending', {})
         for frame in ack_frames(message):
+            observe_profile_frame(self, flow, message, frame)
             request_id = frame['id']
             if message.from_client:
                 if frame.get('method', 0) in (0, 1):

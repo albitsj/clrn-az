@@ -75,6 +75,7 @@ async function retryStagingStatus(device: AndroidDevice, deadline: number): Prom
   if (!statusRetryAvailable(nodeText(message), nodeText(retry))) return;
   if (Date.now() >= deadline) return;
   await device.tap({ res: 'android:id/button1' });
+  console.log('ANDROID > 已点击 staging v1/status 的 RETRY，继续原有大厅等待');
 }
 
 /** 确认消息确实来自 staging 的 v1/status，而非其他初始化错误。
