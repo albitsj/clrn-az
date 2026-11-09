@@ -13,16 +13,31 @@ const snapshots = new URL('./snapshots/android-35-x86_64-720x1280-en/', import.m
 
 /** 用已审查的真实素材帧模拟同一条原生采集时间线。
  * @param frames - 完整屏幕帧，首帧同时作为效果播放前后的屏幕。
+ * @param denseFrames - 区域采样独立保留的真实时间线输入。
+ * @param commands - 记录实际选择的驱动命令。
  */
-function deviceFor(frames) {
+function deviceFor(frames, denseFrames = frames, commands = []) {
   return { _connection: { /** 提供模拟驱动。 */ toImpl: () => ({
     /** 按实际采集协议返回控件树、完整屏幕或时间线。
      * @param method - 原生驱动命令。
+     * @param params - 实际请求的裁切区域。
      */
-    _send: async method => method === 'tree' ? { bounds: { x: 0, y: 0, width: 720, height: 1280 }, children: [] }
-      : method === 'screen' ? frames[0].toString('base64')
-        : [...frames, ...Array(7).fill(frames.at(-1))]
-          .map((png, index) => ({ capturedAt: index * 100, png: png.toString('base64') })),
+    _send: async (method, params) => {
+      commands.push(method);
+      if (method === 'tree') return { bounds: { x: 0, y: 0, width: 720, height: 1280 }, children: [] };
+      if (method === 'screen') return frames[0].toString('base64');
+      const source = method === 'assetFrames' ? denseFrames : frames;
+      return [...source, ...Array(7).fill(source.at(-1))].map((png, index) => {
+        const result = { capturedAt: index * 100, png: png.toString('base64') };
+        if (method !== 'assetFrames') return result;
+        const screen = PNG.sync.read(png);
+        return { capturedAt: index * 100, regions: params.regions.map(region => {
+          const part = new PNG({ width: region.width, height: region.height });
+          PNG.bitblt(screen, part, region.x, region.y, region.width, region.height, 0, 0);
+          return PNG.sync.write(part).toString('base64');
+        }) };
+      });
+    },
   }) } };
 }
 
@@ -68,15 +83,8 @@ function propScene(name = 'texas-prop-tea', sparse = false) {
     flightRegion: { x: body[0].width, y: 0, width: flight[0].width, height: flight[0].height } };
 }
 
-/** 仅替换外部录屏，真实触发、截图、裁切及严格锚点比较继续执行。
- * @param frames - 此次连续飞行采集的裁切帧。
- */
-function flightRecorder(frames) {
-  return async (_name, _region, trigger) => { await trigger(); return frames; };
-}
-
 test('登记的飞行位置锚点缺失必须失败，不能因主图匹配而静默跳过', async () => {
-  const { name, frames, flight, region, flightRegion } = propScene();
+  const { name, frames, region, flightRegion } = propScene();
   const missing = `${name}-flight-peak-alternate.png`;
   const info = { config: { updateSnapshots: 'none' }, /** 本例不保存附件。 */ attach: async () => {},
     /** 仅模拟一个已登记的真实锚点文件丢失。
@@ -84,7 +92,7 @@ test('登记的飞行位置锚点缺失必须失败，不能因主图匹配而�
      */
     snapshotPath: file => fileURLToPath(new URL(file === missing ? `missing/${file}` : file, snapshots)) };
   await assert.rejects(captureAssetSequence(deviceFor(frames), name, info, region, async () => {},
-    flightRegion, flightRecorder(flight)),
+    flightRegion),
   error => error.code === 'ENOENT' && error.path.endsWith(missing));
 });
 
@@ -101,45 +109,48 @@ function sequenceInfo(attachments) {
    */ snapshotPath: file => fileURLToPath(new URL(file, snapshots)) };
 }
 
-test('无损截图漏掉飞行位置时，独立连续录屏仍按原锚点验证同一次真实触发', async () => {
+test('稀疏整屏截图漏掉飞行时，密集原生区域仍按原锚点验证同一次真实触发', async () => {
   const scene = propScene('texas-prop-tea', true);
   const attachments = new Map();
   let triggers = 0;
-  /** 对同一次消息采集飞行画面，截图与录屏触发不能分别重发消息。 */
+  /** 对同一次消息采集飞行画面，两种采样不能分别重发消息。 */
   const trigger = async () => { triggers++; };
-  await captureAssetSequence(deviceFor(scene.frames), scene.name, sequenceInfo(attachments),
-    scene.region, trigger, scene.flightRegion, flightRecorder(scene.flight));
+  await captureAssetSequence(deviceFor(scene.frames, propScene().frames), scene.name, sequenceInfo(attachments),
+    scene.region, trigger, scene.flightRegion);
   assert.equal(triggers, 1);
   assert.deepEqual(attachments.get(`${scene.name}-flight-peak.png`), scene.flight[1]);
 });
 
-test('连续录屏没有真实飞行时仍失败，不用接收者播放或起止截图代替路径', async () => {
-  const scene = propScene();
-  await assert.rejects(captureAssetSequence(deviceFor(scene.frames), scene.name, sequenceInfo(new Map()),
-    scene.region, async () => {}, scene.flightRegion, flightRecorder(Array(20).fill(scene.flight[0]))),
-  /道具必须飞过目标路线/);
-});
-
 for (const name of ['texas-prop-water', 'texas-prop-beer', 'zhajinhua-prop-tea']) {
-  test(`${name} 保留原无损飞行采样，不进入录屏路径`, async () => {
+  test(`${name} 保留原无损整屏采样，不进入区域采样`, async () => {
     const scene = propScene(name);
-    /** 不允许恢复已导致其他道具失败的全量录屏策略。 */
-    const unexpectedRecorder = async () => { throw new Error('此道具必须保留无损采样'); };
-    await captureAssetSequence(deviceFor(scene.frames), name, sequenceInfo(new Map()), scene.region,
-      async () => {}, scene.flightRegion, unexpectedRecorder);
+    const commands = [];
+    await captureAssetSequence(deviceFor(scene.frames, scene.frames, commands), name, sequenceInfo(new Map()), scene.region,
+      async () => {}, scene.flightRegion);
+    assert.equal(commands.includes('assetFrames'), false);
+    assert.equal(commands.includes('motionFrames'), true);
   });
 }
 
-test('其他道具的无损截图没有飞行时仍失败，不用可通过的录屏掩盖缺帧', async () => {
-  const scene = propScene('texas-prop-water', true);
-  await assert.rejects(captureAssetSequence(deviceFor(scene.frames), scene.name, sequenceInfo(new Map()),
-    scene.region, async () => {}, scene.flightRegion, flightRecorder(scene.flight)), /道具必须飞过目标路线/);
-});
+for (const name of ['texas-prop-tea', 'texas-prop-water']) {
+  test(`${name} 没有真实飞行时仍失败，不用接收者播放代替路径`, async () => {
+    const scene = propScene(name, true);
+    await assert.rejects(captureAssetSequence(deviceFor(scene.frames), name, sequenceInfo(new Map()),
+      scene.region, async () => {}, scene.flightRegion), /道具必须飞过目标路线/);
+  });
+}
 
-test('实际预触发静态录像的编码差异不能充当飞行运动', async () => {
+test('真实区域帧和采集时间在比较前写入报告', async () => {
   const scene = propScene();
-  const frames = [1, 11, 21].map(index => readFileSync(new URL(
-    `./fixtures/prop-flight-static/frame-${String(index).padStart(4, '0')}.png`, import.meta.url)));
-  await assert.rejects(captureAssetSequence(deviceFor(scene.frames), scene.name, sequenceInfo(new Map()),
-    scene.region, async () => {}, scene.flightRegion, flightRecorder(frames)), /道具必须飞过目标路线/);
+  const attachments = new Map();
+  const commands = [];
+  await captureAssetSequence(deviceFor(scene.frames, scene.frames, commands), scene.name, sequenceInfo(attachments),
+    scene.region, async () => {}, scene.flightRegion);
+  assert.equal(commands.includes('assetFrames'), true);
+  assert.equal(commands.includes('motionFrames'), false);
+  const metadata = JSON.parse(attachments.get(`${scene.name}-native-sampling`));
+  assert.equal(metadata.method, 'assetFrames');
+  assert.deepEqual(metadata.regions, [scene.region, scene.flightRegion]);
+  assert.deepEqual(metadata.capturedAt, Array.from({ length: 10 }, (_, index) => index * 100));
+  assert.deepEqual(attachments.get(`${scene.name}-native-flight-0001.png`), scene.flight[1]);
 });
