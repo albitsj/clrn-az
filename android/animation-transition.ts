@@ -55,7 +55,7 @@ export function framePaletteDistance(left: Buffer, right: Buffer): number {
  * @param samplingMethod - Native capture method.
  */
 export function middleCandidates(before: Buffer, after: Buffer, timeline: Buffer[],
-  samplingMethod: 'motionFrames' | 'launchFrames' | 'videoFrames'): {
+  samplingMethod: 'motionFrames' | 'challengeFrames' | 'launchFrames' | 'videoFrames'): {
     frame: Buffer; index: number; progress: number; remaining: number }[] {
   const total = frameColorDistance(before, after);
   const minimum = samplingMethod === 'videoFrames' ? Math.min(7, total * 0.2) : 1;
@@ -122,7 +122,7 @@ export function assertReviewedVideoMiddle(before: Buffer, after: Buffer,
 export async function captureNativeTransition(device: AndroidDevice, name: string, testInfo: TestInfo,
   region: AnimationRegion, trigger: () => unknown, masks: ScreenshotMask[] = [],
   requiredRegions: ScreenshotBounds[] = [], settleMs = 0,
-  samplingMethod: 'motionFrames' | 'launchFrames' | 'videoFrames' = 'motionFrames',
+  samplingMethod: 'motionFrames' | 'challengeFrames' | 'launchFrames' | 'videoFrames' = 'motionFrames',
   inspectFrames?: (frames: Buffer[], testInfo: TestInfo) => Promise<void>,
   afterReady?: () => Promise<void>, videoPhaseAnchors: string[] = [],
   endCompareMasks: ScreenshotMask[] = [],
@@ -163,7 +163,8 @@ export async function captureNativeTransition(device: AndroidDevice, name: strin
     try {
       const pending = Promise.race([
         implementation._send(samplingMethod),
-        setTimeout(30_000, undefined, { signal: timeout.signal }).then(() => { throw new Error('原生动画采样超时。'); }),
+        setTimeout(nativeSamplingTimeout(samplingMethod), undefined, { signal: timeout.signal })
+          .then(() => { throw new Error('原生动画采样超时。'); }),
       ]);
       await setTimeout(300);
       observeTransition(observe, 'trigger-start');
@@ -253,6 +254,13 @@ export async function captureNativeTransition(device: AndroidDevice, name: strin
         .toBeLessThanOrEqual(36);
     }
   }
+}
+
+/** 现有长采样命令包含更多 PNG 编码与传输，沿用比牌采集已经使用的响应期限。
+ * @param method - 本次选定的原生采样命令。
+ */
+function nativeSamplingTimeout(method: string): number {
+  return method === 'challengeFrames' ? 60_000 : 30_000;
 }
 
 /**

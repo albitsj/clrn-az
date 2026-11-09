@@ -1,4 +1,4 @@
-/** 保持滚轮采样条件，首败时固定响应时间与原生日志。 */
+/** 用已有无损长窗口覆盖旋转响应及实际运动，首败时固定时间与原生日志。 */
 import type { TestInfo } from '@playwright/test';
 import type { AndroidDevice } from 'playwright';
 import type { Mitmproxy } from '../e2e/helpers/mitmproxy-client';
@@ -20,9 +20,10 @@ export async function captureSlotSpin(device: AndroidDevice, proxy: Mitmproxy, c
   const startedAt = Date.now();
   const events: { event: string; at: number }[] = [];
   try {
+    // 复用已有 4600 毫秒连续采样；三个转轮及首尾、中途画面仍执行原有严格检查。
     await captureNativeTransition(device, name, info,
       { x: 124, y: 420, width: 469, height: 362 }, trigger, [], reels, 1500,
-      'motionFrames', undefined, undefined, [], [], [], [], undefined,
+      'challengeFrames', undefined, undefined, [], [], [], [], undefined,
       event => { events.push({ event, at: Date.now() }); });
   } catch (error) {
     await preserveAnimationFailure(name, startedAt, info).catch(() => undefined);

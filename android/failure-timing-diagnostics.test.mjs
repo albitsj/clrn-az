@@ -33,7 +33,7 @@ test('滚轮首败诊断不改变参数、不重试点击，所有诊断故障�
       assert.equal(args[6], reels);
       assert.deepEqual(JSON.parse(JSON.stringify(args[3])), { x: 124, y: 420, width: 469, height: 362 });
       assert.equal(args[7], 1500);
-      assert.equal(args[8], 'motionFrames');
+      assert.equal(args[8], 'challengeFrames');
       await args[4]();
       args[16]('native-sampling-start');
       throw failure;
