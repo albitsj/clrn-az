@@ -35,8 +35,23 @@ def _observe_profile_frame(observer, flow, message, frame):
 
 
 def profile_shape(body):
-    """仅保留成功标记与结果条数，不能将业务内容写入附件。"""
-    body = body if isinstance(body, dict) else {}
+    """按实际 RPC 的嵌套结构统计盲注规则，不能将业务内容写入附件。"""
+    body = profile_body(body)
     result = body.get('result')
+    rules = result.get('all_time_based_rule') if isinstance(result, dict) else None
     return {'rpcOk': body.get('ok') if type(body.get('ok')) is bool else None,
-            'resultEntries': len(result) if isinstance(result, (dict, list)) else None}
+            'resultEntries': collection_size(result), 'ruleEntries': collection_size(rules)}
+
+
+def collection_size(value):
+    """只返回集合大小；缺失或无效类型必须与真实空集合区分。"""
+    return len(value) if isinstance(value, (dict, list)) else None
+
+
+def profile_body(value):
+    """兼容应用已支持的旧响应和含 http_code/json 的第二版信封。"""
+    value = value if isinstance(value, dict) else {}
+    if type(value.get('http_code')) in (int, float):
+        body = value.get('json')
+        return body if isinstance(body, dict) else {}
+    return value
