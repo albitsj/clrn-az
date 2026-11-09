@@ -50,24 +50,72 @@ test('目录中额外存在备用图不能放行素材主基准的明显差异',
   } finally { rmSync(directory, { recursive: true, force: true }); }
 });
 
-test('登记的飞行位置锚点缺失必须失败，不能因主图匹配而静默跳过', async () => {
+/** 用已审查区域组成单元输入，刻意令稀疏截图漏掉飞行位置时仍保留接收者的真实素材帧。
+ * @param sparse - 原生无损截图是否只保留飞行起点。
+ */
+function teaScene(sparse = false) {
   const name = 'texas-prop-tea';
   const body = ['start', 'peak', 'changed'].map(phase => PNG.sync.read(readFileSync(new URL(`${name}-${phase}.png`, snapshots))));
   const flight = ['start', 'peak', 'changed'].map(phase => PNG.sync.read(readFileSync(new URL(`${name}-flight-${phase}.png`, snapshots))));
   const frames = body.map((picture, index) => {
     const canvas = new PNG({ width: picture.width + flight[index].width, height: Math.max(picture.height, flight[index].height) });
     PNG.bitblt(picture, canvas, 0, 0, picture.width, picture.height, 0, 0);
-    PNG.bitblt(flight[index], canvas, 0, 0, flight[index].width, flight[index].height, picture.width, 0);
+    PNG.bitblt(flight[sparse ? 0 : index], canvas, 0, 0, flight[index].width, flight[index].height, picture.width, 0);
     return PNG.sync.write(canvas);
   });
+  return { name, body, flight: flight.map(picture => PNG.sync.write(picture)), frames,
+    region: { x: 0, y: 0, width: body[0].width, height: body[0].height },
+    flightRegion: { x: body[0].width, y: 0, width: flight[0].width, height: flight[0].height } };
+}
+
+/** 仅替换外部录屏，真实触发、截图、裁切及严格锚点比较继续执行。
+ * @param frames - 此次连续飞行采集的裁切帧。
+ */
+function flightRecorder(frames) {
+  return async (_name, _region, trigger) => { await trigger(); return frames; };
+}
+
+test('登记的飞行位置锚点缺失必须失败，不能因主图匹配而静默跳过', async () => {
+  const { name, frames, flight, region, flightRegion } = teaScene();
   const missing = `${name}-flight-peak-alternate.png`;
   const info = { config: { updateSnapshots: 'none' }, /** 本例不保存附件。 */ attach: async () => {},
     /** 仅模拟一个已登记的真实锚点文件丢失。
      * @param file - 基准名。
      */
     snapshotPath: file => fileURLToPath(new URL(file === missing ? `missing/${file}` : file, snapshots)) };
-  await assert.rejects(captureAssetSequence(deviceFor(frames), name, info,
-    { x: 0, y: 0, width: body[0].width, height: body[0].height }, async () => {},
-    { x: body[0].width, y: 0, width: flight[0].width, height: flight[0].height }),
+  await assert.rejects(captureAssetSequence(deviceFor(frames), name, info, region, async () => {},
+    flightRegion, flightRecorder(flight)),
   error => error.code === 'ENOENT' && error.path.endsWith(missing));
+});
+
+/** 继续使用唯一正式锚点，附件只保存在当前用例内。
+ * @param attachments - 当前报告附件。
+ */
+function sequenceInfo(attachments) {
+  return { config: { updateSnapshots: 'none' }, /** 保留原始比较输入。
+    * @param name - 附件名。
+    * @param value - 原始附件。
+    */ attach: async (name, value) => attachments.set(name, value.body),
+  /** 只读取原有正式基准。
+   * @param file - 已登记文件名。
+   */ snapshotPath: file => fileURLToPath(new URL(file, snapshots)) };
+}
+
+test('无损截图漏掉飞行位置时，独立连续录屏仍按原锚点验证同一次真实触发', async () => {
+  const scene = teaScene(true);
+  const attachments = new Map();
+  let triggers = 0;
+  /** 对同一次消息采集飞行画面，截图与录屏触发不能分别重发消息。 */
+  const trigger = async () => { triggers++; };
+  await captureAssetSequence(deviceFor(scene.frames), scene.name, sequenceInfo(attachments),
+    scene.region, trigger, scene.flightRegion, flightRecorder(scene.flight));
+  assert.equal(triggers, 1);
+  assert.deepEqual(attachments.get(`${scene.name}-flight-peak.png`), scene.flight[1]);
+});
+
+test('连续录屏没有真实飞行时仍失败，不用接收者播放或起止截图代替路径', async () => {
+  const scene = teaScene();
+  await assert.rejects(captureAssetSequence(deviceFor(scene.frames), scene.name, sequenceInfo(new Map()),
+    scene.region, async () => {}, scene.flightRegion, flightRecorder(Array(20).fill(scene.flight[0]))),
+  /道具必须飞过目标路线/);
 });
