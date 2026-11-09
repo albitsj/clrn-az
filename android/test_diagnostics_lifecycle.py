@@ -7,6 +7,7 @@ import signal
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 import unittest
 from unittest.mock import Mock, patch
@@ -44,7 +45,8 @@ class LifecycleTests(unittest.TestCase):
         (self.directory / 'emulator-process.pid').write_text('123')
         finished, stopped = Mock(), Mock()
         finished.wait.return_value = True
-        with patch('diagnostics_wrappers.signal_group') as send, \
+        with patch('diagnostics_wrappers.os.getpgid', return_value=123), \
+                patch('diagnostics_wrappers.os.kill') as send, \
                 patch('diagnostics_wrappers.threading.Thread.start', side_effect=RuntimeError('unavailable')):
             graceful_emulator_stop(self.diagnostics, finished, stopped)
         send.assert_called_once_with(123, signal.SIGTERM)
@@ -163,30 +165,7 @@ else:
     def sdk(self, mode):
         sdk = self.directory / 'sdk'
         script = self.directory / 'native.py'
-        script.write_text('''import os, pathlib, signal, sys, time
-directory = pathlib.Path(os.environ['ANDROID_DIAGNOSTICS_DIR'])
-if sys.argv[1] == 'adb':
-    if os.environ['FIXTURE_MODE'] == 'adb-hang': time.sleep(60)
-    (directory / 'native-stop').touch()
-    sys.exit(0)
-signal.signal(signal.SIGTERM, signal.SIG_IGN)
-(directory / 'native-ready').touch()
-mode = os.environ['FIXTURE_MODE']
-if mode == 'graceful-stop':
-    def graceful_stop(*_):
-        time.sleep(3)
-        sys.exit(0)
-    signal.signal(signal.SIGTERM, graceful_stop)
-    if os.fork() == 0:
-        (directory / 'native-child-ready').touch()
-while mode not in ['normal', 'nonzero-exit', 'signal-exit'] or not (directory / 'native-stop').exists():
-    time.sleep(0.05)
-if mode == 'nonzero-exit': sys.exit(23)
-if mode == 'signal-exit':
-    signal.signal(signal.SIGTERM, signal.SIG_DFL)
-    os.kill(os.getpid(), signal.SIGTERM)
-print('native emulator stopped', flush=True)
-''')
+        script.write_text((ROOT / 'fixtures/diagnostics-native.py').read_text())
         for relative, kind in [('emulator/emulator', 'emulator'), ('platform-tools/adb', 'adb')]:
             path = sdk / relative
             path.parent.mkdir(parents=True)
@@ -244,7 +223,28 @@ print('native emulator stopped', flush=True)
 
     def test_acknowledged_console_stop_can_finish_with_graceful_process_termination(self):
         """控制台已确认但未退出时，真实进程组正常响应终止后才能通过清理。"""
-        sdk, env = self.sdk('graceful-stop')
+        self.assert_graceful_shutdown('graceful-stop')
+
+    def test_emulator_shutdown_keeps_support_process_alive_until_requested(self):
+        """SDK 主进程完成关闭握手前，不能先终止其辅助进程。"""
+        self.assert_graceful_shutdown('parent-dependent-stop')
+
+    def test_emulator_shutdown_rejects_nonleader_registration(self):
+        """登记已不是进程组首领时拒绝终止未知进程。"""
+        (self.directory / 'emulator-process.pid').write_text('12345')
+        finished = threading.Event()
+        finished.set()
+        with patch('diagnostics_wrappers.os.getpgid', return_value=12346), \
+                patch('diagnostics_wrappers.os.kill') as kill, \
+                patch('diagnostics_lifecycle.os.killpg') as killpg:
+            graceful_emulator_stop(self.diagnostics, finished, threading.Event())
+        self.assertTrue((self.directory / 'cleanup-failed').exists())
+        kill.assert_not_called()
+        killpg.assert_not_called()
+
+    def assert_graceful_shutdown(self, mode):
+        """通过真实包装器验证原生零退出、整个进程组回收及原测试结果。"""
+        sdk, env = self.sdk(mode)
         process = self.launch(sdk, env)
         self.wait_for(self.directory / 'native-child-ready', process)
         pgid = int((self.directory / 'emulator-process.pid').read_text())
