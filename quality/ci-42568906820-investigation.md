@@ -230,3 +230,17 @@ Social/en job 129227117488、artifact 13685806697，ZIP SHA-256 `2e3aa0ddd905fd8
 新增真实父子进程回归：ADB 已确认但进程不退出、父子进程均响应正常终止，原代码复现 124；修改后原生返回 0、进程组消失、原 test.exit=0 保留。既有异常原生退出、信号退出、忽略终止、管道遗留和原测试失败保留等反例继续拒绝。完整 63 项 Python 测试、3 项诊断附件集成测试和全仓 lint 通过。
 
 其余三项失败分别是英文游客零重试选线、简中房间账号准备及繁中德州战绩加载。游客首败画面为 `65 v1/status` 错误，代理记录显示除按用例禁用的 64 外，68 的 `/node/v1/status` 返回 503、67 探测出错；没有证据表明存在健康候选却被客户端遗漏。简中房间在用例开始前真实业务登录请求 timeout/attempts=1；繁中德州原生画面直接显示 HTTP 502，未得到预期战绩数据。保留零重试、预期玩家数和全部断言，不通过固定节点或吞掉错误掩盖这些失败。
+
+### 42655848555：SDK 关闭预算反例与初始化首败取证
+
+`6ff92e0e683e14adad7cbaaa959356d05af42174`、应用 `a1900b152328e300c44a46b23d3d47022abe14af` 的 attempt 1 有四个 priority 分片，简中房间及繁中拼三张通过；繁中德州牌桌和英文游客失败，remaining 未执行。仓库检查另有 535 项 Node 测试通过，真实 SDK 的六个既有 smoke 场景通过，这些成功不能替代本轮剩余门禁。
+
+繁中德州 `129294298344` 的四项原生用例全部首次通过，`test.exit=0`。诊断附件 `13692574314`（SHA-256 `0abe437b05bd9f79b88f8adba8a6a521b8486f6d306ac65ce20ba8d1b4d5bdcb`）核验当前 run、HEAD、ZIP 摘要、CRC 和安全路径后读取。16:53:39.883 控制台返回 0；49.891 包装器发送 SIGTERM，SDK 随即明确启动 20 秒正常关闭预算；49.919 开始关闭，51.891 包装器却在两秒后强制终止，记录 124。原生组仍有 QEMU 3730 及其关闭看门狗 8548。这是此前两秒 fallback 的反例，不能把已收到控制台确认或其他分片正常退出当成修复完成。
+
+核对 SDK 源码的 [requestClose](https://android.googlesource.com/platform/external/qemu/+/emu-master-dev/android/android-ui/modules/aemu-ui-headless/src/android/skin/qt/emulator-no-qt-no-window.cpp)、[waitAndKillSelf](https://android.googlesource.com/platform/external/qemu/+/emu-master-dev/android/android-emu-base/android/base/system/System.cpp) 和 [handle_kill_command](https://android.googlesource.com/platform/external/qemu/+/emu-master-dev/android/emulator/main-emulator.cpp)：关闭时启动独立看门狗，正常等待后才强制结束；看门狗不是正常退出证据。因此给 SIGTERM 后保留 20 秒 SDK 预算及 5 秒输出排空／进程回收预算，外层固定为 40 秒，覆盖原控制台 10 秒和回收阶段。原生退出必须为 0 且整个进程组消失；异常退出、看门狗或包装器强制结束、残留管道仍失败，原始测试退出码不变。
+
+真实父子进程回归现在在 SIGTERM 后正常清理三秒：旧两秒代码复现 124，新预算通过。新增独立 `graceful-stop` SDK smoke 只在 smoke 进程中模拟控制台 ACK 而不关闭；正式包装器随后必须让真实 SDK 以 0 退出并释放进程组、管道及账号槽。现有不响应和残留管道负例继续验收；新云端 smoke 和完整矩阵尚待通过。
+
+英文游客 `129294298562` 首次失败的是搜索确认动画用例初始化，尚未进入动画采样；重试通过仍被 flaky 门禁拒绝。报告 `13692314580`（SHA-256 `44502911eecae82da4f23e1a3baa052d348e64ad56fb0da2ac874e9cdcac9826`）对应当前应用，首次结果仅有错误上下文和 stderr；最终诊断 `13692893891`（SHA-256 `6a4af64b9f2b225eee9dda56ef917fd4106955e71bc31ff71bc6abdf42f3be7a`）最早 logcat 已为 16:45:53，晚于 16:41:26 首败，不能据此把本次声明为已证实的网络故障。
+
+该用例此前只有 finally 关闭设备，缺少已有的 captureDeviceFailure 路径。现在失败时先复用原有脱敏日志／画面／控件树取证，再关闭设备并抛出同一个原错误；附件失败也不能覆盖它。生产用例边界测试在旧代码复现“先关闭而未取证”，修改后验证两种附件结果均先取证再关闭。未修改大厅两分钟期限、初始化 RETRY 规则、动画参数、图像基准或 flaky 门禁；下轮若仍失败，必须用新的首次附件继续定位。

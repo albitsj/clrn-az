@@ -99,7 +99,8 @@ def graceful_emulator_stop(diagnostics, finished, stopped):
         pass
     except (OSError, ValueError) as error:
         failure(diagnostics.directory, log, f'phase=emulator-termination failed: {type(error).__name__}')
-    if not finished.wait(2):
+    # SDK 正常关闭允许 20 秒；额外 5 秒用于采集器排空输出和回收进程组。
+    if not finished.wait(25):
         report(log, 'phase=emulator-shutdown timeout after graceful-stop')
         stopped.set()
 

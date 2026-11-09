@@ -114,6 +114,9 @@ test('guest search confirmation animates into and out of the Android screen', as
         String(Math.round(cancel.bounds.y + cancel.bounds.height / 2)));
       await captureNativeTransition(device, 'search-confirmation-exit', testInfo, region,
         pressCancel, [], [], 0, 'videoFrames');
+    } catch (error) {
+      await captureDeviceFailure(device, testInfo).catch(() => undefined);
+      throw error;
     } finally { await closeDevice(device); }
   });
 });

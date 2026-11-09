@@ -142,7 +142,10 @@ signal.signal(signal.SIGTERM, signal.SIG_IGN)
 (directory / 'native-ready').touch()
 mode = os.environ['FIXTURE_MODE']
 if mode == 'graceful-stop':
-    signal.signal(signal.SIGTERM, lambda *_: sys.exit(0))
+    def graceful_stop(*_):
+        time.sleep(3)
+        sys.exit(0)
+    signal.signal(signal.SIGTERM, graceful_stop)
     if os.fork() == 0:
         (directory / 'native-child-ready').touch()
 while mode not in ['normal', 'nonzero-exit', 'signal-exit'] or not (directory / 'native-stop').exists():
@@ -202,7 +205,7 @@ print('native emulator stopped', flush=True)
         request_shutdown(self.directory)
         self.assertFalse(wait_emulator(self.directory, self.log))
         self.assertEqual(process.wait(timeout=2), 124)
-        self.assertLess(time.monotonic() - started, 15)
+        self.assertLess(time.monotonic() - started, 40)
         self.assertFalse(group_members(pgid))
         self.assertTrue((self.directory / 'cleanup-failed').exists())
         self.assertIn('phase=emulator-shutdown timeout', self.contents('emulator'))

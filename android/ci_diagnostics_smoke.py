@@ -99,6 +99,9 @@ def verify(case, outcome, cleanup_outcome):
         assert 'phase=emulator-shutdown timeout' in contents('emulator'), 'Shutdown timeout not exercised'
     if case == 'retained-pipe':
         assert 'phase=output-drain timeout' in contents('emulator'), 'Pipe timeout not exercised'
+    if case == 'graceful-stop':
+        assert 'phase=emulator-shutdown graceful-stop' in contents('emulator'), 'Graceful stop not exercised'
+        assert 'emulator_exit=0' in contents('emulator'), 'Native emulator did not exit normally'
     secret = os.environ['DIAGNOSTICS_SMOKE_TOKEN']
     for path in DIRECTORY.glob('*.log*'):
         data = path.read_text()
