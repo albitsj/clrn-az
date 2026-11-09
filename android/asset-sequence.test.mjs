@@ -51,10 +51,10 @@ test('目录中额外存在备用图不能放行素材主基准的明显差异',
 });
 
 /** 用已审查区域组成单元输入，刻意令稀疏截图漏掉飞行位置时仍保留接收者的真实素材帧。
+ * @param name - 使用既有正式基准的道具名称。
  * @param sparse - 原生无损截图是否只保留飞行起点。
  */
-function teaScene(sparse = false) {
-  const name = 'texas-prop-tea';
+function propScene(name = 'texas-prop-tea', sparse = false) {
   const body = ['start', 'peak', 'changed'].map(phase => PNG.sync.read(readFileSync(new URL(`${name}-${phase}.png`, snapshots))));
   const flight = ['start', 'peak', 'changed'].map(phase => PNG.sync.read(readFileSync(new URL(`${name}-flight-${phase}.png`, snapshots))));
   const frames = body.map((picture, index) => {
@@ -76,7 +76,7 @@ function flightRecorder(frames) {
 }
 
 test('登记的飞行位置锚点缺失必须失败，不能因主图匹配而静默跳过', async () => {
-  const { name, frames, flight, region, flightRegion } = teaScene();
+  const { name, frames, flight, region, flightRegion } = propScene();
   const missing = `${name}-flight-peak-alternate.png`;
   const info = { config: { updateSnapshots: 'none' }, /** 本例不保存附件。 */ attach: async () => {},
     /** 仅模拟一个已登记的真实锚点文件丢失。
@@ -102,7 +102,7 @@ function sequenceInfo(attachments) {
 }
 
 test('无损截图漏掉飞行位置时，独立连续录屏仍按原锚点验证同一次真实触发', async () => {
-  const scene = teaScene(true);
+  const scene = propScene('texas-prop-tea', true);
   const attachments = new Map();
   let triggers = 0;
   /** 对同一次消息采集飞行画面，截图与录屏触发不能分别重发消息。 */
@@ -114,8 +114,32 @@ test('无损截图漏掉飞行位置时，独立连续录屏仍按原锚点验�
 });
 
 test('连续录屏没有真实飞行时仍失败，不用接收者播放或起止截图代替路径', async () => {
-  const scene = teaScene();
+  const scene = propScene();
   await assert.rejects(captureAssetSequence(deviceFor(scene.frames), scene.name, sequenceInfo(new Map()),
     scene.region, async () => {}, scene.flightRegion, flightRecorder(Array(20).fill(scene.flight[0]))),
   /道具必须飞过目标路线/);
+});
+
+for (const name of ['texas-prop-water', 'texas-prop-beer', 'zhajinhua-prop-tea']) {
+  test(`${name} 保留原无损飞行采样，不进入录屏路径`, async () => {
+    const scene = propScene(name);
+    /** 不允许恢复已导致其他道具失败的全量录屏策略。 */
+    const unexpectedRecorder = async () => { throw new Error('此道具必须保留无损采样'); };
+    await captureAssetSequence(deviceFor(scene.frames), name, sequenceInfo(new Map()), scene.region,
+      async () => {}, scene.flightRegion, unexpectedRecorder);
+  });
+}
+
+test('其他道具的无损截图没有飞行时仍失败，不用可通过的录屏掩盖缺帧', async () => {
+  const scene = propScene('texas-prop-water', true);
+  await assert.rejects(captureAssetSequence(deviceFor(scene.frames), scene.name, sequenceInfo(new Map()),
+    scene.region, async () => {}, scene.flightRegion, flightRecorder(scene.flight)), /道具必须飞过目标路线/);
+});
+
+test('实际预触发静态录像的编码差异不能充当飞行运动', async () => {
+  const scene = propScene();
+  const frames = [1, 11, 21].map(index => readFileSync(new URL(
+    `./fixtures/prop-flight-static/frame-${String(index).padStart(4, '0')}.png`, import.meta.url)));
+  await assert.rejects(captureAssetSequence(deviceFor(scene.frames), scene.name, sequenceInfo(new Map()),
+    scene.region, async () => {}, scene.flightRegion, flightRecorder(frames)), /道具必须飞过目标路线/);
 });
