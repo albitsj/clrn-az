@@ -2,6 +2,7 @@ import { test, locale } from '../fixtures';
 import { androidScenarios } from '../scenarios';
 import { navigateScenario, signIn } from '../navigation';
 import { compareScreenshot } from '../device';
+import { compareResetPassword } from '../reset-password-diagnostics';
 import { screenshotMasks } from '../screenshot';
 import type { AndroidDevice } from 'playwright';
 import type { VisualScenario } from '../../visual/scenarioTypes';
@@ -23,7 +24,7 @@ for (const scenario of androidScenarios(locale, process.env.ANDROID_GROUP)
     if (englishPage(scenario, 'signed_in_hall')) {
       await verifyHallBanner(application.device, name, testInfo, masks);
     }
-    await compareScreenshot(application.device, name, testInfo, masks);
+    await comparePage(application.device, scenario, name, testInfo, masks);
   });
 }
 
@@ -61,3 +62,16 @@ async function verifyHallBanner(device: AndroidDevice, name: string, testInfo: T
  * @param page - 页面标识。
  */
 function englishPage(scenario: VisualScenario, page: string): boolean { return scenario.pageLabel === page && locale === 'en'; }
+
+/** 密码页保留原比较，并附加既有安全诊断。
+ * @param device - 当前设备。
+ * @param scenario - 当前场景。
+ * @param name - 截图名称。
+ * @param info - 当前报告。
+ * @param masks - 原有遮罩。
+ */
+async function comparePage(device: AndroidDevice, scenario: VisualScenario, name: string,
+  info: TestInfo, masks: ScreenshotMask[]): Promise<void> {
+  if (englishPage(scenario, 'signed_in_reset_password')) await compareResetPassword(device, name, info, masks);
+  else await compareScreenshot(device, name, info, masks);
+}
