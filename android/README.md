@@ -152,7 +152,11 @@ Android CI 在初始化前启动独立诊断采集器，持续保存 logcat、AD
 
 每个日志流最多保留 2 MiB（当前文件及一个轮转文件合计），七个流共最多 14 MiB。日志写入前使用 CI 账号池、用户名、密码和令牌进行脱敏，并过滤常见凭据字段和输入操作；不采集进程参数、环境变量或 ADB 数据包追踪。诊断文件位于 `android/artifacts/diagnostics/`，附件名称包含业务组、语言、分片、运行 ID 和重试次数，成功或失败均上传，保留 7 天。`lifecycle.log` 关联运行信息及阶段，`cleanup.log` 记录模拟器清理结果；长期运行超过容量时会淘汰最旧日志。
 
-`Android diagnostics smoke` 在真实 API 35 模拟器上独立验证正常运行、子命令退出 23、清空 logcat 后的 adbd 重连，以及模拟器初始化失败；上传前检查时间戳、关闭前采集和脱敏哨兵，结果写入附件中的 `smoke-validation.json`。本机回归通过 `python3 -m unittest discover -s android -p 'test_*.py'` 执行，不依赖 Android SDK。
+模拟器包装器释放 action 的标准输入输出，模拟器日志继续写入脱敏文件。主进程退出后，输出管道最多再等 2 秒；`adb emu kill` 最多 10 秒，随后模拟器最多再等 10 秒，包装器最多等 15 秒，诊断采集器最多等 10 秒。测试进程使用独立进程组；正常退出后清理残留子进程，取消时转入同一清理流程，TERM 后最多等 2 秒再 KILL。超时记录阶段及 PID、PPID、PGID、状态和程序名，不记录参数或环境变量。
+
+原始测试结果写入 `test.exit` 和 `lifecycle.log`；模拟器退出写入 `emulator.exit`。强制终止或未知清理异常设置 `cleanup-failed`，最终清理步骤据此失败，避免上游 action 忽略 `emu kill` 错误后误报成功；测试失败码不被清理错误替换。最终清理步骤最多 2 分钟，模拟器 action 最多 110 分钟，为 job 的 120 分钟上限预留诊断和附件上传时间。
+
+`Android diagnostics smoke` 在真实 API 35 模拟器上独立验证正常运行、测试失败、取消信号、初始化失败、模拟器不响应及子进程持有输出管道；也保留 adbd 重连和脱敏哨兵检查。验证 action 和清理步骤的实际 outcome、进程退出及日志，写入 `smoke-validation.json`；后续任务使用同一个独立账号槽位锁，验证锁已释放，不占用业务测试账号。定向本机回归为 `PYTHONPATH=android python3 -m unittest test_ci_diagnostics test_diagnostics_io test_diagnostics_lifecycle`，不依赖 Android SDK。
 
 统计说明等两秒短时提示在触发前准备底层页面遮罩，触发后由原生驱动连续采集真实屏幕，再统一编码传输，避免压缩与传输耗尽提示显示时间；用设备时间验证像素连续稳定至少 250 毫秒，并断言提示在每帧截图前后都可见，背景遮罩不覆盖提示面板；普通页面继续要求连续两秒稳定，截图仍使用统一的 0.5% 差异比例和原有颜色容差。
 
