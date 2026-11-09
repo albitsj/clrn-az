@@ -9,7 +9,7 @@ import { gameScreenshot } from './game-controls';
 import { motionParts, samePixels } from './motion-regions';
 import { maskScreenshot, type ScreenshotBounds, type ScreenshotMask } from './screenshot';
 import { recordNativeVideoFrames, type AnimationRegion } from './video-frames';
-import { recordTransitionFrames } from './transition-frames';
+import { recordTransitionFrames, requestTransitionFrames, cropTransitionFrame } from './transition-frames';
 import { alignedVideoDistance, localMotionDistance,
   misplacedVideoFrame, preservesVideoColumns, videoThumbnail } from './video-motion';
 
@@ -162,7 +162,7 @@ export async function captureNativeTransition(device: AndroidDevice, name: strin
     observeTransition(observe, 'native-sampling-start');
     try {
       const pending = Promise.race([
-        implementation._send(samplingMethod),
+        requestTransitionFrames(implementation, { name, method: samplingMethod, region, info: testInfo }),
         setTimeout(nativeSamplingTimeout(samplingMethod), undefined, { signal: timeout.signal })
           .then(() => { throw new Error('原生动画采样超时。'); }),
       ]);
@@ -182,7 +182,7 @@ export async function captureNativeTransition(device: AndroidDevice, name: strin
   if (inspectFrames) await inspectFrames(originals, testInfo);
   const timeline = samplingMethod === 'videoFrames'
     ? originals.map(frame => maskScreenshot(frame, masks.map(mask => ({ ...mask,
-      x: mask.x - bounds.x, y: mask.y - bounds.y })))) : originals.map(crop);
+      x: mask.x - bounds.x, y: mask.y - bounds.y })))) : originals.map(frame => cropTransitionFrame(frame, { name, method: samplingMethod, crop, masks, bounds }));
   if (settleMs) await setTimeout(settleMs);
   if (afterReady) await afterReady();
   const after = crop(await gameScreenshot(device));
