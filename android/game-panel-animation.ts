@@ -4,6 +4,7 @@ import { captureNativeTransition, captureTimedPrompt } from './animation-transit
 import { adb } from './device';
 import { gameConnected, gameMarker, gameReady, gameTap, gameTapTarget, type NativeNode } from './game-controls';
 import { preserveAnimationFailure } from './animation-diagnostics';
+import { preserveRenderStatistics } from './render-diagnostics';
 import { preserveRulePanelState, tracePanelTarget, type PanelTrace } from './game-panel-diagnostics';
 import type { ScreenshotBounds, ScreenshotMask } from './screenshot';
 
@@ -144,6 +145,7 @@ async function preservePanelFailure(name: string, startedAt: number, info: TestI
   if (['texas-holdem-chat-enter', 'texas-holdem-voice-enter'].includes(name) || ruleTransition(name)) {
     await preserveAnimationFailure(name, startedAt, info).catch(() => undefined);
   }
+  await preserveRenderStatistics(name, info).catch(() => undefined);
 }
 
 /**

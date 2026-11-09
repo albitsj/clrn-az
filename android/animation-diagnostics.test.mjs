@@ -24,6 +24,7 @@ function panel(directory, failure, attach) {
       /** 动画入口的两次布局查询已经一致。 */ gameTapTarget: async () => ({ bounds: { x: 0, y: 0, width: 10, height: 10 } }),
     },
     './game-panel-diagnostics': require('./game-panel-diagnostics.ts'),
+    './render-diagnostics': { /** 渲染统计在独立故障边界测试中验证。 */ preserveRenderStatistics: async () => {} },
     './device': { /** 设备点击已完成。 */ adb: () => {} },
     './animation-transition': { /** 保留原入口的成功或失败，不更改其结果。 */
       captureNativeTransition: async () => { if (failure) throw failure; },

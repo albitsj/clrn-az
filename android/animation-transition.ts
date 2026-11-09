@@ -166,8 +166,11 @@ export async function captureNativeTransition(device: AndroidDevice, name: strin
         setTimeout(30_000, undefined, { signal: timeout.signal }).then(() => { throw new Error('原生动画采样超时。'); }),
       ]);
       await setTimeout(300);
+      observeTransition(observe, 'trigger-start');
       await trigger();
+      observeTransition(observe, 'trigger-complete');
       frames = await pending;
+      observeTransition(observe, 'native-sampling-complete');
     } finally { timeout.abort(); }
   }
   const bounds = await resolveRegion();

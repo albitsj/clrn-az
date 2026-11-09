@@ -9,6 +9,7 @@ import { withAndroidProxy } from '../proxy';
 import { navigateScenario } from '../navigation';
 import { androidScenarios } from '../scenarios';
 import { captureNativeTransition } from '../animation-transition';
+import { captureSlotSpin } from '../slot-spin';
 import { verifyLoopAnimation } from '../loop-animation';
 import { captureMovingKeyframes } from '../loop-keyframes';
 import { waitAbsent } from '../native-state';
@@ -58,8 +59,7 @@ test('all three native slot reels and reward types animate from real spin respon
         const pressSpin = () => adb('shell', 'input', 'tap',
           String(Math.round(button.bounds.x + button.bounds.width / 2)),
           String(Math.round(button.bounds.y + button.bounds.height / 2)));
-        await captureNativeTransition(device, `slot-${currency}-reels`, testInfo,
-          { x: 124, y: 420, width: 469, height: 362 }, pressSpin, [], reels, 1500);
+        await captureSlotSpin(device, proxy, currency, testInfo, pressSpin, reels);
         const prize = await device.info({ res: reward });
         expect(Number(prize.text), `${currency} 应显示真实奖励`).toBeGreaterThan(0);
       }
