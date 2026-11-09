@@ -40,7 +40,7 @@ async function capture(pictures, timestamps = [100, 1100, 2100, 3100, 4100, 5100
      * @param method - 生产采样命令。
      */
     _send: async method => {
-      assert.equal(method, 'motionFrames');
+      assert.equal(method, 'challengeFrames');
       return pictures.map((png, index) => ({ capturedAt: timestamps[index], png: png.toString('base64') }));
     },
   }) } };

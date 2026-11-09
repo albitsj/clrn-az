@@ -14,7 +14,7 @@ export async function challengeFrames(device: AndroidDevice): Promise<ChallengeF
   const timeout = new AbortController();
   try {
     const frames = await Promise.race([
-      implementation._send('motionFrames'),
+      implementation._send('challengeFrames'),
       setTimeout(30_000, undefined, { signal: timeout.signal }).then(() => { throw new Error('比牌原生连续采样超时。'); }),
     ]);
     expect(frames.length, '比牌原生采样至少返回三帧').toBeGreaterThanOrEqual(3);
