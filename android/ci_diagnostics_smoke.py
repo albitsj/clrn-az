@@ -55,6 +55,27 @@ def marker(name):
     raise AssertionError(f'Logcat collector did not retain {name}')
 
 
+def diagnose_root_failure():
+    """Observe a failed root handshake without retrying it or accepting its exit."""
+    from ci_diagnostics import best_effort
+    log = BoundedLog(DIRECTORY, 'smoke-root-failure', Redactor())
+    probes = [
+        ('reconnect', [*ADB, 'wait-for-device'], 12),
+        ('root-state', [*ADB, 'shell',
+                        'getprop service.adb.root; getprop init.svc.adbd; '
+                        'getprop ro.debuggable; id; ps -A -o USER,PID,PPID,NAME | grep adbd'], 5),
+        ('daemon-log', [*ADB, 'logcat', '-b', 'all', '-d', '-t', '200',
+                        '-s', 'adbd:*', 'init:*'], 5),
+    ]
+    for label, arguments, timeout in probes:
+        def collect():
+            log.write(f'phase={label}')
+            result = subprocess.run(arguments, timeout=timeout, stdout=subprocess.PIPE,
+                                    stderr=subprocess.STDOUT, check=False)
+            log.write(f'exit={result.returncode}\n' + result.stdout.decode('utf-8', errors='replace'))
+        best_effort(collect, log)
+
+
 def exercise(case='normal'):
     """Prove child status retention and continuous logs across adbd restart."""
     command([*CLI, 'run', '--', sys.executable, '-c', 'raise SystemExit(0)'])
@@ -64,7 +85,12 @@ def exercise(case='normal'):
         # so a setup transport restart cannot prevent their fault injection.
         marker('CI_DIAG_BEFORE_RECONNECT')
         command([*ADB, 'logcat', '-c'])
-        command([*ADB, 'root'])
+        try:
+            command([*ADB, 'root'])
+        except Exception:
+            from ci_diagnostics import best_effort
+            best_effort(diagnose_root_failure)
+            raise
         command([*ADB, 'wait-for-device'])
         marker('CI_DIAG_AFTER_RECONNECT')
         assert 'CI_DIAG_BEFORE_RECONNECT' in contents('logcat'), 'Earlier log lost after restart'
