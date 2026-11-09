@@ -13,7 +13,7 @@ function fixture(context) {
   const root = mkdtempSync(join(tmpdir(), 'android-ci-cli-'));
   context.after(() => rmSync(root, { recursive: true, force: true }));
   const files = ['scripts/android-ci-run.mjs', 'scripts/android-ci-policy.mjs', 'scripts/android-ci-github.mjs',
-    'scripts/ci-accounts.mjs', 'scripts/ci-test-accounts.json', 'android/playwright.config.ts',
+    'scripts/ci-accounts.mjs', 'scripts/password-diagnostic-account.mjs', 'scripts/ci-test-accounts.json', 'android/playwright.config.ts',
     'android/build-driver.mjs', 'android/download-release.mjs', 'android/release-download.mjs', 'android/release.mjs',
     'android/scenarios.ts', 'visual/scenarios.ts', 'android/tests',
     '.github/workflows/android-visual.yml', '.github/actions/android-visual/action.yml',
@@ -66,6 +66,22 @@ function runJobs(plan, fail = false) {
       started_at: '2026-11-04T00:01:00Z', completed_at: '2026-11-04T00:02:00Z' };
   }));
 }
+
+test('独立探针真实 CLI 固定失败账号，但仍只产生局部诊断门禁', context => {
+  const root = fixture(context);
+  const env = { ...environment(root, 9), GITHUB_EVENT_NAME: 'workflow_dispatch',
+    GITHUB_REF: 'refs/heads/ci-diagnostic/password-native-metrics-bc3048',
+    CI_ANDROID_GROUP: 'account', CI_ANDROID_LOCALE: 'en', CI_ANDROID_FULL: 'true',
+    CI_ANDROID_FILTER: 'signed_in_reset_password$', CI_ANDROID_PASSWORD_ACCOUNT: 'clrnci261015045' };
+  writeFileSync(join(root, 'event.json'), '{}');
+  writeFileSync(join(root, 'routes.json'), JSON.stringify({ 'repos/owner/repo/actions/runs/9': { json: { workflow_id: 10 } } }));
+  const result = spawnSync(process.execPath, ['scripts/android-ci-run.mjs', 'plan'], { cwd: root, env, encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+  const plan = JSON.parse(readFileSync(join(root, '.ttyctl/android-ci/plan.json'), 'utf8'));
+  assert.equal(plan.full.length, 1);
+  assert.equal(plan.full[0].account, 'clrnci261015045');
+  assert.match(readFileSync(join(root, 'outputs'), 'utf8'), /merge-gate=false/);
+});
 
 test('真实 CLI 三轮修复：35 → 优先 1 失败且余项未启动 → 优先 1 加剩余 34 全部成功', context => {
   const root = fixture(context);

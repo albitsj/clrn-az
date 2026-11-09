@@ -1,6 +1,7 @@
 import { appendFileSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { setTimeout } from 'node:timers/promises';
 import { androidAccountMatrix } from './ci-accounts.mjs';
+import { passwordDiagnosticAccount } from './password-diagnostic-account.mjs';
 import { PendingJobsError, planSignature, schedulePlan, shardId, verifyCompletion } from './android-ci-policy.mjs';
 import { githubJson, githubJobs, loadHistory } from './android-ci-github.mjs';
 
@@ -33,10 +34,11 @@ function planSummary(plan) {
 /** 当前矩阵与配置都来自检出提交，账号只分配一次。 */
 function currentPlan() {
   const event = JSON.parse(readFileSync(process.env.GITHUB_EVENT_PATH, 'utf8'));
-  const full = androidAccountMatrix(runId, process.env.CI_ANDROID_GROUP || 'all', process.env.CI_ANDROID_LOCALE || 'all').include;
+  const full = passwordDiagnosticAccount(androidAccountMatrix(runId,
+    process.env.CI_ANDROID_GROUP || 'all', process.env.CI_ANDROID_LOCALE || 'all').include, process.env);
   const files = ['.github/workflows/android-visual.yml', '.github/actions/android-visual/action.yml',
     'scripts/android-ci-policy.mjs', 'scripts/android-ci-github.mjs', 'scripts/android-ci-run.mjs',
-    'scripts/ci-accounts.mjs', 'scripts/ci-test-accounts.json', 'android/playwright.config.ts',
+    'scripts/ci-accounts.mjs', 'scripts/password-diagnostic-account.mjs', 'scripts/ci-test-accounts.json', 'android/playwright.config.ts',
     'android/build-driver.mjs', 'android/download-release.mjs', 'android/release-download.mjs', 'android/release.mjs',
     'android/scenarios.ts', 'visual/scenarios.ts',
     'deployments/staging.json', 'package-lock.json'];
