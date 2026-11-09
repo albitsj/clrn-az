@@ -38,8 +38,38 @@ const patched = source
     return null;
   }
 
+  // 仅在截图比较结束后请求脱敏的原生字体和输入属性，不读取输入内容。
+  private static void inputMetrics(AccessibilityNodeInfo node, JSONArray output) throws Exception {
+    if (node == null) return;
+    String resource = node.getViewIdResourceName();
+    if (resource != null && (resource.equals("old-password-input") || resource.equals("new-password-input")
+        || resource.equals("old-password-input-title") || resource.equals("new-password-title"))) {
+      String key = (String) AccessibilityNodeInfo.class.getField("EXTRA_DATA_RENDERING_INFO_KEY").get(null);
+      boolean refreshed = node.refreshWithExtraData(key, new android.os.Bundle());
+      Object rendering = AccessibilityNodeInfo.class.getMethod("getExtraRenderingInfo").invoke(node);
+      Rect bounds = new Rect();
+      node.getBoundsInScreen(bounds);
+      JSONObject metrics = new JSONObject().put("resource", resource).put("inputType", node.getInputType())
+        .put("multiline", node.isMultiLine()).put("focused", node.isFocused()).put("refreshed", refreshed)
+        .put("width", bounds.width()).put("height", bounds.height());
+      if (rendering != null) {
+        metrics.put("textSizePx", rendering.getClass().getMethod("getTextSizeInPx").invoke(rendering));
+        metrics.put("textSizeUnit", rendering.getClass().getMethod("getTextSizeUnit").invoke(rendering));
+        Object layout = rendering.getClass().getMethod("getLayoutSize").invoke(rendering);
+        metrics.put("layoutSize", layout == null ? JSONObject.NULL : layout.toString());
+      }
+      output.put(metrics);
+    }
+    for (int index = 0; index < node.getChildCount(); index++) inputMetrics(node.getChild(index), output);
+  }
+
   private static JSONObject tree(UiDevice device)`)
-  .replace('case "tree":', `case "launchFrames":
+  .replace('case "tree":', `case "inputMetrics":
+              JSONArray metrics = new JSONArray();
+              inputMetrics(getRootA11yNode(device), metrics);
+              response.put("result", metrics);
+              break;
+            case "launchFrames":
               // 启动画面跨过系统 Splash；边截屏边编码，持续记录应用插画与测试版提示。
               JSONArray launchFrames = new JSONArray();
               long launchDeadline = android.os.SystemClock.uptimeMillis() + 10000;

@@ -2,6 +2,7 @@ import type { AndroidDevice } from 'playwright';
 import type { TestInfo } from '@playwright/test';
 import { adb, compareScreenshot } from './device';
 import type { ScreenshotMask } from './screenshot';
+import { collectPasswordNativeMetrics } from './password-native-metrics';
 
 type PasswordSample = { elapsedMs: number; body: Buffer };
 
@@ -28,6 +29,9 @@ export async function compareResetPassword(device: AndroidDevice, name: string, 
     if (last && frames.at(-1) !== last) frames.push(last);
     // 诊断是旁路证据，附件、节点和 ADB 故障都不得覆盖比较结果或原始异常。
     await preservePasswordEvidence(device, name, info, frames).catch(() => undefined);
+    await collectPasswordNativeMetrics(device, info).catch(async error => {
+      await info.attach('password-native-metrics-error', { body: String(error), contentType: 'text/plain' }).catch(() => undefined);
+    });
   }
 }
 

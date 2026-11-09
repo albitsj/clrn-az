@@ -31,6 +31,7 @@ function passwordScene(failures = {}) {
     },
   };
   const { compareResetPassword } = loadGameFlow('./reset-password-diagnostics.ts', {
+    './password-native-metrics': { collectPasswordNativeMetrics: /** 隔离比较后执行的外部字体探针。 */ async () => {} },
     './device': {
       /** 配置查询失败不得改变测试结论。 */
       adb: () => {
