@@ -88,3 +88,76 @@ test('reveal 最后一次失败保留原始错误，九次查询只执行八次�
   assert.equal(swipes.length, 8);
   assert.ok(swipes.every(args => args.at(-1) === '600'));
 });
+
+test('上一场景的 timeout / OK 对话框隐藏拉霸控件时，先确认再关闭拉霸并返回标签', async () => {
+  let screen = 'dialog';
+  const actions = [];
+  const visibleByScreen = { dialog: ['android:id/message', 'android:id/button1'],
+    slot: ['slot-machine-view', 'close-button'], tabs: [] };
+  const device = {
+    /** 回放首败层级：Dialog 打开时，底下的拉霸不在可访问树中。
+     * @param selector - 原生查询。
+     */
+    info: async selector => {
+      const visible = visibleByScreen[screen];
+      if (!visible.includes(selector.res)) throw new Error('java.lang.NullPointerException');
+      return { bounds };
+    },
+    /** 标签只能在确认对话框并关闭拉霸后出现。
+     * @param selector - 等待目标。
+     */
+    wait: async selector => {
+      if (selector.res === 'settings-tab') assert.equal(screen, 'tabs');
+    },
+    /** 精确匹配本轮原生按钮，不能用 Back 关闭不可取消的 Dialog。
+     * @param selector - 点击目标。
+     */
+    tap: async selector => {
+      assert.deepEqual(selector, { res: 'android:id/button1', text: 'OK' });
+      actions.push('OK'); screen = 'slot';
+    },
+    input: {
+      /** 拉霸关闭入口仍使用既有真实点击。 */
+      tap: async () => { assert.equal(screen, 'slot'); actions.push('close-slot'); screen = 'tabs'; },
+      /** 本轮 Back 对 Dialog 无效，不应走该路径。 */
+      press: async () => { assert.fail('不能用 Back 代替对话框确认'); },
+    },
+  };
+  await returnToTabs(device);
+  assert.deepEqual(actions, ['OK', 'close-slot']);
+});
+
+test('不确认其他消息或 RETRY 对话框，仍耗尽原有标签查询并抛出原始失败', async () => {
+  for (const [message, button] of [['other error', 'OK'], ['timeout', 'RETRY']]) {
+    const failure = new Error('标签被未知 Dialog 遮挡');
+    let waits = 0;
+    let backs = 0;
+    const device = {
+      /** 只暴露匹配文字的原生 Dialog 节点。
+       * @param selector - 原生查询。
+       */
+      info: async selector => {
+        const text = { 'android:id/message': message, 'android:id/button1': button }[selector.res];
+        if (text === undefined || selector.text !== text) throw new Error('java.lang.NullPointerException');
+        return { bounds };
+      },
+      /** 未知 Dialog 必须继续阻塞标签。
+       * @param selector - 等待目标。
+       * @param options - 原有等待预算。
+       */
+      wait: async (selector, options) => {
+        assert.equal(selector.res, 'settings-tab'); assert.equal(options.timeout, 3000);
+        waits++; throw failure;
+      },
+      /** 不允许盲目确认其他错误。 */
+      tap: async () => { assert.fail('未知 Dialog 不应被确认'); },
+      input: {
+        /** 保留原有的 Back 次数。 */
+        press: async () => { backs++; },
+      },
+    };
+    await assert.rejects(returnToTabs(device), error => error === failure);
+    assert.equal(waits, 9);
+    assert.equal(backs, 8);
+  }
+});

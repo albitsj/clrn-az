@@ -20,8 +20,21 @@ export async function returnToTabs(device: AndroidDevice): Promise<void> {
  * @param attempt - 当前尝试次数。
  */
 async function tabsAttempt(device: AndroidDevice, attempt: number): Promise<boolean> {
+  await dismissPreviousTimeout(device);
   if (await dismissTabOverlay(device)) return false;
   return waitForTabs(device, attempt);
+}
+
+/** 场景间确认上一页的网络超时提示，恢复被原生 Dialog 隐藏的关闭入口。
+ * @param device - 原生设备。
+ */
+async function dismissPreviousTimeout(device: AndroidDevice): Promise<void> {
+  const message = { res: 'android:id/message', text: 'timeout' };
+  if (!await exists(device, message)) return;
+  const button = { res: 'android:id/button1', text: 'OK' };
+  if (!await exists(device, button)) return;
+  await device.tap(button);
+  await waitAbsent(device, message);
 }
 
 /** 标签等待失败时只按原有预算返回一次。
