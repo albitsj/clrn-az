@@ -161,7 +161,7 @@ jobs:
         run: |
           test -s .ttyctl/android-driver/android-driver-target.apk
           test -s .ttyctl/android-driver/android-driver.apk
-          node -e 'const source = require("./.ttyctl/android-driver/source.json"); if (source.revision !== "39e3553a4f283a41134d75d7e404484bd9e6865a" || source.patch !== 9) process.exit(1)'
+          node -e 'const source = require("./.ttyctl/android-driver/source.json"); if (source.revision !== "39e3553a4f283a41134d75d7e404484bd9e6865a" || source.patch !== 10) process.exit(1)'
       - name: 保存固定原生驱动
         uses: actions/upload-artifact@v4
         with:

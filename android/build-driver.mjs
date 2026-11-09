@@ -143,7 +143,7 @@ const patched = source
               response.put("result", found == null ? JSONObject.NULL : found);
               break;
             case "tree":`);
-if (!['setWaitForIdleTimeout(100)', 'if (child != null)', 'case "marker":', 'case "screen":', 'case "transientFrames":', 'case "challengeFrames":', 'case "motionFrames":', 'case "launchFrames":', 'case "assetFrames":']
+if (!['setWaitForIdleTimeout(100)', 'if (child != null)', 'case "marker":', 'case "screen":', 'case "transientFrames":', 'case "challengeFrames":', 'case "motionFrames":', 'case "launchFrames":', 'case "assetFrames":', 'case "panelFrames":']
   .every(fragment => patched.includes(fragment))) throw new Error('原生驱动补丁没有完整应用。');
 writeFileSync(java, patched);
 const gradle = path.join(directory, 'build.gradle');
@@ -160,5 +160,5 @@ const output = path.resolve('.ttyctl/android-driver');
 mkdirSync(output, { recursive: true });
 copyFileSync(path.join(directory, 'app/build/outputs/apk/debug/app-debug.apk'), path.join(output, 'android-driver-target.apk'));
 copyFileSync(path.join(directory, 'app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk'), path.join(output, 'android-driver.apk'));
-writeFileSync(path.join(output, 'source.json'), JSON.stringify({ revision, patch: 9 }));
+writeFileSync(path.join(output, 'source.json'), JSON.stringify({ revision, patch: 10 }));
 console.log('原生控件驱动已构建，应用画面和动画保持原样。');

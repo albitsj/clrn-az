@@ -105,3 +105,100 @@
 新增 `assetFrames` 原生驱动命令，仅用于德州扑克茶道具。连续 4.6 秒直接截图，立即裁出原接收者和飞行区域，回收完整位图；区域总面积上限 128000 像素，最多 240 帧，按至少 20ms 的实际迭代间隔采集，PNG 编码放在采集后。保留同一次真实消息、采集后 300ms 触发、原生时间戳和全部真实飞行区域帧。驱动补丁版本改为 9，缓存键同时覆盖命令源码。水、啤酒及其他道具继续原无损整屏路径。
 
 原始基准、已登记备用位置、色差 15、路径运动与结束恢复断言均保持原值，不新增锚点、遮罩或重试。生产 Java 命令的执行测试覆盖完整时间窗、实际时间戳、区域内存上限、越界及压缩失败回收；基于已审查素材的设备边界测试覆盖稀疏整屏漏帧、真实区域通过、静止路径拒绝、缺少登记锚点拒绝及其他道具隔离。真实设备采样频率和最终稳定性仍须新一轮原生 CI 验证。
+
+### 42617216683：同步上游 RTC 删除后的三语高级房间基准
+
+应用已合入上游 `a63f9c71bcc81795b70b8b41a8e77e10cb3c1be6`（#7093），`CreateTexasHoldemRoomAdvancedOptionsView.js` 明确删除 `_renderAllowRTC()`。新 APK `f256b58447df4aa9d0b90a12a31444c4f43bbf69`、build 100002601 下，德州扑克与短牌的底部对齐选项列表删除视频项，露出既有猜手牌项；下方升盲、时长、资产及按钮保持原像素。六张图片均逐图审查，三次采集分别字节一致，所有差异仅位于 y=180..649 选项区。只替换六张唯一基准，保留原像素容差和所有场景。
+
+证据：测试 HEAD `cedcdd537f2e8ce7b836889b8635234d9b5ec77b`，run 42617216683/attempt 1；en artifact 13676212655 / SHA-256 3c0560eb76db0ea0b190c7b664259e8188e1d7bc36177681e6243f0ddaaa8dd4；zh-Hans 13677080345 / c0fcf0079f40d970547dce18fe7e7a6e6dcbedadee6be27d6e6b8f7dbc8269a8；zh-Hant 13675216929 / 56b5d33088592fa9210258e3f5320208644c6d9fafaafcacdd6dd40ad098ba67。均在独立新目录核验 ZIP 摘要、路径、CRC 及 build-info 应用提交后读取原图。
+
+六张原图摘要及逐像素差异范围：
+
+```json
+[
+  {
+    "locale": "en",
+    "game": "texas",
+    "sha256": "e4d8ca39f18008c45d550987b496500ec9e5cfe45267dfcc1f9cca2e1c2fc5a7",
+    "pixels": 32686,
+    "bounds": {
+      "minX": 32,
+      "minY": 212,
+      "maxX": 685,
+      "maxY": 638
+    }
+  },
+  {
+    "locale": "en",
+    "game": "six-plus",
+    "sha256": "53f0b460ce944ea08177e62653f1bd6d24a706ebafb7bb2b65c1a70a60e337cd",
+    "pixels": 32686,
+    "bounds": {
+      "minX": 32,
+      "minY": 212,
+      "maxX": 685,
+      "maxY": 638
+    }
+  },
+  {
+    "locale": "zh-Hans",
+    "game": "texas",
+    "sha256": "091ad1ccbdc4bd99850bee46970f50682eaeb0b75d67651e341fec76cb3df295",
+    "pixels": 22493,
+    "bounds": {
+      "minX": 92,
+      "minY": 204,
+      "maxX": 685,
+      "maxY": 630
+    }
+  },
+  {
+    "locale": "zh-Hans",
+    "game": "six-plus",
+    "sha256": "39465f9c568c521be703463adccf2c2201d22da8117a4449bd67beb0b9353038",
+    "pixels": 22493,
+    "bounds": {
+      "minX": 92,
+      "minY": 204,
+      "maxX": 685,
+      "maxY": 630
+    }
+  },
+  {
+    "locale": "zh-Hant",
+    "game": "texas",
+    "sha256": "ce9fb0ac81f13be4f491e54693a32f67a205b9ef03f6c8844852cbe59802b8af",
+    "pixels": 22989,
+    "bounds": {
+      "minX": 92,
+      "minY": 204,
+      "maxX": 685,
+      "maxY": 630
+    }
+  },
+  {
+    "locale": "zh-Hant",
+    "game": "six-plus",
+    "sha256": "d4f55af94da04cc7108fe022da3b3e93821c94e7e1f69dc7d86e46c0eda846a6",
+    "pixels": 22989,
+    "bounds": {
+      "minX": 92,
+      "minY": 204,
+      "maxX": 685,
+      "maxY": 630
+    }
+  }
+]
+```
+
+### 42617216683：原生区域采样验收与老虎机退场补充反例
+
+茶道具新命令首次真实通过：Texas/en/effects job 129160568708，artifact 13676231394，ZIP SHA-256 `b1174cde5fa750c725a9a5db524e3c9c27b6432752fe829af280c5c1a957d99c`。核验 HEAD `cedcdd537f2e8ce7b836889b8635234d9b5ec77b`、应用 `f256b58447df4aa9d0b90a12a31444c4f43bbf69` 和完整内嵌报告后，两项测试均 retry 0 passed、0 flaky、0 skipped。茶道具保留 146 张实际无损帧，设备时间 304446..309020，跨度 4574ms、相邻中位数 24ms，平均约 32fps；比较区域、锚点和色差 15 均维持原值。
+
+Social/en job 129160568274 的三类奖励、九个滚轮在失败尝试中均已完成；两次失败实际位于 `slot-popup-exit`，空间门禁返回 Infinity，retry 2 通过仍由 failOnFlakyTests 拒绝。artifact 13676522580，ZIP SHA-256 `4e9ed23b8badb8c5e814ae729f8bbfc0e956b0f4e9ed57b86c76e0530fb86a96`。按生产参数重放全部原始 MP4，结果依次 false/false/true：实际帧为 62/4.957189s、35/5.033156s、47/3.436267s。失败中途画面的面板已过晚滑出，通过记录保留更早位置；原生首尾截图三次一致，不能通过改终点或增加位置基准消除反例。
+
+补充 `panelFrames` 命令仅用于该退场，保留完整原区域 0,500,720,680 和原空间门禁 46。3.2 秒内按至少 20ms 采集，只合并 Bitmap.sameAs 确认逐像素相同的连续帧，保留每张真实变化帧及末帧，记录全部实际采样时间。区域面积最多 512000 像素、最多 64 张保留帧，区域位图池上限 125MiB；超过上限明确失败，不能静默丢弃变化。原茶道具命令的两区域、128000 像素、4.6 秒和 240 帧上限保持原值。驱动补丁改为 10，截图 PNG 在采样后编码，旧视频边界及其他转场保持既有路径。
+
+生产 Java 命令测试实际执行了重复帧合并、160 次物理采样覆盖完整 3.2 秒、18 张变化及首尾帧、全时间戳、超预算拒绝与回收；设备边界测试覆盖原区域无损返回、单次触发、原始录屏重放兼容，以及驱动/超时失败后的触发取消。新退场路径还须真实设备 CI 验证。
+
+英文游客 job 129160568054 的 `network-without-64` 首败来自真实登录请求：67 节点 PUT `/public/v10/user/username/is_existed` 在 10 秒后 Network Error，随后选线排除 67 的状态探测失败，日志报 69 `/node/v1/status` 网络问题；管理器返回当前 67，SDK 未向同一故障地址重复提交。首败画面明确为 Network Error 对话框，非缺失控件；本轮 67 WebSocket 已握手并收到 ACK。保留原 60 秒控件断言、零测试重试以及所有选线断言，不凭一次后续成功宣称外部节点稳定性已修复。

@@ -9,6 +9,7 @@ import { gameScreenshot } from './game-controls';
 import { motionParts, samePixels } from './motion-regions';
 import { maskScreenshot, type ScreenshotBounds, type ScreenshotMask } from './screenshot';
 import { recordNativeVideoFrames, type AnimationRegion } from './video-frames';
+import { recordTransitionFrames } from './transition-frames';
 import { alignedVideoDistance, localMotionDistance,
   misplacedVideoFrame, preservesVideoColumns, videoThumbnail } from './video-motion';
 
@@ -99,8 +100,7 @@ export function assertReviewedVideoMiddle(before: Buffer, after: Buffer,
   expect(Math.min(...distances), '动画中途帧的实际画面须接近已审查轨迹').toBeLessThanOrEqual(46);
 }
 
-/**
- * 点击真实入口期间由原生驱动逐帧截屏；基准约束起点、终点和中途真实像素。
+/** 点击真实入口期间由原生驱动逐帧截屏；基准约束起点、终点和中途真实像素。
  * @param device - 安装固定补丁驱动的模拟器。
  * @param name - 本次具体动画效果的基准前缀。
  * @param testInfo - Playwright 测试报告。
@@ -156,8 +156,8 @@ export async function captureNativeTransition(device: AndroidDevice, name: strin
   if (samplingMethod === 'videoFrames') {
     if (requiredRegions.length) throw new Error('录屏转场需单独定义不含子区域的绘制范围。');
     observeTransition(observe, 'video-recording-start');
-    frames = (await videoRecorder(name, typeof region === 'function' ? resolveRegion : region, trigger, testInfo))
-      .map((png, index) => ({ capturedAt: index * 33, png: png.toString('base64') }));
+    frames = await recordTransitionFrames({ device, name,
+      region: typeof region === 'function' ? resolveRegion : region, trigger, info: testInfo }, videoRecorder);
   } else {
     observeTransition(observe, 'native-sampling-start');
     try {

@@ -1,7 +1,9 @@
 // 只传回真实区域 PNG；采样期间不编码，避免压缩和整屏传输漏掉短飞行位置。
-export const assetFrameCommand = `case "assetFrames":
+export const assetFrameCommand = `case "panelFrames":
+            case "assetFrames":
+              boolean assetPanel = method.equals("panelFrames");
               JSONArray assetRegions = params.getJSONArray("regions");
-              if (assetRegions.length() != 2) throw new IllegalArgumentException("Expected two asset regions");
+              if (assetRegions.length() != (assetPanel ? 1 : 2)) throw new IllegalArgumentException("Unexpected native region count");
               long assetPixels = 0;
               for (int index = 0; index < assetRegions.length(); index++) {
                 JSONObject region = assetRegions.getJSONObject(index);
@@ -10,12 +12,15 @@ export const assetFrameCommand = `case "assetFrames":
                   throw new IllegalArgumentException("Invalid asset region");
                 assetPixels += (long) width * height;
               }
-              if (assetPixels > 128000) throw new IllegalArgumentException("Asset regions exceed memory budget");
+              if (assetPixels > (assetPanel ? 512000 : 128000)) throw new IllegalArgumentException("Asset regions exceed memory budget");
               java.util.ArrayList<android.graphics.Bitmap> assetBitmaps = new java.util.ArrayList<>();
               JSONArray assetFrames = new JSONArray();
-              long assetDeadline = android.os.SystemClock.uptimeMillis() + 4600;
+              // 区域位图上限分别为 125MiB 与 117.2MiB；帧数不能先于完整时间窗耗尽。
+              int assetPeriod = 20;
+              JSONArray assetSamples = new JSONArray();
+              long assetDeadline = android.os.SystemClock.uptimeMillis() + (assetPanel ? 3200 : 4600);
               try {
-                while (android.os.SystemClock.uptimeMillis() < assetDeadline && assetFrames.length() < 240) {
+                while (android.os.SystemClock.uptimeMillis() < assetDeadline) {
                   long assetStarted = android.os.SystemClock.uptimeMillis();
                   android.graphics.Bitmap assetScreen = InstrumentationRegistry.getInstrumentation().getUiAutomation().takeScreenshot();
                   if (assetScreen == null) throw new IllegalStateException("Native asset screenshot returned no bitmap");
@@ -30,9 +35,20 @@ export const assetFrameCommand = `case "assetFrames":
                         throw new IllegalArgumentException("Asset region outside screenshot");
                       assetBitmaps.add(android.graphics.Bitmap.createBitmap(assetScreen, x, y, width, height));
                     }
-                    assetFrames.put(new JSONObject().put("capturedAt", assetCapturedAt));
+                    if (assetPanel) assetSamples.put(assetCapturedAt);
+                    int assetLast = assetBitmaps.size() - 1;
+                    // 只合并逐像素完全相同的连续帧；所有实际变化都保留，超预算明确失败。
+                    boolean assetDuplicate = assetPanel && assetLast > 0
+                      && assetBitmaps.get(assetLast).sameAs(assetBitmaps.get(assetLast - 1))
+                      && assetCapturedAt < assetDeadline - assetPeriod;
+                    if (assetDuplicate) assetBitmaps.remove(assetLast).recycle();
+                    else {
+                      if (assetFrames.length() >= (assetPanel ? 64 : 240))
+                        throw new IllegalStateException("Native region frame budget exhausted");
+                      assetFrames.put(new JSONObject().put("capturedAt", assetCapturedAt));
+                    }
                   } finally { assetScreen.recycle(); }
-                  android.os.SystemClock.sleep(Math.max(1, 20 - (android.os.SystemClock.uptimeMillis() - assetStarted)));
+                  android.os.SystemClock.sleep(Math.max(1, assetPeriod - (android.os.SystemClock.uptimeMillis() - assetStarted)));
                 }
                 for (int frameIndex = 0; frameIndex < assetFrames.length(); frameIndex++) {
                   JSONArray assetPngs = new JSONArray();
@@ -45,6 +61,8 @@ export const assetFrameCommand = `case "assetFrames":
                   }
                   assetFrames.getJSONObject(frameIndex).put("regions", assetPngs);
                 }
+                if (assetPanel && assetFrames.length() > 0)
+                  assetFrames.getJSONObject(0).put("sampledAt", assetSamples);
                 response.put("result", assetFrames);
               } finally { for (android.graphics.Bitmap frame : assetBitmaps) frame.recycle(); }
               break;
