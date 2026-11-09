@@ -39,11 +39,12 @@ const patched = source
   }
 
   // 仅在截图比较结束后请求脱敏的原生字体和输入属性，不读取输入内容。
-  private static void inputMetrics(AccessibilityNodeInfo node, JSONArray output) throws Exception {
+  private static void inputMetrics(AccessibilityNodeInfo node, JSONArray output) throws JSONException {
     if (node == null) return;
     String resource = node.getViewIdResourceName();
     if (resource != null && (resource.equals("old-password-input") || resource.equals("new-password-input")
         || resource.equals("old-password-input-title") || resource.equals("new-password-title"))) {
+      try {
       String key = (String) AccessibilityNodeInfo.class.getField("EXTRA_DATA_RENDERING_INFO_KEY").get(null);
       boolean refreshed = node.refreshWithExtraData(key, new android.os.Bundle());
       Object rendering = AccessibilityNodeInfo.class.getMethod("getExtraRenderingInfo").invoke(node);
@@ -59,6 +60,7 @@ const patched = source
         metrics.put("layoutSize", layout == null ? JSONObject.NULL : layout.toString());
       }
       output.put(metrics);
+      } catch (ReflectiveOperationException error) { throw new JSONException(error.toString()); }
     }
     for (int index = 0; index < node.getChildCount(); index++) inputMetrics(node.getChild(index), output);
   }
