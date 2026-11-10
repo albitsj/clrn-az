@@ -40,7 +40,7 @@ export async function captureGame(device: AndroidDevice, name: string, testInfo:
   inputMasks = captureInputMasks(inputMasks);
   validateTrigger(transientMarker, triggerTransient);
   const nodes = await captureNodes(device, transientMarker, expectedAlertMarker,
-    name.endsWith('-signed-in-texas-hall-variants-auto-rebuy-enabled'));
+    /-signed-in-texas-(?:hall-variants-auto-rebuy-enabled|table-states-(?:observer|full-table))$/.test(name));
   const masks: ScreenshotMask[] = [...inputMasks];
   const panels = foregroundPanels(nodes);
   await testInfo.attach(`${name}-native-tree`, { body: JSON.stringify(nodes[0]), contentType: 'application/json' });
@@ -105,7 +105,7 @@ function validateTrigger(marker?: string, trigger?: () => Promise<string | void>
 /** 等待前景转场结束，保留原有连续两次布局一致的断言。
  * @param device - 原生设备。
  * @param nodes - 首次读取的原生树。
- * @param requirePing - 自动带入截图必须取得已有网络遮罩的真实来源。
+ * @param requirePing - 已核对的桌面截图必须取得已有网络遮罩的真实来源。
  */
 async function stablePanels(device: AndroidDevice, nodes: NativeNode[], requirePing?: boolean): Promise<NativeNode[]> {
   if (!foregroundPanels(nodes).length && !requirePing) return nodes;
@@ -113,7 +113,7 @@ async function stablePanels(device: AndroidDevice, nodes: NativeNode[], requireP
   await expect(async () => {
     nodes = await gameNodes(device);
     if (requirePing) expect(nodes.some(node => node.res === 'ping-screen-container'),
-      '自动带入截图须取得网络延迟遮罩节点，不能用暂缺节点的原生树生成遮罩').toBe(true);
+      '桌面截图须取得网络延迟遮罩节点，不能用暂缺节点的原生树生成遮罩').toBe(true);
     const current = JSON.stringify(foregroundPanels(nodes).map(node => node.bounds));
     const before = previous;
     previous = current;
