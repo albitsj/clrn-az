@@ -14,6 +14,25 @@ def sample(path, body=None, status=200, host=HOST):
 
 
 class NetworkSelectionTests(unittest.TestCase):
+    def test_failed_room_rpc_paths_are_redacted_and_diagnostics_cannot_break_response(self):
+        recorder = NetworkSelection()
+        for path, method, redacted in (
+                ('/v3/pay_action/do', 'POST', '/v3/pay_action/do'),
+                ('/v10/texas_holdem/room/secret-room/profile?token=secret', 'GET',
+                 '/v10/texas_holdem/room/{room}/profile')):
+            flow = sample(path, {'password': 'secret'}, status=500)
+            flow.request.method = method
+            flow.request.timestamp_start = 12.5
+            recorder.observe(flow)
+            self.assertEqual(recorder.events[-1]['path'], redacted)
+            self.assertEqual(recorder.events[-1]['status'], 500)
+            self.assertEqual(recorder.events[-1]['requestAt'], 12500)
+            original = flow.response
+            flow.response.json = lambda: (_ for _ in ()).throw(RuntimeError('secret'))
+            recorder.observe(flow)
+            self.assertIs(flow.response, original)
+        self.assertNotIn('secret', json.dumps(recorder.snapshot()))
+
     def test_wallet_reads_record_contract_without_identity_balance_or_credentials(self):
         recorder = NetworkSelection()
         body = {'ok': True, 'result': {'currencies': [

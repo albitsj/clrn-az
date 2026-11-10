@@ -1,4 +1,4 @@
-"""只读选线与钱包读取诊断：不保存正文、令牌、余额、完整 URL 或用户/房间身份。"""
+"""只读选线与本轮失败 RPC 诊断：不保存正文、令牌、余额、完整 URL 或身份。"""
 
 import json
 import re
@@ -15,6 +15,10 @@ def diagnostic_path(request):
         return path
     if request.method == 'PUT' and re.fullmatch(r'/v10/wallet/[^/]+', path):
         return '/v10/wallet/{user}'
+    if request.method == 'POST' and path == '/v3/pay_action/do':
+        return path
+    if request.method == 'GET' and re.fullmatch(r'/v10/texas_holdem/room/[^/]+/profile', path):
+        return '/v10/texas_holdem/room/{room}/profile'
     return None
 
 
@@ -49,17 +53,29 @@ def staging(host):
     return host == 'api.shafayouxi.org' or host.endswith('.api.staging.laiwan.shafayouxi.com')
 
 
+def request_timing(request):
+    started = getattr(request, 'timestamp_start', None)
+    return {'requestAt': round(started * 1000)} if type(started) in (int, float) else {}
+
+
 class NetworkSelection:
     def __init__(self):
         self.events = []
         self.total = 0
 
     def observe(self, flow, event='response', **details):
+        # 诊断解析或写入失败不能中断代理的原始响应/异常处理。
+        try:
+            self._observe(flow, event, **details)
+        except Exception:
+            pass
+
+    def _observe(self, flow, event, **details):
         path = diagnostic_path(flow.request)
         if not staging(flow.request.host) or path is None:
             return
         record = {'at': round(time.time() * 1000), 'event': event, 'host': flow.request.host,
-                  'path': path, 'method': flow.request.method, **details}
+                  'path': path, 'method': flow.request.method, **request_timing(flow.request), **details}
         if flow.response is not None:
             record['status'] = flow.response.status_code
             try:

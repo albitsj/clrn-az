@@ -14,12 +14,15 @@ import { captureMovingKeyframes } from '../loop-keyframes';
 import { waitAbsent } from '../native-state';
 import { gameReady, gameScreenshot } from '../game-controls';
 import { motionParts, samePixels } from '../motion-regions';
+import { preserveAnimationFailure } from '../animation-diagnostics';
 
 test('all three native slot reels and reward types animate from real spin responses', async ({}, testInfo) => {
   test.skip(!englishGroup('social'), '老虎机动画只在英文社交任务采集一次');
   test.setTimeout(420_000);
   await withAndroidProxy(async proxy => {
     let device: AndroidDevice | undefined;
+    const startedAt = Date.now();
+    const spinTrace: { currency: string; event: string; at: number }[] = [];
     try {
       device = await launchApplication({ gameDriver: true, enableSystemAnimations: true });
       await prepareSignedInAnimation(device);
@@ -55,11 +58,17 @@ test('all three native slot reels and reward types animate from real spin respon
         await proxy.command('android/slot', { currency });
         const button = await device.info({ res: 'spin-button' });
         /** 点击正式老虎机的旋转按钮，网络夹具只固定奖励响应。 */
-        const pressSpin = () => adb('shell', 'input', 'tap',
-          String(Math.round(button.bounds.x + button.bounds.width / 2)),
-          String(Math.round(button.bounds.y + button.bounds.height / 2)));
+        const pressSpin = () => {
+          spinTrace.push({ currency, event: 'tap-start', at: Date.now() });
+          adb('shell', 'input', 'tap', String(Math.round(button.bounds.x + button.bounds.width / 2)),
+            String(Math.round(button.bounds.y + button.bounds.height / 2)));
+          spinTrace.push({ currency, event: 'tap-complete', at: Date.now() });
+        };
         await captureNativeTransition(device, `slot-${currency}-reels`, testInfo,
-          { x: 124, y: 420, width: 469, height: 362 }, pressSpin, [], reels, 1500);
+          { x: 124, y: 420, width: 469, height: 362 }, pressSpin, [], reels, 1500).catch(async error => {
+          await preserveAnimationFailure('slot', startedAt, testInfo).catch(() => undefined);
+          throw error;
+        });
         const prize = await device.info({ res: reward });
         expect(Number(prize.text), `${currency} 应显示真实奖励`).toBeGreaterThan(0);
       }
@@ -115,6 +124,14 @@ test('all three native slot reels and reward types animate from real spin respon
       const final = await proxy.command<{ spins: number }>('android/slot');
       expect(final.spins, '能量不足由第四次旋转请求触发').toBe(4);
       await waitAbsent(device, { res: 'slot-machine-view' });
-    } finally { await closeDevice(device); }
+    } finally {
+      await proxy.command('android/slot').then(status => testInfo.attach('slot-rpc-trace', {
+        body: JSON.stringify(status), contentType: 'application/json',
+      })).catch(() => undefined);
+      await testInfo.attach('slot-spin-input-trace', {
+        body: JSON.stringify(spinTrace), contentType: 'application/json',
+      }).catch(() => undefined);
+      await closeDevice(device);
+    }
   }, 'slot');
 });

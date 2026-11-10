@@ -110,7 +110,8 @@ export async function texasPanels(context: TexasContext): Promise<void> {
   await gameGone(device, 'in-game-chat-container');
   const application = { scene: 'buy-in-review' };
   if (animationInfo) await captureNativeTransition(device, 'texas-holdem-buy-in-review-enter', animationInfo,
-    { x: 70, y: 440, width: 580, height: 270 }, () => replay(proxy, 'texas', room, application));
+    { x: 70, y: 440, width: 580, height: 270 }, () => replay(proxy, 'texas', room, application),
+    [], [], 0, 'videoFrames');
   else await replay(proxy, 'texas', room, application);
   await gameReady(device, 'buy-in-review-close-button');
   await capture('buy_in_review');
