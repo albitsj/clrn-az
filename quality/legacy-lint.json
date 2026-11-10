@@ -13,18 +13,6 @@
   },
   {
     "tool": "eslint",
-    "file": "android/asset-sequence.ts",
-    "rule": "complexity",
-    "line": 32,
-    "column": 8,
-    "endLine": 32,
-    "endColumn": 43,
-    "message": "Async function 'captureAssetSequence' has a complexity of 14. Maximum allowed is 10.",
-    "sourceHash": "105713442b77e694727e8e1b606b938291f3d621f19d195bfec218a8d60a5296",
-    "reason": "既有原生界面、截图或测试工具控制流；本次不改变设备行为，修改时降低该处复杂度/嵌套，禁止恶化。"
-  },
-  {
-    "tool": "eslint",
     "file": "android/motion-regions.ts",
     "rule": "complexity",
     "line": 33,

@@ -1,3 +1,4 @@
+import { preserveAssetSamples, type AssetSample } from './asset-sample-diagnostics';
 import { requireEnglishAnimation } from './animation-locale';
 import { readFileSync } from 'node:fs';
 import { setTimeout } from 'node:timers/promises';
@@ -31,6 +32,28 @@ const flightPhaseAnchors: Record<string, string[]> = {
  */
 export async function captureAssetSequence(device: AndroidDevice, name: string, info: TestInfo,
   region: ScreenshotBounds, trigger: () => Promise<unknown>, flightRegion?: ScreenshotBounds): Promise<void> {
+  const samples: AssetSample[] = [];
+  try {
+    await captureSampledSequence(device, name, info, region, trigger, samples, flightRegion);
+  } finally {
+    if (name === 'texas-prop-tea') {
+      await preserveAssetSamples(name, info, samples, region, flightRegion);
+    }
+  }
+}
+
+/** 执行原有采样和全部断言，原始采样只交给断言结束后的诊断。
+ * @param device - 原生设备。
+ * @param name - 素材名。
+ * @param info - 测试报告。
+ * @param region - 效果区域。
+ * @param trigger - 原始触发操作。
+ * @param samples - 已返回采样登记。
+ * @param flightRegion - 飞行区域。
+ */
+async function captureSampledSequence(device: AndroidDevice, name: string, info: TestInfo,
+  region: ScreenshotBounds, trigger: () => Promise<unknown>, samples: AssetSample[],
+  flightRegion?: ScreenshotBounds): Promise<void> {
   requireEnglishAnimation();
   /**
    * 从完整原生截图中裁出效果范围。
@@ -49,7 +72,9 @@ export async function captureAssetSequence(device: AndroidDevice, name: string, 
     const pending = implementation._send('motionFrames');
     await setTimeout(300);
     await trigger();
-    screens = (await pending).map(frame => Buffer.from(frame.png, 'base64'));
+    const frames = await pending;
+    samples.push({ attempt, frames });
+    screens = frames.map(frame => Buffer.from(frame.png, 'base64'));
     timeline = screens.map(crop);
     expect(timeline.length).toBeGreaterThanOrEqual(10);
     expect(samePixels(before, timeline[0]), `${name} 必须在采样开始后播放`).toBe(true);
@@ -88,34 +113,44 @@ export async function captureAssetSequence(device: AndroidDevice, name: string, 
   }
   await setTimeout(2500);
   expect(samePixels(before, crop(await gameScreenshot(device))), `${name} 须播放结束并恢复画面`).toBe(true);
-  if (flightRegion) {
-    /**
-     * 裁切道具经过的中途路线，独立锁定飞行轨迹。
-     * @param bytes - 原生完整屏幕 PNG。
-     */
-    const flight = (bytes: Buffer) => motionParts(bytes, [flightRegion]).regions[0];
-    const flightStart = flight(beforeScreen);
-    const flightFrames = screens.map(flight);
-    const moving = flightFrames.map((frame, index) => ({ frame, index,
-      distance: frameColorDistance(flightStart, frame) })).filter(item => item.distance > 1);
-    expect(moving.length, `${name} 道具必须飞过目标路线`).toBeGreaterThanOrEqual(2);
-    const farthest = moving.reduce((best, item) => item.distance > best.distance ? item : best);
-    const alternate = moving.reduce((best, item) => frameColorDistance(farthest.frame, item.frame)
-      > frameColorDistance(farthest.frame, best.frame) ? item : best);
-    expect(frameColorDistance(farthest.frame, alternate.frame), `${name} 飞行位置必须变化`).toBeGreaterThan(1);
-    for (const [phase, frame] of [['start', flightStart], ['peak', farthest.frame],
-      ['changed', alternate.frame]] as const) {
-      const file = `${name}-flight-${phase}.png`;
-      await info.attach(file, { body: frame, contentType: 'image/png' });
-      if (info.config.updateSnapshots === 'all') expect(frame).toMatchSnapshot(file);
-      else {
-        const references = [file, ...(flightPhaseAnchors[file] || [])]
-          .map(anchor => readFileSync(info.snapshotPath(anchor)));
-        expect(Math.min(...(phase === 'start' ? [flightStart] : moving.map(item => item.frame))
-          .flatMap(candidate => references.map(reference => frameColorDistance(candidate, reference)))),
-        `${name} 飞行 ${phase} 视觉回归`)
-          .toBeLessThanOrEqual(15);
-      }
+  if (flightRegion) await assertFlightSequence(name, info, beforeScreen, screens, flightRegion);
+}
+
+/** 用同一次采样执行原有全部飞行断言，诊断包装不改变这些条件。
+ * @param name - 素材名。
+ * @param info - 当前报告。
+ * @param beforeScreen - 原始起点。
+ * @param screens - 原始采样帧。
+ * @param flightRegion - 原飞行区域。
+ */
+async function assertFlightSequence(name: string, info: TestInfo, beforeScreen: Buffer,
+  screens: Buffer[], flightRegion: ScreenshotBounds): Promise<void> {
+  /**
+   * 裁切道具经过的中途路线，独立锁定飞行轨迹。
+   * @param bytes - 原生完整屏幕 PNG。
+   */
+  const flight = (bytes: Buffer) => motionParts(bytes, [flightRegion]).regions[0];
+  const flightStart = flight(beforeScreen);
+  const flightFrames = screens.map(flight);
+  const moving = flightFrames.map((frame, index) => ({ frame, index,
+    distance: frameColorDistance(flightStart, frame) })).filter(item => item.distance > 1);
+  expect(moving.length, `${name} 道具必须飞过目标路线`).toBeGreaterThanOrEqual(2);
+  const farthest = moving.reduce((best, item) => item.distance > best.distance ? item : best);
+  const alternate = moving.reduce((best, item) => frameColorDistance(farthest.frame, item.frame)
+    > frameColorDistance(farthest.frame, best.frame) ? item : best);
+  expect(frameColorDistance(farthest.frame, alternate.frame), `${name} 飞行位置必须变化`).toBeGreaterThan(1);
+  for (const [phase, frame] of [['start', flightStart], ['peak', farthest.frame],
+    ['changed', alternate.frame]] as const) {
+    const file = `${name}-flight-${phase}.png`;
+    await info.attach(file, { body: frame, contentType: 'image/png' });
+    if (info.config.updateSnapshots === 'all') expect(frame).toMatchSnapshot(file);
+    else {
+      const references = [file, ...(flightPhaseAnchors[file] || [])]
+        .map(anchor => readFileSync(info.snapshotPath(anchor)));
+      expect(Math.min(...(phase === 'start' ? [flightStart] : moving.map(item => item.frame))
+        .flatMap(candidate => references.map(reference => frameColorDistance(candidate, reference)))),
+      `${name} 飞行 ${phase} 视觉回归`)
+        .toBeLessThanOrEqual(15);
     }
   }
 }

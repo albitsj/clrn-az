@@ -61,7 +61,12 @@ test('登记的飞行位置锚点缺失必须失败，不能因主图匹配而�
     return PNG.sync.write(canvas);
   });
   const missing = `${name}-flight-peak-alternate.png`;
-  const info = { config: { updateSnapshots: 'none' }, /** 本例不保存附件。 */ attach: async () => {},
+  let diagnosticCalls = 0;
+  const info = { config: { updateSnapshots: 'none' }, /** 诊断不可写不得替换原始锚点异常。
+     * @param attachment - 附件名。
+     */ attach: async attachment => {
+      if (attachment === `${name}-raw-samples`) { diagnosticCalls++; throw new Error('unavailable'); }
+    },
     /** 仅模拟一个已登记的真实锚点文件丢失。
      * @param file - 基准名。
      */
@@ -70,4 +75,5 @@ test('登记的飞行位置锚点缺失必须失败，不能因主图匹配而�
     { x: 0, y: 0, width: body[0].width, height: body[0].height }, async () => {},
     { x: body[0].width, y: 0, width: flight[0].width, height: flight[0].height }),
   error => error.code === 'ENOENT' && error.path.endsWith(missing));
+  assert.equal(diagnosticCalls, 1);
 });
