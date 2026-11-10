@@ -49,7 +49,7 @@ async function inputReady(device: AndroidDevice, resource: string, text: string)
  * @param sample - 最后一组真实采样。
  * @param samples - 原有各次采样的脱敏几何状态。
  */
-async function preserveCaretFailure(info: TestInfo | undefined, resource: string, sample: CaretSample | undefined,
+export async function preserveCaretFailure(info: TestInfo | undefined, resource: string, sample: CaretSample | undefined,
   samples: object[]): Promise<void> {
   if (!info) return;
   await info.attach(`${resource}-caret-state`, {

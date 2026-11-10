@@ -1,6 +1,7 @@
 /** 诊断必须保留采样参数与原始失败，并拒绝复制未脱敏输出。 */
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { expect } from '@playwright/test';
 import { runInNewContext } from 'node:vm';
 import { diagnosticSource } from './diagnostics-test-support.mjs';
 
@@ -88,4 +89,63 @@ test('渲染诊断只保留数字，设备读取与附件失败都不抛出', as
   failRead = true;
   await preserveRenderStatistics('texas-holdem-voice-enter', info);
   await preserveRenderStatistics('slot-popup-exit', info);
+});
+
+test('启动传输诊断只探测当前专用代理，不复制路由、端口或异常正文', async () => {
+  const calls = [], attachments = [];
+  let offline = false;
+  const { preserveProxyTransport } = load('./proxy-transport-diagnostics.ts', {
+    './device-command': {
+      /** 执行只读命令的替身，故障正文不能进入附件。
+       * @param args - 生产命令。
+       */ adb: (...args) => {
+        calls.push(args);
+        if (offline) throw new Error('private-transport-error');
+        if (args.includes('settings')) return '10.0.2.2:12345\n';
+        if (args.includes('route')) return 'default via 10.0.2.1 dev wlan0 private-route\n';
+        assert.deepEqual(args, ['shell', 'toybox', 'nc', '-z', '-w', '3', '10.0.2.2', '12345']);
+        return '';
+      },
+    },
+  });
+  const info = { /** 保存白名单诊断。
+     * @param name - 附件名。
+     * @param data - 附件内容。
+     */ attach: async (name, data) => {
+    assert.equal(name, 'launch-proxy-transport');
+    assert.doesNotMatch(data.body, /private|12345/);
+    attachments.push(JSON.parse(data.body));
+  } };
+  await preserveProxyTransport(info);
+  assert.equal(calls.length, 3);
+  assert.equal(attachments[0].proxyReachable, true);
+  assert.equal(attachments[0].defaultRoute, true);
+  offline = true;
+  await preserveProxyTransport(info);
+  assert.equal(calls.length, 5, '配置读取失败不能探测猜测的端口');
+  assert.equal(attachments[1].proxyReachable, null);
+  assert.equal(attachments[1].routesReadable, false);
+  await preserveProxyTransport({ /** 附件存储故障不能抛出。 */ attach: async () => { throw new Error('report unavailable'); } });
+});
+
+
+test('带入审核诊断输出失败不能触发原回放的重试', async () => {
+  const exports = {};
+  let commands = 0;
+  const modules = {
+    '@playwright/test': { expect },
+    './game-controls': {},
+    './game-room': { /** 返回本例的已验证房间。 */ gameSession: async () => ({ room: { roomId: 'room' } }) },
+  };
+  runInNewContext(diagnosticSource('./game-replay.ts'), { exports, Date,
+    console: { /** 模拟写入诊断输出失败。 */ log: () => { throw new Error('output unavailable'); } },
+    /** 只替换原外部边界。
+     * @param name - 模块名。
+     */ require: name => modules[name],
+  });
+  await exports.replay({ /** 记录原回放请求，不允许诊断增加发送次数。 */ command: async () => {
+    commands++;
+    return { replayedMessages: 1 };
+  } }, 'texas', 'room', { scene: 'buy-in-review' });
+  assert.equal(commands, 1);
 });

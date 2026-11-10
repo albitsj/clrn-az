@@ -7,6 +7,7 @@ import { captureDeviceFailure, closeDevice } from './support/lifecycle';
 import { selectLanguage } from '../navigation';
 import { gameMarker, gameReady, gameScreenshot } from '../game-controls';
 import { withAndroidProxy } from '../proxy';
+import { preserveProxyTransport } from '../proxy-transport-diagnostics';
 
 const locale = process.env.ANDROID_LOCALE || 'en';
 
@@ -67,6 +68,7 @@ test(`${locale} launch_branding full screen while initialization waits`, async (
       await proxy.command('android/network-selection').then(network => testInfo.attach('launch-network-evidence', {
         body: JSON.stringify({ networkObservations, network }), contentType: 'application/json',
       })).catch(() => undefined);
+      await preserveProxyTransport(testInfo).catch(() => undefined);
       await captureDeviceFailure(device, testInfo);
       throw error;
     } finally {
