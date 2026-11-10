@@ -41,7 +41,7 @@ function fixture(options = {}) {
       spawn: (executable, args) => {
         assert.equal(executable, 'adb');
         assert.deepEqual(args.slice(0, 4), ['-s', 'emulator-6666', 'shell', '-T']);
-        assert.match(args[4], /sleep 8; kill -INT "\$recorder"/);
+        assert.match(args[4], /sleep 8 & sleeper=\$!; wait "\$sleeper"; kill -INT "\$recorder"/);
         events.push('spawn');
         void delay(2).then(() => emitSource(child, options));
         return child;
