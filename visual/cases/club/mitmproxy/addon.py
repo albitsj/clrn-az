@@ -8,8 +8,8 @@ from urllib.parse import parse_qs, urlsplit
 
 from mitmproxy import http
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[4] / 'e2e' / 'mitmproxy'))
-from response_overrides import is_staging  # noqa: E402
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / '_shared' / 'mitmproxy'))
+from proxy_http import ProxyHTTP, respond  # noqa: E402
 
 CONTROL_HOST = 'test-mitmproxy.invalid'
 CLUB_IDENTIFIER = '00000000-0000-4000-8000-000000000151'
@@ -48,18 +48,7 @@ CLUB_ROOMS = [
 ]
 
 
-def respond(flow, result):
-    """将固定结果按应用接口格式返回，并维持浏览器需要的跨域响应头。"""
-    flow.response = http.Response.make(200, json.dumps(result).encode(), {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': flow.request.headers.get('Origin', '*'),
-        'Access-Control-Allow-Credentials': 'true', 'Vary': 'Origin',
-        'Access-Control-Allow-Methods': 'GET, PUT, POST, DELETE, OPTIONS',
-        'Access-Control-Allow-Headers': flow.request.headers.get('Access-Control-Request-Headers', ''),
-    })
-
-
-class ClubRoomVisualProxy:
+class ClubRoomVisualProxy(ProxyHTTP):
     """只在专用场景中匹配指定俱乐部及其房间，其他请求保持原路径。"""
 
     def __init__(self):
@@ -85,53 +74,70 @@ class ClubRoomVisualProxy:
             flow.response = http.Response.make(403, b'{}')
             return
         path = urlsplit(flow.request.path).path
-        if flow.request.method == 'POST' and path == '/scenario':
-            try:
-                scenario = json.loads(flow.request.content)['scenario']
-            except (ValueError, KeyError, TypeError):
-                scenario = False
-            if scenario not in (None, 'visual-stable'):
-                flow.response = http.Response.make(400, b'{}')
-                return
-            self.scenario = scenario
-            self.club_room_requests = {}
-        elif flow.request.method != 'GET' or path != '/status':
+        if self.control_command(flow, path):
+            respond(flow, self.status())
+
+    def control_command(self, flow, path):
+        if (flow.request.method, path) == ('POST', '/scenario'):
+            return self.configure_scenario(flow)
+        if (flow.request.method, path) != ('GET', '/status'):
             flow.response = http.Response.make(400, b'{}')
-            return
-        respond(flow, self.status())
+            return False
+        return True
+
+    def configure_scenario(self, flow):
+        scenario = self.read_scenario(flow)
+        if scenario not in (None, 'visual-stable'):
+            flow.response = http.Response.make(400, b'{}')
+            return False
+        self.scenario = scenario
+        self.club_room_requests = {}
+        return True
+
+    def read_scenario(self, flow):
+        try:
+            return json.loads(flow.request.content)['scenario']
+        except (ValueError, KeyError, TypeError):
+            return False
 
     def fixture(self, flow):
-        """校验请求方法、目标俱乐部及请求正文后，返回固定业务结果。"""
+        """校验方法、目标俱乐部及正文；其他请求透传。"""
         url = urlsplit(flow.request.path)
-        path = url.path
-        method = flow.request.method
-        if path == '/v10/club' and method == 'GET' and parse_qs(url.query).get('user_id'):
-            return {'clubs': [{'id': CLUB_IDENTIFIER}]}
-        if method != 'PUT':
-            return None
+        if (flow.request.method, url.path) == ('GET', '/v10/club'):
+            return self.club_list(url)
+        if flow.request.method == 'PUT':
+            return self.put_fixture(flow, url.path)
+        return None
+
+    def club_list(self, url):
+        return {'clubs': [{'id': CLUB_IDENTIFIER}]} if parse_qs(url.query).get('user_id') else None
+
+    def put_fixture(self, flow, path):
         try:
             body = json.loads(flow.request.content)
         except (ValueError, TypeError):
             return None
+        return self.club_fixture(path, body)
+
+    def club_fixture(self, path, body):
         if path == '/v10/clubs' and body.get('club_ids') == [CLUB_IDENTIFIER]:
-            return [{
-                'id': CLUB_IDENTIFIER, 'club_id': CLUB_IDENTIFIER, 'club_no': 151,
-                'name': CLUB_NAME, 'owner': {'id': 'visual-club-owner', 'role': 'owner'},
-                'owner_id': 'visual-club-owner', 'admin_ids': [],
-                'create_room_role': ['owner'], 'room_amount': 2,
-            }]
+            return self.club_details()
+        return self.room_fixture(path, body)
+
+    def room_fixture(self, path, body):
         if path == '/v2/building/rooms' and body.get('building_ids') == [CLUB_IDENTIFIER]:
             return CLUB_ROOMS
         return None
 
-    def request(self, flow):
-        """控制请求单独处理；业务请求必须经过场景和 staging 地址核对。"""
-        if flow.request.host == CONTROL_HOST:
-            self.control(flow)
-            return
-        self.proxied_requests += 1
-        if self.scenario != 'visual-stable' or not is_staging(flow.request.host):
-            return
+    def club_details(self):
+        return [{
+            'id': CLUB_IDENTIFIER, 'club_id': CLUB_IDENTIFIER, 'club_no': 151,
+            'name': CLUB_NAME, 'owner': {'id': 'visual-club-owner', 'role': 'owner'},
+            'owner_id': 'visual-club-owner', 'admin_ids': [],
+            'create_room_role': ['owner'], 'room_amount': 2,
+        }]
+
+    def fixture_request(self, flow):
         result = self.fixture(flow)
         if result is None:
             return

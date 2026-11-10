@@ -43,20 +43,32 @@ class RecordProxyTests(unittest.IsolatedAsyncioTestCase):
     def test_room_names_respect_ui_creation_limit(self):
         # 建房按 UTF-16 字符单元计数：ASCII 为 1，其他为 2，上限 20。
         for record in all_records():
-            units = record['name'].encode('utf-16-le')
-            length = sum(1 if units[i] < 128 and units[i + 1] == 0 else 2
-                         for i in range(0, len(units), 2))
-            self.assertLessEqual(length, 20, record['name'])
-        self.assertEqual(len(next(record['name'] for record in all_records()
-                                  if record['play_session_id'] == PREFIX + 'large')), 20)
+            self.assertLessEqual(self.ui_name_length(record['name']), 20, record['name'])
+        self.assertEqual(len(self.record_with_id(all_records(), PREFIX + 'large')['name']), 20)
+
+    def ui_name_length(self, name):
+        units = name.encode('utf-16-le')
+        return sum(self.ui_character_width(units[i:i + 2]) for i in range(0, len(units), 2))
+
+    def ui_character_width(self, unit):
+        return 1 if unit[0] < 128 and unit[1] == 0 else 2
+
+    def record_with_id(self, records, room_id):
+        return next(record for record in records if record['play_session_id'] == room_id)
+
+    def room_ids(self, items):
+        return [item['room_id'] for item in items]
+
+    def session_ids(self, records):
+        return [record['play_session_id'] for record in records]
 
     async def test_list_includes_unstarted_record_without_settlements(self):
         room_id = PREFIX + 'empty'
         legacy = self.result(await self.request(f'/v10/texas_holdem/user/{SELF}/game_records'))
-        self.assertIn(room_id, [item['room_id'] for item in legacy['items']])
+        self.assertIn(room_id, self.room_ids(legacy['items']))
         v2 = self.result(await self.request(f'/v11/game_log/{SELF}/play_session_record/recent',
                                             'PUT', {'user_id': SELF}))
-        unstarted = next(record for record in v2['records'] if record['play_session_id'] == room_id)
+        unstarted = self.record_with_id(v2['records'], room_id)
         self.assertEqual(unstarted['all_round_count'], 0)
         settlements = self.result(await self.request('/v1/game_log/room/settlement', 'PUT',
                                                       {'room_ids': [room_id]}))
@@ -100,18 +112,18 @@ class RecordProxyTests(unittest.IsolatedAsyncioTestCase):
         first = self.result(await self.request(path))
         second = self.result(await self.request(path + '?next_page=' + first['next_page']))
         self.assertIsNone(second['next_page'])
-        ids = [item['room_id'] for item in first['items'] + second['items']]
-        self.assertEqual(ids, [record['play_session_id'] for record in all_records()])
+        ids = self.room_ids(first['items'] + second['items'])
+        self.assertEqual(ids, self.session_ids(all_records()))
         self.assertEqual(len(first['items']), 20)
         v2 = self.result(await self.request(f'/v11/game_log/{SELF}/play_session_record/recent',
                                             'PUT', {'user_id': SELF}))
-        self.assertEqual([record['play_session_id'] for record in v2['records']], ids)
+        self.assertEqual(self.session_ids(v2['records']), ids)
         self.assertEqual(len(set(ids)), 23)
         # 删除状态跨模式保留；旧版删除成功后分页应为 20 + 2 条。
         self.proxy.deleted = [PREFIX + 'club']
         first = self.result(await self.request(path))
         second = self.result(await self.request(path + '?next_page=' + first['next_page']))
-        remaining = [item['room_id'] for item in first['items'] + second['items']]
+        remaining = self.room_ids(first['items'] + second['items'])
         self.assertEqual(len(first['items']), 20)
         self.assertEqual(len(second['items']), 2)
         self.assertEqual(remaining, [room_id for room_id in ids if room_id != PREFIX + 'club'])

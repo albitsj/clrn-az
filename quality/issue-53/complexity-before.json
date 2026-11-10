@@ -1,0 +1,1306 @@
+[
+  {
+    "file": "visual/cases/club/mitmproxy/addon.py",
+    "line": 51,
+    "column": 1,
+    "function": "respond",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/club/mitmproxy/addon.py",
+    "line": 65,
+    "column": 5,
+    "function": "ClubRoomVisualProxy.__init__",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/club/mitmproxy/addon.py",
+    "line": 72,
+    "column": 5,
+    "function": "ClubRoomVisualProxy.status",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/club/mitmproxy/addon.py",
+    "line": 82,
+    "column": 5,
+    "function": "ClubRoomVisualProxy.control",
+    "complexity": 8,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/club/mitmproxy/addon.py",
+    "line": 103,
+    "column": 5,
+    "function": "ClubRoomVisualProxy.fixture",
+    "complexity": 10,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/club/mitmproxy/addon.py",
+    "line": 127,
+    "column": 5,
+    "function": "ClubRoomVisualProxy.request",
+    "complexity": 5,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/club/mitmproxy/test_addon.py",
+    "line": 13,
+    "column": 1,
+    "function": "make_flow",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/club/mitmproxy/test_addon.py",
+    "line": 28,
+    "column": 5,
+    "function": "ClubRoomVisualProxyTests.setUp",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/club/mitmproxy/test_addon.py",
+    "line": 33,
+    "column": 5,
+    "function": "ClubRoomVisualProxyTests.test_populated_room_responses",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/club/mitmproxy/test_addon.py",
+    "line": 61,
+    "column": 5,
+    "function": "ClubRoomVisualProxyTests.test_unrelated_requests_pass_through",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/club/mitmproxy/test_addon.py",
+    "line": 76,
+    "column": 5,
+    "function": "ClubRoomVisualProxyTests.test_control_requires_token",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/game-record/mitmproxy/addon.py",
+    "line": 21,
+    "column": 1,
+    "function": "respond",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/game-record/mitmproxy/addon.py",
+    "line": 33,
+    "column": 5,
+    "function": "GameRecordProxy.__init__",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/game-record/mitmproxy/addon.py",
+    "line": 47,
+    "column": 5,
+    "function": "GameRecordProxy.status",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/game-record/mitmproxy/addon.py",
+    "line": 52,
+    "column": 5,
+    "function": "GameRecordProxy.control",
+    "complexity": 18,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/game-record/mitmproxy/addon.py",
+    "line": 91,
+    "column": 5,
+    "function": "GameRecordProxy.fixture",
+    "complexity": 76,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/game-record/mitmproxy/addon.py",
+    "line": 171,
+    "column": 5,
+    "function": "GameRecordProxy.response",
+    "complexity": 9,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/game-record/mitmproxy/addon.py",
+    "line": 184,
+    "column": 5,
+    "function": "GameRecordProxy.request",
+    "complexity": 21,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/game-record/mitmproxy/data.py",
+    "line": 18,
+    "column": 1,
+    "function": "records",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/game-record/mitmproxy/data.py",
+    "line": 32,
+    "column": 1,
+    "function": "all_records",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/game-record/mitmproxy/data.py",
+    "line": 44,
+    "column": 1,
+    "function": "rooms",
+    "complexity": 8,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/game-record/mitmproxy/data.py",
+    "line": 65,
+    "column": 1,
+    "function": "settlements",
+    "complexity": 5,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/game-record/mitmproxy/data.py",
+    "line": 74,
+    "column": 1,
+    "function": "detail",
+    "complexity": 6,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/game-record/mitmproxy/data.py",
+    "line": 86,
+    "column": 1,
+    "function": "round_data",
+    "complexity": 13,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/game-record/mitmproxy/data.py",
+    "line": 110,
+    "column": 1,
+    "function": "replay",
+    "complexity": 6,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/game-record/mitmproxy/test_addon.py",
+    "line": 16,
+    "column": 1,
+    "function": "flow",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/game-record/mitmproxy/test_addon.py",
+    "line": 28,
+    "column": 5,
+    "function": "RecordProxyTests.setUp",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/game-record/mitmproxy/test_addon.py",
+    "line": 35,
+    "column": 5,
+    "function": "RecordProxyTests.request",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/game-record/mitmproxy/test_addon.py",
+    "line": 40,
+    "column": 5,
+    "function": "RecordProxyTests.result",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/game-record/mitmproxy/test_addon.py",
+    "line": 43,
+    "column": 5,
+    "function": "RecordProxyTests.test_room_names_respect_ui_creation_limit",
+    "complexity": 7,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/game-record/mitmproxy/test_addon.py",
+    "line": 53,
+    "column": 5,
+    "function": "RecordProxyTests.test_list_includes_unstarted_record_without_settlements",
+    "complexity": 4,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/game-record/mitmproxy/test_addon.py",
+    "line": 68,
+    "column": 5,
+    "function": "RecordProxyTests.test_other_users_hosts_and_methods_pass_through",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/game-record/mitmproxy/test_addon.py",
+    "line": 79,
+    "column": 5,
+    "function": "RecordProxyTests.test_mixed_unknown_rooms_and_profiles_pass_through",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/game-record/mitmproxy/test_addon.py",
+    "line": 86,
+    "column": 5,
+    "function": "RecordProxyTests.test_authenticated_control_validates_before_changing_state",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/game-record/mitmproxy/test_addon.py",
+    "line": 97,
+    "column": 5,
+    "function": "RecordProxyTests.test_pagination_has_no_missing_or_duplicate_records",
+    "complexity": 7,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/game-record/mitmproxy/test_addon.py",
+    "line": 119,
+    "column": 5,
+    "function": "RecordProxyTests.test_loading_gate_releases_without_sleep",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/game-record/mitmproxy/test_addon.py",
+    "line": 127,
+    "column": 5,
+    "function": "RecordProxyTests.test_delete_error_keeps_record_and_success_removes_it",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/game-record/mitmproxy/test_addon.py",
+    "line": 140,
+    "column": 5,
+    "function": "RecordProxyTests.test_v2_list_and_detail_faults_are_separate",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/game-record/mitmproxy/test_addon.py",
+    "line": 151,
+    "column": 5,
+    "function": "RecordProxyTests.test_current_profile_and_version_keep_real_fields_and_errors",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/texas-holdem/mitmproxy/addon.py",
+    "line": 22,
+    "column": 1,
+    "function": "respond",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/texas-holdem/mitmproxy/addon.py",
+    "line": 33,
+    "column": 5,
+    "function": "TexasVisualProxy.__init__",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/texas-holdem/mitmproxy/addon.py",
+    "line": 43,
+    "column": 5,
+    "function": "TexasVisualProxy.control",
+    "complexity": 19,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/texas-holdem/mitmproxy/addon.py",
+    "line": 86,
+    "column": 5,
+    "function": "TexasVisualProxy.websocket_message",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/texas-holdem/mitmproxy/addon.py",
+    "line": 90,
+    "column": 5,
+    "function": "TexasVisualProxy.websocket_end",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/texas-holdem/mitmproxy/addon.py",
+    "line": 93,
+    "column": 5,
+    "function": "TexasVisualProxy.response",
+    "complexity": 14,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/texas-holdem/mitmproxy/addon.py",
+    "line": 112,
+    "column": 5,
+    "function": "TexasVisualProxy.request",
+    "complexity": 23,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/texas-holdem/mitmproxy/game_log.py",
+    "line": 10,
+    "column": 1,
+    "function": "game",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/texas-holdem/mitmproxy/game_log.py",
+    "line": 31,
+    "column": 1,
+    "function": "fixture",
+    "complexity": 15,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/texas-holdem/mitmproxy/records_v2.py",
+    "line": 11,
+    "column": 5,
+    "function": "RecordsV2.__init__",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/texas-holdem/mitmproxy/records_v2.py",
+    "line": 14,
+    "column": 5,
+    "function": "RecordsV2.release",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/texas-holdem/mitmproxy/records_v2.py",
+    "line": 19,
+    "column": 5,
+    "function": "RecordsV2.configure",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/texas-holdem/mitmproxy/records_v2.py",
+    "line": 24,
+    "column": 5,
+    "function": "RecordsV2.response",
+    "complexity": 10,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/texas-holdem/mitmproxy/records_v2.py",
+    "line": 33,
+    "column": 5,
+    "function": "RecordsV2.fixture",
+    "complexity": 9,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/texas-holdem/mitmproxy/records_v2.py",
+    "line": 45,
+    "column": 1,
+    "function": "round_data",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/texas-holdem/mitmproxy/room_view.py",
+    "line": 9,
+    "column": 5,
+    "function": "RoomView.__init__",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/texas-holdem/mitmproxy/room_view.py",
+    "line": 14,
+    "column": 5,
+    "function": "RoomView.configure",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/texas-holdem/mitmproxy/room_view.py",
+    "line": 19,
+    "column": 5,
+    "function": "RoomView.response",
+    "complexity": 27,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/texas-holdem/mitmproxy/room_view.py",
+    "line": 54,
+    "column": 5,
+    "function": "RoomView.fixture",
+    "complexity": 7,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/texas-holdem/mitmproxy/test_addon.py",
+    "line": 14,
+    "column": 5,
+    "function": "TexasAddonTests.setUp",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/texas-holdem/mitmproxy/test_addon.py",
+    "line": 21,
+    "column": 5,
+    "function": "TexasAddonTests.request",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/texas-holdem/mitmproxy/test_addon.py",
+    "line": 27,
+    "column": 5,
+    "function": "TexasAddonTests.test_read_fixtures_do_not_hide_mutations_or_other_users",
+    "complexity": 4,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/texas-holdem/mitmproxy/test_addon.py",
+    "line": 50,
+    "column": 5,
+    "function": "TexasAddonTests.test_block_fixture_only_intercepts_replay_players_and_known_methods",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/texas-holdem/mitmproxy/test_addon.py",
+    "line": 59,
+    "column": 5,
+    "function": "TexasAddonTests.test_production_hosts_and_disabled_scenarios_always_pass_through",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/texas-holdem/mitmproxy/test_addon.py",
+    "line": 69,
+    "column": 5,
+    "function": "TexasAddonTests.test_malformed_or_unauthorized_control_cannot_change_replay",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/texas-holdem/mitmproxy/test_addon.py",
+    "line": 80,
+    "column": 5,
+    "function": "TexasAddonTests.test_new_record_version_control_is_authenticated_and_released",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/texas-holdem/mitmproxy/test_records_v2.py",
+    "line": 11,
+    "column": 5,
+    "function": "RecordsV2Tests.setUp",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/texas-holdem/mitmproxy/test_records_v2.py",
+    "line": 14,
+    "column": 5,
+    "function": "RecordsV2Tests.enter",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/texas-holdem/mitmproxy/test_records_v2.py",
+    "line": 20,
+    "column": 5,
+    "function": "RecordsV2Tests.test_version_is_opt_in_and_read_only",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/texas-holdem/mitmproxy/test_records_v2.py",
+    "line": 31,
+    "column": 5,
+    "function": "RecordsV2Tests.test_only_successful_enter_of_created_room_records_session",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/texas-holdem/mitmproxy/test_records_v2.py",
+    "line": 44,
+    "column": 5,
+    "function": "RecordsV2Tests.test_records_require_exact_user_session_and_round",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/texas-holdem/mitmproxy/test_room_view.py",
+    "line": 11,
+    "column": 5,
+    "function": "RoomViewTests.test_only_successful_creation_arms_exact_room_read",
+    "complexity": 5,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/texas-holdem/mitmproxy/test_room_view.py",
+    "line": 36,
+    "column": 5,
+    "function": "RoomViewTests.test_other_payments_failed_creations_and_second_rooms_cannot_arm_view",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/texas-holdem/mitmproxy/test_room_view.py",
+    "line": 41,
+    "column": 9,
+    "function": "RoomViewTests.test_other_payments_failed_creations_and_second_rooms_cannot_arm_view.created",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/texas-holdem/mitmproxy/test_room_view.py",
+    "line": 58,
+    "column": 5,
+    "function": "RoomViewTests.test_room_details_never_replace_known_self_with_unvalidated_creator",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/texas-holdem/mitmproxy/test_room_view.py",
+    "line": 69,
+    "column": 5,
+    "function": "RoomViewTests.test_guest_identity_only_changes_successful_read_of_created_room",
+    "complexity": 7,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/texas-holdem/mitmproxy/test_room_view.py",
+    "line": 87,
+    "column": 5,
+    "function": "RoomViewTests.test_logs_do_not_replace_other_room_or_user_records",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/texas-holdem/mitmproxy/test_texas_replay.py",
+    "line": 14,
+    "column": 1,
+    "function": "flow",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/texas-holdem/mitmproxy/test_texas_replay.py",
+    "line": 29,
+    "column": 1,
+    "function": "socket_flow",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/texas-holdem/mitmproxy/test_texas_replay.py",
+    "line": 35,
+    "column": 1,
+    "function": "message",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/texas-holdem/mitmproxy/test_texas_replay.py",
+    "line": 43,
+    "column": 5,
+    "function": "TexasReplayTests.setUp",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/texas-holdem/mitmproxy/test_texas_replay.py",
+    "line": 51,
+    "column": 5,
+    "function": "TexasReplayTests.test_publish_waits_for_successful_subscription_ack",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/texas-holdem/mitmproxy/test_texas_replay.py",
+    "line": 69,
+    "column": 5,
+    "function": "TexasReplayTests.test_server_unsubscribe_removes_confirmed_channel_and_preserves_frame",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/texas-holdem/mitmproxy/test_texas_replay.py",
+    "line": 78,
+    "column": 5,
+    "function": "TexasReplayTests.test_client_unsubscribe_cancels_pending_ack_and_socket_end_clears_pending",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/texas-holdem/mitmproxy/test_texas_replay.py",
+    "line": 91,
+    "column": 5,
+    "function": "TexasReplayTests.test_publish_goes_to_browser_and_requires_matching_live_room",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/texas-holdem/mitmproxy/test_texas_replay.py",
+    "line": 107,
+    "column": 5,
+    "function": "TexasReplayTests.test_混合消息保留房间在线请求并隔离牌局操作",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/texas-holdem/mitmproxy/test_texas_replay.py",
+    "line": 131,
+    "column": 5,
+    "function": "TexasReplayTests.test_server_push_filter_preserves_rpc_and_injected_messages",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/texas-holdem/mitmproxy/test_texas_replay.py",
+    "line": 142,
+    "column": 5,
+    "function": "TexasReplayTests.test_profiles_are_scoped_and_release_clears_fixtures",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/texas-holdem/mitmproxy/test_texas_replay.py",
+    "line": 152,
+    "column": 5,
+    "function": "TexasReplayTests.test_push_filter_preserves_other_streams_unsubscribe_and_malformed_results",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/texas-holdem/mitmproxy/test_texas_replay.py",
+    "line": 162,
+    "column": 5,
+    "function": "TexasReplayTests.test_unsubscribe_and_closed_sockets_cannot_receive_replay",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/texas-holdem/mitmproxy/test_texas_replay.py",
+    "line": 170,
+    "column": 5,
+    "function": "TexasReplayTests.test_created_room_isolated_before_subscription_and_release_restores_traffic",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/texas-holdem/mitmproxy/test_texas_replay.py",
+    "line": 188,
+    "column": 5,
+    "function": "TexasReplayTests.test_payment_rpc_matches_action_room_path_and_methods_and_returns_game_shape",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/texas-holdem/mitmproxy/test_texas_replay.py",
+    "line": 192,
+    "column": 9,
+    "function": "TexasReplayTests.test_payment_rpc_matches_action_room_path_and_methods_and_returns_game_shape.command",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/texas-holdem/mitmproxy/test_texas_replay.py",
+    "line": 206,
+    "column": 5,
+    "function": "TexasReplayTests.test_active_created_room_cannot_be_replaced_with_another_subscribed_room",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/texas-holdem/mitmproxy/test_texas_replay.py",
+    "line": 215,
+    "column": 5,
+    "function": "TexasReplayTests.test_rtc_responses_keep_chatroom_model_fields_and_do_not_target_other_rooms",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/texas-holdem/mitmproxy/test_texas_replay.py",
+    "line": 226,
+    "column": 5,
+    "function": "TexasReplayTests.test_scenario_changes_release_replay_and_control_requires_token",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/texas-holdem/mitmproxy/test_ui_states.py",
+    "line": 11,
+    "column": 5,
+    "function": "UIStateTests.setUp",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/texas-holdem/mitmproxy/test_ui_states.py",
+    "line": 17,
+    "column": 5,
+    "function": "UIStateTests.request",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/texas-holdem/mitmproxy/test_ui_states.py",
+    "line": 22,
+    "column": 5,
+    "function": "UIStateTests.control",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/texas-holdem/mitmproxy/test_ui_states.py",
+    "line": 27,
+    "column": 5,
+    "function": "UIStateTests.test_control_requires_authentication_room_and_valid_state",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/texas-holdem/mitmproxy/test_ui_states.py",
+    "line": 35,
+    "column": 5,
+    "function": "UIStateTests.test_application_rows_and_pagination_only_match_current_room",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/texas-holdem/mitmproxy/test_ui_states.py",
+    "line": 52,
+    "column": 5,
+    "function": "UIStateTests.test_selection_mutations_cannot_reach_other_rooms",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/texas-holdem/mitmproxy/test_ui_states.py",
+    "line": 64,
+    "column": 5,
+    "function": "UIStateTests.test_payment_isolation_matches_room_method_and_exact_action",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/texas-holdem/mitmproxy/test_ui_states.py",
+    "line": 76,
+    "column": 5,
+    "function": "UIStateTests.test_rpc_errors_are_injected_to_browser_and_reset_on_release",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/texas-holdem/mitmproxy/texas_replay.py",
+    "line": 13,
+    "column": 5,
+    "function": "TexasReplay.__init__",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/texas-holdem/mitmproxy/texas_replay.py",
+    "line": 22,
+    "column": 5,
+    "function": "TexasReplay.arm_created_room",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/texas-holdem/mitmproxy/texas_replay.py",
+    "line": 26,
+    "column": 5,
+    "function": "TexasReplay.publish",
+    "complexity": 14,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/texas-holdem/mitmproxy/texas_replay.py",
+    "line": 51,
+    "column": 5,
+    "function": "TexasReplay.release",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/texas-holdem/mitmproxy/texas_replay.py",
+    "line": 57,
+    "column": 5,
+    "function": "TexasReplay.is_replay_publication",
+    "complexity": 5,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/texas-holdem/mitmproxy/texas_replay.py",
+    "line": 65,
+    "column": 5,
+    "function": "TexasReplay.websocket_message",
+    "complexity": 53,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/texas-holdem/mitmproxy/texas_replay.py",
+    "line": 129,
+    "column": 5,
+    "function": "TexasReplay.websocket_end",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/texas-holdem/mitmproxy/texas_replay.py",
+    "line": 133,
+    "column": 5,
+    "function": "TexasReplay.is_replay_rpc",
+    "complexity": 16,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/texas-holdem/mitmproxy/texas_replay.py",
+    "line": 158,
+    "column": 5,
+    "function": "TexasReplay.rpc_result",
+    "complexity": 6,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/texas-holdem/mitmproxy/texas_replay.py",
+    "line": 174,
+    "column": 5,
+    "function": "TexasReplay.profile",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/texas-holdem/mitmproxy/texas_replay.py",
+    "line": 180,
+    "column": 5,
+    "function": "TexasReplay.http_fixture",
+    "complexity": 13,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/texas-holdem/mitmproxy/ui_states.py",
+    "line": 8,
+    "column": 5,
+    "function": "UIStates.__init__",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/texas-holdem/mitmproxy/ui_states.py",
+    "line": 11,
+    "column": 5,
+    "function": "UIStates.release",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/texas-holdem/mitmproxy/ui_states.py",
+    "line": 15,
+    "column": 5,
+    "function": "UIStates.configure",
+    "complexity": 5,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/texas-holdem/mitmproxy/ui_states.py",
+    "line": 24,
+    "column": 5,
+    "function": "UIStates.rpc_result",
+    "complexity": 7,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/texas-holdem/mitmproxy/ui_states.py",
+    "line": 34,
+    "column": 5,
+    "function": "UIStates.fixture",
+    "complexity": 16,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/zhajinhua/mitmproxy/addon.py",
+    "line": 19,
+    "column": 1,
+    "function": "respond",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/zhajinhua/mitmproxy/addon.py",
+    "line": 30,
+    "column": 5,
+    "function": "ZhajinhuaVisualProxy.__init__",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/zhajinhua/mitmproxy/addon.py",
+    "line": 38,
+    "column": 5,
+    "function": "ZhajinhuaVisualProxy.control",
+    "complexity": 15,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/zhajinhua/mitmproxy/addon.py",
+    "line": 72,
+    "column": 5,
+    "function": "ZhajinhuaVisualProxy.response",
+    "complexity": 20,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/zhajinhua/mitmproxy/addon.py",
+    "line": 97,
+    "column": 5,
+    "function": "ZhajinhuaVisualProxy.websocket_message",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/zhajinhua/mitmproxy/addon.py",
+    "line": 101,
+    "column": 5,
+    "function": "ZhajinhuaVisualProxy.websocket_end",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/zhajinhua/mitmproxy/addon.py",
+    "line": 104,
+    "column": 5,
+    "function": "ZhajinhuaVisualProxy.request",
+    "complexity": 11,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/zhajinhua/mitmproxy/test_addon.py",
+    "line": 13,
+    "column": 5,
+    "function": "ZhajinhuaAddonTests.setUp",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/zhajinhua/mitmproxy/test_addon.py",
+    "line": 18,
+    "column": 5,
+    "function": "ZhajinhuaAddonTests.creation",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/zhajinhua/mitmproxy/test_addon.py",
+    "line": 26,
+    "column": 5,
+    "function": "ZhajinhuaAddonTests.control",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/zhajinhua/mitmproxy/test_addon.py",
+    "line": 31,
+    "column": 5,
+    "function": "ZhajinhuaAddonTests.test_only_successful_zhajinhua_creation_owns_replay",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/zhajinhua/mitmproxy/test_addon.py",
+    "line": 43,
+    "column": 5,
+    "function": "ZhajinhuaAddonTests.test_replay_requires_created_room_and_authorized_control",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/zhajinhua/mitmproxy/test_addon.py",
+    "line": 58,
+    "column": 5,
+    "function": "ZhajinhuaAddonTests.test_http_fixtures_preserve_mutations_other_users_and_hosts",
+    "complexity": 3,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/zhajinhua/mitmproxy/test_addon.py",
+    "line": 75,
+    "column": 5,
+    "function": "ZhajinhuaAddonTests.test_current_user_is_real_and_mixed_profiles_only_add_virtual_opponents",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/zhajinhua/mitmproxy/test_zhajinhua_replay.py",
+    "line": 14,
+    "column": 1,
+    "function": "flow",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/zhajinhua/mitmproxy/test_zhajinhua_replay.py",
+    "line": 29,
+    "column": 1,
+    "function": "socket_flow",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/zhajinhua/mitmproxy/test_zhajinhua_replay.py",
+    "line": 35,
+    "column": 1,
+    "function": "message",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/zhajinhua/mitmproxy/test_zhajinhua_replay.py",
+    "line": 43,
+    "column": 5,
+    "function": "ZhajinhuaReplayTests.setUp",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/zhajinhua/mitmproxy/test_zhajinhua_replay.py",
+    "line": 51,
+    "column": 5,
+    "function": "ZhajinhuaReplayTests.test_operation_reward_requires_bound_room_and_resets_on_release",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/zhajinhua/mitmproxy/test_zhajinhua_replay.py",
+    "line": 71,
+    "column": 5,
+    "function": "ZhajinhuaReplayTests.test_publish_waits_for_successful_subscription_ack",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/zhajinhua/mitmproxy/test_zhajinhua_replay.py",
+    "line": 89,
+    "column": 5,
+    "function": "ZhajinhuaReplayTests.test_server_unsubscribe_removes_confirmed_channel_and_preserves_frame",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/zhajinhua/mitmproxy/test_zhajinhua_replay.py",
+    "line": 98,
+    "column": 5,
+    "function": "ZhajinhuaReplayTests.test_client_unsubscribe_cancels_pending_ack_and_socket_end_clears_pending",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/zhajinhua/mitmproxy/test_zhajinhua_replay.py",
+    "line": 111,
+    "column": 5,
+    "function": "ZhajinhuaReplayTests.test_publish_goes_to_browser_and_requires_matching_live_room",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/zhajinhua/mitmproxy/test_zhajinhua_replay.py",
+    "line": 127,
+    "column": 5,
+    "function": "ZhajinhuaReplayTests.test_mixed_batch_keeps_ping_and_unrelated_rpc_and_blocks_only_replay_room",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/zhajinhua/mitmproxy/test_zhajinhua_replay.py",
+    "line": 147,
+    "column": 5,
+    "function": "ZhajinhuaReplayTests.test_server_push_filter_preserves_rpc_and_injected_messages",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/zhajinhua/mitmproxy/test_zhajinhua_replay.py",
+    "line": 158,
+    "column": 5,
+    "function": "ZhajinhuaReplayTests.test_固定对局隔离本房间两个游戏频道并保留其他消息",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/zhajinhua/mitmproxy/test_zhajinhua_replay.py",
+    "line": 176,
+    "column": 5,
+    "function": "ZhajinhuaReplayTests.test_profiles_are_scoped_and_release_clears_fixtures",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/zhajinhua/mitmproxy/test_zhajinhua_replay.py",
+    "line": 186,
+    "column": 5,
+    "function": "ZhajinhuaReplayTests.test_push_filter_preserves_other_streams_unsubscribe_and_malformed_results",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/zhajinhua/mitmproxy/test_zhajinhua_replay.py",
+    "line": 196,
+    "column": 5,
+    "function": "ZhajinhuaReplayTests.test_unsubscribe_and_closed_sockets_cannot_receive_replay",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/zhajinhua/mitmproxy/test_zhajinhua_replay.py",
+    "line": 204,
+    "column": 5,
+    "function": "ZhajinhuaReplayTests.test_pool_socket_blocks_owned_room_after_activation_and_release_restores_traffic",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/zhajinhua/mitmproxy/test_zhajinhua_replay.py",
+    "line": 228,
+    "column": 5,
+    "function": "ZhajinhuaReplayTests.test_active_replay_cannot_be_replaced_with_another_subscribed_room",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/zhajinhua/mitmproxy/test_zhajinhua_replay.py",
+    "line": 238,
+    "column": 5,
+    "function": "ZhajinhuaReplayTests.test_rtc_responses_keep_chatroom_model_fields_and_do_not_target_other_rooms",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/zhajinhua/mitmproxy/test_zhajinhua_replay.py",
+    "line": 250,
+    "column": 5,
+    "function": "ZhajinhuaReplayTests.test_scenario_changes_release_replay_and_control_requires_token",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/zhajinhua/mitmproxy/zhajinhua_replay.py",
+    "line": 12,
+    "column": 5,
+    "function": "ZhajinhuaReplay.__init__",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/zhajinhua/mitmproxy/zhajinhua_replay.py",
+    "line": 21,
+    "column": 5,
+    "function": "ZhajinhuaReplay.publish",
+    "complexity": 14,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/zhajinhua/mitmproxy/zhajinhua_replay.py",
+    "line": 46,
+    "column": 5,
+    "function": "ZhajinhuaReplay.release",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/zhajinhua/mitmproxy/zhajinhua_replay.py",
+    "line": 51,
+    "column": 5,
+    "function": "ZhajinhuaReplay.set_operation_reward",
+    "complexity": 4,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/zhajinhua/mitmproxy/zhajinhua_replay.py",
+    "line": 56,
+    "column": 5,
+    "function": "ZhajinhuaReplay.is_replay_publication",
+    "complexity": 6,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/zhajinhua/mitmproxy/zhajinhua_replay.py",
+    "line": 66,
+    "column": 5,
+    "function": "ZhajinhuaReplay.websocket_message",
+    "complexity": 50,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/zhajinhua/mitmproxy/zhajinhua_replay.py",
+    "line": 129,
+    "column": 5,
+    "function": "ZhajinhuaReplay.websocket_end",
+    "complexity": 1,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/zhajinhua/mitmproxy/zhajinhua_replay.py",
+    "line": 133,
+    "column": 5,
+    "function": "ZhajinhuaReplay.is_replay_rpc",
+    "complexity": 8,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/zhajinhua/mitmproxy/zhajinhua_replay.py",
+    "line": 146,
+    "column": 5,
+    "function": "ZhajinhuaReplay.rpc_result",
+    "complexity": 5,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/zhajinhua/mitmproxy/zhajinhua_replay.py",
+    "line": 158,
+    "column": 5,
+    "function": "ZhajinhuaReplay.profile",
+    "complexity": 2,
+    "limit": 3
+  },
+  {
+    "file": "visual/cases/zhajinhua/mitmproxy/zhajinhua_replay.py",
+    "line": 164,
+    "column": 5,
+    "function": "ZhajinhuaReplay.http_fixture",
+    "complexity": 12,
+    "limit": 3
+  }
+]
