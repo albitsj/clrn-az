@@ -69,7 +69,9 @@ export function androidAccountMatrix(runId, selectedGroup = 'all', selectedLocal
           label: `${group} / ${locale}${shard === 'all' ? '' : ` / ${shard}`}`,
           account: allocateCiAccount(runId, index === 0
             ? groups.indexOf(group) * 3 + locales.indexOf(locale) : shardOffsets[key] + index - 1) }));
-      })) };
+      })).filter(row => process.env.CI_ANDROID_FILTER !== 'launch_branding|signed_in_texas_pre_game_first|signed_in_zhajinhua_pre_game_second'
+        || ['guest / zh-Hant', 'texas / en / pregame-first',
+          'zhajinhua / en / pregame-second'].includes(row.label)) };
 }
 
 /**
