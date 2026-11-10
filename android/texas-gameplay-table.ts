@@ -1,7 +1,7 @@
 import { expect } from '@playwright/test';
 import { REPLAY_PLAYER_IDS, type Street } from '../e2e/helpers/game-scenes';
 import { captureNativeTransition, captureTransientTransition } from './animation-transition';
-import { adb } from './device';
+
 import {
   flattenNodes, gameConnected,
   gameGone,
@@ -65,7 +65,7 @@ export async function captureOwnCountdown(context: TexasContext, street: Street)
   }
 }
 
-/** 真实拖动必须改变加注数值。
+/** 通过原生驱动完成拖动，90 个五毫秒步骤保持原 450ms 移动时长。
  * @param context - 当前真实房间、设备及报告。
  */
 export async function captureRaiseSlider(context: TexasContext): Promise<void> {
@@ -75,7 +75,7 @@ export async function captureRaiseSlider(context: TexasContext): Promise<void> {
     const initialRaise = (await gameReady(device, 'raise-bet-display-text')).text;
     await captureNativeTransition(device, 'texas-raise-slider', animationInfo,
       { x: 285, y: 245, width: 295, height: 630 },
-      () => adb('shell', 'input', 'swipe', '333', '814', '333', '530', '450'),
+      () => device.input.drag({ x: 333, y: 814 }, { x: 333, y: 530 }, 90),
       [{
         x: 285, y: 725, width: 160, height: 35,
         reason: '加注滑块后面的牌局倒计时独立跳秒'
