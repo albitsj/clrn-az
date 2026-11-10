@@ -57,23 +57,21 @@ function installCertificate(directory: string): void {
   adb('shell', 'sh', '/data/local/tmp/clrn-trust-proxy.sh', `/data/local/tmp/${hash}.0`);
 }
 
-/** 先探测原有主机回环映射，失败时才使用本轮反向转发。
+/** 通过本轮独占反向转发连接代理，避免把初次桥接探测当成整个会话的路由保证。
  * @param port - 本轮独占端口。
  */
-function connectProxy(port: string): string | undefined {
-  try { adb('shell', 'toybox', 'nc', '-z', '-w', '3', '10.0.2.2', port); }
-  catch { return configureReverse(port); }
-  adb('shell', 'settings', 'put', 'global', 'http_proxy', `10.0.2.2:${port}`);
-  return undefined;
-}
+function connectProxy(port: string): string { return configureReverse(port); }
 
 /** 反向转发设置失败时立即清理该端口。
  * @param port - 本轮独占端口。
  */
 function configureReverse(port: string): string {
-  console.log('ANDROID > 模拟器无法直连本轮代理，改用专用反向转发');
+  console.log('ANDROID > 为本轮代理建立专用反向转发');
   adb('reverse', `tcp:${port}`, `tcp:${port}`);
-  try { adb('shell', 'settings', 'put', 'global', 'http_proxy', `127.0.0.1:${port}`); }
+  try {
+    adb('shell', 'toybox', 'nc', '-z', '-w', '3', '127.0.0.1', port);
+    adb('shell', 'settings', 'put', 'global', 'http_proxy', `127.0.0.1:${port}`);
+  }
   catch (error) { rollbackReverse(port, error); }
   return port;
 }
