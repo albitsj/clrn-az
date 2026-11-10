@@ -176,7 +176,11 @@ class NativeReplayTests(unittest.IsolatedAsyncioTestCase):
             preflight = flow(health.request.pretty_url, 'OPTIONS')
             await addon.request(preflight)
             self.assertIsNone(preflight.response)
-            pending = asyncio.create_task(addon.request(health))
+            await addon.request(health)
+            self.assertIsNone(health.response, '真实请求应立即交给上游，不伪造健康结果')
+            health.response = http.Response.make(503, b'original-upstream-error')
+            original = health.response
+            pending = asyncio.create_task(addon.responseheaders(health))
             try:
                 await asyncio.sleep(0)
                 self.assertEqual(addon.launch.requested, 1)
@@ -185,7 +189,8 @@ class NativeReplayTests(unittest.IsolatedAsyncioTestCase):
                 release = flow(hold.request.pretty_url, 'POST', b'{"hold":false}', 'test-token')
                 await addon.request(release)
                 await asyncio.wait_for(pending, 1)
-            self.assertIsNone(health.response, '释放后健康请求仍须访问上游')
+            self.assertIs(health.response, original)
+            self.assertEqual((health.response.status_code, health.response.content), (503, b'original-upstream-error'))
 
 
 if __name__ == '__main__':
