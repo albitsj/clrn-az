@@ -29,6 +29,7 @@ function caretScene(options = {}) {
      */ info: async selector => {
       assert.equal(selector.res, resource);
       events.push('info');
+      if (options.noInput && selector.focused) return undefined;
       return { ...input, focused: ++checks > 1 };
     },
     /** 键盘已经显示。
@@ -92,5 +93,15 @@ test('没有真实闪烁时仍失败，保留两张原图但不记录输入文�
 test('光标诊断写入失败不覆盖原始检测错误，也不再次输入', async () => {
   const scene = caretScene({ noBlink: true, attachFailure: true });
   await assert.rejects(scene.run(), /应检测到真实光标/);
+  assert.equal(scene.events.filter(event => event === 'fill').length, 1);
+});
+
+test('采样前失去焦点仍保留零次采样证据并抛出原检测错误', async () => {
+  const scene = caretScene({ noInput: true });
+  await assert.rejects(scene.run(), /应检测到真实光标/);
+  assert.deepEqual(scene.attachments.map(([name]) => name), [`${resource}-caret-state`]);
+  const state = JSON.parse(scene.attachments[0][1].body);
+  assert.deepEqual(state.samples, []);
+  assert.equal(JSON.stringify(state).includes(text), false);
   assert.equal(scene.events.filter(event => event === 'fill').length, 1);
 });

@@ -7,7 +7,7 @@ import { focusedCaretMask, type CaretSample } from './screenshot';
  * @param device - 原生设备。
  * @param resource - 当前唯一的输入框标记。
  * @param text - 本用例的固定输入。
- * @param info - 英文失败时保存实际采样帧。
+ * @param info - 各语言失败时保存实际采样帧。
  */
 export async function gameInputCaret(device: AndroidDevice, resource: string, text: string, info?: TestInfo) {
   await gameTap(device, resource);
@@ -15,12 +15,16 @@ export async function gameInputCaret(device: AndroidDevice, resource: string, te
   await inputReady(device, resource, text);
   await gameTapTarget(device, resource);
   let last: CaretSample | undefined;
+  const samples: { at: number; bounds: CaretSample['input']['bounds']; focused: boolean }[] = [];
   try {
-    const caret = await focusedCaretMask(device, { res: resource, focused: true }, sample => { last = sample; });
+    const caret = await focusedCaretMask(device, { res: resource, focused: true }, sample => {
+      last = sample;
+      samples.push({ at: Date.now(), bounds: { ...sample.input.bounds }, focused: sample.input.focused });
+    });
     expect(caret, '键盘可见时应检测到真实光标，不能遮掉整行文字').toBeDefined();
     return caret!;
   } catch (error) {
-    await preserveCaretFailure(info, resource, last).catch(() => undefined);
+    await preserveCaretFailure(info, resource, last, samples).catch(() => undefined);
     throw error;
   }
 }
@@ -43,14 +47,16 @@ async function inputReady(device: AndroidDevice, resource: string, text: string)
  * @param info - 当前报告。
  * @param resource - 固定输入框标记。
  * @param sample - 最后一组真实采样。
+ * @param samples - 原有各次采样的脱敏几何状态。
  */
-async function preserveCaretFailure(info: TestInfo | undefined, resource: string, sample: CaretSample | undefined): Promise<void> {
+async function preserveCaretFailure(info: TestInfo | undefined, resource: string, sample: CaretSample | undefined,
+  samples: object[]): Promise<void> {
   if (!info) return;
-  if (!sample) return;
   await info.attach(`${resource}-caret-state`, {
-    body: JSON.stringify({ at: Date.now(), bounds: sample.input.bounds, focused: sample.input.focused }),
+    body: JSON.stringify({ at: Date.now(), ...samples.at(-1), samples }),
     contentType: 'application/json',
   }).catch(() => undefined);
+  if (!sample) return;
   await info.attach(`${resource}-caret-before`, { body: sample.before, contentType: 'image/png' }).catch(() => undefined);
   await info.attach(`${resource}-caret-after`, { body: sample.after, contentType: 'image/png' }).catch(() => undefined);
 }

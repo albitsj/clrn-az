@@ -1,7 +1,7 @@
 import { prepareSignedInAnimation } from './support/lifecycle';
 import { closeDevice } from './support/lifecycle';
 import { englishGroup } from './support/selection';
-import { expect, test } from '@playwright/test';
+import { expect, test, type TestInfo } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import type { AndroidDevice } from 'playwright';
 import { adb, launchApplication } from '../device';
@@ -15,6 +15,8 @@ import { captureMovingKeyframes } from '../loop-keyframes';
 import { waitAbsent } from '../native-state';
 import { gameReady, gameScreenshot } from '../game-controls';
 import { motionParts, samePixels } from '../motion-regions';
+import { preserveAnimationFailure } from '../animation-diagnostics';
+import { preserveRenderStatistics } from '../render-diagnostics';
 
 test('all three native slot reels and reward types animate from real spin responses', async ({}, testInfo) => {
   test.skip(!englishGroup('social'), '老虎机动画只在英文社交任务采集一次');
@@ -70,8 +72,7 @@ test('all three native slot reels and reward types animate from real spin respon
       const pressClose = () => adb('shell', 'input', 'tap',
         String(Math.round(close.bounds.x + close.bounds.width / 2)),
         String(Math.round(close.bounds.y + close.bounds.height / 2)));
-      await captureNativeTransition(device, 'slot-popup-exit', testInfo,
-        { x: 0, y: 500, width: 720, height: 680 }, pressClose, [], [], 0, 'videoFrames');
+      await captureSlotExit(device, testInfo, pressClose);
       await waitAbsent(device, { res: 'slot-machine-view' });
       const bannerAgain = await device.info({ res: 'slot-banner' });
       await adb('shell', 'input', 'tap',
@@ -118,3 +119,20 @@ test('all three native slot reels and reward types animate from real spin respon
     } finally { await closeDevice(device); }
   }, 'slot');
 });
+
+/** 退场失败后保留渲染取证，采样参数、断言和原异常保持不变。
+ * @param device - 当前原生设备。
+ * @param info - 当前尝试报告。
+ * @param trigger - 只执行一次的真实关闭操作。
+ */
+async function captureSlotExit(device: AndroidDevice, info: TestInfo, trigger: () => unknown): Promise<void> {
+  const startedAt = Date.now();
+  try {
+    await captureNativeTransition(device, 'slot-popup-exit', info,
+      { x: 0, y: 500, width: 720, height: 680 }, trigger, [], [], 0, 'videoFrames');
+  } catch (error) {
+    await preserveAnimationFailure('slot-popup-exit', startedAt, info).catch(() => undefined);
+    await preserveRenderStatistics('slot-popup-exit', info).catch(() => undefined);
+    throw error;
+  }
+}

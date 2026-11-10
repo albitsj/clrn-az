@@ -84,6 +84,8 @@ test('渲染诊断只保留数字，设备读取与附件失败都不抛出', as
     throw new Error('secret-report-payload');
   } };
   await preserveRenderStatistics('texas-holdem-voice-enter', info);
+  await preserveRenderStatistics('slot-popup-exit', info);
   failRead = true;
   await preserveRenderStatistics('texas-holdem-voice-enter', info);
+  await preserveRenderStatistics('slot-popup-exit', info);
 });
