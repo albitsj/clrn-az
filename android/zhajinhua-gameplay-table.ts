@@ -172,6 +172,11 @@ export async function captureOpponentAndSettlement(context: ZhajinhuaContext): P
   const showdown = { scene: 'showdown' };
   const settlement = { scene: 'settlement' };
   await gameTap(device, 'zhajinhua-cancel-challenge-choosing');
+  if (animationInfo) {
+    // 先核对真实取消，再重建下一阶段；离线像素比较可能耗尽上一回合的 120 秒。
+    await gameGone(device, 'challenge_player_selector');
+    await send(restoreTable(false, true));
+  }
   await gameTap(device, 'zhajinhua-shortcut-raise-first');
   await send(restoreTable(true, true));
   await gameReady(device, `zhajinhua-player-container-${PLAYER_IDS[0]}-operating`);
