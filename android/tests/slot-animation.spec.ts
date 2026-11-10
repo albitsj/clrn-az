@@ -69,9 +69,8 @@ test('all three native slot reels and reward types animate from real spin respon
       expect(status.spins, '三种奖励必须分别由真实旋转 RPC 触发').toBe(3);
       const close = await gameReady(device, 'close-button');
       /** 正常关闭老虎机，采集面板退场。能量不足会自动关闭面板，无法再点击该按钮。 */
-      const pressClose = () => adb('shell', 'input', 'tap',
-        String(Math.round(close.bounds.x + close.bounds.width / 2)),
-        String(Math.round(close.bounds.y + close.bounds.height / 2)));
+      const pressClose = () => device!.shell(`input tap ${Math.round(close.bounds.x + close.bounds.width / 2)} `
+        + `${Math.round(close.bounds.y + close.bounds.height / 2)}`);
       await captureSlotExit(device, testInfo, pressClose);
       await waitAbsent(device, { res: 'slot-machine-view' });
       const bannerAgain = await device.info({ res: 'slot-banner' });

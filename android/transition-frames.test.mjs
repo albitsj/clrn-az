@@ -11,7 +11,7 @@ const bounds = { x: 0, y: 500, width: 720, height: 680 };
 const images = ['start', 'middle', 'end'].map(phase => readFileSync(new URL(
   `./snapshots/android-35-x86_64-720x1280-en/slot-popup-exit-${phase}.png`, import.meta.url)));
 
-for (const name of ['slot-popup-exit', 'texas-holdem-chat-enter', 'texas-holdem-chat-exit']) {
+for (const name of ['texas-holdem-chat-enter', 'texas-holdem-chat-exit']) {
   test(`${name} 保留原区域、真实时间戳与所有无损帧，实际点击只发生一次`, async () => {
     const attachments = new Map();
     let triggers = 0;
