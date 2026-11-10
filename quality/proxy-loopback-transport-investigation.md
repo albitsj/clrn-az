@@ -16,4 +16,5 @@
 
 `node --import tsx --test android/proxy.test.mjs`：10 项通过，包含反向转发 TCP 探测失败及创建失败的负向验证；typecheck、定向 ESLint、git diff 检查通过。
 
-模拟器五次启动复现和最终全量 Master CI 尚待执行；本地命令桩不能证明真实 Android 网络传输已恢复。
+真实运行 42764115228 / attempt 1，诊断 HEAD 4f9f94c6399cf07d7ebce4092d187f4360da3e41：五次启动全部 retry 0 passed、无 flaky。报告 artifact 13741995578，SHA256 9cf3b49aff64559974bd2bacb473a40e47d323f0988c7f890779cc74a203ec61，运行身份、摘要、CRC 及正式 App 7a24d8c / build 300003601 均已核验。
+诊断只添加五次重复；生产只合入干净候选 3933b44，重复参数不得合入。最终同步新正式包后的完整 PR 及 master CI 仍须验证；五次成功不能排除所有远端故障。
