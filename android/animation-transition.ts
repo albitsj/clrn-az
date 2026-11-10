@@ -10,8 +10,8 @@ import { motionParts, samePixels } from './motion-regions';
 import { maskScreenshot, type ScreenshotBounds, type ScreenshotMask } from './screenshot';
 import { recordNativeVideoFrames, type AnimationRegion } from './video-frames';
 import { recordTransitionFrames, requestTransitionFrames, cropTransitionFrame } from './transition-frames';
-import { alignedVideoDistance, localMotionDistance,
-  misplacedVideoFrame, preservesVideoColumns, videoThumbnail } from './video-motion';
+import { alignedVideoDistance, misplacedVideoFrame, preservesVideoColumns, videoThumbnail } from './video-motion';
+import { preservesLocalPhase, reviewedVideoReference } from './video-phase-constraints';
 
 type NativeFrame = { capturedAt: number; png: string };
 /**
@@ -79,9 +79,9 @@ export function assertReviewedVideoMiddle(before: Buffer, after: Buffer,
   expect(candidates.length, '必须采到起点和终点之间的真实动画帧').toBeGreaterThan(0);
   const total = frameColorDistance(before, after);
   const endpoints = [videoThumbnail(before), videoThumbnail(after)];
-  const references = anchors.map(anchor => ({ start: frameColorDistance(before, anchor) / total,
-    end: frameColorDistance(after, anchor) / total,
-    thumbnail: videoThumbnail(anchor), localMotion: localMotionDistance(before, anchor) }));
+  const references = anchors.map(anchor => reviewedVideoReference(
+    before, after, anchor, total, frameColorDistance,
+  ));
   const distances = candidates.flatMap(({ frame, progress, remaining }) => {
     const actual = videoThumbnail(frame);
     return references.map(reference => {
@@ -93,7 +93,7 @@ export function assertReviewedVideoMiddle(before: Buffer, after: Buffer,
       // 镜像与横向调整仅用于错位反证；首尾不增加可接受的中途参考。
       if (misplacedVideoFrame(actual, reference.thumbnail, distance, endpoints)) return Infinity;
       // A global flash may have the same colours and mean distance as a sliding panel.
-      if (localMotionDistance(before, frame) < Math.max(2.5, reference.localMotion * 0.15)) return Infinity;
+      if (!preservesLocalPhase(before, frame, endpoints[1], actual, reference)) return Infinity;
       return distance;
     });
   });

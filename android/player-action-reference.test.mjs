@@ -11,22 +11,15 @@ const root = fileURLToPath(new URL('../', import.meta.url));
 const snapshots = path.join(root, 'android/snapshots/android-35-x86_64-720x1280-en');
 const actions = ['call', 'raise', 'check', 'fold'];
 
-/** 为 check 构造有明确像素预期的半透明采样输入；其他相位复用原图。
- * check 的正式 middle 是极早相位，单帧不足以代表完整录屏的候选帧。
- * 此合成输入仅测试采集控制流，不冒充真实录像或正式基准。
+/** 采集流程使用原始动作相位，check 使用已有真实录像中的可见中间帧。
+ * 正式 check middle 是极早相位，不足以代表完整录像中的候选；整图首尾混合也不是独立前景运动。
+ * 此处只生成临时测试快照，不修改正式基准或原始录像。
  * @param action - 当前玩家动作。
  */
 function phases(action) {
-  const images = ['start', 'middle', 'end'].map(phase =>
-    readFileSync(path.join(snapshots, `texas-player-action-${action}-${phase}.png`)));
-  if (action === 'check') {
-    const before = PNG.sync.read(images[0]), after = PNG.sync.read(images[2]);
-    for (let offset = 0; offset < before.data.length; offset++) {
-      before.data[offset] = Math.round((before.data[offset] + after.data[offset]) / 2);
-    }
-    images[1] = PNG.sync.write(before);
-  }
-  return images;
+  return ['start', 'middle', 'end'].map(phase => readFileSync(action === 'check' && phase === 'middle'
+    ? path.join(root, 'android/fixtures/player-action/check-middle.png')
+    : path.join(snapshots, `texas-player-action-${action}-${phase}.png`)));
 }
 
 /** 在真实 Playwright 报告/快照上下文中执行生产准备和完整录屏比较。

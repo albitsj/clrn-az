@@ -1,0 +1,44 @@
+{
+  "run": 42807488339,
+  "attempt": 1,
+  "head": "11709b747c6e55cda72d22a474b8d48859d1886d",
+  "artifact": 13764120269,
+  "artifactSha256": "1b3b183a7e167d823922e578a6d59cd829e0ed32fd22d02c1b83fcaa83e12d32",
+  "app": "dd1a99f335a66a33cb0ad1f0b3c3841621672eab",
+  "build": 300003801,
+  "worker": 2,
+  "retry": 0,
+  "name": "texas-holdem-card-rank-exit",
+  "images": {
+    "before.png": {
+      "sha256": "6542ab0c44c34cb415cebaaf017aeb6cc911b03903e4242366c3e67b31f3f633",
+      "source": "data/e35e403f99f00ee6b3b3a17fa9b2e6656d8aaeaa.png",
+      "attachment": "texas-holdem-card-rank-exit-start"
+    },
+    "after.png": {
+      "sha256": "fa393be97961597c8867f83d8c5993ca8d84aa5d3c365b4d1f3efc015b3f24ae",
+      "source": "data/52969c93e51d0df2e60c24e612ddc82dadb58d87.png",
+      "attachment": "texas-holdem-card-rank-exit-end"
+    },
+    "recorded-first.png": {
+      "sha256": "dec120903d1409961d98b0c77589e9ad31da8c2e0a45ffb77ab504f65c86b1cb",
+      "source": "data/ecc8977cd8efd507d63b3e0e0b6afca8dca67df0.png",
+      "attachment": "texas-holdem-card-rank-exit-native-frame-0000.png"
+    },
+    "recorded-penultimate.png": {
+      "sha256": "3a9626ac733b250ccf116e78eca686eaeaa504de4eef87e6171eba23d40bfa4d",
+      "source": "data/3015fb98baaa2887799803d1997709f3281a0d25.png",
+      "attachment": "texas-holdem-card-rank-exit-native-frame-0022.png"
+    },
+    "recorded-last.png": {
+      "sha256": "3a9626ac733b250ccf116e78eca686eaeaa504de4eef87e6171eba23d40bfa4d",
+      "source": "data/3015fb98baaa2887799803d1997709f3281a0d25.png",
+      "attachment": "texas-holdem-card-rank-exit-native-frame-0023.png"
+    },
+    "backdrop-only.png": {
+      "sha256": "1a95420f286481f1fcd02d6006a024b0c0ba1b1dc591f4eafdf89f98fcf744b2",
+      "source": "data/1cbdcf6f3ea09bbbd1ce6bed14d4e1a150c0c2c6.png",
+      "attachment": "texas-holdem-card-rank-exit-native-frame-0003.png"
+    }
+  }
+}
