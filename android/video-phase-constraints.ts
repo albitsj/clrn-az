@@ -37,7 +37,8 @@ export function foregroundMotion(endpoint: VideoThumbnail, frame: VideoThumbnail
 export function preservesLocalPhase(before: Buffer, frame: Buffer, endpoint: VideoThumbnail, actual: VideoThumbnail,
   reference: { localMotion: number; foregroundMotion: number }): boolean {
   return localMotionDistance(before, frame) >= Math.max(2.5, reference.localMotion * 0.15)
-    && foregroundMotion(endpoint, actual) >= Math.max(2.5, reference.foregroundMotion * 0.15);
+    && foregroundMotion(endpoint, actual) >= Math.min(reference.foregroundMotion,
+      Math.max(2.5, reference.foregroundMotion * 0.15));
 }
 
 /** 原生首尾只用于运动约束，不增加可接受的中途参考。
