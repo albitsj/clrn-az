@@ -11,4 +11,3 @@ export async function closeGamePicker(device: AndroidDevice): Promise<void> {
   adb('shell', 'input', 'tap', '10', String(Math.max(30, Math.round(bounds.y - 100))));
   await waitAbsent(device, { res: 'select-game-category-text' });
 }
-

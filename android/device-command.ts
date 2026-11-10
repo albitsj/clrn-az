@@ -12,4 +12,3 @@ export function adb(...argumentsList: string[]): string {
   if (!/^emulator-\d+$/.test(serial)) throw new Error('必须通过 ANDROID_SERIAL 指定专用模拟器，例如 emulator-5554。');
   return execFileSync('adb', ['-s', serial, ...argumentsList], { encoding: 'utf8', timeout: 120_000 });
 }
-

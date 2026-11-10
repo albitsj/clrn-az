@@ -30,4 +30,3 @@ export async function tap(device: AndroidDevice, identifier: string): Promise<vo
     await device.input.tap({ x: bounds.x + bounds.width / 2, y: bounds.y + bounds.height / 2 });
   }
 }
-

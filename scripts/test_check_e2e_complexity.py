@@ -83,6 +83,14 @@ class MeasurementTests(unittest.TestCase):
 
 
 class GateTests(unittest.TestCase):
+    gate = gate
+    support = gate.SUPPORT
+    checker = 'scripts/check_e2e_complexity.py'
+    checker_dependencies = ()
+    entry = 'lint:python:e2e'
+    empty_message = 'Empty E2E function scan'
+    expected_rows = len(gate.REQUIRED) + len(gate.TOOLS)
+
     def setUp(self):
         directory = tempfile.TemporaryDirectory()
         self.addCleanup(directory.cleanup)
@@ -94,28 +102,28 @@ class GateTests(unittest.TestCase):
         target.write_text(source, encoding='utf-8')
 
     def populate(self, source='def probe():\n    return 1\n'):
-        for name in gate.REQUIRED:
-            self.write(gate.SUPPORT / f'{name}.py', source)
-        for file in gate.TOOLS:
+        for name in self.gate.REQUIRED:
+            self.write(self.support / f'{name}.py', source)
+        for file in self.gate.TOOLS:
             self.write(file, source)
 
     def run_gate(self, *flags):
-        return subprocess.run([sys.executable, *flags, str(gate.ROOT / 'scripts/check_e2e_complexity.py'),
+        return subprocess.run([sys.executable, *flags, str(self.gate.ROOT / self.checker),
                                '--root', str(self.root)], capture_output=True, text=True, check=False)
 
     def test_cli_accepts_boundary_and_rejects_overlimit(self):
         self.populate(branches(3))
         self.assertEqual(self.run_gate().returncode, 0)
-        self.write(gate.SUPPORT / 'replay_scenes.py', branches(4))
+        self.write(self.support / 'replay_scenes.py', branches(4))
         result = self.run_gate()
         self.assertEqual(result.returncode, 1)
         self.assertIn('complexity 4 > 3', result.stderr)
 
     def test_cli_tool_boundary(self):
         self.populate()
-        self.write('scripts/check_e2e_complexity.py', branches(6))
+        self.write(self.checker, branches(6))
         self.assertEqual(self.run_gate().returncode, 0)
-        self.write('scripts/check_e2e_complexity.py', branches(7))
+        self.write(self.checker, branches(7))
         result = self.run_gate()
         self.assertEqual(result.returncode, 1)
         self.assertIn('complexity 7 > 6', result.stderr)
@@ -123,7 +131,7 @@ class GateTests(unittest.TestCase):
     def test_adjacent_and_nested_helpers_inherit_test_limit(self):
         self.populate()
         for file in ('helper.py', 'extracted/callback.py'):
-            self.write(gate.SUPPORT / file, branches(4))
+            self.write(self.support / file, branches(4))
         result = self.run_gate()
         self.assertEqual(result.returncode, 1)
         self.assertEqual(result.stderr.count('complexity 4 > 3'), 2)
@@ -131,14 +139,14 @@ class GateTests(unittest.TestCase):
     def test_nested_callback_cannot_hide_behind_noqa(self):
         self.populate()
         source = 'def outer():  # noqa\n' + textwrap.indent(branches(4), '    ') + '    return probe\n'
-        self.write(gate.SUPPORT / 'helper.py', source)
+        self.write(self.support / 'helper.py', source)
         result = self.run_gate()
         self.assertEqual(result.returncode, 1)
         self.assertIn('outer.probe complexity 4 > 3', result.stderr)
 
     def test_lambda_and_async_callbacks_cannot_bypass_limit(self):
         self.populate()
-        self.write(gate.SUPPORT / 'callbacks.py', 'callback = lambda a, b, c, d: a and b and c and d\n'
+        self.write(self.support / 'callbacks.py', 'callback = lambda a, b, c, d: a and b and c and d\n'
                    + branches(4, 'async def asynchronous(value):'))
         result = self.run_gate()
         self.assertEqual(result.returncode, 1)
@@ -146,7 +154,7 @@ class GateTests(unittest.TestCase):
 
     def test_parse_error_is_nonzero(self):
         self.populate()
-        self.write(gate.SUPPORT / 'helper.py', 'def broken(:')
+        self.write(self.support / 'helper.py', 'def broken(:')
         result = self.run_gate()
         self.assertNotEqual(result.returncode, 0)
         self.assertIn('SyntaxError', result.stderr)
@@ -164,31 +172,31 @@ class GateTests(unittest.TestCase):
 
     def test_empty_support_scan_is_nonzero(self):
         self.populate('# no functions\n')
-        self.write('scripts/check_e2e_complexity.py', 'def tool():\n    pass\n')
+        self.write(self.checker, 'def tool():\n    pass\n')
         result = self.run_gate()
         self.assertNotEqual(result.returncode, 0)
-        self.assertIn('Empty E2E function scan', result.stderr)
+        self.assertIn(self.empty_message, result.stderr)
 
     def test_report_contains_every_function(self):
         self.populate()
-        result = subprocess.run([sys.executable, str(gate.ROOT / 'scripts/check_e2e_complexity.py'),
+        result = subprocess.run([sys.executable, str(self.gate.ROOT / self.checker),
                                  '--root', str(self.root), '--report'],
                                 capture_output=True, text=True, check=False)
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(len(json.loads(result.stdout)), len(gate.REQUIRED) + len(gate.TOOLS))
+        self.assertEqual(len(json.loads(result.stdout)), self.expected_rows)
 
     def prepare_npm_entry(self):
         self.populate()
-        for file in ('package.json', 'ruff.toml', 'scripts/check_e2e_complexity.py'):
-            shutil.copyfile(gate.ROOT / file, self.root / file)
+        for file in ('package.json', 'ruff.toml', self.checker, *self.checker_dependencies):
+            shutil.copyfile(self.gate.ROOT / file, self.root / file)
 
     def npm_entry(self):
-        return subprocess.run(['npm', 'run', 'lint:python:e2e'], cwd=self.root,
+        return subprocess.run(['npm', 'run', self.entry], cwd=self.root,
                               capture_output=True, text=True, check=False)
 
     def test_actual_npm_entry_blocks_overlimit(self):
         self.prepare_npm_entry()
-        self.write(gate.SUPPORT / 'helper.py', branches(4))
+        self.write(self.support / 'helper.py', branches(4))
         result = self.npm_entry()
         self.assertNotEqual(result.returncode, 0)
         self.assertIn('complexity 4 > 3', result.stderr)
@@ -196,7 +204,7 @@ class GateTests(unittest.TestCase):
     def test_actual_npm_entry_preserves_ruff_checks(self):
         self.prepare_npm_entry()
         self.assertEqual(self.npm_entry().returncode, 0)
-        self.write(gate.SUPPORT / 'helper.py', 'import missing_module  # noqa: F401\n')
+        self.write(self.support / 'helper.py', 'import missing_module  # noqa: F401\n')
         result = self.npm_entry()
         self.assertNotEqual(result.returncode, 0)
         self.assertIn('F401', result.stdout)

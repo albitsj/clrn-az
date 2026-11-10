@@ -1,0 +1,114 @@
+{
+  "issue": 53,
+  "environment": {
+    "python": "3.12.12",
+    "radon": "6.0.1",
+    "ruff": "0.15.12",
+    "mitmproxy": "12.2.3",
+    "node": "26.8.2"
+  },
+  "checks": [
+    {
+      "command": "npm run lint:python:visual",
+      "result": "pass; Radon support/test limit 3, checker limit 6; ordinary Ruff checks and scoped C901 limit 6, --ignore-noqa"
+    },
+    {
+      "command": "npm run lint:python:e2e",
+      "result": "pass; reused checker/contract-test changes remain within the pre-existing scope gate"
+    },
+    {
+      "command": "uv run --python 3.12 --no-project --with radon==6.0.1 python -m unittest discover -s scripts -p 'test_check_*complexity.py'",
+      "tests": 38,
+      "result": "pass; 18 existing checker contract tests and 20 visual checker tests"
+    },
+    {
+      "command": "uv run --python 3.12 --no-project --with mitmproxy==12.2.3 python -m unittest discover -s visual/cases/club/mitmproxy -p 'test_*.py'",
+      "tests": 3,
+      "result": "pass"
+    },
+    {
+      "command": "uv run --python 3.12 --no-project --with mitmproxy==12.2.3 python -m unittest discover -s visual/cases/game-record/mitmproxy -p 'test_*.py'",
+      "tests": 10,
+      "result": "pass"
+    },
+    {
+      "command": "uv run --python 3.12 --no-project --with mitmproxy==12.2.3 python -m unittest discover -s visual/cases/texas-holdem/mitmproxy -p 'test_*.py'",
+      "tests": 35,
+      "result": "pass"
+    },
+    {
+      "command": "uv run --python 3.12 --no-project --with mitmproxy==12.2.3 python -m unittest discover -s visual/cases/zhajinhua/mitmproxy -p 'test_*.py'",
+      "tests": 19,
+      "result": "pass"
+    },
+    {
+      "command": "npm run lint:duplicates",
+      "result": "pass; no new clone fingerprints or enlarged exemptions"
+    },
+    {
+      "command": "git diff --check",
+      "result": "pass"
+    }
+  ],
+  "totalRelatedUnitTests": 105,
+  "negativeCases": [
+    "Support/test functions at 3 pass and at 4 fail; independent checker at 6 passes and 7 fails",
+    "All five recursively scanned visual support directories and checker tests enforce 3, including helpers without test names",
+    "Nested functions/classes, async functions, methods and lambdas measured independently; no_assert=True",
+    "Nested callbacks and noqa cannot hide decisions or Ruff F401 findings",
+    "Missing Radon (-S), AST parse failure, missing required paths and empty scans all return nonzero",
+    "Actual npm run lint:python:visual rejects temporary complexity 4 support functions"
+  ],
+  "payloadComparison": {
+    "baselineRevision": "cb680d8bc6e074ce714ba9ff170c0d1429439369",
+    "method": "Temporary git archive of baseline visual and e2e; baseline/current evaluated in separate Python subprocesses; compare complete decoded JSON results and exception type/messages",
+    "recordCases": 114801,
+    "websocketCasesByGame": {
+      "texas-holdem": 1458,
+      "zhajinhua": 1458
+    },
+    "recordMatrix": "Every mode, GET/PUT/DELETE, 195 fixed/account/session/room routes, 14 valid/invalid bodies, both first/second-page queries, plus complete deterministic data payloads",
+    "websocketMatrix": "Seed 53; 180 sampled frames and 60 mixed batches plus malformed/empty/unsubscribe frames; unbound/bound/created room states; both directions; compare kept bytes, drop state, injected payloads/direction, confirmed/pending subscriptions and blocked RPC counts",
+    "result": "identical",
+    "temporaryProbeSha256": {
+      "issue53_compare.py": "e71c491cbe216b5ed0f3c26ca7cdbb7c6198290e3943cc601bb94d9d9ddbbc54",
+      "issue53_compare_driver.py": "bf66624fee45294e07a12b1fb471850df264b274df340f59749fe5798f00942c"
+    }
+  },
+  "mitmdumpProcessSmoke": {
+    "version": "12.2.3",
+    "method": "Start each real addon on an ephemeral loopback port with an isolated temporary confdir; HTTP control requests through the proxy verify status, authenticated activation, forbidden mutation and reset; terminate every process",
+    "cases": [
+      {
+        "case": "club",
+        "startup": "pass",
+        "authenticatedControl": "pass",
+        "reset": "pass"
+      },
+      {
+        "case": "game-record",
+        "startup": "pass",
+        "authenticatedControl": "pass",
+        "reset": "pass"
+      },
+      {
+        "case": "texas-holdem",
+        "startup": "pass",
+        "authenticatedControl": "pass",
+        "reset": "pass"
+      },
+      {
+        "case": "zhajinhua",
+        "startup": "pass",
+        "authenticatedControl": "pass",
+        "reset": "pass"
+      }
+    ]
+  },
+  "entryChain": "lint:python:visual -> lint:python -> lint -> existing repository-lint pre-commit hook -> existing Repository checks pre-commit step",
+  "ciChange": "Existing Python proxy test step discovers both checker contract suites; no new workflow or dependency version",
+  "legacyRemoval": "Only the six resolved scope C901 entries were removed; every other entry unchanged",
+  "fullSuiteRun": false,
+  "nativeDeviceRun": false,
+  "runtimeEvidence": "Real mitmdump startup/control smoke and HTTPFlow/WebSocket unit tests passed. No adb executable was available on PATH; no fixed APK/native animation/screenshot run is claimed. Protocol payloads were checked against baseline; no visual baseline, timing or retry thresholds changed."
+}
