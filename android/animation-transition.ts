@@ -10,7 +10,7 @@ import { motionParts, samePixels } from './motion-regions';
 import { maskScreenshot, type ScreenshotBounds, type ScreenshotMask } from './screenshot';
 import { recordNativeVideoFrames, type AnimationRegion } from './video-frames';
 import { recordTransitionFrames, requestTransitionFrames, cropTransitionFrame } from './transition-frames';
-import { alignedVideoDistance, misplacedVideoFrame, preservesVideoColumns, videoThumbnail } from './video-motion';
+import { alignedVideoDistance, misplacedVideoFrame, preservesVideoColumns, reviewedVideoAxis, videoThumbnail } from './video-motion';
 import { preservesLocalPhase, reviewedVideoReference } from './video-phase-constraints';
 
 type NativeFrame = { capturedAt: number; png: string };
@@ -28,7 +28,6 @@ export function frameColorDistance(left: Buffer, right: Buffer): number {
   }
   return difference / (a.width * a.height * 3);
 }
-
 /** 平移弹层的颜色分布距离；保留配色与覆盖比例，允许同一幅画面处在不同纵向位置。
  * @param left - 第一张局部 PNG。
  * @param right - 第二张局部 PNG。
@@ -73,9 +72,10 @@ export function middleCandidates(before: Buffer, after: Buffer, timeline: Buffer
  * @param after - Exact end frame.
  * @param candidates - Frames with visible motion.
  * @param anchors - Reviewed native video phases.
+ * @param axis - 已审查的转场运动方向，默认保留原纵向检查。
  */
 export function assertReviewedVideoMiddle(before: Buffer, after: Buffer,
-  candidates: { frame: Buffer; progress: number; remaining: number }[], anchors: Buffer[]): void {
+  candidates: { frame: Buffer; progress: number; remaining: number }[], anchors: Buffer[], axis: 'vertical' | 'horizontal' = 'vertical'): void {
   expect(candidates.length, '必须采到起点和终点之间的真实动画帧').toBeGreaterThan(0);
   const total = frameColorDistance(before, after);
   const endpoints = [videoThumbnail(before), videoThumbnail(after)];
@@ -86,12 +86,12 @@ export function assertReviewedVideoMiddle(before: Buffer, after: Buffer,
     const actual = videoThumbnail(frame);
     return references.map(reference => {
       if (progress < reference.start / 4 || remaining < reference.end / 4) return Infinity;
-      // 整列共有的背景变化须持续覆盖，缩放前景不能抬高较早相位的位置要求。
-      if (!preservesVideoColumns(endpoints, reference.thumbnail, actual)) return Infinity;
+      // 沿运动轴共有的背景变化须持续覆盖，前景不能抬高较早相位的位置要求。
+      if (!preservesVideoColumns(endpoints, reference.thumbnail, actual, axis)) return Infinity;
       const distance = alignedVideoDistance(actual, reference.thumbnail);
       if (distance > 46) return Infinity;
-      // 镜像与横向调整仅用于错位反证；首尾不增加可接受的中途参考。
-      if (misplacedVideoFrame(actual, reference.thumbnail, distance, endpoints)) return Infinity;
+      // 镜像与错轴调整仅用于错位反证；首尾不增加可接受的中途参考。
+      if (misplacedVideoFrame(actual, reference.thumbnail, distance, endpoints, axis)) return Infinity;
       // A global flash may have the same colours and mean distance as a sliding panel.
       if (!preservesLocalPhase(before, frame, endpoints[1], actual, reference)) return Infinity;
       return distance;
@@ -242,7 +242,7 @@ export async function captureNativeTransition(device: AndroidDevice, name: strin
     // 原生截图可能落在已审查中途相位的两侧，但靠近起止帧的无关闪屏不能冒充转场。
     // 非录屏路径仍要求真实帧远离首尾，并与已审查相位接近；录屏路径逐个检查空间位置。
     const anchors = [reference, ...videoPhaseAnchors.map(file => readFileSync(testInfo.snapshotPath(file)))];
-    if (samplingMethod === 'videoFrames') assertReviewedVideoMiddle(before, after, candidates, anchors);
+    if (samplingMethod === 'videoFrames') assertReviewedVideoMiddle(before, after, candidates, anchors, reviewedVideoAxis(name));
     else {
       const reviewedDistances = candidates.flatMap(item => anchors
         .filter(anchor => frameColorDistance(before, item.frame)

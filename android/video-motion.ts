@@ -71,9 +71,12 @@ function videoColumnMotion(before: VideoThumbnail, frame: VideoThumbnail): numbe
  * @param endpoints - 原生首尾缩略图，只用于位置诊断，不作为中途参考。
  * @param reference - 已审查中途相位。
  * @param actual - 实际录屏中途相位。
+ * @param axis - 已审查运动方向；横滑沿整行区分背景与前景。
  */
 export function preservesVideoColumns(endpoints: VideoThumbnail[], reference: VideoThumbnail,
-  actual: VideoThumbnail): boolean {
+  actual: VideoThumbnail, axis: 'vertical' | 'horizontal' = 'vertical'): boolean {
+  if (axis === 'horizontal') return preservesVideoColumns(endpoints.map(transposedThumbnail),
+    transposedThumbnail(reference), transposedThumbnail(actual));
   const [before, after] = endpoints, { width, height } = before;
   const persistent = new Array<number>(width).fill(Infinity);
   for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) {
@@ -93,11 +96,12 @@ export function preservesVideoColumns(endpoints: VideoThumbnail[], reference: Vi
 /** Align a reviewed vertical slide phase without allowing horizontal displacement.
  * @param actual - Recorded phase thumbnail.
  * @param reference - Reviewed phase thumbnail.
+ * @param maximumShift - 可选的纵向搜索边界；零用于保留原位置的反证。
  */
-export function alignedVideoDistance(actual: VideoThumbnail, reference: VideoThumbnail): number {
+export function alignedVideoDistance(actual: VideoThumbnail, reference: VideoThumbnail, maximumShift?: number): number {
   if (actual.width !== reference.width || actual.height !== reference.height) throw new Error('动画帧尺寸变化');
   const { width, height } = actual;
-  const limit = Math.min(30, Math.floor(height * 0.4));
+  const limit = maximumShift ?? Math.min(30, Math.floor(height * 0.4));
   let best = Infinity;
   for (let shift = -limit; shift <= limit; shift++) {
     let difference = 0;
@@ -132,12 +136,19 @@ function transposedThumbnail(frame: VideoThumbnail): VideoThumbnail {
  * @param reference - 已审查中途相位。
  * @param distance - 原有纵向对齐距离。
  * @param endpoints - 原生首尾，仅作错位反证，不参与中途相位的接受距离。
+ * @param axis - 产品组件已审查的运动方向。
  */
 export function misplacedVideoFrame(actual: VideoThumbnail, reference: VideoThumbnail,
-  distance: number, endpoints: VideoThumbnail[]): boolean {
+  distance: number, endpoints: VideoThumbnail[], axis: 'vertical' | 'horizontal' = 'vertical'): boolean {
   const inverted = alignedVideoDistance(actual, mirroredThumbnail(reference));
   const horizontal = alignedVideoDistance(transposedThumbnail(actual), transposedThumbnail(reference));
   if (inverted + 6 < distance) return true;
+  if (axis === 'horizontal') {
+    // 已审查的横滑允许沿 X 轴经过参考两侧；Y 轴布局和文字顺序仍须保留。
+    if (distance + 6 < alignedVideoDistance(actual, reference, 0)) return true;
+    const upsideDown = transposedThumbnail(mirroredThumbnail(transposedThumbnail(reference)));
+    return alignedVideoDistance(actual, upsideDown) + 6 < distance;
+  }
   if (horizontal + 6 >= distance) return false;
   const nearest = endpoints.map(frame => ({ frame, distance: alignedVideoDistance(actual, frame) }))
     .sort((left, right) => left.distance - right.distance)[0];
@@ -195,4 +206,12 @@ export function localMotionDistance(before: Buffer, frame: Buffer): number {
   }
   return motion / (pixels * 3);
 }
-
+/** 只为产品组件明确使用横向滑出的既有退场声明运动轴，其他场景保留原检查。
+ * @param name - 原始动画场景名称。
+ */
+export function reviewedVideoAxis(name: string): 'vertical' | 'horizontal' {
+  const horizontal = ['texas-holdem-card-rank-exit', 'zhajinhua-card-rank-exit',
+    'texas-holdem-leaderboard-exit', 'texas-holdem-personal-leaderboard-exit', 'zhajinhua-leaderboard-exit',
+    'texas-holdem-game-record-exit', 'zhajinhua-game-record-exit'];
+  return horizontal.includes(name) ? 'horizontal' : 'vertical';
+}

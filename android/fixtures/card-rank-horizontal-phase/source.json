@@ -1,0 +1,37 @@
+{
+  "run": 42836348383,
+  "attempt": 1,
+  "head": "61d6ca0506f12a8ba1ccd6a8a12934fdb17b145e",
+  "production": "432b25ca68b85f528532c3e53fe6d5deeedaffaf",
+  "application": "e4ad9957048c36f088ca27f6c71934fef02e7396",
+  "build": 300004001,
+  "artifact": 13777222476,
+  "artifactSha256": "2ad18d31afc6cc77d41aab5f195863edf6bbcd7f488e2a6efbd97643e5d60de4",
+  "worker": 2,
+  "repeat": 2,
+  "retry": 0,
+  "name": "texas-holdem-card-rank-exit",
+  "region": {
+    "x": 110,
+    "y": 400,
+    "width": 440,
+    "height": 600
+  },
+  "images": {
+    "before.png": {
+      "sourceAttachment": "texas-holdem-card-rank-exit-start",
+      "path": "data/e35e403f99f00ee6b3b3a17fa9b2e6656d8aaeaa.png",
+      "sha256": "6542ab0c44c34cb415cebaaf017aeb6cc911b03903e4242366c3e67b31f3f633"
+    },
+    "middle.png": {
+      "sourceAttachment": "texas-holdem-card-rank-exit-native-frame-0001.png",
+      "path": "data/3a8d54d1b38edf4b2626600ff48eac05543425b8.png",
+      "sha256": "a0a821d4ef2443d88ee146b03295b6e1d467f39639b732097ce104e6d61d6461"
+    },
+    "after.png": {
+      "sourceAttachment": "texas-holdem-card-rank-exit-end",
+      "path": "data/52969c93e51d0df2e60c24e612ddc82dadb58d87.png",
+      "sha256": "fa393be97961597c8867f83d8c5993ca8d84aa5d3c365b4d1f3efc015b3f24ae"
+    }
+  }
+}

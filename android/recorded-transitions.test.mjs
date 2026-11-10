@@ -13,10 +13,7 @@ import { decodeRecordedVideo } from './video-fixtures.mjs';
 const require = createRequire(import.meta.url);
 const { assertReviewedVideoMiddle, middleCandidates } = require('./animation-transition.ts');
 const { maskScreenshot } = require('./screenshot.ts');
-// 完整原片逐帧核对后的旧误收反例；输入字节及所有原空间门禁均保留。
-// 判定理由见 quality/ci-42798414791-video-backdrop-counterexamples.md。
-const backdropCounterexamples = new Map([[43, 'texas-holdem-card-rank-exit'],
-  [47, 'texas-holdem-card-rank-exit'], [72, 'zhajinhua-leaderboard-exit']]);
+const { reviewedVideoAxis } = require('./video-motion.ts');
 const snapshots = new URL('./snapshots/android-35-x86_64-720x1280-en/', import.meta.url);
 const directory = mkdtempSync(path.join(tmpdir(), 'clrn-recorded-transitions-'));
 const collections = [['recorded-transitions', 79, 62], ['accurate-bet', 2, 1]].map(([name, count, kinds]) => {
@@ -70,11 +67,9 @@ for (const { manifest, directory } of collections) for (const record of manifest
     // 接受距离只使用原调用方已有的已审查相位，首尾与本轮实际图都不能扩大参考集合。
     const anchors = record.anchors.map(file => readFileSync(new URL(file, snapshots)));
     /** 对完整原片执行同一生产空间及局部前景断言。 */
-    const compare = () => assertReviewedVideoMiddle(start, end, middleCandidates(start, end, frames, 'videoFrames'), anchors);
-    if (backdropCounterexamples.has(record.id)) {
-      assert.equal(record.name, backdropCounterexamples.get(record.id), '负例身份必须与已核对的原录像一致');
-      assert.throws(compare, /动画中途帧的实际画面须接近已审查轨迹/);
-    } else compare();
+    const compare = () => assertReviewedVideoMiddle(start, end, middleCandidates(start, end, frames, 'videoFrames'),
+      anchors, reviewedVideoAxis(record.name));
+    compare();
     rmSync(framesDirectory, { recursive: true });
   });
 }

@@ -1,0 +1,81 @@
+{
+  "run": 42836348383,
+  "attempt": 1,
+  "head": "61d6ca0506f12a8ba1ccd6a8a12934fdb17b145e",
+  "application": "e4ad9957048c36f088ca27f6c71934fef02e7396",
+  "build": 300004001,
+  "artifact": 13778091970,
+  "artifactSha256": "9db2d12c3dfdbad4f88693df5686bfb0848ed22fb26068c3825c956626b43913",
+  "records": [
+    {
+      "name": "zhajinhua-leaderboard-exit",
+      "worker": 0,
+      "repeat": 0,
+      "retry": 0,
+      "region": {
+        "x": 110,
+        "y": 400,
+        "width": 470,
+        "height": 450
+      },
+      "images": {
+        "before": {
+          "file": "zhajinhua-leaderboard-exit-before.png",
+          "sha256": "4eef1457afc1e5ece1da3207545f6ca2cf2e180ffc9a86fadd681843d007a373",
+          "attachment": "zhajinhua-leaderboard-exit-start",
+          "sourcePath": "data/134a710bbb57d581e0892bb0544162e5cbe21d6d.png"
+        },
+        "middle": {
+          "file": "zhajinhua-leaderboard-exit-middle.png",
+          "sha256": "d1e76e87bdb3d95363d320f8a2dc3eb084e3fd59fcba22743845158c611f214a",
+          "attachment": "zhajinhua-leaderboard-exit-native-video",
+          "sourcePath": "data/751e9c83690eca0b930e0aff232c642da4ada12b.mp4",
+          "decodedFrameIndex": 34,
+          "decoder": "fps=30,scale=720:1280:flags=lanczos,crop=original region",
+          "videoSha256": "fbd2c92f50d4ea491d5bce89b681903443968eea648c5117362b7d84fe6bb7dd"
+        },
+        "after": {
+          "file": "zhajinhua-leaderboard-exit-after.png",
+          "sha256": "f4afadacd24200a94fb615e593b14a5ca08107e932891527d60d42aae72376b8",
+          "attachment": "zhajinhua-leaderboard-exit-end",
+          "sourcePath": "data/e44089bb14fa0db180d78d6dfbea86b8049770b8.png"
+        }
+      }
+    },
+    {
+      "name": "zhajinhua-game-record-exit",
+      "worker": 7,
+      "repeat": 2,
+      "retry": 2,
+      "region": {
+        "x": 150,
+        "y": 400,
+        "width": 440,
+        "height": 450
+      },
+      "images": {
+        "before": {
+          "file": "zhajinhua-game-record-exit-before.png",
+          "sha256": "325e5a94f94d32b55d32a8423a4d7a557df6f7a1ffa664286606a1776b1c22da",
+          "attachment": "zhajinhua-game-record-exit-start",
+          "sourcePath": "data/9d1dddd75468f52777785e36483a263bdf2a5818.png"
+        },
+        "middle": {
+          "file": "zhajinhua-game-record-exit-middle.png",
+          "sha256": "02dddcebb338e4ba795d744fe6a87f64fd502ddf0d3c5563ee8ca28e070eec1a",
+          "attachment": "zhajinhua-game-record-exit-native-video",
+          "sourcePath": "data/66064f112b7e88ecf63e87cb728dc3b4da2e3d5a.mp4",
+          "decodedFrameIndex": 32,
+          "decoder": "fps=30,scale=720:1280:flags=lanczos,crop=original region",
+          "videoSha256": "af623860ccfb1c1dafc6f0236109c235f5c62dee4746bc5c841a5d53682098b8"
+        },
+        "after": {
+          "file": "zhajinhua-game-record-exit-after.png",
+          "sha256": "7bf2eb1b4a298681491667862cf0edd5eaf42aa4fe57609e9ffd4a7fede6db41",
+          "attachment": "zhajinhua-game-record-exit-end",
+          "sourcePath": "data/01020abb5a0a2738ffaa9aca9a69206f20aec3df.png"
+        }
+      }
+    }
+  ]
+}
