@@ -176,8 +176,9 @@ test('club more menu fades into and out of the Android screen', async ({}, testI
       const pressRoomsTab = () => adb('shell', 'input', 'tap',
         String(Math.round(roomsTab.bounds.x + roomsTab.bounds.width / 2)),
         String(Math.round(roomsTab.bounds.y + roomsTab.bounds.height / 2)));
+      // motionFrames 的 20 帧上限可能在空态淡入完成前耗尽，复用长原生采样。
       await captureNativeTransition(device, 'club-rooms-empty-enter', testInfo,
-        { x: 100, y: 420, width: 520, height: 200 }, pressRoomsTab);
+        { x: 100, y: 420, width: 520, height: 200 }, pressRoomsTab, [], [], 0, 'launchFrames');
       await device.wait({ res: 'club-rooms-empty-view' });
     } finally { await closeDevice(device); }
   });

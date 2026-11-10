@@ -111,10 +111,10 @@ function liveRuleCheck(name: string, method: SamplingMethod): boolean {
   return name === 'zhajinhua-game-rule-enter' && method === 'videoFrames';
 }
 
-/** 规则入退场保存同一份定向诊断。
+/** 规则入退场及本轮续费入场保存同一份定向诊断。
  * @param name - 当前转场名。
  */
-function ruleTransition(name: string): boolean { return name.startsWith('zhajinhua-game-rule-'); }
+function diagnosticTransition(name: string): boolean { return name.startsWith('zhajinhua-game-rule-') || name === 'zhajinhua-renew-enter'; }
 
 /** 规则失败时读取脱敏现场，不覆盖原始错误。
  * @param device - 专用模拟器。
@@ -122,7 +122,7 @@ function ruleTransition(name: string): boolean { return name.startsWith('zhajinh
  * @param info - 独立测试报告。
  */
 async function preserveRuleFailure(device: AndroidDevice, name: string, info: TestInfo): Promise<void> {
-  if (ruleTransition(name)) await preserveRulePanelState(device, name, info).catch(() => undefined);
+  if (diagnosticTransition(name)) await preserveRulePanelState(device, name, info).catch(() => undefined);
 }
 
 /** 成败均保存规则及聊天入口时间线，供对照首次执行。
@@ -131,7 +131,7 @@ async function preserveRuleFailure(device: AndroidDevice, name: string, info: Te
  * @param trace - 只包含入口几何状态的时间线。
  */
 async function attachRuleTrace(name: string, info: TestInfo, trace: PanelTrace): Promise<void> {
-  if (ruleTransition(name) || name === 'texas-holdem-chat-enter') await info.attach(`${name}-input-trace`, {
+  if (diagnosticTransition(name) || name === 'texas-holdem-chat-enter') await info.attach(`${name}-input-trace`, {
     body: JSON.stringify(trace), contentType: 'application/json',
   }).catch(() => undefined);
 }
@@ -142,7 +142,7 @@ async function attachRuleTrace(name: string, info: TestInfo, trace: PanelTrace):
  * @param info - 测试报告。
  */
 async function preservePanelFailure(name: string, startedAt: number, info: TestInfo): Promise<void> {
-  if (name === 'texas-holdem-chat-enter' || ruleTransition(name)) {
+  if (name === 'texas-holdem-chat-enter' || diagnosticTransition(name)) {
     await preserveAnimationFailure(name, startedAt, info).catch(() => undefined);
     await preserveRenderStatistics(name, info).catch(() => undefined);
   }

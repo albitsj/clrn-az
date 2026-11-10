@@ -41,6 +41,7 @@ export async function preserveRulePanelState(device: AndroidDevice, name: string
  */
 function ruleMarkers(nodes: NativeNode[]): object {
   return Object.fromEntries(['menu-button', 'drawer-menu-item-exit', 'drawer-menu-item-game_rule',
-    'game-rule-popup', 'game-rule-popup-close-button'].map(res =>
+    'game-rule-popup', 'game-rule-popup-close-button', 'drawer-menu-item-renew',
+    'renew-popup-remain-diamond', 'renew-popup-spend-diamond'].map(res =>
     [res, targetState(nodes.find(node => node.res === res))]));
 }
