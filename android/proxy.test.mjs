@@ -68,14 +68,14 @@ test('代理重试先有界等待指定模拟器连接，再读取旧设置，�
   });
   assert.equal(result, 'completed');
   assert.deepEqual(state.commands.slice(0, 2), ['wait-for-device', 'shell settings get global http_proxy']);
-  assert.ok(state.commands.some(command => /^shell toybox nc -z -w 3 10\.0\.2\.2 \d+$/.test(command)));
-  assert.ok(state.commands.some(command => /^shell settings put global http_proxy 10\.0\.2\.2:\d+$/.test(command)));
-  assert.equal(state.commands.at(-1), 'shell settings put global http_proxy :0');
-  assert.ok(state.commands.every(command => !command.startsWith('reverse ')));
+  assert.ok(state.commands.some(command => /^shell toybox nc -z -w 3 127\.0\.0\.1 \d+$/.test(command)));
+  assert.ok(state.commands.some(command => /^shell settings put global http_proxy 127\.0\.0\.1:\d+$/.test(command)));
+  assert.ok(state.commands.at(-1).startsWith('reverse --remove tcp:'));
+  assert.ok(state.commands.every(command => !command.includes('10.0.2.2')));
 });
 
-test('模拟器无法连接主机回环映射时使用专用反向转发并在结束后清理', async context => {
-  const state = session(context, command => command.startsWith('shell toybox nc ') ? new Error('代理端口不可达') : undefined);
+test('首轮就使用独占反向转发，桥接路由是否仍可用不影响代理选择与清理', async context => {
+  const state = session(context, command => command.includes('10.0.2.2') ? new Error('桥接路由已失效') : undefined);
   assert.equal(await withAndroidProxy(async () => '已进入测试'), '已进入测试');
   const probe = state.commands.find(command => command.startsWith('shell toybox nc '));
   assert.ok(probe);
@@ -95,12 +95,29 @@ test('模拟器无法连接主机回环映射时使用专用反向转发并在�
 
 test('模拟器重连已清除反向转发时仍能完成代理恢复', async context => {
   const state = session(context, command => {
-    if (command.startsWith('shell toybox nc ')) return new Error('代理端口不可达');
     if (command.startsWith('reverse --remove ')) return new Error(`listener '${command.split(' ').at(-1)}' not found`);
     return undefined;
   });
   assert.equal(await withAndroidProxy(async () => '已进入测试'), '已进入测试');
   assert.ok(state.commands.some(command => command.startsWith('reverse --remove ')));
+});
+
+test('反向转发的真实 TCP 探测失败时清理本轮映射，不运行界面或设置失效代理', async context => {
+  const failure = new Error('loopback proxy unavailable');
+  const state = session(context, command => command.startsWith('shell toybox nc ') ? failure : undefined);
+  await assert.rejects(withAndroidProxy(async () => assert.fail('不能运行界面')), error => error === failure);
+  assert.ok(state.commands.some(command => command.startsWith('reverse tcp:')));
+  assert.ok(state.commands.some(command => command.startsWith('reverse --remove tcp:')));
+  assert.ok(state.commands.every(command => !command.startsWith('shell settings put global http_proxy 127.0.0.1:')));
+  assert.equal(state.commands.at(-1), 'shell settings put global http_proxy :0');
+});
+
+test('反向映射创建失败不能回退失效桥接地址或清除不属于本轮的监听', async context => {
+  const failure = new Error('reverse unavailable');
+  const state = session(context, command => command.startsWith('reverse tcp:') ? failure : undefined);
+  await assert.rejects(withAndroidProxy(async () => assert.fail('不能运行界面')), error => error === failure);
+  assert.ok(state.commands.every(command => !command.startsWith('reverse --remove')));
+  assert.ok(state.commands.every(command => !command.includes('10.0.2.2')));
 });
 
 for (const failedCommand of ['wait-for-device', 'shell settings get global http_proxy']) {
@@ -132,7 +149,7 @@ test('清理成功时保留原始错误对象，不重试或吞掉原生失败',
   let attempts = 0;
   await assert.rejects(withAndroidProxy(async () => { attempts++; throw failure; }), error => error === failure);
   assert.equal(attempts, 1);
-  assert.equal(state.commands.at(-1), 'shell settings put global http_proxy :0');
+  assert.ok(state.commands.at(-1).startsWith('reverse --remove tcp:'));
 });
 
 test('正文成功但代理设置恢复失败仍然失败，不能误报视觉成功', async context => {
