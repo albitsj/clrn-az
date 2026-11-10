@@ -46,6 +46,39 @@ class NetworkSelectionTests(unittest.TestCase):
             recorder.observe(flow)
         self.assertEqual(recorder.total, 2)
 
+    def test_room_initialization_records_only_status_and_safe_contract(self):
+        recorder = NetworkSelection()
+        for path, method, normalized in (
+                ('/v3/pay_action/do?token=secret', 'POST', '/v3/pay_action/do'),
+                ('/v1/room/secret-room', 'GET', '/v1/room/{room}'),
+                ('/v10/texas_holdem/room/secret-room/profile', 'GET', '/v10/texas_holdem/room/{room}/profile')):
+            body = {'ok': False, 'error': 'authentication_failed', 'result': {'token': 'secret'}}
+            flow = sample(path, body)
+            flow.request.method = method
+            flow.request.timestamp_start = 123.5
+            recorder.observe(flow)
+            event = recorder.events[-1]
+            self.assertEqual(event['path'], normalized)
+            self.assertEqual(event['requestAt'], 123500)
+            self.assertFalse(event['ok'])
+            self.assertTrue(event['authenticationFailed'])
+            self.assertEqual(flow.response.json(), body)
+            self.assertNotIn('secret', json.dumps(recorder.snapshot()))
+            flow.response = None
+            recorder.observe(flow, 'error')
+            self.assertNotIn('ok', recorder.events[-1])
+
+    def test_diagnostic_exception_does_not_escape_or_mutate_response(self):
+        recorder = NetworkSelection()
+        flow = sample('/v3/pay_action/do', {'ok': True, 'error': 'secret'})
+        flow.request.method = 'POST'
+        recorder.observe(flow)
+        self.assertFalse(recorder.events[-1]['authenticationFailed'])
+        self.assertNotIn('secret', json.dumps(recorder.snapshot()))
+        flow.request.timestamp_start = float('nan')
+        recorder.observe(flow)
+        self.assertEqual(flow.response.json(), {'ok': True, 'error': 'secret'})
+
     def test_metadata_and_health_only_copy_whitelisted_diagnostics(self):
         recorder = NetworkSelection()
         for servers in ([HOST, 'external.test'], {HOST: 'secret-address', 'external.test': 'secret'}):
