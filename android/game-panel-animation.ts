@@ -56,7 +56,8 @@ export async function animateGamePanel(device: AndroidDevice, game: 'texas-holde
     await gameConnected(device);
     observe('target-query-start');
     const target = await gameTapTarget(device, button, node => tracePanelTarget(trace, 'target-query-result', node));
-    const press = panelPress(device, target, trace, liveRuleCheck(transition, samplingMethod));
+    const surfaceInput = surfacePanelInput(transition, samplingMethod);
+    const press = panelPress(device, target, trace, liveRuleCheck(transition, samplingMethod), surfaceInput);
     await captureNativeTransition(device, transition, testInfo, region, press,
       masks, [], 0, samplingMethod, undefined, afterReady, videoPhaseAnchors,
       [], [], [], undefined, observe);
@@ -74,9 +75,10 @@ export async function animateGamePanel(device: AndroidDevice, game: 'texas-holde
  * @param target - 采集前已稳定的入口。
  * @param trace - 当前点击的脱敏时间线。
  * @param verify - 规则入场录屏路径才能即时查询；连续截图期间驱动正忙。
+ * @param surfaceInput - Use awaited native input while the independent Surface stream stays readable.
  */
 function panelPress(device: AndroidDevice, target: NativeNode,
-  trace: PanelTrace, verify: boolean): () => Promise<void> {
+  trace: PanelTrace, verify: boolean, surfaceInput: boolean): () => Promise<void> {
   return async () => {
     tracePanelTarget(trace, 'trigger-ready', target);
     if (verify) {
@@ -88,9 +90,27 @@ function panelPress(device: AndroidDevice, target: NativeNode,
     const { x, y, width, height } = target.bounds;
     const point = { x: Math.round(x + width / 2), y: Math.round(y + height / 2) };
     trace.events.push({ event: 'tap', at: Date.now(), point });
-    adb('shell', 'input', 'tap', String(point.x), String(point.y));
+    await pressPanelPoint(device, point, surfaceInput);
     tracePanelTarget(trace, 'tap-complete');
   };
+}
+
+/** Select the recorded raw-frame boundary before looking at any result.
+ * @param name - Exact transition name.
+ * @param method - Caller-selected sampling protocol.
+ */
+function surfacePanelInput(name: string, method: SamplingMethod): boolean {
+  return name === 'texas-holdem-card-rank-exit' && method === 'videoFrames';
+}
+
+/** Keep the raw stream readable during the same single click.
+ * @param device - Dedicated native device.
+ * @param point - Stable original target center.
+ * @param surfaceInput - The independently recorded raw-frame boundary.
+ */
+async function pressPanelPoint(device: AndroidDevice, point: { x: number; y: number }, surfaceInput: boolean): Promise<void> {
+  if (surfaceInput) await device.input.tap(point);
+  else adb('shell', 'input', 'tap', String(point.x), String(point.y));
 }
 
 /** 核对一次即时节点；失败直接抛出，不重新点击或在录制中等待布局。
@@ -131,7 +151,7 @@ async function preserveRuleFailure(device: AndroidDevice, name: string, info: Te
  * @param trace - 只包含入口几何状态的时间线。
  */
 async function attachRuleTrace(name: string, info: TestInfo, trace: PanelTrace): Promise<void> {
-  if (ruleTransition(name) || name === 'texas-holdem-voice-enter') await info.attach(`${name}-input-trace`, {
+  if (ruleTransition(name) || ['texas-holdem-voice-enter', 'texas-holdem-card-rank-exit'].includes(name)) await info.attach(`${name}-input-trace`, {
     body: JSON.stringify(trace), contentType: 'application/json',
   }).catch(() => undefined);
 }

@@ -15,12 +15,13 @@ import { preserveAnimationFailure } from './animation-diagnostics';
 export async function recordSurfaceRegion(context: { name: string; bounds: ScreenshotBounds;
   trigger: () => unknown; info: TestInfo }): Promise<{ capturedAt: number; png: string }[]> {
   const startedAt = Date.now();
+  const profile = context.name === 'slot-popup-exit' ? 'slot' : 'video';
   const recording = await collectSurfaceFrames(context.trigger,
-    () => preserveAnimationFailure(`${context.name}-source`, startedAt, context.info));
+    () => preserveAnimationFailure(`${context.name}-source`, startedAt, context.info), profile);
   const directory = mkdtempSync(path.join(tmpdir(), 'clrn-surface-'));
   try {
     await context.info.attach(`${context.name}-surface-source`, { body: JSON.stringify({
-      format: 'Android35-screenrecord-frames-rgb888', size: [240, 426], clock: 'host-receipt-performance.now',
+      format: 'Android35-screenrecord-frames-rgb888', profile, size: [240, 426], clock: 'host-receipt-performance.now',
       timeOrigin: performance.timeOrigin,
       sampledAt: recording.frames.map(frame => frame.capturedAt), stderr: recording.stderr,
       stoppedTailBytes: recording.stoppedTailBytes,

@@ -13,7 +13,7 @@ const protocol = require('./surface-frame-protocol.ts');
  * @param options - 当前进程故障。
  */
 function fixture(options = {}) {
-  const events = [];
+  const events = [], observed = {};
   const child = new EventEmitter();
   child.stdout = new EventEmitter();
   child.stderr = new EventEmitter();
@@ -43,7 +43,7 @@ function fixture(options = {}) {
         assert.deepEqual(args.slice(0, 4), ['-s', 'emulator-6666', 'shell', '-T']);
         assert.match(args[4], /sleep 8 & sleeper=\$!; wait "\$sleeper"; kill -INT "\$recorder"/);
         events.push('spawn');
-        void delay(2).then(() => emitSource(child, options));
+        void delay(2).then(() => { observed.sourceAt = performance.now(); emitSource(child, options); });
         return child;
       },
       /** 只停止本次 PID，模拟远端正常关闭后等待本地通道退出。
@@ -59,6 +59,7 @@ function fixture(options = {}) {
         assert.equal(settings.timeout, 2000);
         const forced = args[4] === '-KILL';
         events.push(forced ? 'force-stop' : 'stop');
+        if (!forced) observed.stoppedAt = performance.now();
         if (options.stopHangs && !forced) { callback(null, '', ''); return; }
         child.exitCode = options.stopFailure ? 23 : 0;
         child.emit('close', child.exitCode);
@@ -66,16 +67,19 @@ function fixture(options = {}) {
       },
     },
   });
-  return { events,
-    /** 在隔离序列号下运行并恢复环境。 */
-    run: async () => {
+  return { events, observed,
+    /** Run within an isolated emulator serial and restore it after completion.
+     * @param profile - Original capture timing profile.
+     */
+    run: async profile => {
       const before = process.env.ANDROID_SERIAL;
       process.env.ANDROID_SERIAL = 'emulator-6666';
       try {
         return await collectSurfaceFrames(async () => {
+          observed.triggerAt = performance.now();
           events.push('trigger');
           if (options.triggerFailure) throw options.triggerFailure;
-        }, async () => { events.push('preserve'); });
+        }, async () => { events.push('preserve'); }, profile);
       } finally {
         if (before === undefined) delete process.env.ANDROID_SERIAL;
         else process.env.ANDROID_SERIAL = before;
@@ -132,4 +136,13 @@ test('录制不响应 SIGINT 时仅强杀本次 PID，原停止超时仍失败',
   const scene = fixture({ stopHangs: true });
   await assert.rejects(scene.run(), /停止超时/);
   assert.deepEqual(scene.events, ['spawn', 'trigger', 'stop', 'force-stop']);
+});
+
+
+test('video source preserves the original five-second window and one-second pre-trigger interval', async () => {
+  const scene = fixture();
+  await scene.run('video');
+  assert.deepEqual(scene.events, ['spawn', 'trigger', 'stop']);
+  assert.ok(scene.observed.triggerAt - scene.observed.sourceAt >= 19, 'trigger must wait the scaled original second');
+  assert.ok(scene.observed.stoppedAt - scene.observed.sourceAt >= 99, 'stream must remain open for the scaled original five seconds');
 });

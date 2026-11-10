@@ -14,7 +14,7 @@ type TransitionCapture = { device: AndroidDevice; name: string; region: Animatio
  */
 export async function recordTransitionFrames(context: TransitionCapture, recorder?: typeof recordNativeVideoFrames):
 Promise<{ capturedAt: number; png: string }[]> {
-  if ((!recorder || recorder === recordNativeVideoFrames) && context.name === 'slot-popup-exit') {
+  if ((!recorder || recorder === recordNativeVideoFrames) && ['slot-popup-exit', 'texas-holdem-card-rank-exit', 'texas-preflop-cards', 'texas-river-cards'].includes(context.name)) {
     const bounds = typeof context.region === 'function' ? await context.region() : context.region;
     return recordSurfaceRegion({ ...context, bounds });
   }

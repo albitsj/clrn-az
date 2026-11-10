@@ -52,22 +52,28 @@ test('实际 ffmpeg 无时间补帧解码，保持帧数、顺序和完整 720×
   } finally { rmSync(directory, { recursive: true, force: true }); }
 });
 
-test('仅 Slot 退出选择原始采帧，保留原 ROI、报告及单次入口', async () => {
-  const bounds = { x: 0, y: 500, width: 720, height: 680 };
-  const context = { device: {}, name: 'slot-popup-exit', region: bounds, info: {},
-    /** 路由测试不执行设备操作。 */ trigger: () => {} };
-  const expected = [{ capturedAt: 108.2, png: 'real-png' }];
-  /** 正式调用方显式传入的默认录屏器，不能因此错过原始帧路径。 */
-  const recordNativeVideoFrames = () => { throw new Error('不应回到 MP4 编码路径'); };
-  const { recordTransitionFrames } = loadGameFlow('./transition-frames.ts', {
-    './native-sampling': {}, './video-frames': { recordNativeVideoFrames }, './screenshot': {},
-    './surface-frame-images': {
-      /** 仅替换外部采集边界，验证精确路由与上下文。
-       * @param request - 传给采帧器的真实参数。
-       */
-      recordSurfaceRegion: async request => { assert.deepEqual(request, { ...context, bounds }); return expected; },
-    },
+for (const [name, bounds] of [
+  ['slot-popup-exit', { x: 0, y: 500, width: 720, height: 680 }],
+  ['texas-holdem-card-rank-exit', { x: 110, y: 400, width: 440, height: 600 }],
+  ['texas-preflop-cards', { x: 360, y: 1054, width: 137, height: 102 }],
+  ['texas-river-cards', { x: 492, y: 603, width: 78, height: 117 }],
+]) {
+  test(`${name} uses complete raw frames with the original ROI and default-recorder identity`, async () => {
+    const context = { device: {}, name, region: bounds, info: {},
+      /** The routing boundary must not perform a device operation. */ trigger: () => {} };
+    const expected = [{ capturedAt: 108.2, png: 'real-png' }];
+    /** Encoding cannot supply the missing physical animation phase. */
+    const recordNativeVideoFrames = () => { throw new Error('unexpected MP4 path'); };
+    const { recordTransitionFrames } = loadGameFlow('./transition-frames.ts', {
+      './native-sampling': {}, './video-frames': { recordNativeVideoFrames }, './screenshot': {},
+      './surface-frame-images': {
+        /** Preserve the exact capture parameters and original bounds.
+         * @param request - Physical source capture context.
+         */
+        recordSurfaceRegion: async request => { assert.deepEqual(request, { ...context, bounds }); return expected; },
+      },
+    });
+    assert.equal(await recordTransitionFrames(context), expected);
+    assert.equal(await recordTransitionFrames(context, recordNativeVideoFrames), expected);
   });
-  assert.equal(await recordTransitionFrames(context), expected);
-  assert.equal(await recordTransitionFrames(context, recordNativeVideoFrames), expected);
-});
+}

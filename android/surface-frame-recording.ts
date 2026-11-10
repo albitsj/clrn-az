@@ -4,6 +4,7 @@ import { setTimeout } from 'node:timers/promises';
 import { SurfaceFrameParser } from './surface-frame-protocol';
 
 export type SurfaceFrame = { capturedAt: number; rgb: Buffer };
+export type SurfaceCaptureWindow = 'slot' | 'video';
 const execute = promisify(execFile);
 // 原始帧分支不执行 screenrecord 的编码器时限检查；由同一 shell 设置独立的 8 秒保险。
 export const surfaceRecordingCommand = 'screenrecord --output-format=frames --size 240x426 - & recorder=$!; '
@@ -14,17 +15,18 @@ export const surfaceRecordingCommand = 'screenrecord --output-format=frames --si
   + '</dev/null >/dev/null 2>&1 & guard=$!; '
   + 'wait "$recorder"; result=$?; kill "$guard" 2>/dev/null; wait "$guard" 2>/dev/null; exit "$result"';
 
-/** 连续接收 SurfaceFlinger 原始帧；接收期间不编码 PNG，不阻塞事件循环。
- * @param trigger - 第一帧和进程握手后，仅执行一次的异步真实操作。
- * @param preserveFailure - 原异常发生后，在设备清理前保存宿主现场。
+/** Receive complete physical frames without encoding or blocking the input trigger.
+ * @param trigger - Single original action after the first frame and PID handshake.
+ * @param preserveFailure - Preserve the original failure before device cleanup.
+ * @param profile - Original Slot timing or five-second video timing.
  */
-export async function collectSurfaceFrames(trigger: () => unknown, preserveFailure: () => Promise<void>): Promise<{
+export async function collectSurfaceFrames(trigger: () => unknown, preserveFailure: () => Promise<void>, profile: SurfaceCaptureWindow = 'slot'): Promise<{
   frames: SurfaceFrame[]; stderr: string; stoppedTailBytes: number }> {
   const serial = process.env.ANDROID_SERIAL || '';
   if (!/^emulator-\d+$/.test(serial)) throw new Error('原始采帧仅允许专用 Android 模拟器');
   const session = new SurfaceRecording(serial);
   const controller = new AbortController();
-  const main = captureWindow(session, trigger, controller.signal);
+  const main = captureWindow(session, trigger, controller.signal, profile);
   let completed = false;
   try {
     await Promise.race([main, session.failure]);
@@ -39,16 +41,17 @@ export async function collectSurfaceFrames(trigger: () => unknown, preserveFailu
   return { frames: session.frames, stderr: session.stderr, stoppedTailBytes: session.parser.tailBytes() };
 }
 
-/** 从实际就绪开始观察原 3.2 秒窗口，不以固定帧率替代实际采样时间。
- * @param session - 本次拥有的原始帧进程。
- * @param trigger - 实际关闭按钮。
- * @param signal - 失败时取消尚未执行的真实操作。
+/** Observe the original 3.2-second Slot or five-second video window from physical readiness.
+ * @param session - The owned raw-frame process.
+ * @param trigger - The original single action.
+ * @param signal - Cancel a trigger that has not happened after a source failure.
+ * @param profile - Fixed original timing, chosen before any frame is inspected.
  */
-async function captureWindow(session: SurfaceRecording, trigger: () => unknown, signal: AbortSignal): Promise<void> {
+async function captureWindow(session: SurfaceRecording, trigger: () => unknown, signal: AbortSignal, profile: SurfaceCaptureWindow): Promise<void> {
   const deadline = setTimeout(4_000, undefined, { signal }).then(() => { throw new Error('原始采帧启动超时'); });
   await Promise.race([session.ready, deadline]);
-  await Promise.all([setTimeout(3_200, undefined, { signal }),
-    setTimeout(300, undefined, { signal }).then(() => trigger())]);
+  await Promise.all([setTimeout(profile === 'video' ? 5_000 : 3_200, undefined, { signal }),
+    setTimeout(profile === 'video' ? 1_000 : 300, undefined, { signal }).then(() => trigger())]);
 }
 
 /** 仅管理本次 shell 返回的 PID；不使用 killall 或其他进程的文件。 */

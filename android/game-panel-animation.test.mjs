@@ -15,11 +15,17 @@ const moving = { ...target, bounds: { ...target.bounds, y: 380 } };
  */
 function panelScene(options = {}) {
   const events = [], attachments = [];
+  const variant = { game: 'zhajinhua', name: 'game-rule', phase: 'enter', button, ...options };
   const layouts = options.layouts || [moving, target, target];
   /** 一次即时查询可以返回节点消失，不能用默认值替代 null。 */
   const current = () => Object.hasOwn(options, 'current') ? options.current : target;
   let queries = 0;
-  const device = { _connection: { /** 提供 tree、marker 和失败截图命令。 */ toImpl: () => ({
+  const device = { input: {
+    /** Record one awaited native input operation.
+     * @param point - Unmodified stable target center.
+     */
+    tap: async point => { events.push(['native-tap', point]); if (options.inputFailure) throw options.inputFailure; },
+  }, _connection: { /** 提供 tree、marker 和失败截图命令。 */ toImpl: () => ({
     /** 返回节点，记录查询发生在录制前还是触发时。
      * @param method - 原生命令。
      */
@@ -86,8 +92,8 @@ function panelScene(options = {}) {
     /** 执行入口；可选择无动画的普通路径。
      * @param animationInfo - 当前测试报告。
      */
-    run: (animationInfo = info) => animateGamePanel(device, 'zhajinhua', 'game-rule', button,
-      { x: 130, y: 330, width: 460, height: 610 }, animationInfo, 'enter', options.method),
+    run: (animationInfo = info) => animateGamePanel(device, variant.game, variant.name, variant.button,
+      { x: 130, y: 330, width: 460, height: 610 }, animationInfo, variant.phase, options.method),
     /** 读取结构化入口诊断。 */
     trace: () => JSON.parse(attachments.find(([name]) => name.endsWith('-input-trace'))[1].body),
   };
@@ -149,3 +155,16 @@ test('连续截图路径在触发时只用已稳定坐标，不向忙碌的驱�
   assert.equal(scene.events.filter(Array.isArray).length, 1);
   assert.equal(scene.events.slice(scene.events.indexOf('capture')).includes('tree'), false);
 });
+
+
+for (const inputFailure of [undefined, new Error('native tap rejected')]) {
+  test(`card rank raw capture awaits one native tap and preserves input failure: ${!!inputFailure}`, async () => {
+    const close = { ...target, res: 'card-rank-popup-close' };
+    const scene = panelScene({ game: 'texas-holdem', name: 'card-rank', phase: 'exit', method: 'videoFrames',
+      button: close.res, layouts: [close, close], inputFailure });
+    if (inputFailure) await assert.rejects(scene.run(), error => error === inputFailure);
+    else await scene.run();
+    assert.deepEqual(scene.events.filter(Array.isArray), [['native-tap', { x: 210, y: 450 }]]);
+    assert.equal(scene.trace().events.filter(event => event.event === 'tap').length, 1);
+  });
+}
