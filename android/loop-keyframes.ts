@@ -96,8 +96,10 @@ export async function captureMovingKeyframes(device: AndroidDevice, name: string
   const implementation = (device as unknown as { _connection: { toImpl(device: AndroidDevice): {
     _send(method: string): Promise<NativeFrame[]> } } })._connection.toImpl(device);
   const pictures: Buffer[][] = [];
+  const sampleTimes: number[] = [];
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     const timeline = await implementation._send('motionFrames');
+    sampleTimes.push(...timeline.map(frame => frame.capturedAt));
     expect(timeline.length).toBeGreaterThanOrEqual(10);
     pictures.push(...timeline.map(frame => motionParts(Buffer.from(frame.png, 'base64'), regions).regions));
     if (regions.every((_, index) => pictures.some(parts => frameColorDistance(parts[index], pictures[0][index]) > 1))) break;
@@ -107,7 +109,7 @@ export async function captureMovingKeyframes(device: AndroidDevice, name: string
     const first = frames[0];
     const distances = frames.map(frame => frameColorDistance(first, frame));
     const farthestIndex = distances.indexOf(Math.max(...distances));
-    expect(distances[farthestIndex], `${name} 第 ${index + 1} 个控件必须运动`).toBeGreaterThan(1);
+    await assertMovingFrame(name, index, frames, regions, sampleTimes, distances, testInfo);
     for (const [phase, selected] of [['first', first], ['moved', frames[farthestIndex]]] as const) {
       const file = `${name}-${index + 1}-${phase}.png`;
       await testInfo.attach(file, { body: selected, contentType: 'image/png' });
@@ -145,5 +147,33 @@ export async function captureConcurrentMotion(frames: Buffer[], name: string, te
       expect(Math.min(...pictures.map(frame => frameColorDistance(frame, reference))),
         `${name} ${phase} 视觉回归`).toBeLessThanOrEqual(18);
     }
+  }
+}
+
+/** 保留倒计时运动首败的既有 ROI 与时间线，不改变断言或重采样。
+ * @param name - 当前动画。
+ * @param index - 原控件序号。
+ * @param frames - 已采集的裁切帧，不包含屏幕其他身份信息。
+ * @param regions - 原比较区域。
+ * @param sampleTimes - 原生采样时间。
+ * @param distances - 相对首帧的原始距离。
+ * @param testInfo - 本次尝试报告。
+ */
+async function assertMovingFrame(name: string, index: number, frames: Buffer[], regions: ScreenshotBounds[],
+  sampleTimes: number[], distances: number[], testInfo: TestInfo): Promise<void> {
+  try {
+    expect(Math.max(...distances), `${name} 第 ${index + 1} 个控件必须运动`).toBeGreaterThan(1);
+  } catch (error) {
+    if (name.endsWith('-game-opponent-turn-countdown')) {
+      await testInfo.attach(`${name}-motion-evidence`, {
+        body: JSON.stringify({ regions, sampleTimes, distances }), contentType: 'application/json',
+      }).catch(() => undefined);
+      for (const [position, body] of frames.entries()) {
+        await testInfo.attach(`${name}-${index + 1}-sample-${position}`, {
+          body, contentType: 'image/png',
+        }).catch(() => undefined);
+      }
+    }
+    throw error;
   }
 }

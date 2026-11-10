@@ -15,6 +15,7 @@ test(`${locale} launch_branding full screen while initialization waits`, async (
   test.setTimeout(300_000);
   await withAndroidProxy(async proxy => {
     let device: AndroidDevice | undefined;
+    const networkObservations: unknown[] = [];
     try {
       device = await launchApplication({ gameDriver: true });
       await waitForHall(device);
@@ -34,6 +35,7 @@ test(`${locale} launch_branding full screen while initialization waits`, async (
       // 不延长应用超时，也不把可见错误提示关闭后当作成功截图。
       await expect.poll(async () => {
         const network = await proxy.command<{ requested: number; lastRequestedAt: number }>('android/launch-network');
+        networkObservations.push({ at: Date.now(), phase: 'held', ...network });
         expect(network.requested, '必须真正拦截启动健康检查').toBeGreaterThan(0);
         return Date.now() - network.lastRequestedAt;
       }, { timeout: 30_000, intervals: [500] }).toBeGreaterThan(6000);
@@ -57,9 +59,14 @@ test(`${locale} launch_branding full screen while initialization waits`, async (
         return bytes;
       };
       await compareScreenshot(device, `${locale}-launch-branding`, testInfo, [], undefined, fullScreen);
-      await proxy.command('android/launch-network', { hold: false });
+      const released = await proxy.command('android/launch-network', { hold: false });
+      networkObservations.push({ at: Date.now(), phase: 'released', state: released });
       await device.wait({ res: 'settings-tab' }, { timeout: 120_000 });
     } catch (error) {
+      // 读取已有脱敏选线事件；不重试健康检查、不关闭错误弹窗，保留原始失败。
+      await proxy.command('android/network-selection').then(network => testInfo.attach('launch-network-evidence', {
+        body: JSON.stringify({ networkObservations, network }), contentType: 'application/json',
+      })).catch(() => undefined);
       await captureDeviceFailure(device, testInfo);
       throw error;
     } finally {
