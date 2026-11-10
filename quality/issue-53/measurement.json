@@ -1,0 +1,235 @@
+{
+  "issue": 53,
+  "baselineRevision": "cb680d8bc6e074ce714ba9ff170c0d1429439369",
+  "metric": "Radon 6.0.1 decisions, no_assert=True; ordinary/async functions, methods and lambdas independent; nested function/class/lambda bodies excluded from parent",
+  "scope": [
+    "visual/cases/_shared/mitmproxy",
+    "visual/cases/club/mitmproxy",
+    "visual/cases/game-record/mitmproxy",
+    "visual/cases/texas-holdem/mitmproxy",
+    "visual/cases/zhajinhua/mitmproxy"
+  ],
+  "limits": {
+    "visualTestsAndSupport": 3,
+    "gateTests": 3,
+    "independentChecker": 6,
+    "scopedRuffC901": 6
+  },
+  "beforeSupportFunctions": 163,
+  "beforeOverLimit": 45,
+  "beforeMaximum": 76,
+  "afterSupportFunctions": 400,
+  "afterTotalFunctionsIncludingGate": 408,
+  "afterSupportMaximum": 3,
+  "afterOverLimit": 0,
+  "afterCheckerMaximum": 6,
+  "reportCommand": "uv run --no-project --with radon==6.0.1 python scripts/check_visual_complexity.py --report",
+  "beforeSources": [
+    {
+      "file": "visual/cases/club/mitmproxy/addon.py",
+      "beforeSha256": "24b06167dccc2c500b8f90740ad97be53609162d4332755c21d64dfdd153174d"
+    },
+    {
+      "file": "visual/cases/club/mitmproxy/test_addon.py",
+      "beforeSha256": "11bfa13b4e7bad3d7eed73f588a9c1cd473bd8ac93aad30ce5eca35d32695def"
+    },
+    {
+      "file": "visual/cases/game-record/mitmproxy/addon.py",
+      "beforeSha256": "4984f17a083bec4384ad4dbd37b5a2d633f0c1e3207fbaabeda8a64a4bcd9366"
+    },
+    {
+      "file": "visual/cases/game-record/mitmproxy/data.py",
+      "beforeSha256": "af02ff95cd0adc4a4a9f8c28f8065906f9dc7a5faed9e0d639d69b36c3b863e7"
+    },
+    {
+      "file": "visual/cases/game-record/mitmproxy/test_addon.py",
+      "beforeSha256": "51bf9b88ee664ce8c623eaa53d1a1e969bdbcb1909d42b0564acc81c52312eb8"
+    },
+    {
+      "file": "visual/cases/texas-holdem/mitmproxy/addon.py",
+      "beforeSha256": "7dbbeab97dd9fc5aafd2ba24f17bf03dec2ade2d5d43500fe69b915f1ab00807"
+    },
+    {
+      "file": "visual/cases/texas-holdem/mitmproxy/game_log.py",
+      "beforeSha256": "a36b633ae809d9503957de0d6fe888d0221fa7582e280fafa13d6578027245d7"
+    },
+    {
+      "file": "visual/cases/texas-holdem/mitmproxy/records_v2.py",
+      "beforeSha256": "128f100beed3ecd2b46b37342e8c550f8da6163670c1a58c1ae812f33d9c4de2"
+    },
+    {
+      "file": "visual/cases/texas-holdem/mitmproxy/room_view.py",
+      "beforeSha256": "db2a97c62cd696c39e22f52e31947638b6197168f52c1ea45d838b7f275baadc"
+    },
+    {
+      "file": "visual/cases/texas-holdem/mitmproxy/test_addon.py",
+      "beforeSha256": "1db8d62d5b3f6342b0cd612f65564a3e25fd63dded693e653ff4c3d355a5bd80"
+    },
+    {
+      "file": "visual/cases/texas-holdem/mitmproxy/test_records_v2.py",
+      "beforeSha256": "725b20e98c7ed3bbb1bf2d494dc270c3ef1541480043766899b8f1ae4417aca7"
+    },
+    {
+      "file": "visual/cases/texas-holdem/mitmproxy/test_room_view.py",
+      "beforeSha256": "f0ce59dca8d1a3f4235e3a5c9891c2dbbf81a0c094f201494f6b7b576f7da04f"
+    },
+    {
+      "file": "visual/cases/texas-holdem/mitmproxy/test_texas_replay.py",
+      "beforeSha256": "03ea071ff96c8c4b70aef7b6e9fbba726d859a696aa6a17cdd6ea51df4803bab"
+    },
+    {
+      "file": "visual/cases/texas-holdem/mitmproxy/test_ui_states.py",
+      "beforeSha256": "aa34a1318d5e8047f43bc134fd190c64d9fff9dbce4eddc5abf4def0e4a524f0"
+    },
+    {
+      "file": "visual/cases/texas-holdem/mitmproxy/texas_replay.py",
+      "beforeSha256": "ee35c1484ccfe0d35b28d6d7a90132e961ad62248de8eab40fbeaa31c2569d24"
+    },
+    {
+      "file": "visual/cases/texas-holdem/mitmproxy/ui_states.py",
+      "beforeSha256": "7c1a6a4757dba2f130c60ce83b31377eb2a56ed9128a2dedc0d5b8c9c48cbfac"
+    },
+    {
+      "file": "visual/cases/zhajinhua/mitmproxy/addon.py",
+      "beforeSha256": "59cd7f1af3394cc63dc6436ce3f430e05d7cc4105557020074d58b367ec36a6d"
+    },
+    {
+      "file": "visual/cases/zhajinhua/mitmproxy/test_addon.py",
+      "beforeSha256": "9ed3ea6b3190a591cd2cc1e903e9b9e10c13f5997acc060ccd65df1a2fab5cdf"
+    },
+    {
+      "file": "visual/cases/zhajinhua/mitmproxy/test_zhajinhua_replay.py",
+      "beforeSha256": "94c6c6a4b63de1b8858d084d7f2f1f3575e8181dbe28392bfc9b508222ff26a5"
+    },
+    {
+      "file": "visual/cases/zhajinhua/mitmproxy/zhajinhua_replay.py",
+      "beforeSha256": "8ee27a2c9eaa9a1c73e8fb2f79390be10bcda1991b8fc880f7e4078961a6b36d"
+    }
+  ],
+  "afterSources": [
+    {
+      "file": "scripts/check_visual_complexity.py",
+      "afterSha256": "e12cc90b21d01011b750abfc5e5bb66abed36807361914fce1ba2f617a3a64da"
+    },
+    {
+      "file": "scripts/test_check_visual_complexity.py",
+      "afterSha256": "e404151a44e705374983df38e5b8b118671f3aec3198677d479fceb710a99939"
+    },
+    {
+      "file": "visual/cases/_shared/mitmproxy/proxy_control.py",
+      "afterSha256": "27b143daa6b1ba5f8db97e7b1b830594ee598ce5eb50dd8d2789c1bf8247a641"
+    },
+    {
+      "file": "visual/cases/_shared/mitmproxy/proxy_http.py",
+      "afterSha256": "3fb010d1a7bbcbe31dd148dae0383f114efd6a1d5ced62c4025b1f6a482487a6"
+    },
+    {
+      "file": "visual/cases/_shared/mitmproxy/replay_games.py",
+      "afterSha256": "7d3dff9d0e6e6bfbefc632236e8a2438464e85f212a143006dd565fe2e523efb"
+    },
+    {
+      "file": "visual/cases/_shared/mitmproxy/replay_protocol.py",
+      "afterSha256": "4e4784e5350bb3d92dc293287ec9046312203d5ccfa73fd63d591fc8c8b946f0"
+    },
+    {
+      "file": "visual/cases/_shared/mitmproxy/room_creation.py",
+      "afterSha256": "980af0bae871798d35d41d105b4bbafc5333fb5423cae9b12d5632e6b3a230bc"
+    },
+    {
+      "file": "visual/cases/club/mitmproxy/addon.py",
+      "afterSha256": "b5764e0a43ca27012642e9a67c41fdc541470ba5ffb059622cec9b54ff52228b"
+    },
+    {
+      "file": "visual/cases/club/mitmproxy/test_addon.py",
+      "afterSha256": "11bfa13b4e7bad3d7eed73f588a9c1cd473bd8ac93aad30ce5eca35d32695def"
+    },
+    {
+      "file": "visual/cases/game-record/mitmproxy/addon.py",
+      "afterSha256": "f9a2833c735023b1735e8a7367c9550fd62efa460cdcf048675d6d01b19a62da"
+    },
+    {
+      "file": "visual/cases/game-record/mitmproxy/data.py",
+      "afterSha256": "40299a40617df3955267c5289c22c10f767882a0687e7337557f5ef34a0bfe0e"
+    },
+    {
+      "file": "visual/cases/game-record/mitmproxy/record_fixtures.py",
+      "afterSha256": "5677b513056edf07ae01f4dfd1892101b2c5039957727a769167bc80ad62c56b"
+    },
+    {
+      "file": "visual/cases/game-record/mitmproxy/test_addon.py",
+      "afterSha256": "0e18dc492ae28de73d029ce64b673b664e4c05e1312c3858e9bbfc54a667ab34"
+    },
+    {
+      "file": "visual/cases/texas-holdem/mitmproxy/addon.py",
+      "afterSha256": "26a772e6e794e3424672d125ac4c7653eea6770e6a46f4409aad53d5c81d6059"
+    },
+    {
+      "file": "visual/cases/texas-holdem/mitmproxy/game_log.py",
+      "afterSha256": "9f53df6fb07129e719f3453960995c3727af46240945e735315398f6837d6b03"
+    },
+    {
+      "file": "visual/cases/texas-holdem/mitmproxy/records_v2.py",
+      "afterSha256": "84752efd9b6e210c58f1a8f22393a90f476d75db4e789fb728e01fcc2df0b0a5"
+    },
+    {
+      "file": "visual/cases/texas-holdem/mitmproxy/room_view.py",
+      "afterSha256": "6569071df1c7bf73ed8bb869172b56f3d51f67277607d6623a02397523e6276f"
+    },
+    {
+      "file": "visual/cases/texas-holdem/mitmproxy/test_addon.py",
+      "afterSha256": "789ddae9ef03821b45fcc665549603590df3930ecd6cda45c8ea907468447acf"
+    },
+    {
+      "file": "visual/cases/texas-holdem/mitmproxy/test_records_v2.py",
+      "afterSha256": "725b20e98c7ed3bbb1bf2d494dc270c3ef1541480043766899b8f1ae4417aca7"
+    },
+    {
+      "file": "visual/cases/texas-holdem/mitmproxy/test_room_view.py",
+      "afterSha256": "7d4a9ecf447682a382fc0157858dc5b6d30a0d2bcfa8dbb74f4a071764fb7334"
+    },
+    {
+      "file": "visual/cases/texas-holdem/mitmproxy/test_texas_replay.py",
+      "afterSha256": "03ea071ff96c8c4b70aef7b6e9fbba726d859a696aa6a17cdd6ea51df4803bab"
+    },
+    {
+      "file": "visual/cases/texas-holdem/mitmproxy/test_ui_states.py",
+      "afterSha256": "aa34a1318d5e8047f43bc134fd190c64d9fff9dbce4eddc5abf4def0e4a524f0"
+    },
+    {
+      "file": "visual/cases/texas-holdem/mitmproxy/texas_replay.py",
+      "afterSha256": "5f2a055b86581b533722c45075e78f619e1fe840253f7c870bf0e772fbe43c92"
+    },
+    {
+      "file": "visual/cases/texas-holdem/mitmproxy/ui_states.py",
+      "afterSha256": "ea347e32f2d717d1ee1d675bff60b52ad72067d0c0ae44b74b1c64845568ced4"
+    },
+    {
+      "file": "visual/cases/zhajinhua/mitmproxy/addon.py",
+      "afterSha256": "5be49b7185823a2b32c5a5a742d97436ab3b34b28130bbb8d8bf8c277f023737"
+    },
+    {
+      "file": "visual/cases/zhajinhua/mitmproxy/test_addon.py",
+      "afterSha256": "9ed3ea6b3190a591cd2cc1e903e9b9e10c13f5997acc060ccd65df1a2fab5cdf"
+    },
+    {
+      "file": "visual/cases/zhajinhua/mitmproxy/test_zhajinhua_replay.py",
+      "afterSha256": "94c6c6a4b63de1b8858d084d7f2f1f3575e8181dbe28392bfc9b508222ff26a5"
+    },
+    {
+      "file": "visual/cases/zhajinhua/mitmproxy/zhajinhua_replay.py",
+      "afterSha256": "00d082afa32c6707a23921e9da0a9c95ece9ea6eed1aa27d92fe5718d5ec7c4c"
+    }
+  ],
+  "comparison": "complexity-comparison.json maps every original function to its current or inherited definition; additional functions listed separately",
+  "reusedCheckerGate": "npm run lint:python:e2e",
+  "reusedCheckerSources": [
+    {
+      "file": "scripts/check_e2e_complexity.py",
+      "afterSha256": "23b16d15933e3a0dad29da2a79c43102c631a945ebe11f19acaca91f99f59c44"
+    },
+    {
+      "file": "scripts/test_check_e2e_complexity.py",
+      "afterSha256": "a30e8936f6fafb105dac2c27740df82676067daca409a4cd594bbaf812a21910"
+    }
+  ]
+}

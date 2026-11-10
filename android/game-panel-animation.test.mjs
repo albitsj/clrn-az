@@ -44,6 +44,7 @@ function panelScene(options = {}) {
   };
   const { animateGamePanel } = loadGameFlow('./game-panel-animation.ts', {
     '@playwright/test': require('@playwright/test'),
+    './render-diagnostics': { /** 设备渲染统计由独立边界测试覆盖。 */ preserveRenderStatistics: async () => {} },
     './device': { /** 记录一次真实 ADB 点击。
      * @param args - 点击命令及坐标。
      */

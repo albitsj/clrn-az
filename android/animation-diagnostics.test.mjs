@@ -27,6 +27,7 @@ function panel(directory, failure, attach) {
       /** 动画入口的两次布局查询已经一致。 */ gameTapTarget: async () => ({ bounds: { x: 0, y: 0, width: 10, height: 10 } }),
     },
     './game-panel-diagnostics': require('./game-panel-diagnostics.ts'),
+    './render-diagnostics': { /** 设备渲染统计由独立边界测试覆盖。 */ preserveRenderStatistics: async () => {} },
     './device': { /** 设备点击已完成。 */ adb: () => {} },
     './animation-transition': { /** 保留原入口的成功或失败，不更改其结果。 */
       captureNativeTransition: async () => { if (failure) throw failure; },
@@ -71,6 +72,10 @@ test('聊天首败立即固定现有脱敏日志，重试轮转后仍保留失�
     assert.deepEqual(window.logs.filter(log => log.status === 'unavailable').map(log => log.file),
       ['adb.log.1', 'host.log.1', 'lifecycle.log.1']);
     assert.equal(JSON.stringify(window).includes(directory), false);
+    const trace = JSON.parse(attachments.get('texas-holdem-chat-enter-input-trace'));
+    assert.equal(trace.testID, 'chat-button');
+    assert.ok(trace.events.some(event => event.event === 'target-query-start'));
+    assert.equal(JSON.stringify(trace).includes(directory), false);
     const count = attachments.size;
     for (const args of [['texas-holdem', 'chat', 'exit'], ['zhajinhua', 'chat'], ['texas-holdem', 'voice']]) {
       await assert.rejects(run(...args), error => error === failure);

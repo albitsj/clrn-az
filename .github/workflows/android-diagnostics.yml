@@ -6,6 +6,7 @@ on:
       - 'android/*diagnostic*.py'
       - '.github/workflows/android-diagnostics.yml'
       - '.github/workflows/android-visual.yml'
+      - '.github/actions/android-visual/**'
   workflow_dispatch:
 
 permissions:
@@ -19,7 +20,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        case: [normal, init-failure]
+        case: [normal, init-failure, test-failure, cancel, unresponsive, retained-pipe]
+    # Use an isolated account-slot key to prove lifecycle failures release the lock.
+    concurrency:
+      group: android-diagnostics-account-${{ github.run_id }}-${{ matrix.case }}
+      cancel-in-progress: false
+      queue: max
     env:
       ANDROID_SERIAL: emulator-5554
       ANDROID_DIAGNOSTICS_DIR: ${{ github.workspace }}/android/artifacts/diagnostics
@@ -45,7 +51,8 @@ jobs:
           sudo udevadm trigger --name-match=kvm
       - name: Exercise real emulator lifecycle
         id: emulator
-        continue-on-error: ${{ matrix.case == 'init-failure' }}
+        timeout-minutes: 12
+        continue-on-error: true
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 35
@@ -53,17 +60,21 @@ jobs:
           arch: x86_64
           emulator-boot-timeout: ${{ matrix.case == 'init-failure' && '30' || '600' }}
           emulator-options: -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader_indirect ${{ matrix.case == 'init-failure' && '-diagnostics-deliberately-invalid-option' || '' }}
-          pre-emulator-launch-script: python3 android/ci_diagnostics.py install-emulator-wrapper
-          script: python3 android/ci_diagnostics_smoke.py exercise
+          pre-emulator-launch-script: python3 android/ci_diagnostics_smoke.py prepare ${{ matrix.case }}
+          script: python3 android/ci_diagnostics_smoke.py exercise ${{ matrix.case }}
       - name: Finalize diagnostics
+        id: cleanup
         if: always()
+        timeout-minutes: 2
+        continue-on-error: true
         run: python3 android/ci_diagnostics.py stop
       - name: Verify retained logs and redaction
         if: always()
         env:
           SMOKE_CASE: ${{ matrix.case }}
           EMULATOR_OUTCOME: ${{ steps.emulator.outcome }}
-        run: python3 android/ci_diagnostics_smoke.py verify "$SMOKE_CASE" "$EMULATOR_OUTCOME"
+          CLEANUP_OUTCOME: ${{ steps.cleanup.outcome }}
+        run: python3 android/ci_diagnostics_smoke.py verify "$SMOKE_CASE" "$EMULATOR_OUTCOME" "$CLEANUP_OUTCOME"
       - name: Upload verified diagnostics, including failure evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -72,3 +83,21 @@ jobs:
           path: android/artifacts/diagnostics/
           if-no-files-found: error
           retention-days: 7
+  next-account-slot:
+    needs: diagnostics
+    if: always()
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    strategy:
+      fail-fast: false
+      matrix:
+        case: [normal, init-failure, test-failure, cancel, unresponsive, retained-pipe]
+    concurrency:
+      group: android-diagnostics-account-${{ github.run_id }}-${{ matrix.case }}
+      cancel-in-progress: false
+      queue: max
+    steps:
+      - name: Confirm subsequent account task can start
+        env:
+          DIAGNOSTICS_RESULT: ${{ needs.diagnostics.result }}
+        run: echo "Account slot acquired after diagnostics result=$DIAGNOSTICS_RESULT"

@@ -22,21 +22,44 @@ class RecordsV2:
         self.enabled, self.empty = True, empty
 
     def response(self, flow, path, room_id):
-        if not self.enabled or not room_id or flow.request.method != 'PUT' or (
-            path != f'/v10/texas_holdem/room/{room_id}/enter') or not flow.response:
+        if not self.enabled or not room_id:
             return
+        self.read_session(flow, path, room_id)
+
+    def read_session(self, flow, path, room_id):
+        if (flow.request.method, path) != ('PUT', f'/v10/texas_holdem/room/{room_id}/enter'):
+            return
+        if flow.response:
+            self.bind_session(flow)
+
+    def bind_session(self, flow):
         body = json.loads(flow.response.content)
-        session = body.get('result', {}).get('play_session_id') if body.get('ok') is True else None
-        if flow.response.status_code == 200 and isinstance(session, str) and re.fullmatch(r'[A-Za-z0-9_-]{1,128}', session):
+        session = self.response_session(body)
+        if flow.response.status_code == 200 and self.valid_session(session):
             self.session_id = session
+
+    def response_session(self, body):
+        return body.get('result', {}).get('play_session_id') if body.get('ok') is True else None
+
+    def valid_session(self, session):
+        return isinstance(session, str) and re.fullmatch(r'[A-Za-z0-9_-]{1,128}', session)
 
     def fixture(self, path, method, self_id):
         if not self.enabled or method != 'GET':
             return None
+        return self.session_fixture(path, self_id)
+
+    def session_fixture(self, path, self_id):
         if not self_id or not self.session_id:
             return None
+        return self.record_fixture(path, self_id)
+
+    def record_fixture(self, path, self_id):
         if path == f'/v11/game_log/{self_id}/play_session_record/{self.session_id}':
             return {'all_round_id': [] if self.empty else [ROUND]}
+        return self.round_fixture(path, self_id)
+
+    def round_fixture(self, path, self_id):
         if not self.empty and path == f'/v11/game_log/{self_id}/round/{ROUND}':
             return round_data(self_id)
         return None

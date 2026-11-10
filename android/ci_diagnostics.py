@@ -13,6 +13,9 @@ import threading
 import time
 
 from diagnostics_io import BoundedLog, Redactor, capture
+from diagnostics_lifecycle import (
+    failure, group_members, report, request_shutdown, run_test, stop_captures, stop_test, wait_emulator,
+)
 
 
 ROOT = Path(__file__).resolve().parent
@@ -160,21 +163,22 @@ def start():
     raise RuntimeError('Collector startup timed out')
 
 
-def stop_daemon(log=None):
+def stop_daemon(log=None, timeout=10):
     """Terminate the collector independently of final probes and SDK restoration."""
     pidfile = directory() / 'collector.pid'
     if pidfile.exists():
         pid = int(pidfile.read_text())
         try:
             os.kill(pid, signal.SIGTERM)
-            for _ in range(100):
-                if not (directory() / 'ready').exists():
-                    break
+            deadline = time.monotonic() + timeout
+            while group_members(pid) and time.monotonic() < deadline:
                 time.sleep(0.1)
-            else:
+            members = group_members(pid)
+            if members:
+                report(log, f'phase=collector-shutdown pgid={pid}\n' + '\n'.join(members))
                 os.killpg(pid, signal.SIGKILL)
-                if log is not None:
-                    best_effort(lambda: log.write('collector shutdown timed out; killed process group'))
+                failure(directory(), log, 'phase=collector-shutdown timeout; killed process group')
+                (directory() / 'ready').unlink(missing_ok=True)
         except ProcessLookupError:
             if log is not None:
                 best_effort(lambda: log.write('collector already exited'))
@@ -184,14 +188,21 @@ def stop_daemon(log=None):
 def stop():
     diagnostics = best_effort(collector)
     log = diagnostics.logs['lifecycle'] if diagnostics else None
-    try:
-        if diagnostics:
-            best_effort(lambda: diagnostics.sample('after-emulator-action'), log)
-        best_effort(lambda: stop_daemon(log), log)
-    finally:
-        from diagnostics_wrappers import restore
-        best_effort(restore, log)
-    return 0
+    clean = True
+    from diagnostics_wrappers import restore
+    if diagnostics:
+        best_effort(lambda: diagnostics.sample('after-emulator-action'), log)
+    actions = [lambda: request_shutdown(directory()), lambda: wait_emulator(directory(), log),
+               lambda: stop_test(directory(), log), lambda: stop_daemon(log),
+               lambda: stop_captures(directory(), log), restore]
+    for action in actions:
+        try:
+            if action() is False:
+                clean = False
+        except Exception as error:
+            clean = False
+            failure(directory(), log, f'phase=final-cleanup failed: {type(error).__name__}')
+    return 0 if clean and not (directory() / 'cleanup-failed').exists() else 1
 
 
 def best_effort(action, log=None):
@@ -214,13 +225,14 @@ def run(command):
         best_effort(lambda: diagnostics.logs['lifecycle'].write('phase=test-start'))
     status = 127
     try:
-        result = subprocess.run(command, check=False)
-        status = result.returncode if result.returncode >= 0 else 128 - result.returncode
+        status = run_test(command, diagnostics.directory if diagnostics else directory(),
+                          diagnostics.logs['lifecycle'] if diagnostics else None)
     except OSError as error:
         print(f'Android test spawn failed ({type(error).__name__}).', file=sys.stderr)
         if diagnostics:
             best_effort(lambda failure=error: diagnostics.logs['lifecycle'].write(f'test spawn failed: {failure}'))
     finally:
+        best_effort(lambda: (directory() / 'test.exit').write_text(str(status)))
         if diagnostics:
             best_effort(lambda: diagnostics.logs['lifecycle'].write(f'test_exit={status}'))
             best_effort(lambda: diagnostics.sample('after-test'), diagnostics.logs['lifecycle'])
@@ -236,14 +248,13 @@ def main():
         best_effort(start)
         return 0
     if action == 'stop':
-        best_effort(stop)
-        return 0
+        return stop()
     if action == 'snapshot':
         best_effort(lambda: collector().sample('manual'))
         return 0
     if action == 'install-emulator-wrapper':
         from diagnostics_wrappers import install
-        best_effort(install)
+        install()
         return 0
     if action == 'run' and len(sys.argv) > 3 and sys.argv[2] == '--':
         return run(sys.argv[3:])

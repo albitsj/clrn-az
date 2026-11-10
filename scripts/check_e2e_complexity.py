@@ -99,25 +99,25 @@ def failures(rows):
     return [row for row in rows if row['complexity'] > row['limit']]
 
 
-def check(rows):
+def check(rows, label='E2E'):
     exceeded = failures(rows)
     for row in exceeded:
         print(f"{row['file']}:{row['line']}:{row['column']}: {row['function']} "
               f"complexity {row['complexity']} > {row['limit']}", file=sys.stderr)
-    print(f'E2E complexity: {len(rows)} functions, {len(exceeded)} failures')
+    print(f'{label} complexity: {len(rows)} functions, {len(exceeded)} failures')
     return int(bool(exceeded))
 
 
-def main():
-    parser = argparse.ArgumentParser(description=__doc__)
+def main(scan_scope=scan, description=__doc__, label='E2E'):
+    parser = argparse.ArgumentParser(description=description)
     parser.add_argument('--root', type=Path, default=ROOT)
     parser.add_argument('--report', action='store_true', help='JSON measurement; no threshold enforcement')
     args = parser.parse_args()
-    rows = scan(args.root.resolve())
+    rows = scan_scope(args.root.resolve())
     if args.report:
         print(json.dumps(rows, indent=2))
         return 0
-    return check(rows)
+    return check(rows, label)
 
 
 if __name__ == '__main__':

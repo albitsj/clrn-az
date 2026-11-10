@@ -29,8 +29,7 @@ class TexasAddonTests(unittest.TestCase):
         for path in (f'/v10/profile/{player}', f'/v10/wallet/{player}/currency/coin',
                      f'/v1/texas_statistics/player/{player}/rounds/100'):
             self.assertIsNotNone(self.request(path).response)
-            for method in ('PUT', 'POST', 'PATCH', 'DELETE', 'OPTIONS'):
-                self.assertIsNone(self.request(path, method).response)
+            self.assert_mutations_pass_through(path)
         self.assertIsNone(self.request(f'/v10/profile/{OTHER}').response)
         self.assertIsNone(self.request('/v10/profile/users', 'PUT', {'users': [player, OTHER]}).response)
         profiles = self.request('/v10/profile/users', 'PUT', {'users': [player, SELF]})
@@ -46,6 +45,27 @@ class TexasAddonTests(unittest.TestCase):
         for path in (f'/v10/profile/{SELF}', f'/v10/wallet/{SELF}/currency/coin',
                      f'/v1/texas_statistics/player/{SELF}/rounds/100'):
             self.assertIsNone(self.request(path).response)
+
+    def assert_mutations_pass_through(self, path):
+        for method in ('PUT', 'POST', 'PATCH', 'DELETE', 'OPTIONS'):
+            self.assertIsNone(self.request(path, method).response)
+
+    def test_malformed_ui_request_stops_before_record_and_profile_handlers(self):
+        with patch.object(self.addon.ui, 'fixture', side_effect=ValueError('bad UI request')):
+            with patch.object(self.addon.records, 'fixture') as records:
+                request = self.request(f'/v10/profile/{PLAYER_IDS[0]}')
+        self.assertIsNone(request.response)
+        records.assert_not_called()
+
+    def test_record_fixture_errors_keep_their_original_propagation(self):
+        with patch.object(self.addon.records, 'fixture', side_effect=ValueError('bad record')):
+            with self.assertRaisesRegex(ValueError, 'bad record'):
+                self.request('/unrelated')
+
+    def test_profile_preparation_errors_are_not_swallowed(self):
+        with patch('addon.prepare_profiles', side_effect=ValueError('bad profile')):
+            with self.assertRaisesRegex(ValueError, 'bad profile'):
+                self.request('/v10/profile/users', 'PUT', {'users': [SELF]})
 
     def test_block_fixture_only_intercepts_replay_players_and_known_methods(self):
         path = '/v1/hall_matching/blacklist'
