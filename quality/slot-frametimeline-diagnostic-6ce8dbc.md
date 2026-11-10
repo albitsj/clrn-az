@@ -7,3 +7,5 @@
 官方依据：https://perfetto.dev/docs/data-sources/frametimeline ，https://perfetto.dev/docs/learning-more/tracing-in-background 。background-wait 在数据源就绪后返回，固定期限结束且进程退出后才拉取，避免未完成 trace 被当成完整证据。
 
 首轮 42740814804/a1 复现一次 Slot flaky、四次首次通过，但六次 Perfetto 均因读取 /data/local/tmp 配置被 SELinux 拒绝而未启动，没有有效系统帧时间线。按官方配置输入方式改为通过标准输入传递文本配置；保留一份原始本地配置作为证据，保持固定十秒和所有原生门禁。不能将首轮的诊断启动失败当作渲染或截图根因。
+
+后续标准输入诊断正常合入当前生产候选 b40a686 的 SDK 准备限时修复，避免再次被无界清单请求阻塞。相对 b40a686 只保留原有五次定向调度和系统时间线取证差异；此诊断分支仍禁止合并。
