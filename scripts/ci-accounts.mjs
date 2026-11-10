@@ -69,7 +69,8 @@ export function androidAccountMatrix(runId, selectedGroup = 'all', selectedLocal
           label: `${group} / ${locale}${shard === 'all' ? '' : ` / ${shard}`}`,
           account: allocateCiAccount(runId, index === 0
             ? groups.indexOf(group) * 3 + locales.indexOf(locale) : shardOffsets[key] + index - 1) }));
-      })) };
+      })).filter(row => selectedGroup !== 'texas' || selectedLocale !== 'en'
+        || ['pregame-first', 'game-table'].includes(row.shard)) };
 }
 
 /**
