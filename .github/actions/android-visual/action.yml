@@ -73,23 +73,10 @@ runs:
       run: |
         test -s .ttyctl/android-driver/android-driver-target.apk
         test -s .ttyctl/android-driver/android-driver.apk
-        node -e 'const source = require("./.ttyctl/android-driver/source.json"); if (source.revision !== "39e3553a4f283a41134d75d7e404484bd9e6865a" || source.patch !== 7) process.exit(1)'
+        node -e 'const source = require("./.ttyctl/android-driver/source.json"); if (source.revision !== "39e3553a4f283a41134d75d7e404484bd9e6865a" || source.patch !== 11) process.exit(1)'
     - name: 准备固定 Android 系统镜像
       shell: bash
-      run: |
-        sdk_manager="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
-        (yes || true) | "$sdk_manager" --licenses > /dev/null
-        for attempt in 1 2 3; do
-          if "$sdk_manager" --install 'system-images;android-35;google_apis;x86_64' &&
-            test -f "$ANDROID_HOME/system-images/android-35/google_apis/x86_64/system.img"; then
-            break
-          fi
-          if [ "$attempt" = 3 ]; then exit 1; fi
-          # sdkmanager 会复用损坏的下载；清除缓存及未完成安装后重新下载。
-          rm -rf "${ANDROID_HOME:?}/.temp" "${ANDROID_HOME:?}/system-images/android-35/google_apis/x86_64"
-          rm -rf "${ANDROID_USER_HOME:-$HOME/.android}/cache"
-          sleep 5
-        done
+      run: bash scripts/prepare-android-image.sh
     - name: 启用模拟器硬件加速
       shell: bash
       run: |

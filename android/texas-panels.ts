@@ -8,7 +8,8 @@ import { captureGameThemes, closeGameMask, gameMenu } from './game-pregame';
 import { gameCardNames, replay } from './game-replay';
 import { dismissKeyboard } from './keyboard';
 import { captureMovingKeyframes } from './loop-keyframes';
-import { focusedCaretMask } from './screenshot';
+import { focusedCaretMask, type CaretSample } from './screenshot';
+import { preserveCaretFailure } from './game-input-caret';
 import { gameTapText, restoreTexas, texasEvents, type TexasContext } from './texas-support';
 
 /**
@@ -54,8 +55,19 @@ export async function texasPanels(context: TexasContext): Promise<void> {
   const captureRecord = async (state: string) => {
     await gameTap(device, 'review-board-page-input');
     await device.fill({ res: 'review-board-page-input' }, '1');
-    const caret = await focusedCaretMask(device);
-    expect(caret, '页码输入框应检测到真实细光标').toBeDefined();
+    let last: CaretSample | undefined;
+    const samples: object[] = [];
+    let caret;
+    try {
+      caret = await focusedCaretMask(device, undefined, sample => {
+        last = sample;
+        samples.push({ at: Date.now(), bounds: { ...sample.input.bounds }, focused: sample.input.focused });
+      });
+      expect(caret, '页码输入框应检测到真实细光标').toBeDefined();
+    } catch (error) {
+      await preserveCaretFailure(context.diagnosticsInfo, 'review-board-page-input', last, samples).catch(() => undefined);
+      throw error;
+    }
     await dismissKeyboard(device);
     const input = await gameReady(device, 'review-board-page-input', '1');
     await capture(state, [translateCaret(caret!, input.bounds)]);

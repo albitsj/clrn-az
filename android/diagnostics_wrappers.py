@@ -3,11 +3,12 @@
 import os
 from pathlib import Path
 import signal
+import subprocess
 import sys
 import threading
 
 from diagnostics_io import capture
-from diagnostics_lifecycle import failure, request_shutdown, wait_emulator
+from diagnostics_lifecycle import failure, report, request_shutdown, wait_emulator
 
 
 SUFFIX = '.diagnostics-original'
@@ -87,6 +88,46 @@ def shutdown(command, diagnostics, timeout=10):
     return result if result >= 0 else 128 - result
 
 
+def observe_shutdown_threads(pid, log, finished):
+    """Record bounded, argument-free wait states without affecting shutdown."""
+    from ci_diagnostics import best_effort
+
+    def snapshot():
+        result = subprocess.run(
+            ['ps', '-L', '-p', str(pid), '-o', 'pid,tid,stat,wchan:32,comm'],
+            capture_output=True, text=True, timeout=2, check=True)
+        report(log, 'phase=emulator-shutdown thread-waits\n' +
+               '\n'.join(result.stdout.splitlines()[:256]))
+
+    for delay in (0, 5, 10):
+        if finished.wait(delay):
+            return
+        best_effort(snapshot, log)
+
+
+def graceful_emulator_stop(diagnostics, finished, stopped):
+    """先正常终止已登记主进程，保留关闭依赖；采集器继续严格回收整个进程组。"""
+    log = diagnostics.logs['emulator']
+    try:
+        pid = int((diagnostics.directory / 'emulator-process.pid').read_text())
+        if os.getpgid(pid) != pid:
+            raise ValueError('Registered emulator is no longer a group leader')
+        report(log, f'phase=emulator-shutdown graceful-stop pid={pid}')
+        os.kill(pid, signal.SIGTERM)
+        from ci_diagnostics import best_effort
+        best_effort(lambda: threading.Thread(
+            target=observe_shutdown_threads, args=(pid, log, finished), daemon=True).start(), log)
+    except (FileNotFoundError, ProcessLookupError):
+        # 原生采集器确认进程组退出后可能刚刚移除登记。
+        pass
+    except (OSError, ValueError) as error:
+        failure(diagnostics.directory, log, f'phase=emulator-termination failed: {type(error).__name__}')
+    # SDK 正常关闭允许 20 秒；额外 5 秒用于采集器排空输出和回收进程组。
+    if not finished.wait(25):
+        report(log, 'phase=emulator-shutdown timeout after graceful-stop')
+        stopped.set()
+
+
 def emulator(command, diagnostics, shutdown_grace=10):
     """Release action-owned pipes and enforce a deadline after shutdown starts."""
     # emulator-runner starts us in the background. Holding its stdout/stderr open
@@ -108,8 +149,8 @@ def emulator(command, diagnostics, shutdown_grace=10):
             if (diagnostics.directory / 'shutdown-requested').exists():
                 log.write('phase=emulator-shutdown requested')
                 if not finished.wait(shutdown_grace):
-                    log.write(f'phase=emulator-shutdown timeout after {shutdown_grace}s')
-                    stopped.set()
+                    report(log, f'phase=emulator-shutdown console-grace-expired after {shutdown_grace}s')
+                    graceful_emulator_stop(diagnostics, finished, stopped)
                 return
 
     threading.Thread(target=watch_shutdown, daemon=True).start()

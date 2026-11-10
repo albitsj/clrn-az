@@ -140,6 +140,15 @@ export class HostSelector {
     // Metadata failure must not bypass health selection of cached or bootstrap candidates.
   }
 
+  /** A busy bootstrap may still serve public discovery; never send business traffic without healthy selection.
+   * @param excluded - Nodes already failed in this business call.
+   * @param signal - Original total deadline and cancellation.
+   */
+  private async bootstrapHost(excluded: Set<string>, signal: AbortSignal): Promise<string> {
+    try { return await this.race(this.available([...this.config.bootstrap, ...this.hosts], excluded), signal); }
+    catch { signal.throwIfAborted(); return ''; }
+  }
+
   /** Select from bootstrap then refresh remote metadata; force one refresh after exhausting a cached list.
    * @param excluded - All nodes that failed in this call.
    * @param signal - Total business-call deadline.
@@ -153,7 +162,7 @@ export class HostSelector {
     }
     let bootstrap = '';
     if (Date.now() - this.hostsAt >= (this.config.cacheMs ?? 30_000)) {
-      bootstrap = await this.race(this.available([...this.config.bootstrap, ...this.hosts], excluded), signal);
+      bootstrap = await this.bootstrapHost(excluded, signal);
       await this.discover(bootstrap, excluded, signal);
     }
     let chosen: string;

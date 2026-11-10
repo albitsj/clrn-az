@@ -58,6 +58,7 @@ function panelScene(options = {}) {
       preserveAnimationFailure: async () => { events.push('preserve-logs'); throw new Error('logs unavailable'); },
     },
     './game-panel-diagnostics': diagnostics,
+    './render-diagnostics': require('./render-diagnostics.ts'),
     './animation-transition': {
       /** 模拟录屏就绪后才触发，保持采集接口的真实参数位置。
        * @param args - 生产采集参数。

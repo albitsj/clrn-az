@@ -192,8 +192,9 @@ def check_emulator_exit(directory, log):
     return False
 
 
-def wait_emulator(directory, log, timeout=15):
+def wait_emulator(directory, log, timeout=40):
     """Do not rely on emulator-runner propagating errors from adb emu kill."""
+    # 包含控制台 10 秒、SDK 正常关闭 20 秒及采集器回收预算，仍有固定上限。
     pidfile = directory / 'emulator-wrapper.pid'
     deadline = time.monotonic() + timeout
     while pidfile.exists() and time.monotonic() < deadline:
