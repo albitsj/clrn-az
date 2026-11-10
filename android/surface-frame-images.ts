@@ -21,6 +21,7 @@ export async function recordSurfaceRegion(context: { name: string; bounds: Scree
   try {
     await context.info.attach(`${context.name}-surface-source`, { body: JSON.stringify({
       format: 'Android35-screenrecord-frames-rgb888', size: [240, 426], clock: 'host-receipt-performance.now',
+      timeOrigin: performance.timeOrigin,
       sampledAt: recording.frames.map(frame => frame.capturedAt), stderr: recording.stderr,
       stoppedTailBytes: recording.stoppedTailBytes,
     }), contentType: 'application/json' });

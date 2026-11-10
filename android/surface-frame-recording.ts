@@ -6,9 +6,10 @@ import { SurfaceFrameParser } from './surface-frame-protocol';
 export type SurfaceFrame = { capturedAt: number; rgb: Buffer };
 const execute = promisify(execFile);
 // 原始帧分支不执行 screenrecord 的编码器时限检查；由同一 shell 设置独立的 8 秒保险。
-const command = 'screenrecord --output-format=frames --size 240x426 - & recorder=$!; '
+export const surfaceRecordingCommand = 'screenrecord --output-format=frames --size 240x426 - & recorder=$!; '
   + 'printf "CLRN_FRAME_PID=%s\\n" "$recorder" >&2; '
-  + '(sleep 8; kill -INT "$recorder" 2>/dev/null) & guard=$!; '
+  + '(sleep 8; kill -INT "$recorder" 2>/dev/null; sleep 2; kill -KILL "$recorder" 2>/dev/null) '
+  + '</dev/null >/dev/null 2>&1 & guard=$!; '
   + 'wait "$recorder"; result=$?; kill "$guard" 2>/dev/null; wait "$guard" 2>/dev/null; exit "$result"';
 
 /** 连续接收 SurfaceFlinger 原始帧；接收期间不编码 PNG，不阻塞事件循环。
@@ -68,7 +69,7 @@ class SurfaceRecording {
   constructor(private readonly serial: string) {
     this.ready = new Promise(resolve => { this.resolveReady = resolve; });
     this.failure = new Promise((_, reject) => { this.rejectFailure = reject; });
-    this.child = spawn('adb', ['-s', serial, 'shell', '-T', command], { stdio: 'pipe' });
+    this.child = spawn('adb', ['-s', serial, 'shell', '-T', surfaceRecordingCommand], { stdio: 'pipe' });
     this.closed = new Promise(resolve => this.child.once('close', resolve));
     this.child.on('error', error => this.rejectFailure(error));
     this.child.stdout.on('data', chunk => this.receive(chunk));
@@ -112,7 +113,11 @@ class SurfaceRecording {
       }
       await boundedClose(this.closed);
     } finally {
-      if (this.child.exitCode === null) this.child.kill('SIGKILL');
+      if (this.child.exitCode === null) {
+        if (this.remotePid) await execute('adb', ['-s', this.serial, 'shell', 'kill', '-KILL', this.remotePid],
+          { timeout: 2_000 }).catch(() => undefined);
+        if (this.child.exitCode === null) this.child.kill('SIGKILL');
+      }
     }
   }
 }

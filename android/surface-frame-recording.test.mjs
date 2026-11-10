@@ -54,9 +54,12 @@ function fixture(options = {}) {
        */
       execFile: (executable, args, settings, callback) => {
         assert.equal(executable, 'adb');
-        assert.deepEqual(args, ['-s', 'emulator-6666', 'shell', 'kill', '-INT', '4321']);
+        assert.ok(['-INT', '-KILL'].includes(args[4]));
+        assert.deepEqual(args, ['-s', 'emulator-6666', 'shell', 'kill', args[4], '4321']);
         assert.equal(settings.timeout, 2000);
-        events.push('stop');
+        const forced = args[4] === '-KILL';
+        events.push(forced ? 'force-stop' : 'stop');
+        if (options.stopHangs && !forced) { callback(null, '', ''); return; }
         child.exitCode = options.stopFailure ? 23 : 0;
         child.emit('close', child.exitCode);
         callback(null, '', '');
@@ -123,4 +126,10 @@ test('触发失败仍停止本次 PID，清理失败保留原错误身份', asyn
 
 test('非零停止状态不能被作为成功采集返回', async () => {
   await assert.rejects(fixture({ stopFailure: true }).run(), /退出状态 23/);
+});
+
+test('录制不响应 SIGINT 时仅强杀本次 PID，原停止超时仍失败', async () => {
+  const scene = fixture({ stopHangs: true });
+  await assert.rejects(scene.run(), /停止超时/);
+  assert.deepEqual(scene.events, ['spawn', 'trigger', 'stop', 'force-stop']);
 });
