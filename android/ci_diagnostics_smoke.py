@@ -17,13 +17,40 @@ CLI = [sys.executable, str(ROOT / 'ci_diagnostics.py')]
 ADB = ['adb', '-s', os.environ.get('ANDROID_SERIAL', 'emulator-5554')]
 
 
+class CommandFailure(AssertionError):
+    """Retain transport output privately without exposing arguments in errors."""
+    def __init__(self, result, expected):
+        super().__init__(f'Command returned {result.returncode}; expected {expected}')
+        self.returncode, self.output = result.returncode, result.stdout
+
+
 def command(arguments, expected=0, timeout=120):
     """Check exit status without copying command arguments or raw logs to CI output."""
     result = subprocess.run(arguments, timeout=timeout, stdout=subprocess.PIPE,
                             stderr=subprocess.STDOUT, check=False)
     BoundedLog(DIRECTORY, 'smoke', Redactor()).write(result.stdout.decode('utf-8', errors='replace'))
     if result.returncode != expected:
-        raise AssertionError(f'Command returned {result.returncode}; expected {expected}')
+        raise CommandFailure(result, expected)
+    return result
+
+
+def restart_adbd():
+    """Accept only the observed closed handshake after independently proving root."""
+    original = None
+    try:
+        command([*ADB, 'root'])
+    except CommandFailure as error:
+        if error.returncode != 1 or error.output.strip() != b'adb: unable to connect for root: closed':
+            raise
+        original = error
+    try:
+        command([*ADB, 'wait-for-device'])
+        result = command([*ADB, 'shell', 'id', '-u'], timeout=5)
+        assert result.stdout.strip() == b'0', 'adbd root verification failed'
+    except Exception as error:
+        if original is not None:
+            raise original from error
+        raise
 
 
 def contents(name):
@@ -86,12 +113,11 @@ def exercise(case='normal'):
         marker('CI_DIAG_BEFORE_RECONNECT')
         command([*ADB, 'logcat', '-c'])
         try:
-            command([*ADB, 'root'])
+            restart_adbd()
         except Exception:
             from ci_diagnostics import best_effort
             best_effort(diagnose_root_failure)
             raise
-        command([*ADB, 'wait-for-device'])
         marker('CI_DIAG_AFTER_RECONNECT')
         assert 'CI_DIAG_BEFORE_RECONNECT' in contents('logcat'), 'Earlier log lost after restart'
     else:
