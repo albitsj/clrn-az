@@ -69,7 +69,9 @@ export function androidAccountMatrix(runId, selectedGroup = 'all', selectedLocal
           label: `${group} / ${locale}${shard === 'all' ? '' : ` / ${shard}`}`,
           account: allocateCiAccount(runId, index === 0
             ? groups.indexOf(group) * 3 + locales.indexOf(locale) : shardOffsets[key] + index - 1) }));
-      })) };
+      }))
+    // 仅独立复现分支：繁体光标诊断保留原账号映射，只执行包含该场景的 other 分片。
+    .filter(row => selectedGroup !== 'texas' || selectedLocale !== 'zh-Hant' || row.shard === 'other') };
 }
 
 /**

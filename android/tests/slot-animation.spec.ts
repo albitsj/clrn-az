@@ -17,6 +17,7 @@ import { gameReady, gameScreenshot } from '../game-controls';
 import { motionParts, samePixels } from '../motion-regions';
 import { preserveAnimationFailure } from '../animation-diagnostics';
 import { preserveRenderStatistics } from '../render-diagnostics';
+import { startSlotFrameTrace } from '../slot-frame-trace';
 
 test('all three native slot reels and reward types animate from real spin responses', async ({}, testInfo) => {
   test.skip(!englishGroup('social'), '老虎机动画只在英文社交任务采集一次');
@@ -125,6 +126,7 @@ test('all three native slot reels and reward types animate from real spin respon
  * @param trigger - 只执行一次的真实关闭操作。
  */
 async function captureSlotExit(device: AndroidDevice, info: TestInfo, trigger: () => unknown): Promise<void> {
+  const finishTrace = await startSlotFrameTrace(info).catch(() => async () => {});
   const startedAt = Date.now();
   try {
     await captureNativeTransition(device, 'slot-popup-exit', info,
@@ -133,5 +135,7 @@ async function captureSlotExit(device: AndroidDevice, info: TestInfo, trigger: (
     await preserveAnimationFailure('slot-popup-exit', startedAt, info).catch(() => undefined);
     await preserveRenderStatistics('slot-popup-exit', info).catch(() => undefined);
     throw error;
+  } finally {
+    await finishTrace().catch(() => undefined);
   }
 }
