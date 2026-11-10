@@ -58,7 +58,9 @@ function prepare(options = {}) {
   }
   const calls = path.join(root, 'calls');
   try {
-    const result = spawnSync('bash', [script], { encoding: 'utf8', timeout: 5000,
+    // 此上限只防夹具挂死；生产 120/600 秒及 TERM 后 10 秒边界由实际命令参数断言。
+    // 完整并行测试下的进程启动时间不能误判为被模拟的 SDK 命令超时。
+    const result = spawnSync('bash', [script], { encoding: 'utf8', timeout: 15000,
       env: { ...process.env, PATH: `${bin}:${process.env.PATH}`, ANDROID_HOME: sdk,
         ANDROID_USER_HOME: path.join(root, 'android-user'), SDK_FIXTURE: root, SDK_IMAGE: image,
         SDK_CALLS: calls, SDK_FAIL_STAGE: '', SDK_FAIL_COUNT: '0', SDK_MISSING_IMAGE: '0',
