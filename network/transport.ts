@@ -80,8 +80,9 @@ function cleanupDiagnostic(error: unknown, phase: 'headers' | 'body'): void {
     let current = error;
     for (let depth = 0; current && depth < 6; depth++) {
       const item = current as { code?: unknown; cause?: unknown };
-      if (typeof item.code === 'string' && /^(?:ECONNRESET|ECONNREFUSED|ECONNABORTED|EPIPE|ENOTFOUND|EAI_AGAIN|ENETUNREACH|EHOSTUNREACH|ETIMEDOUT|UND_ERR_SOCKET|UND_ERR_CONNECT_TIMEOUT|UND_ERR_HEADERS_TIMEOUT|UND_ERR_BODY_TIMEOUT)$/.test(item.code)) {
-        codes.push(item.code);
+      const code = item.code;
+      if (typeof code === 'string' && /^(?:ECONNRESET|ECONNREFUSED|ECONNABORTED|EPIPE|ENOTFOUND|EAI_AGAIN|ENETUNREACH|EHOSTUNREACH|ETIMEDOUT|UND_ERR_SOCKET|UND_ERR_CONNECT_TIMEOUT|UND_ERR_HEADERS_TIMEOUT|UND_ERR_BODY_TIMEOUT)$/.test(code)) {
+        codes.push(code);
       }
       current = item.cause;
     }

@@ -30,3 +30,22 @@ test('room cleanup identifies body interruption and keeps ordinary requests free
   await assert.rejects(send(fetcher, url, 'GET', {}, undefined, new AbortController().signal), { kind: 'network' });
   assert.equal(log.mock.callCount(), 0);
 });
+
+
+test('cleanup diagnostic validates the same code value that it logs', async t => {
+  const secret = 'private-token-that-must-not-be-logged';
+  let reads = 0;
+  const failure = new Error('private cause');
+  Object.defineProperty(failure, 'code', {
+    /** Reproduce an error property that changes between accesses. */
+    get() { return ++reads <= 2 ? 'ECONNRESET' : secret; },
+  });
+  const log = t.mock.method(console, 'error', () => {});
+  /** Preserve the original error while exercising mutable untrusted fields. */
+  const fetcher = () => Promise.reject(failure);
+  const observed = await send(fetcher, url, 'DELETE', {}, undefined, new AbortController().signal).catch(error => error);
+  assert.equal(observed, failure);
+  const serialized = log.mock.calls[0].arguments[1];
+  assert.equal(serialized.includes(secret), false);
+  assert.deepEqual(JSON.parse(serialized).codes, ['ECONNRESET']);
+});
