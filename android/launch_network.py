@@ -1,4 +1,4 @@
-"""暂缓启动健康检查，保留真实请求与应用自身超时，释放后继续访问原服务器。"""
+"""暂缓启动健康响应，保留真实请求与应用自身超时，释放后继续访问原服务器。"""
 
 import asyncio
 import json
@@ -39,6 +39,12 @@ class LaunchNetwork:
         if self.holding and path == '/node/v1/status' and flow.request.method == 'GET':
             self.requested += 1
             self.last_requested_at = round(time.time() * 1000)
+        return False
+
+    async def responseheaders(self, flow):
+        """真实上游先处理健康请求，只暂缓响应头，避免把后端往返留到截图之后。"""
+        path = urlsplit(flow.request.path).path
+        if self.holding and path == '/node/v1/status' and flow.request.method == 'GET':
             # 不伪造成功或修改应用的五秒超时；测试退出后应显式释放。
             try:
                 await asyncio.wait_for(self.release.wait(), timeout=60)

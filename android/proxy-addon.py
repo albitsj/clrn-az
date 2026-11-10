@@ -82,6 +82,9 @@ class AndroidVisualProxy:
             self.records = GameRecordProxy()
             self.records.scenario = 'visual-stable'
 
+    async def responseheaders(self, flow):
+        await self.launch.responseheaders(flow)
+
     def response(self, flow):
         self.selection_faults.response(flow)
         self.network_selection.observe(flow)
