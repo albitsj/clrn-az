@@ -176,6 +176,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix: ${{ fromJSON(needs.accounts.outputs.priority) }}
+      # Bound simultaneous native clients against shared staging capacity.
+      max-parallel: 6
     concurrency:
       group: android-staging-account-${{ matrix.account }}
       cancel-in-progress: false
@@ -210,6 +212,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix: ${{ fromJSON(needs.accounts.outputs.remaining) }}
+      # Bound simultaneous native clients against shared staging capacity.
+      max-parallel: 6
     concurrency:
       group: android-staging-account-${{ matrix.account }}
       cancel-in-progress: false
