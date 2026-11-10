@@ -17,13 +17,14 @@ data_sources { config { name: "linux.process_stats" process_stats_config {
 `;
 
 /** 只操作当前专用模拟器，诊断命令具有独立期限。
+ * @param input - 通过标准输入传递配置，避免 Perfetto 域读取 shell 文件被拒绝。
  * @param args - 已知命令与参数。
  */
-function traceAdb(...args: string[]): string {
+function traceAdb(input: string, ...args: string[]): string {
   const serial = process.env.ANDROID_SERIAL || '';
   if (!/^emulator-\d+$/.test(serial)) throw new Error('Trace requires dedicated emulator');
   return execFileSync('adb', ['-s', serial, ...args], {
-    encoding: 'utf8', timeout: 40_000, maxBuffer: 1_048_576,
+    input, encoding: 'utf8', timeout: 40_000, maxBuffer: 1_048_576,
   });
 }
 
@@ -33,14 +34,12 @@ function traceAdb(...args: string[]): string {
 export async function startSlotFrameTrace(info: TestInfo): Promise<() => Promise<void>> {
   const token = `clrn-slot-${process.pid}-${Date.now()}`;
   const remote = `/data/misc/perfetto-traces/${token}.perfetto-trace`;
-  const remoteConfig = `/data/local/tmp/${token}.pbtx`;
   const localConfig = info.outputPath(`${token}.pbtx`);
   const localTrace = info.outputPath(`${token}.perfetto-trace`);
   let pid = '', readyAt = 0;
   try {
     writeFileSync(localConfig, config);
-    traceAdb('push', localConfig, remoteConfig);
-    pid = traceAdb('shell', 'perfetto', '--background-wait', '--txt', '-c', remoteConfig, '-o', remote).trim();
+    pid = traceAdb(config, 'shell', 'perfetto', '--background-wait', '--txt', '-c', '-', '-o', remote).trim();
     if (!/^\d+$/.test(pid)) throw new Error('Trace did not return owned PID');
     readyAt = Date.now();
     await info.attach('slot-frame-trace-start', {
@@ -54,9 +53,9 @@ export async function startSlotFrameTrace(info: TestInfo): Promise<() => Promise
     try {
       if (!readyAt) return;
       await setTimeout(Math.max(0, readyAt + 11_000 - Date.now()));
-      const alive = traceAdb('shell', `if kill -0 ${pid} 2>/dev/null; then echo alive; else echo finished; fi`).trim();
+      const alive = traceAdb('', 'shell', `if kill -0 ${pid} 2>/dev/null; then echo alive; else echo finished; fi`).trim();
       if (alive !== 'finished') throw new Error('Trace still writing');
-      traceAdb('pull', remote, localTrace);
+      traceAdb('', 'pull', remote, localTrace);
       await info.attach('slot-popup-exit-frametimeline', { path: localTrace, contentType: 'application/octet-stream' });
     } catch {
       await info.attach('slot-frame-trace-collection-failed', { body: 'Trace unavailable or incomplete', contentType: 'text/plain' });
