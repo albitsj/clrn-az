@@ -7,6 +7,7 @@ const filter = requestedFilter && shardFilter ? `(?=.*(?:${requestedFilter}))(?=
   : requestedFilter || shardFilter;
 const result = spawnSync(process.execPath, ['node_modules/@playwright/test/cli.js', 'test',
   '--config', 'android/playwright.config.ts',
+  '--repeat-each=5',
   ...(filter ? ['--grep', filter] : []), ...(mode === 'reference' ? ['--update-snapshots=all'] : [])],
 { stdio: 'inherit', env: process.env });
 if (result.error) throw result.error;
