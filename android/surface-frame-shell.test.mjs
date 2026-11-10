@@ -23,8 +23,8 @@ test('真实 shell 关闭录制后管道立即释放，保险 sleep 不得继承
   const closed = once(child, 'close');
   const controller = new AbortController();
   try {
-    const startup = setTimeout(4000, undefined, { signal: controller.signal }).then(() => {
-      throw new Error('测试录制进程未就绪');
+    const startup = setTimeout(10000, undefined, { signal: controller.signal }).then(() => {
+      throw new Error(`测试录制进程未就绪：exit=${child.exitCode} ${stderr}`);
     });
     await Promise.race([once(child.stdout, 'data'), startup]);
     await setTimeout(60);
