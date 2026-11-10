@@ -7,8 +7,7 @@ import { frameColorDistance, framePaletteDistance } from './animation-transition
 import { gameConnected, gameScreenshot } from './game-controls';
 import { motionParts, samePixels } from './motion-regions';
 import type { ScreenshotBounds } from './screenshot';
-
-type NativeFrame = { capturedAt: number; png: string };
+import { collectAssetFrames } from './asset-frames';
 
 // 只登记仍需独立位置锚点的真实飞行相位；目录中出现其他文件不能改变比较结果。
 // 审查与删减依据见 SCREENSHOT_SIMPLIFICATION_32.md。
@@ -41,23 +40,21 @@ export async function captureAssetSequence(device: AndroidDevice, name: string, 
   let beforeScreen = await gameScreenshot(device);
   let before = crop(beforeScreen);
   const implementation = (device as unknown as { _connection: { toImpl(device: AndroidDevice): {
-    _send(method: string): Promise<NativeFrame[]> } } })._connection.toImpl(device);
-  let screens: Buffer[] = [];
+    _send(method: string, params?: object): Promise<unknown> } } })._connection.toImpl(device);
+  let flightFrames: Buffer[] = [];
   let timeline: Buffer[] = [];
   let visible: { frame: Buffer; index: number; distance: number }[] = [];
   for (let attempt = 0; attempt < 2; attempt++) {
-    const pending = implementation._send('motionFrames');
-    await setTimeout(300);
-    await trigger();
-    screens = (await pending).map(frame => Buffer.from(frame.png, 'base64'));
-    timeline = screens.map(crop);
+    const sample = await collectAssetFrames(implementation, { name, info, region, trigger, flightRegion });
+    flightFrames = sample.flight;
+    timeline = sample.receiver;
     expect(timeline.length).toBeGreaterThanOrEqual(10);
     expect(samePixels(before, timeline[0]), `${name} 必须在采样开始后播放`).toBe(true);
     visible = timeline.map((frame, index) => ({ frame, index, distance: frameColorDistance(before, frame) }))
       .filter(item => item.distance > 2);
     if (visible.length >= 2 || attempt) break;
     // 消息到达后短时采样可能先于原生素材绘制；保留原画面，再重新触发同一效果。
-    await info.attach(`${name}-首次未显示`, { body: screens.at(-1)!, contentType: 'image/png' });
+    await info.attach(`${name}-首次未显示`, { body: timeline.at(-1)!, contentType: 'image/png' });
     await setTimeout(2500);
     await gameConnected(device, 2_000);
     beforeScreen = await gameScreenshot(device);
@@ -89,33 +86,35 @@ export async function captureAssetSequence(device: AndroidDevice, name: string, 
   await setTimeout(2500);
   expect(samePixels(before, crop(await gameScreenshot(device))), `${name} 须播放结束并恢复画面`).toBe(true);
   if (flightRegion) {
-    /**
-     * 裁切道具经过的中途路线，独立锁定飞行轨迹。
-     * @param bytes - 原生完整屏幕 PNG。
-     */
-    const flight = (bytes: Buffer) => motionParts(bytes, [flightRegion]).regions[0];
-    const flightStart = flight(beforeScreen);
-    const flightFrames = screens.map(flight);
-    const moving = flightFrames.map((frame, index) => ({ frame, index,
-      distance: frameColorDistance(flightStart, frame) })).filter(item => item.distance > 1);
-    expect(moving.length, `${name} 道具必须飞过目标路线`).toBeGreaterThanOrEqual(2);
-    const farthest = moving.reduce((best, item) => item.distance > best.distance ? item : best);
-    const alternate = moving.reduce((best, item) => frameColorDistance(farthest.frame, item.frame)
-      > frameColorDistance(farthest.frame, best.frame) ? item : best);
-    expect(frameColorDistance(farthest.frame, alternate.frame), `${name} 飞行位置必须变化`).toBeGreaterThan(1);
-    for (const [phase, frame] of [['start', flightStart], ['peak', farthest.frame],
-      ['changed', alternate.frame]] as const) {
-      const file = `${name}-flight-${phase}.png`;
-      await info.attach(file, { body: frame, contentType: 'image/png' });
-      if (info.config.updateSnapshots === 'all') expect(frame).toMatchSnapshot(file);
-      else {
-        const references = [file, ...(flightPhaseAnchors[file] || [])]
-          .map(anchor => readFileSync(info.snapshotPath(anchor)));
-        expect(Math.min(...(phase === 'start' ? [flightStart] : moving.map(item => item.frame))
-          .flatMap(candidate => references.map(reference => frameColorDistance(candidate, reference)))),
-        `${name} 飞行 ${phase} 视觉回归`)
-          .toBeLessThanOrEqual(15);
-      }
+    await compareAssetFlight({ name, info, start: motionParts(beforeScreen, [flightRegion]).regions[0],
+      frames: flightFrames });
+  }
+}
+
+/** 位置门禁沿用已审查锚点和原距离上限，仅使用同一次消息的连续原生飞行帧。
+ * @param context - 原生静态起点、连续飞行帧及报告。
+ */
+async function compareAssetFlight(context: { name: string; info: TestInfo; start: Buffer; frames: Buffer[] }): Promise<void> {
+  const { name, info, start: flightStart, frames: flightFrames } = context;
+  const moving = flightFrames.map((frame, index) => ({ frame, index,
+    distance: frameColorDistance(flightStart, frame) })).filter(item => item.distance > 1);
+  expect(moving.length, `${name} 道具必须飞过目标路线`).toBeGreaterThanOrEqual(2);
+  const farthest = moving.reduce((best, item) => item.distance > best.distance ? item : best);
+  const alternate = moving.reduce((best, item) => frameColorDistance(farthest.frame, item.frame)
+    > frameColorDistance(farthest.frame, best.frame) ? item : best);
+  expect(frameColorDistance(farthest.frame, alternate.frame), `${name} 飞行位置必须变化`).toBeGreaterThan(1);
+  for (const [phase, frame] of [['start', flightStart], ['peak', farthest.frame],
+    ['changed', alternate.frame]] as const) {
+    const file = `${name}-flight-${phase}.png`;
+    await info.attach(file, { body: frame, contentType: 'image/png' });
+    if (info.config.updateSnapshots === 'all') expect(frame).toMatchSnapshot(file);
+    else {
+      const references = [file, ...(flightPhaseAnchors[file] || [])]
+        .map(anchor => readFileSync(info.snapshotPath(anchor)));
+      expect(Math.min(...(phase === 'start' ? [flightStart] : moving.map(item => item.frame))
+        .flatMap(candidate => references.map(reference => frameColorDistance(candidate, reference)))),
+      `${name} 飞行 ${phase} 视觉回归`)
+        .toBeLessThanOrEqual(15);
     }
   }
 }

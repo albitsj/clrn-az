@@ -7,20 +7,53 @@ import signal
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from ci_diagnostics import Collector, run, stop, stop_daemon
 from diagnostics_io import capture
 from diagnostics_lifecycle import group_members, request_shutdown, stop_captures, wait_emulator
-from diagnostics_wrappers import install_binaries, restore, shutdown
+from diagnostics_wrappers import graceful_emulator_stop, install_binaries, observe_shutdown_threads, restore, shutdown
 
 
 ROOT = Path(__file__).resolve().parent
 
 
 class LifecycleTests(unittest.TestCase):
+    def test_shutdown_wait_diagnostics_are_bounded_and_stop_after_exit(self):
+        finished = Mock()
+        finished.wait.side_effect = [False, False, True]
+        snapshot = subprocess.CompletedProcess([], 0, stdout='PID TID STAT WCHAN COMMAND\n' * 300)
+        with patch('diagnostics_wrappers.subprocess.run', return_value=snapshot) as probe:
+            observe_shutdown_threads(123, self.log, finished)
+        self.assertEqual(probe.call_count, 2)
+        self.assertEqual([call.args[0] for call in finished.wait.call_args_list], [0, 5, 10])
+        self.assertEqual(self.contents('cleanup').count('PID TID STAT WCHAN COMMAND'), 512)
+        self.assertFalse((self.directory / 'cleanup-failed').exists())
+
+    def test_shutdown_wait_probe_failure_does_not_change_cleanup_result(self):
+        finished = Mock()
+        finished.wait.side_effect = [False, True]
+        with patch('diagnostics_wrappers.subprocess.run', side_effect=OSError('probe unavailable')):
+            observe_shutdown_threads(123, self.log, finished)
+        self.assertIn('collection failed: OSError', self.contents('cleanup'))
+        self.assertFalse((self.directory / 'cleanup-failed').exists())
+
+    def test_shutdown_observer_start_failure_preserves_signal_and_deadline(self):
+        (self.directory / 'emulator-process.pid').write_text('123')
+        finished, stopped = Mock(), Mock()
+        finished.wait.return_value = True
+        with patch('diagnostics_wrappers.os.getpgid', return_value=123), \
+                patch('diagnostics_wrappers.os.kill') as send, \
+                patch('diagnostics_wrappers.threading.Thread.start', side_effect=RuntimeError('unavailable')):
+            graceful_emulator_stop(self.diagnostics, finished, stopped)
+        send.assert_called_once_with(123, signal.SIGTERM)
+        finished.wait.assert_called_once_with(25)
+        stopped.set.assert_not_called()
+        self.assertFalse((self.directory / 'cleanup-failed').exists())
+
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory()
         self.addCleanup(self.temporary.cleanup)
@@ -132,23 +165,7 @@ else:
     def sdk(self, mode):
         sdk = self.directory / 'sdk'
         script = self.directory / 'native.py'
-        script.write_text('''import os, pathlib, signal, sys, time
-directory = pathlib.Path(os.environ['ANDROID_DIAGNOSTICS_DIR'])
-if sys.argv[1] == 'adb':
-    if os.environ['FIXTURE_MODE'] == 'adb-hang': time.sleep(60)
-    (directory / 'native-stop').touch()
-    sys.exit(0)
-signal.signal(signal.SIGTERM, signal.SIG_IGN)
-(directory / 'native-ready').touch()
-mode = os.environ['FIXTURE_MODE']
-while mode not in ['normal', 'nonzero-exit', 'signal-exit'] or not (directory / 'native-stop').exists():
-    time.sleep(0.05)
-if mode == 'nonzero-exit': sys.exit(23)
-if mode == 'signal-exit':
-    signal.signal(signal.SIGTERM, signal.SIG_DFL)
-    os.kill(os.getpid(), signal.SIGTERM)
-print('native emulator stopped', flush=True)
-''')
+        script.write_text((ROOT / 'fixtures/diagnostics-native.py').read_text())
         for relative, kind in [('emulator/emulator', 'emulator'), ('platform-tools/adb', 'adb')]:
             path = sdk / relative
             path.parent.mkdir(parents=True)
@@ -198,11 +215,53 @@ print('native emulator stopped', flush=True)
         request_shutdown(self.directory)
         self.assertFalse(wait_emulator(self.directory, self.log))
         self.assertEqual(process.wait(timeout=2), 124)
-        self.assertLess(time.monotonic() - started, 15)
+        self.assertLess(time.monotonic() - started, 40)
         self.assertFalse(group_members(pgid))
         self.assertTrue((self.directory / 'cleanup-failed').exists())
         self.assertIn('phase=emulator-shutdown timeout', self.contents('emulator'))
         self.assertEqual(self.final_stop(env), 1)
+
+    def test_acknowledged_console_stop_can_finish_with_graceful_process_termination(self):
+        """控制台已确认但未退出时，真实进程组正常响应终止后才能通过清理。"""
+        self.assert_graceful_shutdown('graceful-stop')
+
+    def test_emulator_shutdown_keeps_support_process_alive_until_requested(self):
+        """SDK 主进程完成关闭握手前，不能先终止其辅助进程。"""
+        self.assert_graceful_shutdown('parent-dependent-stop')
+
+    def test_emulator_shutdown_rejects_nonleader_registration(self):
+        """登记已不是进程组首领时拒绝终止未知进程。"""
+        (self.directory / 'emulator-process.pid').write_text('12345')
+        finished = threading.Event()
+        finished.set()
+        with patch('diagnostics_wrappers.os.getpgid', return_value=12346), \
+                patch('diagnostics_wrappers.os.kill') as kill, \
+                patch('diagnostics_lifecycle.os.killpg') as killpg:
+            graceful_emulator_stop(self.diagnostics, finished, threading.Event())
+        self.assertTrue((self.directory / 'cleanup-failed').exists())
+        kill.assert_not_called()
+        killpg.assert_not_called()
+
+    def assert_graceful_shutdown(self, mode):
+        """通过真实包装器验证原生零退出、整个进程组回收及原测试结果。"""
+        sdk, env = self.sdk(mode)
+        process = self.launch(sdk, env)
+        self.wait_for(self.directory / 'native-child-ready', process)
+        pgid = int((self.directory / 'emulator-process.pid').read_text())
+        self.addCleanup(self.kill_group, pgid)
+        self.assertGreaterEqual(len(group_members(pgid)), 2)
+        (self.directory / 'test.exit').write_text('0')
+        with patch.object(self.diagnostics, 'sample', return_value={}), patch.dict(os.environ, env):
+            result = shutdown([str(sdk / 'platform-tools/adb.diagnostics-original'), 'emu', 'kill'],
+                              self.diagnostics)
+        self.assertEqual(result, 0)
+        self.assertEqual(process.wait(timeout=3), 0)
+        self.assertEqual((self.directory / 'emulator.exit').read_text(), '0')
+        self.assertEqual((self.directory / 'test.exit').read_text(), '0')
+        self.assertFalse(group_members(pgid))
+        self.assertFalse((self.directory / 'cleanup-failed').exists())
+        self.assertIn('phase=emulator-shutdown graceful-stop', self.contents('emulator'))
+        self.assertEqual(self.final_stop(env), 0)
 
     def abnormal_emulator_shutdown(self, mode, expected):
         sdk, env = self.sdk(mode)

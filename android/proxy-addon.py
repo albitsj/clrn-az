@@ -6,6 +6,7 @@ import json
 import os
 import re
 import sys
+import time
 from pathlib import Path
 from urllib.parse import urlsplit
 from mitmproxy import ctx, http
@@ -44,6 +45,7 @@ class AndroidVisualProxy:
         self.slot_currency = 'coin'
         self.slot_no_energy = False
         self.slot_spins = 0
+        self.slot_last_spin_at = None
         self.skeleton = scene == 'skeleton'
         self.skeleton_hold = False
         self.skeleton_release = asyncio.Event()
@@ -375,6 +377,7 @@ class AndroidVisualProxy:
                 self.slot_currency = settings['currency']
                 self.slot_no_energy = settings.get('noEnergy') is True
             flow.response = http.Response.make(200, json.dumps({'spins': self.slot_spins,
+                'lastSpinAt': self.slot_last_spin_at,
                 'currency': self.slot_currency, 'noEnergy': self.slot_no_energy}).encode(),
                 {'Content-Type': 'application/json'})
             return
@@ -420,6 +423,7 @@ class AndroidVisualProxy:
         if not spin:
             return {'ok': True, 'result': energy}
         self.slot_spins += 1
+        self.slot_last_spin_at = round(time.time() * 1000)
         if self.slot_no_energy:
             return {'ok': False, 'error': 'energy_not_enough', 'error_description': 'No energy'}
         currency = self.slot_currency

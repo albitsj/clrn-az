@@ -1,5 +1,6 @@
 /** 验证转场采集的真实相位比较及延迟边界解析，防止完整首尾截图被错误裁切。 */
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import test from 'node:test';
@@ -94,6 +95,29 @@ test('带入审核入场预先选择连续录屏，其他面板和退场沿用�
   assert.equal(gamePanelSamplingMethod('texas-holdem', 'buy-in-applications', 'exit', 'motionFrames'), 'motionFrames');
   assert.equal(gamePanelSamplingMethod('texas-holdem', 'leaderboard', 'enter', 'motionFrames'), 'motionFrames');
   assert.equal(gamePanelSamplingMethod('zhajinhua', 'buy-in-applications', 'enter', 'videoFrames'), 'videoFrames');
+});
+
+test('聊天菜单再次入场固定连续录屏，退场及其他玩法保留既有选择', () => {
+  assert.equal(gamePanelSamplingMethod('texas-holdem', 'chat-actions-return', 'enter', 'motionFrames'), 'videoFrames');
+  assert.equal(gamePanelSamplingMethod('texas-holdem', 'chat-actions-return', 'exit', 'motionFrames'), 'motionFrames');
+  assert.equal(gamePanelSamplingMethod('zhajinhua', 'chat-actions-return', 'enter', 'motionFrames'), 'motionFrames');
+});
+
+test('聊天菜单重入的真实二十帧只有首尾，不能通过中间帧断言', async () => {
+  const root = new URL('./fixtures/chat-actions-return/', import.meta.url);
+  const record = JSON.parse(readFileSync(new URL('timeline.json', root), 'utf8'));
+  const images = {};
+  for (const [file, digest] of Object.entries(record.images)) {
+    images[file] = readFileSync(new URL(file, root));
+    assert.equal(createHash('sha256').update(images[file]).digest('hex'), digest);
+  }
+  const frames = record.frames.map(([, file]) => images[file]);
+  assert.equal(frames.length, 20);
+  assert.equal(record.frames[10][0] - record.frames[9][0], 64);
+  const size = PNG.sync.read(frames[0]);
+  await assert.rejects(compare(frames, { name: record.name, start: frames[0], end: frames.at(-1),
+    width: size.width, height: size.height, timestamps: record.frames.map(([time]) => time) }),
+  /必须采到起点和终点之间的真实动画帧/);
 });
 
 for (const record of historical.records) {

@@ -20,7 +20,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        case: [normal, init-failure, test-failure, cancel, unresponsive, retained-pipe]
+        case: [normal, init-failure, test-failure, cancel, unresponsive, retained-pipe, graceful-stop]
     # Use an isolated account-slot key to prove lifecycle failures release the lock.
     concurrency:
       group: android-diagnostics-account-${{ github.run_id }}-${{ matrix.case }}
@@ -91,7 +91,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        case: [normal, init-failure, test-failure, cancel, unresponsive, retained-pipe]
+        case: [normal, init-failure, test-failure, cancel, unresponsive, retained-pipe, graceful-stop]
     concurrency:
       group: android-diagnostics-account-${{ github.run_id }}-${{ matrix.case }}
       cancel-in-progress: false

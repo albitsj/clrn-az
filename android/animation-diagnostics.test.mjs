@@ -6,13 +6,10 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
 import { runInNewContext } from 'node:vm';
-import ts from 'typescript';
+import { diagnosticSource, preserveAnimationFailure } from './diagnostics-test-support.mjs';
 
 const require = createRequire(import.meta.url);
-const { preserveAnimationFailure } = require('./animation-diagnostics.ts');
-const source = ts.transpileModule(readFileSync(new URL('./game-panel-animation.ts', import.meta.url), 'utf8'), {
-  compilerOptions: { module: ts.ModuleKind.CommonJS },
-}).outputText;
+const source = diagnosticSource('./game-panel-animation.ts');
 
 /** 在真实文件与附件边界运行完整面板函数，只替换设备和失败输入。
  * @param directory - 本轮已有采集日志的位置。
@@ -27,6 +24,7 @@ function panel(directory, failure, attach) {
       /** 动画入口的两次布局查询已经一致。 */ gameTapTarget: async () => ({ bounds: { x: 0, y: 0, width: 10, height: 10 } }),
     },
     './game-panel-diagnostics': require('./game-panel-diagnostics.ts'),
+    './render-diagnostics': { /** 渲染统计在独立故障边界测试中验证。 */ preserveRenderStatistics: async () => {} },
     './device': { /** 设备点击已完成。 */ adb: () => {} },
     './animation-transition': { /** 保留原入口的成功或失败，不更改其结果。 */
       captureNativeTransition: async () => { if (failure) throw failure; },
@@ -72,11 +70,16 @@ test('聊天首败立即固定现有脱敏日志，重试轮转后仍保留失�
       ['adb.log.1', 'host.log.1', 'lifecycle.log.1']);
     assert.equal(JSON.stringify(window).includes(directory), false);
     const count = attachments.size;
-    for (const args of [['texas-holdem', 'chat', 'exit'], ['zhajinhua', 'chat'], ['texas-holdem', 'voice']]) {
+    for (const args of [['texas-holdem', 'chat', 'exit'], ['zhajinhua', 'chat']]) {
       await assert.rejects(run(...args), error => error === failure);
     }
     await panel(directory, undefined, async () => { throw new Error('成功路径不应收集首败诊断'); })();
     assert.equal(attachments.size, count, '其他转场和正常采集不增加此项诊断');
+    await assert.rejects(run('texas-holdem', 'voice'), error => error === failure);
+    for (const file of originals.keys()) {
+      assert.deepEqual(attachments.get(`texas-holdem-voice-enter-diagnostics-${file}`), readFileSync(path.join(directory, file)));
+    }
+    assert.ok(attachments.has('texas-holdem-voice-enter-diagnostics-window'));
   } finally { rmSync(directory, { recursive: true, force: true }); }
 });
 

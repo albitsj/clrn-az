@@ -9,6 +9,7 @@ import { gameScreenshot } from './game-controls';
 import { motionParts, samePixels } from './motion-regions';
 import { maskScreenshot, type ScreenshotBounds, type ScreenshotMask } from './screenshot';
 import { recordNativeVideoFrames, type AnimationRegion } from './video-frames';
+import { recordTransitionFrames, requestTransitionFrames, cropTransitionFrame } from './transition-frames';
 import { alignedVideoDistance, localMotionDistance,
   misplacedVideoFrame, preservesVideoColumns, videoThumbnail } from './video-motion';
 
@@ -55,7 +56,7 @@ export function framePaletteDistance(left: Buffer, right: Buffer): number {
  * @param samplingMethod - Native capture method.
  */
 export function middleCandidates(before: Buffer, after: Buffer, timeline: Buffer[],
-  samplingMethod: 'motionFrames' | 'launchFrames' | 'videoFrames'): {
+  samplingMethod: 'motionFrames' | 'challengeFrames' | 'launchFrames' | 'videoFrames'): {
     frame: Buffer; index: number; progress: number; remaining: number }[] {
   const total = frameColorDistance(before, after);
   const minimum = samplingMethod === 'videoFrames' ? Math.min(7, total * 0.2) : 1;
@@ -99,8 +100,7 @@ export function assertReviewedVideoMiddle(before: Buffer, after: Buffer,
   expect(Math.min(...distances), '动画中途帧的实际画面须接近已审查轨迹').toBeLessThanOrEqual(46);
 }
 
-/**
- * 点击真实入口期间由原生驱动逐帧截屏；基准约束起点、终点和中途真实像素。
+/** 点击真实入口期间由原生驱动逐帧截屏；基准约束起点、终点和中途真实像素。
  * @param device - 安装固定补丁驱动的模拟器。
  * @param name - 本次具体动画效果的基准前缀。
  * @param testInfo - Playwright 测试报告。
@@ -122,7 +122,7 @@ export function assertReviewedVideoMiddle(before: Buffer, after: Buffer,
 export async function captureNativeTransition(device: AndroidDevice, name: string, testInfo: TestInfo,
   region: AnimationRegion, trigger: () => unknown, masks: ScreenshotMask[] = [],
   requiredRegions: ScreenshotBounds[] = [], settleMs = 0,
-  samplingMethod: 'motionFrames' | 'launchFrames' | 'videoFrames' = 'motionFrames',
+  samplingMethod: 'motionFrames' | 'challengeFrames' | 'launchFrames' | 'videoFrames' = 'motionFrames',
   inspectFrames?: (frames: Buffer[], testInfo: TestInfo) => Promise<void>,
   afterReady?: () => Promise<void>, videoPhaseAnchors: string[] = [],
   endCompareMasks: ScreenshotMask[] = [],
@@ -156,18 +156,22 @@ export async function captureNativeTransition(device: AndroidDevice, name: strin
   if (samplingMethod === 'videoFrames') {
     if (requiredRegions.length) throw new Error('录屏转场需单独定义不含子区域的绘制范围。');
     observeTransition(observe, 'video-recording-start');
-    frames = (await videoRecorder(name, typeof region === 'function' ? resolveRegion : region, trigger, testInfo))
-      .map((png, index) => ({ capturedAt: index * 33, png: png.toString('base64') }));
+    frames = await recordTransitionFrames({ device, name,
+      region: typeof region === 'function' ? resolveRegion : region, trigger, info: testInfo }, videoRecorder);
   } else {
     observeTransition(observe, 'native-sampling-start');
     try {
       const pending = Promise.race([
-        implementation._send(samplingMethod),
-        setTimeout(30_000, undefined, { signal: timeout.signal }).then(() => { throw new Error('原生动画采样超时。'); }),
+        requestTransitionFrames(implementation, { name, method: samplingMethod, region, info: testInfo }),
+        setTimeout(nativeSamplingTimeout(samplingMethod), undefined, { signal: timeout.signal })
+          .then(() => { throw new Error('原生动画采样超时。'); }),
       ]);
       await setTimeout(300);
+      observeTransition(observe, 'trigger-start');
       await trigger();
+      observeTransition(observe, 'trigger-complete');
       frames = await pending;
+      observeTransition(observe, 'native-sampling-complete');
     } finally { timeout.abort(); }
   }
   const bounds = await resolveRegion();
@@ -178,7 +182,7 @@ export async function captureNativeTransition(device: AndroidDevice, name: strin
   if (inspectFrames) await inspectFrames(originals, testInfo);
   const timeline = samplingMethod === 'videoFrames'
     ? originals.map(frame => maskScreenshot(frame, masks.map(mask => ({ ...mask,
-      x: mask.x - bounds.x, y: mask.y - bounds.y })))) : originals.map(crop);
+      x: mask.x - bounds.x, y: mask.y - bounds.y })))) : originals.map(frame => cropTransitionFrame(frame, { name, method: samplingMethod, crop, masks, bounds }));
   if (settleMs) await setTimeout(settleMs);
   if (afterReady) await afterReady();
   const after = crop(await gameScreenshot(device));
@@ -250,6 +254,13 @@ export async function captureNativeTransition(device: AndroidDevice, name: strin
         .toBeLessThanOrEqual(36);
     }
   }
+}
+
+/** 现有长采样命令包含更多 PNG 编码与传输，沿用比牌采集已经使用的响应期限。
+ * @param method - 本次选定的原生采样命令。
+ */
+function nativeSamplingTimeout(method: string): number {
+  return method === 'challengeFrames' ? 60_000 : 30_000;
 }
 
 /**

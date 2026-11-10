@@ -14,6 +14,8 @@ from diagnostics_wrappers import install
 
 def prepare(case):
     install()
+    if case == 'graceful-stop':
+        prepare_console_ack()
     if case != 'retained-pipe':
         return
     sdk = Path(os.environ['ANDROID_HOME']) / 'emulator'
@@ -23,6 +25,21 @@ def prepare(case):
                         f'sys.path.insert(0, {str(Path(__file__).resolve().parent)!r})\n'
                         'from ci_diagnostics_smoke_process import retain_pipe\n'
                         f'sys.exit(retain_pipe({str(sdk / "emulator.smoke-original")!r}, sys.argv[1:]))\n')
+    original.chmod(0o755)
+
+
+def prepare_console_ack():
+    """仅在独立 smoke 中模拟控制台确认未关闭，后续必须靠真实 SDK 正常退出。"""
+    sdk = Path(os.environ['ANDROID_HOME']) / 'platform-tools'
+    original = sdk / 'adb.diagnostics-original'
+    original.rename(sdk / 'adb.smoke-original')
+    original.write_text(f'#!{sys.executable}\nimport os, sys\n'
+                        'arguments = sys.argv[1:]\n'
+                        'if any(arguments[i:i + 2] == ["emu", "kill"] for i in range(len(arguments) - 1)):\n'
+                        '    print("OK: smoke console acknowledged without shutdown", flush=True)\n'
+                        '    sys.exit(0)\n'
+                        f'os.execv({str(sdk / "adb.smoke-original")!r}, '
+                        f'[{str(sdk / "adb.smoke-original")!r}, *arguments])\n')
     original.chmod(0o755)
 
 
@@ -70,6 +87,6 @@ def verify_processes(directory):
     sdk = Path(os.environ['ANDROID_HOME'])
     for relative in ['emulator/emulator', 'platform-tools/adb']:
         assert not (sdk / (relative + '.diagnostics-original')).exists(), 'SDK wrapper not restored'
-    original = Path(os.environ['ANDROID_HOME']) / 'emulator/emulator.smoke-original'
-    if original.exists():
-        original.replace(original.with_name('emulator'))
+        original = sdk / (relative + '.smoke-original')
+        if original.exists():
+            original.replace(sdk / relative)

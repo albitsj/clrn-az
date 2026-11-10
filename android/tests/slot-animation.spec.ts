@@ -1,7 +1,7 @@
 import { prepareSignedInAnimation } from './support/lifecycle';
 import { closeDevice } from './support/lifecycle';
 import { englishGroup } from './support/selection';
-import { expect, test } from '@playwright/test';
+import { expect, test, type TestInfo } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import type { AndroidDevice } from 'playwright';
 import { adb, launchApplication } from '../device';
@@ -9,11 +9,14 @@ import { withAndroidProxy } from '../proxy';
 import { navigateScenario } from '../navigation';
 import { androidScenarios } from '../scenarios';
 import { captureNativeTransition } from '../animation-transition';
+import { captureSlotSpin } from '../slot-spin';
 import { verifyLoopAnimation } from '../loop-animation';
 import { captureMovingKeyframes } from '../loop-keyframes';
 import { waitAbsent } from '../native-state';
 import { gameReady, gameScreenshot } from '../game-controls';
 import { motionParts, samePixels } from '../motion-regions';
+import { preserveAnimationFailure } from '../animation-diagnostics';
+import { preserveRenderStatistics } from '../render-diagnostics';
 
 test('all three native slot reels and reward types animate from real spin responses', async ({}, testInfo) => {
   test.skip(!englishGroup('social'), '老虎机动画只在英文社交任务采集一次');
@@ -58,8 +61,7 @@ test('all three native slot reels and reward types animate from real spin respon
         const pressSpin = () => adb('shell', 'input', 'tap',
           String(Math.round(button.bounds.x + button.bounds.width / 2)),
           String(Math.round(button.bounds.y + button.bounds.height / 2)));
-        await captureNativeTransition(device, `slot-${currency}-reels`, testInfo,
-          { x: 124, y: 420, width: 469, height: 362 }, pressSpin, [], reels, 1500);
+        await captureSlotSpin(device, proxy, currency, testInfo, pressSpin, reels);
         const prize = await device.info({ res: reward });
         expect(Number(prize.text), `${currency} 应显示真实奖励`).toBeGreaterThan(0);
       }
@@ -67,11 +69,9 @@ test('all three native slot reels and reward types animate from real spin respon
       expect(status.spins, '三种奖励必须分别由真实旋转 RPC 触发').toBe(3);
       const close = await gameReady(device, 'close-button');
       /** 正常关闭老虎机，采集面板退场。能量不足会自动关闭面板，无法再点击该按钮。 */
-      const pressClose = () => adb('shell', 'input', 'tap',
-        String(Math.round(close.bounds.x + close.bounds.width / 2)),
-        String(Math.round(close.bounds.y + close.bounds.height / 2)));
-      await captureNativeTransition(device, 'slot-popup-exit', testInfo,
-        { x: 0, y: 500, width: 720, height: 680 }, pressClose, [], [], 0, 'videoFrames');
+      const pressClose = () => device!.shell(`input tap ${Math.round(close.bounds.x + close.bounds.width / 2)} `
+        + `${Math.round(close.bounds.y + close.bounds.height / 2)}`);
+      await captureSlotExit(device, testInfo, pressClose);
       await waitAbsent(device, { res: 'slot-machine-view' });
       const bannerAgain = await device.info({ res: 'slot-banner' });
       await adb('shell', 'input', 'tap',
@@ -118,3 +118,20 @@ test('all three native slot reels and reward types animate from real spin respon
     } finally { await closeDevice(device); }
   }, 'slot');
 });
+
+/** 退场失败后保留渲染取证，采样参数、断言和原异常保持不变。
+ * @param device - 当前原生设备。
+ * @param info - 当前尝试报告。
+ * @param trigger - 只执行一次的真实关闭操作。
+ */
+async function captureSlotExit(device: AndroidDevice, info: TestInfo, trigger: () => unknown): Promise<void> {
+  const startedAt = Date.now();
+  try {
+    await captureNativeTransition(device, 'slot-popup-exit', info,
+      { x: 0, y: 500, width: 720, height: 680 }, trigger, [], [], 0, 'videoFrames');
+  } catch (error) {
+    await preserveAnimationFailure('slot-popup-exit', startedAt, info).catch(() => undefined);
+    await preserveRenderStatistics('slot-popup-exit', info).catch(() => undefined);
+    throw error;
+  }
+}

@@ -38,7 +38,8 @@ test('预测结果先开始原生采集再发送事件，缺少真实提示帧�
     return '+10';
   }), /提示可见时必须采集至少两帧真实屏幕/);
   assert.deepEqual(order, ['开始采集', '发送事件']);
-  assert.deepEqual(attachments, ['预测结果-capture-window', '预测结果-frames']);
+  assert.deepEqual(attachments.slice(0, 2), ['预测结果-capture-window', '预测结果-frames']);
+  assert.ok(attachments.includes('预测结果-diagnostics-window'), '零帧首败须保留日志窗口，避免重试轮转丢失现场');
 });
 
 test('预测结果金额与回放事件不一致时拒绝截图', async () => {
