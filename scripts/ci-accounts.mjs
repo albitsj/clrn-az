@@ -69,7 +69,9 @@ export function androidAccountMatrix(runId, selectedGroup = 'all', selectedLocal
           label: `${group} / ${locale}${shard === 'all' ? '' : ` / ${shard}`}`,
           account: allocateCiAccount(runId, index === 0
             ? groups.indexOf(group) * 3 + locales.indexOf(locale) : shardOffsets[key] + index - 1) }));
-      })) };
+      }))
+    // 独立诊断：分配账号后仅选择英文 game-table，完整默认矩阵及账号映射不变。
+    .filter(row => selectedGroup !== 'texas' || selectedLocale !== 'en' || row.shard === 'game-table') };
 }
 
 /**
