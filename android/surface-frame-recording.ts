@@ -8,7 +8,9 @@ const execute = promisify(execFile);
 // 原始帧分支不执行 screenrecord 的编码器时限检查；由同一 shell 设置独立的 8 秒保险。
 export const surfaceRecordingCommand = 'screenrecord --output-format=frames --size 240x426 - & recorder=$!; '
   + 'printf "CLRN_FRAME_PID=%s\\n" "$recorder" >&2; '
-  + '(sleep 8; kill -INT "$recorder" 2>/dev/null; sleep 2; kill -KILL "$recorder" 2>/dev/null) '
+  + '(trap \'kill "$sleeper" 2>/dev/null; wait "$sleeper" 2>/dev/null; exit 0\' TERM; '
+  + 'sleep 8 & sleeper=$!; wait "$sleeper"; kill -INT "$recorder" 2>/dev/null; '
+  + 'sleep 2 & sleeper=$!; wait "$sleeper"; kill -KILL "$recorder" 2>/dev/null) '
   + '</dev/null >/dev/null 2>&1 & guard=$!; '
   + 'wait "$recorder"; result=$?; kill "$guard" 2>/dev/null; wait "$guard" 2>/dev/null; exit "$result"';
 
