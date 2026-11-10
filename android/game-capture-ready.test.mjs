@@ -10,6 +10,9 @@ const panelsModule = require('./game-masks.ts');
 const panel = { res: 'auto-rebuy-popup', bounds: { x: 20, y: 410, width: 680, height: 460 } };
 const ping = { res: 'ping-screen-container', bounds: { x: 600, y: 66, width: 120, height: 140 } };
 const name = 'en-signed-in-texas-hall-variants-auto-rebuy-enabled';
+const expectedMasks = [[{
+  x: 610, y: 146, width: 100, height: 48, reason: '网络延迟数值、图标与前后端延迟比例条',
+}]];
 
 /** 重放本轮缺少网络节点但面板边界已稳定的树序列，使用真实遮罩规则。
  * @param trees - 依次返回的原生树。
@@ -48,9 +51,7 @@ test('自动带入面板边界稳定仍须等到同一次树读取包含网络�
   const flow = captureWithTrees([[panel], [panel], [panel], [panel, ping]], compared);
   await flow.run(name);
   assert.ok(flow.reads() >= 5);
-  assert.deepEqual(compared, [[{
-    x: 610, y: 146, width: 100, height: 48, reason: '网络延迟数值、图标与前后端延迟比例条',
-  }]]);
+  assert.deepEqual(compared, expectedMasks);
 });
 
 test('没有网络节点要求的其他截图保持原有面板就绪路径', async () => {
@@ -60,3 +61,16 @@ test('没有网络节点要求的其他截图保持原有面板就绪路径', as
   assert.equal(flow.reads(), 3);
   assert.deepEqual(compared, [[]]);
 });
+
+for (const locale of ['en', 'zh-Hans', 'zh-Hant']) {
+  for (const state of ['observer', 'full-table']) {
+    test(`${locale} ${state} 没有前景面板时仍须取得本次树中的已有网络遮罩`, async () => {
+      const compared = [];
+      const table = { res: 'run-game-view', bounds: { x: 0, y: 0, width: 720, height: 1280 } };
+      const flow = captureWithTrees([[table], [table], [table], [table, ping]], compared);
+      await flow.run(`${locale}-signed-in-texas-table-states-${state}`);
+      assert.ok(flow.reads() >= 5);
+      assert.deepEqual(compared, expectedMasks);
+    });
+  }
+}
