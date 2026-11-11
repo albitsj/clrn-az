@@ -119,6 +119,33 @@ APK 与构建信息继续发布到 **kevinanew/clrn 的公开 Release**，下载
 
 正式基准必须来自固定的 x86_64 CI 环境，并逐图检查。reference 产物会同时携带仓库已有图片，因此只能接收该轮实际通过的场景，不能将整个目录直接覆盖到仓库。更新后必须另跑 compare；基准生成成功不代表回归比较通过。
 
+### 视频功能下线复核（#79）
+
+本轮固定 APK 为 `android-staging-300004701-2d714b4761fd`，应用提交
+`2d714b4761fd99136184603bfcaa6ed01240e186`，SHA-256 为
+`fc69e10954f4703245cebb1c792b221d0f4e68591a28b01f7e537b36f7d73377`。
+该提交包含删除实时音视频的 [应用 PR #7093](https://github.com/kevinanew/laiwan_react_native/pull/7093)。
+已逐图确认英语、简体、繁体的 `signed-in-create-room-advanced-texas` 和
+`signed-in-create-room-advanced-six-plus` 六张旧基准均含视频开关，需要重新采集。
+`parity.spec.ts` 在这六个场景截图前检查视频开关消失，并检查四项文本/语音开关、
+对应标题、回合时长标题及页尾提示完整位于导航栏和系统手势条之间。
+继续使用整屏截图、原有稳定性等待、滚动到底逻辑、遮罩与 0.5% 像素容差。
+
+排查应用的 `MainScreen`、`GameScene` 和玩家头像删除范围后，现有牌桌、菜单、
+设置、语音面板及语音聊天记录代表基准均未发现 RTC 界面；`animation-baselines.json`
+也没有 RTC 关键帧。语音按钮仍打开 `in-game-audio`，文本/语音消息和对应入退场动画
+继续覆盖，不删除这些基准。`test_game_session.py` 同时使用禁用值与旧响应值，
+核对房号归一化不会改写其他字段；旧值只用于透传回归，不代表真实启用视频。
+
+三语言建房定向 [reference 43009122979](https://github.com/albitsj/clrn-az/actions/runs/43009122979)
+仅选择 `signed_in_create_room`；三语言牌桌定向
+[compare 43011621623](https://github.com/albitsj/clrn-az/actions/runs/43011621623)
+仅选择 `signed_in_texas_(pre_game(_(first|middle|second))?|panels|panel_variants)$`。
+牌桌比较使用临时 CI 分支 `ci/issue-79-targeted-rtc`（`415ebce`），仅从调度矩阵去掉
+与该正则无交集的三个英文分片；保留八个相关分片，测试、截图及比较代码均与 master 相同。
+两轮尚在等待 CI runner，未取得新图，六张正式基准尚未替换；不能将排队状态视为验收通过。
+接收候选图后仍须在包含新基准的提交上另跑三语言建房 compare。
+
 应用修复集中在 [laiwan_react_native #7019](https://github.com/kevinanew/laiwan_react_native/pull/7019)，基准扩充及验证记录见 [clrn #25](https://github.com/kevinanew/clrn/pull/25)，其中注明测试提交、APK Release 和 CI 运行。未执行或失败的用例不计入通过数量。
 
 拼三张三语全部 78 张基准来自 [reference 38673980189](https://github.com/kevinanew/clrn/actions/runs/38673980189)，使用 [APK 7235](https://github.com/kevinanew/clrn/releases/tag/android-staging-7235-72d60d0080df)，六个场景全部通过且已审查。三语独立 compare [38676799300](https://github.com/kevinanew/clrn/actions/runs/38676799300) 全部通过。
