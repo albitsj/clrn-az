@@ -4,6 +4,7 @@ import type { AndroidDevice, AndroidSelector } from 'playwright';
 import type { Mitmproxy } from '../../../e2e/helpers/mitmproxy-client';
 import type { VisualScenario } from '../../../visual/scenarioTypes';
 import { captureFailure } from '../../diagnostics';
+import { preserveRecordFailure } from '../../record-diagnostics';
 import { RecordProxy } from '../../../visual/cases/game-record/proxy';
 import { adb, launchApplication, waitForHall } from '../../device';
 import { navigateScenario, reveal, selectLanguage, signIn, tap } from '../../navigation';
@@ -39,6 +40,7 @@ export async function runRecordCase(connection: Mitmproxy, scenario: VisualScena
   const device = await launchApplication();
   const { capture, complete } = recordSnapshots(device, scenario, testInfo, recordStates[version]);
   const context: Context = { device, proxy, scenario, locale, version, controls: recordControls[version], capture };
+  const startedAt = Date.now();
   try {
     await recordOpening(context);
     await recordBottom(context);
@@ -49,7 +51,11 @@ export async function runRecordCase(connection: Mitmproxy, scenario: VisualScena
     await recordNoHands(context);
     await recordEnding(context);
     complete();
-  } catch (error) { await captureFailure(device, testInfo); throw error; }
+  } catch (error) {
+    await preserveRecordFailure(device, proxy, testInfo, startedAt).catch(() => undefined);
+    await captureFailure(device, testInfo);
+    throw error;
+  }
   finally { await proxy.release(); await device.close(); }
 }
 

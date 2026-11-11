@@ -30,6 +30,7 @@ export async function createGameRoom(device: AndroidDevice, proxy: Mitmproxy,
   observerConnection?: boolean): Promise<RoomSession> {
   const account = await roomAccount(proxy);
   await ensureRoomBalance(account);
+  await prepareTestAccountRooms(account);
   await submitRoomForm(device, game, optionalFeatures);
   let room: RoomSession | null = null;
   try {

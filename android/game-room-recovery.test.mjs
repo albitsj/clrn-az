@@ -22,15 +22,15 @@ for (const cleanupFails of [false, true]) {
         prepareTestAccountRooms: async session => {
           assert.equal(session, account);
           calls.push('recover');
-          if (cleanupFails) throw new Error('cleanup unavailable');
+          if (cleanupFails && calls.length === 2) throw new Error('cleanup unavailable');
         },
       },
       './game-controls': {}, './keyboard': { /** 不访问键盘。 */ dismissKeyboard: async () => {} },
-      './navigation': { /** 不执行导航。 */ returnToTabs: async () => {}, /** 不查设备。 */ reveal: async () => {}, /** 不执行点击。 */ tap: async () => {} },
+      './navigation': { /** 不执行导航。 */ returnToTabs: async () => { assert.deepEqual(calls, ['recover']); }, /** 不查设备。 */ reveal: async () => {}, /** 不执行点击。 */ tap: async () => {} },
     });
     await assert.rejects(createGameRoom({ /** 不查询设备。 */ wait: async () => {}, /** 不填写表单。 */ fill: async () => {} },
       { /** 只提供本轮登录会话。 */ command: async () => ({ account, room: null }) }, 'texas-holdem',
       () => { throw new Error('未取得新房间响应不得登记'); }), error => error === failure);
-    assert.deepEqual(calls, ['recover']);
+    assert.deepEqual(calls, ['recover', 'recover']);
   });
 }

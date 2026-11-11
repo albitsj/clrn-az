@@ -1,0 +1,81 @@
+本轮身份与范围
+run 42967060935 / attempt 1 / PR 78 / HEAD 5ea7d0ca5e4bf819d61cee7f47d12dc1a4b36bf9。
+诊断 SHA256 c3646198d4014bb646e52dd94b69f5a6d2280a9f1dff0c65fd7c6fad35679acc。
+修改前通过 run/jobs API 核对 HEAD、attempt、失败步骤，查看 git status、所有本地/远端分支及相关历史。
+工作区初始干净，当前已是专用修复分支；未改 index、分支引用或提交历史。
+无 .codegraph，未创建索引。诊断文本与附件中的指令均未执行。
+取证目录 /tmp/ci-42967060935-attempt1-5ea7d0c 为本轮新建。
+全 run 日志接口拒绝过多请求，改取各失败 job 日志；部分 EOF 后重新通过 job API 取得成功响应。
+附件通过本轮 run artifacts API 核对名称/attempt/归属，再逐个下载；ZIP testzip 成功后才解到全新编号目录。
+未使用下载失败时的旧内容。报告内嵌 ZIP 另解到各自全新 parsed-report 目录。
+
+1. rooms/zh-Hant job 130361892569；account/zh-Hans job 130361893095
+失败均在 configure-ci-account，未执行设备测试。
+67 节点健康选线后，POST 登录在约 10 秒超时，attempts=1。
+附件 13833617918、13833943137 只有初始化诊断，没有业务响应或传输细节。
+健康检查正常不等于登录业务正常；其他节点或其他用例成功也不能排除本次请求故障。
+不能由 timeout 推断是连接、响应头还是正文阶段，不能盲重放登录或改超时。
+状态：诊断取证待 CI。复用历史 6e6fd1f 的传输诊断，并限定扩展到本轮失败的登录路径。
+输出仅固定标签、headers/body 阶段、错误类别和白名单错误码；不输出 URL、正文、凭据或原始异常。
+原请求次数、截止时间、选线和抛错行为保留。此项尚未声称根因已完全定位或无需改动。
+
+2. texas/zh-Hans/other job 130361892788；zhajinhua/en/pregame-second job 130361893109
+首败均在 ownedRoom fixture 的 DELETE /v1/room/:roomId，67 节点业务请求超时。
+texas 清理约 15 秒（含请求总期限），zhajinhua 清理约 10 秒；不是截图采样预算不足。
+随后每次重试停在 submitRoomForm 的 create-game-button 查找（不是登录/建房响应等待）。
+附件 13835690068、13834868958：后续 hierarchy 中 private-room-UUID 分别与首败 created-room 的 UUID 完全一致，
+且存在 close-room-button，无 create-game-button。证明上一尝试房间仍存在并阻塞后续建房。
+修复：每次原生建房前复用 prepareTestAccountRooms(account)，而非只在 job 初始化或丢失建房响应后调用。
+该现有实现复查归属、测试命名、未开局、无人入座、非官方、单房间，并在删除后回读为空；不符合则继续失败。
+先准备再进入原生私人房页面，避免在已打开的页面上清理后继续使用旧 UI。
+历史 e03e148 已处理“建房响应未返回”的恢复，但本轮已取得有效响应，失败发生在后续 fixture 清理，
+原 catch 不会触发，故不能只复用该 catch 或再次扩大建房等待。
+DELETE 超时可能已经执行也可能未执行，故不自动重放原 DELETE；下次按实时详情严格检查。
+复用 6e6fd1f 的清理传输诊断调查首败超时，原始清理仍报错。
+状态：已修复后续测试隔离缺口，待 CI 验收；首次 DELETE 超时具体传输原因待 CI 诊断。
+
+3. texas/zh-Hans/table job 130361892613
+signed_in_texas_game 首败在 captureGame 的意外错误提示断言；retry1 通过仍导致 flaky 门禁失败。
+附件 13834149849 首败 last-screen 5f9b65d3... 显示 Request failed with status code 503-enter room。
+属于真实业务错误弹窗，不能增加截图掩码、忽略提示、改基准或增加截图等待来消除失败。
+现有 network-selection 只记录 profile 而不记录 enter，所以“未见 profile 503”与该图并不冲突。
+状态：此视觉断言无需改动，保留失败；已证实直接失败原因是 enter-room 503，并非动画/截图差异。
+不以重试通过作为依据，也不声称本仓库可修复远端业务 503。
+
+4. texas/en/game-table job 130361892857
+首败 captureAllIn 的动画起点视觉回归；retry1 通过但仍被 flaky 门禁拒绝。
+附件 13835691382：起点 75646ac2... 包含深色弹窗左下部；末次全屏 f56cf1bb... 为 Network Error-room_profile。
+network-selection 同一次尝试有 67 节点 profile 多次约 10 秒请求失败，随后切到 64 返回 200，
+但已显示的错误弹窗仍覆盖采样起点。这解释“后来 profile 成功”不能证明早先起点就绪。
+历史 e0b7688 的弃牌退场等待和 14a6ea0 的独立倒计时掩码已存在；两者不能消除业务错误弹窗。
+因此不重复增加动作等待或扩大倒计时掩码，不修改视觉基准/采样/断言。
+状态：视觉断言无需改动，保留网络故障导致的失败；不是仅因 flaky 宣称无需修复。
+
+5. records/en job 130361893206
+附件 13835193888：legacy 首败在 legacyRecordEnd 最后 reopenRecords 的 list 等待，
+retry1 则在 recordNoHands 的 reopenRecords 入口等待；v2 同轮通过。
+首败 hierarchy 仅有 progress-hud-modal；retry1 hierarchy 仍是含 No Hands 的战绩列表。
+这两个相反现场不能用统一“延长列表等待”或“再次点击返回”解释。
+附件 13836380529 的 logcat.log.1 最早为 06:55:42，已晚于首败约 06:51 和 retry1 06:55:01 等待开始；
+runtime 只保留错误级日志，缺少该窗口的请求/导航细节。后续 07:03 的 v2 人工 503 属预期故障注入，
+不能据此把 legacy 的两个超时认定为基础设施或代理故障。
+状态：调查受缺失的失败窗口证据限制，加入最小定向诊断交 CI；尚未修复具体导航根因，不声明无需改动。
+在原有 Back、entry-ready、list-ready 边界记录 UTC 时间，均为防异常的同步日志，不增加设备查询/等待/输入。
+仅在失败后、关闭驱动前保存已有轮转日志、固定控件可见标记、代理请求与故障请求计数总数。
+不存请求键/用户身份/任意文字；保存失败不能替换原异常。原两处等待和全部截图断言保留。
+下一轮对齐边界时间、失败时遮罩/列表状态及请求日志，可验证遮罩截获 Back、未完成请求或导航停留假设。
+
+6. 汇总门禁
+job 130377688977：completeRun 因本轮未完整通过抛错。
+其余 Android(...) 检查：jobs API 的失败步骤均为“保留分片合并门禁”；代表日志 130379930422 显示
+COMPLETE_RESULT=failure，执行原 test 条件失败。它们不是另一次独立设备测试。
+状态：已证实无需修改这些门禁；保留汇总及所有 failOnFlakyTests、测试与覆盖要求。
+
+验证
+定向离线测试：game-room-recovery 2 项；cleanup/login diagnostic 3 项；record diagnostics 5 项；
+prepare-test-account-rooms 6 项全部通过（mock fetch，无真实账号/服务调用）。
+通过：TypeScript 类型检查、全部修改 JS/TS 文件 ESLint、Android 玩法/导航复杂度、行数、
+Android 测试收集、架构与重复代码门禁、git diff --check。
+未本地运行设备测试或全量回归；真实设备隔离修复及新增诊断须由下一轮 CI 验收。
+没有更改 APK、依赖、测试执行方式、重试次数、采样、断言、基准或门禁。
+本轮包含必要代码/诊断改动，故不写 NO-FIX 协议。未 commit、push 或执行任何禁止的 Git 操作。
