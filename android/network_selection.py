@@ -21,7 +21,7 @@ def diagnostic_path(request):
 
 
 def transport_details(flow, event, path):
-    if event == 'error' and path == '/v10/texas_holdem/room/{room}/profile':
+    if event == 'error' and path in (HEALTH_PATH, '/v10/texas_holdem/room/{room}/profile'):
         return {'failureKind': transport_failure(flow)}
     return {}
 
@@ -72,10 +72,31 @@ class NetworkSelection:
     def __init__(self):
         self.events = []
         self.total = 0
+        self.connections = []
+        self.connection_total = 0
+
+    def connection(self, host, event):
+        # 启动首败可能没有 HTTP flow；独立保留 CONNECT/TLS 阶段，不挤掉请求历史。
+        try:
+            if event not in ('connect', 'tls-client-failed', 'tls-server-failed'):
+                return
+            if not staging(host):
+                return
+            self.connections.append({'at': round(time.time() * 1000), 'host': host, 'event': event})
+            self.connection_total += 1
+            del self.connections[:-200]
+        except Exception:
+            pass
+
+    def tls_failure(self, data, event):
+        try:
+            self.connection(data.context.server.address[0], event)
+        except Exception:
+            pass
 
     def room_profile_request(self, flow):
         try:
-            if diagnostic_path(flow.request) == '/v10/texas_holdem/room/{room}/profile':
+            if diagnostic_path(flow.request) in (HEALTH_PATH, '/v10/texas_holdem/room/{room}/profile'):
                 self.observe(flow, 'request')
         except Exception:  # 取证不得改变请求路由或测试结果。
             pass
@@ -126,4 +147,5 @@ class NetworkSelection:
                     self.observe(flow, 'websocket-ack', kind=kind)
 
     def snapshot(self):
-        return {'total': self.total, 'events': list(self.events)}
+        return {'total': self.total, 'events': list(self.events),
+                'connectionTotal': self.connection_total, 'connections': list(self.connections)}

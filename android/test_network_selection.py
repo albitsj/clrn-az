@@ -14,6 +14,41 @@ def sample(path, body=None, status=200, host=HOST):
 
 
 class NetworkSelectionTests(unittest.TestCase):
+    def test_pre_http_diagnostics_are_bounded_private_and_read_only(self):
+        recorder = NetworkSelection()
+        server = SimpleNamespace(address=(HOST, 443), error='secret error')
+        data = SimpleNamespace(context=SimpleNamespace(server=server), ssl_conn='secret tls')
+        for _ in range(201):
+            recorder.connection(HOST, 'connect')
+        recorder.tls_failure(data, 'tls-client-failed')
+        recorder.tls_failure(data, 'tls-server-failed')
+        recorder.connection('secret.example.com', 'connect')
+        recorder.connection(HOST, 'secret event')
+        recorder.connection(None, 'connect')
+        recorder.tls_failure(None, 'tls-client-failed')
+        state = recorder.snapshot()
+        self.assertEqual(state['total'], 0)
+        self.assertEqual(state['events'], [])
+        self.assertEqual(state['connectionTotal'], 203)
+        self.assertEqual(len(state['connections']), 200)
+        self.assertEqual(state['connections'][-1]['event'], 'tls-server-failed')
+        self.assertNotIn('secret', json.dumps(state))
+        self.assertEqual(server.error, 'secret error')
+        self.assertEqual(data.ssl_conn, 'secret tls')
+
+    def test_health_request_and_transport_failure_preserve_flow_and_hide_error(self):
+        recorder = NetworkSelection()
+        flow = sample('/node/v1/status?token=secret-token')
+        flow.response = None
+        recorder.room_profile_request(flow)
+        flow.error = SimpleNamespace(msg='TLS certificate secret-host secret-token')
+        recorder.observe(flow, 'error')
+        self.assertEqual([item['event'] for item in recorder.events], ['request', 'error'])
+        self.assertEqual(recorder.events[-1]['failureKind'], 'tls')
+        self.assertNotIn('secret', json.dumps(recorder.snapshot()))
+        self.assertIsNone(flow.response)
+        self.assertIn('secret-token', flow.request.path)
+
     def test_room_profile_trace_distinguishes_inbound_response_and_transport_error_without_identity(self):
         recorder = NetworkSelection()
         flow = sample('/v10/texas_holdem/room/secret-room/profile?token=secret-token', {'secret': 'body'})
@@ -36,6 +71,7 @@ class NetworkSelectionTests(unittest.TestCase):
         recorder = NetworkSelection()
         recorder.observe = lambda *args: (_ for _ in ()).throw(RuntimeError('diagnostic unavailable'))
         recorder.room_profile_request(sample('/v10/texas_holdem/room/secret-room/profile'))
+        recorder.room_profile_request(sample('/node/v1/status'))
         self.assertEqual(recorder.total, 0)
 
     def test_wallet_reads_record_contract_without_identity_balance_or_credentials(self):

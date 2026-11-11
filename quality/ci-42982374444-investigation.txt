@@ -1,0 +1,75 @@
+本轮核对与取证
+run 42982374444 / attempt 1 / HEAD 24b5060d006428b8ae40de2877736d10384a8732。
+工作区初始干净，当前专用分支 kevinanew/e2e-js-ts-3-6；未修改 index、分支或历史。
+只读检查所有本地/远端已知分支及相关历史提交后再修改。
+附件 13842940403、13841958976 名称均含 run/attempt，下载到全新目录
+/tmp/ci-42982374444-attempt1-nGa90w 下互不混用的 report、diagnostics 子目录。
+报告 ZIP 内嵌 JSON 直接从本轮 index.html 的 application/zip 解码读取；没有读取旧目录。
+
+1. Android priority (texas / zh-Hant / other)，job 130411337870
+首败 signed_in_texas_hall：waitRoomReady -> gameGone(game-splash-screen-bg)，45 秒后仍存在。
+hierarchy 有“连接超时/請稍後重試”（繁体）、“正在搜索伺服器 2”，不是单纯截图未稳定。
+network-selection 首败 total=19：大厅钱包、WS connect/subscribe 已成功；建房后的 v12 metadata 成功，
+64 健康 200/backend_delay=1650，67 健康 200/backend_delay=1116，04 健康 error。
+之后没有房间 WS 或 profile 请求。重试 total=37，64/67 健康延迟 84/87，
+04 同样 error，但有房间 WS、ack 和 profile 200，成功完成。
+因此 04 错误不是充分原因，健康成功也不能说明整个发现过程结束；不能归咎于房间 profile 502。
+重试通过仍是 flaky，failOnFlakyTests 正确拒绝。本项根因未完成定位，需 CI 继续取证。
+历史 7fe04ab 的首败是大厅启动前零 HTTP，与本轮“建房后部分探测成功”不同，
+但其 CONNECT/TLS 只读诊断适用同一证据缺口，逐块复用必要代码和测试；没有移植无关动画改动。
+另补记健康请求到达代理的时间及脱敏传输失败类别，以区分请求未到达、已到达未结束、TLS 失败。
+独立连接环形历史限 200；不保存错误原文、URL 参数、正文、令牌、用户或房间身份。
+请求到达记录沿用原异常隔离入口；连接/TLS 诊断捕获异常，不修改 flow、证书、选线或重试。
+原 network-selection 附件已包含首次失败/重试快照，无需改报告流程。
+下一轮必须联合 request/response/error、CONNECT/TLS 和同尝试遮罩证据判断，不能仅用通过证明原因。
+历史 2a68202 的建房前清理针对存量房间，当前是成功建房后发现阻塞，暂无证据支持重复移植。
+历史 111beb0/5ea7d0c 的动画终点/采样改动也不解释本轮服务器搜索弹窗。
+
+2. Android full regression，job 130436128236
+complete 的 needs.priority.result=failure，remaining=skipped，抛出“当前提交的 Android 完整回归未通过”。
+已证实为上述失败传播，无需修改汇总门禁。
+
+3. 以下各分片门禁均逐项取得本轮 job 日志并核对 COMPLETE_RESULT=failure 和 exit code 1。
+它们仅运行原 test "$COMPLETE_RESULT" = success，没有独立设备失败；均已证实无需修改门禁：
+130437240312 Android (texas / en / pregame-middle)：失败传播，无需改动。
+130437240340 Android (texas / en / game-table)：失败传播，无需改动。
+130437240364 Android (texas / zh-Hans / table)：失败传播，无需改动。
+130437240408 Android (texas / en / pregame-first)：失败传播，无需改动。
+130437240409 Android (zhajinhua / en / pregame-first)：失败传播，无需改动。
+130437240417 Android (zhajinhua / zh-Hant)：失败传播，无需改动。
+130437240422 Android (texas / en / game-effects)：失败传播，无需改动。
+130437240442 Android (texas / en / other)：失败传播，无需改动。
+130437240450 Android (zhajinhua / en / game-effects)：失败传播，无需改动。
+130437240463 Android (zhajinhua / en / pregame-second)：失败传播，无需改动。
+130437240468 Android (texas / zh-Hant / other)：失败传播，无需改动。
+130437240482 Android (guest / zh-Hans)：失败传播，无需改动。
+130437240498 Android (wallet-help / en)：失败传播，无需改动。
+130437240522 Android (texas / en / pregame-second)：失败传播，无需改动。
+130437240538 Android (account / zh-Hans)：失败传播，无需改动。
+130437240571 Android (account / zh-Hant)：失败传播，无需改动。
+130437240581 Android (zhajinhua / en / game-table)：失败传播，无需改动。
+130437240591 Android (texas / zh-Hans / other)：失败传播，无需改动。
+130437240596 Android (guest / en)：失败传播，无需改动。
+130437240610 Android (wallet-help / zh-Hans)：失败传播，无需改动。
+130437240615 Android (social / en)：失败传播，无需改动。
+130437240620 Android (rooms / en)：失败传播，无需改动。
+130437240633 Android (rooms / zh-Hant)：失败传播，无需改动。
+130437240651 Android (rooms / zh-Hans)：失败传播，无需改动。
+130437240662 Android (records / zh-Hans)：失败传播，无需改动。
+130437240663 Android (wallet-help / zh-Hant)：失败传播，无需改动。
+130437240668 Android (records / en)：失败传播，无需改动。
+130437240684 Android (zhajinhua / zh-Hans)：失败传播，无需改动。
+130437240742 Android (social / zh-Hans)：失败传播，无需改动。
+130437240774 Android (social / zh-Hant)：失败传播，无需改动。
+130437240809 Android (guest / zh-Hant)：失败传播，无需改动。
+130437240818 Android (records / zh-Hant)：失败传播，无需改动。
+130437240826 Android (texas / en / panels)：失败传播，无需改动。
+130437240832 Android (account / en)：失败传播，无需改动。
+130437242510 Android (texas / zh-Hant / table)：失败传播，无需改动。
+
+验证
+python3 -m unittest discover -s android -p test_network_selection.py：8 项通过。
+覆盖健康请求与错误脱敏、连接事件有界/只读、无效输入隔离、诊断异常不得中断请求。
+Ruff ratchet、代码行数、Python 行数和 git diff --check 通过。
+未运行设备回归；全部远端测试、采样、断言、等待期限、覆盖和 flaky 门禁保留。
+这次提交候选为定向取证，不宣称设备根因已修复；不适用 NO-FIX 协议。
