@@ -14,6 +14,30 @@ def sample(path, body=None, status=200, host=HOST):
 
 
 class NetworkSelectionTests(unittest.TestCase):
+    def test_room_profile_trace_distinguishes_inbound_response_and_transport_error_without_identity(self):
+        recorder = NetworkSelection()
+        flow = sample('/v10/texas_holdem/room/secret-room/profile?token=secret-token', {'secret': 'body'})
+        flow.response = None
+        recorder.room_profile_request(flow)
+        self.assertEqual(recorder.events[-1]['event'], 'request')
+        flow.error = SimpleNamespace(msg='TLS certificate failed for secret-host/secret-room')
+        recorder.observe(flow, 'error')
+        self.assertEqual(recorder.events[-1]['failureKind'], 'tls')
+        flow.response = SimpleNamespace(status_code=502, json=lambda: {'secret': 'body'})
+        recorder.observe(flow)
+        self.assertEqual(recorder.events[-1]['status'], 502)
+        self.assertEqual(recorder.events[-1]['path'], '/v10/texas_holdem/room/{room}/profile')
+        self.assertNotIn('secret', json.dumps(recorder.snapshot()))
+        self.assertEqual(flow.response.json(), {'secret': 'body'})
+        recorder.room_profile_request(sample('/v10/profile/users'))
+        self.assertEqual(recorder.total, 3)
+
+    def test_room_profile_request_diagnostic_failure_cannot_abort_request(self):
+        recorder = NetworkSelection()
+        recorder.observe = lambda *args: (_ for _ in ()).throw(RuntimeError('diagnostic unavailable'))
+        recorder.room_profile_request(sample('/v10/texas_holdem/room/secret-room/profile'))
+        self.assertEqual(recorder.total, 0)
+
     def test_wallet_reads_record_contract_without_identity_balance_or_credentials(self):
         recorder = NetworkSelection()
         body = {'ok': True, 'result': {'currencies': [

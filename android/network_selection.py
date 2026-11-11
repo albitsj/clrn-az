@@ -1,4 +1,4 @@
-"""只读选线与钱包读取诊断：不保存正文、令牌、余额、完整 URL 或用户/房间身份。"""
+"""只读选线、房间资料与钱包读取诊断：不保存正文、令牌、余额、完整 URL 或用户/房间身份。"""
 
 import json
 import re
@@ -13,9 +13,28 @@ def diagnostic_path(request):
     path = urlsplit(request.path).path
     if path in (*METADATA_PATHS, HEALTH_PATH, '/v2/centrifugo/connection/websocket'):
         return path
+    if request.method == 'GET' and re.fullmatch(r'/v10/texas_holdem/room/[^/]+/profile', path):
+        return '/v10/texas_holdem/room/{room}/profile'
     if request.method == 'PUT' and re.fullmatch(r'/v10/wallet/[^/]+', path):
         return '/v10/wallet/{user}'
     return None
+
+
+def transport_details(flow, event, path):
+    if event == 'error' and path == '/v10/texas_holdem/room/{room}/profile':
+        return {'failureKind': transport_failure(flow)}
+    return {}
+
+
+def transport_failure(flow):
+    # 不复制错误原文；原文可能包含 URL、身份或凭据。
+    message = str(getattr(getattr(flow, 'error', None), 'msg', '')).lower()
+    for kind, pattern in (('timeout', r'timeout|timed out'), ('tls', r'tls|ssl|certificate'),
+                          ('dns', r'resolv|name or service'), ('refused', r'refused'),
+                          ('unreachable', r'unreachable|no route'), ('closed', r'closed|reset')):
+        if re.search(pattern, message):
+            return kind
+    return 'other'
 
 
 def wallet_details(body):
@@ -54,12 +73,20 @@ class NetworkSelection:
         self.events = []
         self.total = 0
 
+    def room_profile_request(self, flow):
+        try:
+            if diagnostic_path(flow.request) == '/v10/texas_holdem/room/{room}/profile':
+                self.observe(flow, 'request')
+        except Exception:  # 取证不得改变请求路由或测试结果。
+            pass
+
     def observe(self, flow, event='response', **details):
         path = diagnostic_path(flow.request)
         if not staging(flow.request.host) or path is None:
             return
         record = {'at': round(time.time() * 1000), 'event': event, 'host': flow.request.host,
                   'path': path, 'method': flow.request.method, **details}
+        record.update(transport_details(flow, event, path))
         if flow.response is not None:
             record['status'] = flow.response.status_code
             try:

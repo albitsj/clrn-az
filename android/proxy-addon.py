@@ -183,6 +183,7 @@ class AndroidVisualProxy:
             self.game.websocket_end(flow)
 
     async def request(self, flow):
+        self.network_selection.room_profile_request(flow)
         if self.selection_faults.request(flow):
             return
         if await self.launch.request(flow):
