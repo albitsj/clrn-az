@@ -9,7 +9,7 @@ const { motionParts } = require('./motion-regions.ts');
 const png = readFileSync(new URL('./snapshots/android-35-x86_64-720x1280-en/texas-prop-tea-start.png', import.meta.url));
 const region = { x: 0, y: 0, width: 10, height: 10 };
 
-for (const name of ['texas-prop-tea', 'zhajinhua-prop-water']) {
+for (const name of ['texas-prop-tea', 'zhajinhua-prop-water', 'zhajinhua-prop-beer']) {
   test(`${name} 诊断保留所有尝试的真实时间戳及原区域像素，不输出完整屏幕`, async () => {
     const samples = [0, 1].map(attempt => ({ attempt, frames: [10, 57, 131].map(capturedAt =>
       ({ capturedAt, png: png.toString('base64') })) }));

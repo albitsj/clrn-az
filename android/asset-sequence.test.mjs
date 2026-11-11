@@ -50,7 +50,7 @@ test('目录中额外存在备用图不能放行素材主基准的明显差异',
   } finally { rmSync(directory, { recursive: true, force: true }); }
 });
 
-for (const name of ['texas-prop-tea', 'zhajinhua-prop-water']) {
+for (const name of ['texas-prop-tea', 'zhajinhua-prop-water', 'zhajinhua-prop-beer']) {
   test(`${name} 飞行锚点缺失及诊断失败仍保留原始异常`, async () => {
     const body = ['start', 'peak', 'changed'].map(phase => PNG.sync.read(readFileSync(new URL(`${name}-${phase}.png`, snapshots))));
     const flight = ['start', 'peak', 'changed'].map(phase => PNG.sync.read(readFileSync(new URL(`${name}-flight-${phase}.png`, snapshots))));
