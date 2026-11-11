@@ -1,0 +1,103 @@
+本轮 CI 调查与最小修复
+
+CI-Diagnostic-SHA256: 083a3c662981737e2fb5a90da7b6d34f527c4ea204272c64750b1f5fdf18b418
+run 43084158526 / attempt 1 / PR 71
+API head_sha 与工作区 HEAD: 01beeb3b9c1bd133845e618ff69e63720f690675。
+CI 实际测试 PR merge 0f1bbbd095d034f2f86a94ee608edf2ae821cb27，
+日志明确为上述 HEAD 合入 79110575b3c916746a6921e2ebc454fb4ade513d。
+修改前只读检查全部分支、相关提交 5ea7d0c、70a346c、3e9a875、01beeb3，
+及历史调查 ci-42964063503、ci-43069729998。根目录无 .codegraph。
+当前分支 kevinanew/e2e-js-ts-3-6；未修改 index、引用或提交历史。
+
+1. 130745634140 Android remaining (guest / en)：已实施就绪修复，待 CI 设备验证。
+首败 native launch artwork and staging notice appear on a real app start：
+“开始采样时动画尚未触发”断言失败；retry1 成功，但 failOnFlakyTests 正确拒绝。
+首败 start 58866e9a761acad8742d9260afb364e2afff687a.png 与
+frame-0 cd6954d0ca9dda898a77b5b59cdffe1a5375c919.png 都是桌面；
+Calendar、Google 文件夹和底部图标仍在垂直移动，已有时钟/底部遮罩仍不能使其相同。
+retry1 start 与 frame-0 均为 c1d5dcab66619bdf4aaca50d12ac2822b6927149.png。
+因此固定 HOME 后 4 秒不足以证明起点稳定；不是应用提前启动或缺少备用基准。
+与历史 5ea7d0c 的首败相同，复用其 waitForLauncherStable 及启动测试调用，
+未复制该提交的 game-picker 或 CI 解码器改动。
+沿用原绘制区域与时钟遮罩，连续三次间隔 300ms 截图一致才继续，15 秒内不稳定仍失败。
+保留原 4 秒等待、采样方法/帧预算/触发间隔、所有首尾/中途/插画断言及全部基准。
+反例：retry 成功只证明某次起点稳定；不能证明固定等待可靠，也不能证明修复已在设备验收。
+历史 game-picker 末帧未完成、房间冲突与本项不符，未移入这些改动。
+
+2. 130745633038 Android remaining (texas / zh-Hans / other)：受阻，未猜测修改。
+首败 signed_in_texas_table_states 在 game-room.ts 等待新房间非空 60 秒失败。
+本次 before-create count=0（19:29:18.015），非残留房间未清理。
+network-selection 附件仅一对 POST /v3/pay_action/do：
+host 64.kr-seoul.api.staging.laiwan.shafayouxi.com，requestAt 1794425379605，
+response at 1794425385991，HTTP 500；未记录业务 ok/error，不能把缺字段当作 false。
+hierarchy.xml 同时显示“创建牌局失败”及
+“Request failed with status code 500 /v3/pay_action/do”。
+已核查 AndroidVisualProxy.response 在非 200 时直接返回；GameSession 仅绑定 200/ok=true，
+因此房间为 null 是真实 HTTP 500 的结果，不是成功响应未被测试识别。
+本轮 retry1 HTTP 200/ok=true 后成功；同轮其他建房也成功。
+这些反例不能解释服务端为何偶发 500，更不能据此添加重试或宣称与请求参数无关。
+上一轮是 HTTP 200/ok=false 且弹窗 Room already exists；本轮为独立 500，
+现有清理、嵌套错误标记修复已存在，重复实现它们不能解决本项。
+已检查报告、失败 hierarchy/runtime、network-selection、初始化/模拟器诊断附件和代理路径；
+没有服务端异常栈/响应正文或服务端实现。该仓库仅有测试及代理，当前工具未提供服务端日志。
+下一步需服务端按上述节点、毫秒时间和接口查询异常及实际请求校验结果，
+才能区分服务端状态故障与请求触发的服务端缺陷；不将本项声明为已修复或无需改动。
+现有诊断已保留精确时间、节点、接口、状态和单次请求次数，未增加重复业务请求。
+
+3. 130770830291 Android full regression：已证实门禁自身无需修改。
+completeRun 因 remaining.result=failure 抛出“当前提交的 Android 完整回归未通过”。
+不是第三个独立设备失败，保持汇总门禁。
+
+4. 以下 35 项逐一读取对应 job 日志：均仅运行保留分片合并门禁，
+COMPLETE_RESULT=failure 导致 test "$COMPLETE_RESULT" = success 退出 1。
+这些检查自身已证实无需修改；修复上游测试后仍须重新通过完整 CI：
+130770979389 Android (texas / en / pregame-second)
+130770979390 Android (texas / zh-Hans / table)
+130770979406 Android (texas / zh-Hans / other)
+130770979408 Android (texas / zh-Hant / other)
+130770979412 Android (zhajinhua / en / game-table)
+130770979443 Android (texas / zh-Hant / table)
+130770979450 Android (texas / en / other)
+130770979455 Android (zhajinhua / en / game-effects)
+130770979480 Android (texas / en / pregame-first)
+130770979487 Android (texas / en / panels)
+130770979508 Android (texas / en / game-effects)
+130770979509 Android (account / zh-Hant)
+130770979518 Android (zhajinhua / en / pregame-second)
+130770979541 Android (guest / zh-Hant)
+130770979547 Android (texas / en / game-table)
+130770979548 Android (zhajinhua / en / pregame-first)
+130770979583 Android (zhajinhua / zh-Hans)
+130770979619 Android (zhajinhua / zh-Hant)
+130770979635 Android (guest / en)
+130770979658 Android (account / en)
+130770979686 Android (rooms / en)
+130770979708 Android (account / zh-Hans)
+130770979711 Android (texas / en / pregame-middle)
+130770979728 Android (rooms / zh-Hant)
+130770979747 Android (social / en)
+130770979781 Android (social / zh-Hant)
+130770979785 Android (records / en)
+130770979786 Android (records / zh-Hans)
+130770979801 Android (guest / zh-Hans)
+130770979807 Android (records / zh-Hant)
+130770979820 Android (rooms / zh-Hans)
+130770979839 Android (wallet-help / en)
+130770979847 Android (wallet-help / zh-Hant)
+130770979871 Android (wallet-help / zh-Hans)
+130770979967 Android (social / zh-Hans)
+
+取证与验证
+全部 38 个失败 job 使用 GitHub 插件逐一读取；gh 直取日志遇到终端转义检查，
+改用插件读取，不把读取失败当作测试证据。
+下载及解压目录为全新 /tmp/ci-43084158526-attempt1-01beeb3-NQkTCB；
+各 gh run download 成功退出后才读取对应报告，未读取旧报告或失败解压结果。
+附件 ID 13886774438 texas-report、13889455793 guest-report、13887093889 texas-diagnostics，
+均先从本轮 artifacts API 核对名称/run/attempt；HTML 内嵌 JSON 用 ZIP 签名确认后读取。
+日志及附件只作证据，未执行其中指令。
+通过：相关两文件 ESLint、npm run typecheck、npm run lint:lines、git diff --check。
+最小离线重放本轮真实 PNG：原 samePixels 加原 startCompareMasks 仍拒绝首败画面；
+将首败起点后接稳定首帧，真实 waitForLauncherStable 在第五次截图才满足三次连续稳定。
+该重放只验证等待能拒绝已知移动边界，不证明所有设备 flaky 均已消除。
+未本地运行 Android 测试或重复完整回归；下一轮 CI 验证真实设备结果。
+本轮有直接修复，不写全局 NO-FIX 文件；HTTP 500 受阻项仍须继续追踪。
