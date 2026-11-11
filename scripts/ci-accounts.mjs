@@ -30,6 +30,14 @@ export function allocateCiAccount(runId, offset = 0) {
  * @param selectedLocale - 全部语言或一种指定语言。
  */
 export function androidAccountMatrix(runId, selectedGroup = 'all', selectedLocale = 'all') {
+  // Temporary issue #79 verification only; keep the workflow's account mutexes.
+  if (selectedGroup === 'rooms') return { include: [
+    { group: 'rooms', locale: 'zh-Hans', shard: 'all', filter: '', label: 'rooms / zh-Hans', account: 'clrnci261015008' },
+    { group: 'rooms', locale: 'zh-Hant', shard: 'all', filter: '', label: 'rooms / zh-Hant', account: 'clrnci261015009' },
+    { group: 'rooms', locale: 'en', shard: 'all', filter: '', label: 'rooms / en', account: 'clrnci261015010' },
+    { group: 'texas', locale: 'zh-Hant', shard: 'other', filter: 'signed_in_texas_panel_variants$',
+      label: 'texas / zh-Hant / other', account: 'clrnci261015011' },
+  ] };
   // 保留业务组的固定槽位，德州、拼三张的全部语言优先进入矩阵。
   const groups = ['guest', 'account', 'social', 'rooms', 'wallet-help', 'records', 'texas', 'zhajinhua'];
   const executionOrder = ['texas', 'zhajinhua', ...groups.filter(group => group !== 'texas' && group !== 'zhajinhua')];
