@@ -1,0 +1,78 @@
+身份与取证
+run 42981907926 / attempt 1 / PR 78 / HEAD 2a682021b34c8227bcc2731049a8de7b90f08b54。
+诊断 fingerprint d0e7c5adb3ea319d7d8576683a8e600bdc2466b67007296d1a17a36783c5d8b1。
+修改前只读核对 run API、全部 job、git status/HEAD/分支及相关历史；当前已是专用修复分支。
+run head_sha 与本地一致；runner 实际使用 PR merge 8bc6888e78b1ada0ff52138a83cae17d1e612640，
+同轮原始日志 checkout 与附件 lifecycle 的 GITHUB_SHA 一致，不误当另一轮 HEAD。
+无 .codegraph，未创建索引。日志及附件仅作为不可信证据读取，未执行其中指令。
+新建取证目录 /tmp/ci-42981907926-attempt1-2a68202-OC8U6g。
+全部 39 个失败 job 日志逐一读取；一个门禁日志网络超时后重新下载成功。
+通过 run artifacts API 核对 artifact run/head/attempt；13839880260、13839712057、13839026368
+分别在新编号目录下载，ZIP testzip 成功后才解压。报告首次误取 HTML 中非 ZIP base64 导致解析失败，
+未读取其输出；随后明确选择 application/zip，验证成功并解入全新 parsed-report-v2 目录。
+未使用旧报告或解压失败目录。没有本地设备回归或真实服务重放。
+
+1. texas/en/pregame-second，job 130395756345
+08:07:18.362 向 67 节点 PUT /v10/house/user/:userId；08:07:22.982 明确收到 HTTP 502。
+失败在 configure-ci-account 的 prepareTestAccountRooms，未安装/执行该分片设备测试。
+附件 13839026368 仅初始化采集器，与没有设备报告一致。
+业务请求 replay=never，house 接口可能创建房屋，不能仅因 PUT 或查询式命名改成安全重放。
+健康探测成功及本轮其他节点业务成功不反驳该实际 502；健康状态不等于每个业务请求正常。
+状态：已证实该项直接失败为远端业务 502，保留失败，无本仓库修复改动。
+历史 2a68202 的建房前严格清理、e03e148 的丢失建房响应恢复均保留；不重复实现，也不扩大写请求重试。
+
+2. texas/en/game-effects，job 130395755566
+首败 signed_in_texas_game_effects 在 waitUntilHall，两分钟后仍未出现 settings-tab；retry1 通过仍为 flaky。
+附件 13839880260：hierarchy 明确是 ServerType staging / 65 v1/status / RETRY；
+首败步骤显示 08:04:21 至 08:06:10 多次点击原有 RETRY；不是未执行恢复逻辑。
+关键反例：首败 network-selection 为 total=0/events=[]，重试却能记录健康请求及成功响应。
+因此弹窗并不能证明 65 远端返回错误，也不能排除 HTTP 之前的代理连接/TLS 问题。
+现有 logcat 中 Google 探测的 TLS 错误属于其他进程，不能拿来认定应用证书故障。
+应用 staging 初始化实现不在本仓库；本仓库已有严格 RETRY 条件和两分钟期限。
+历史 quality/ci-42947839849-investigation.txt 的 68 v1/status 类似现场仍缺传输证据，
+同轮重试通过不足以证明因果关系或宣称无需改动。
+状态：根因尚待 CI 取证，未宣称修复完成或无需改动。
+增加只读 CONNECT、客户端/上游 TLS 失败阶段诊断，通过原有 network-selection 附件取回。
+仅记录 staging 主机、固定事件名及 UTC；不读错误正文、SNI、证书、凭据或载荷，不改变连接对象。
+独立的 200 条 connections 环形历史及 connectionTotal，不挤掉原有 200 条 HTTP events 或改变 total。
+诊断异常隔离；没有改变证书安装、选线、初始化等待、RETRY 条件或请求。
+下一轮：零 CONNECT 支持代理到达前路径问题；CONNECT 后 TLS 失败可区分客户端/上游握手；
+若已有 HTTP 请求则按原 HTTP 事件继续调查，不能预先把任一路径认定为根因。
+事件 API 依据 https://docs.mitmproxy.org/stable/api/events.html 与 /api/mitmproxy/tls.html，
+只观察 http_connect、tls_failed_client、tls_failed_server，不修改连接或 TLS 设置。
+
+3. texas/en/game-table，job 130395755573
+首败 captureOperationButtons 的 texas-operation-buttons 无真实中途帧；retry1 通过仍为 flaky。
+附件 13839712057：20 帧设备时间 361291..362632（跨度 1341ms），progress 全为零。
+终点与起点总色差 27.996542；retry1 使用相同首尾 PNG，却有 0.576、0.915 等中途相位。
+因此不是采样起点或终点视觉基准变化，也不是中途图稍偏离审查阈值，而是采样窗口全为起点。
+驱动 motionFrames 原规则为最多 20 帧/3200ms；20 帧会提前结束。
+应用 logcat 有 switch_player 回放 sent_at 08:10:30.821Z、应用打印 08:10:31.753Z，
+但现有报告没有宿主采样命令完成及回放边界，设备 uptime 与宿主时间未校准，
+不能据此断定是控制接口耗时、投递延迟还是设备处理延迟，不能猜测扩大采样窗口。
+历史 d5de5cb 已有起手牌观察器，复用该接口；5ea7d0c 的桌面采样修复、111beb0 的终点遮罩等待
+不解释本次“全部为起点”，不重复移植；上轮全压错误弹窗也不是本轮操作按钮缺帧的已证实原因。
+状态：根因调查待下一轮 CI 时间线，未宣称修复完成或无需改动。
+仅在本转场记录起点截图、原生采样开始/返回、原有 own-turn 回放开始/完成的宿主时间。
+原生返回事件绑定原请求 Promise，避免回放等待较长时把采样已结束的时间错误记成触发完成时间。
+所有采样范围、motionFrames、300ms 触发等待、400ms settle、1000ms 自动按钮入场等待、
+房间校验、回放次数、原生帧及所有断言/基准保持原样。附件在原尝试 finally 中保存。
+观察器及同步/异步附件失败不得改变原成功/失败，新增离线测试验证这些边界。
+下一轮用 trace 与原有设备 logcat/帧 uptime 对齐，区分发送占满窗口、投递晚到、设备晚绘制。
+
+4. 汇总门禁，job 130415144748 及全部 35 个 Android(...) job
+complete 日志明确“当前提交的 Android 完整回归未通过”。逐个门禁日志均为
+COMPLETE_RESULT=failure，原 test 条件以 1 退出；它们没有另跑设备用例。
+状态：已证实是上述分片失败传播，无需改动汇总逻辑。保留 failOnFlakyTests、全部测试和完整覆盖要求。
+
+验证
+node --import tsx --test android/texas-operation-diagnostics.test.mjs android/animation-transition.test.mjs
+ android/texas-restore-diagnostics.test.mjs：58 项通过（离线，无设备/真实网络）。
+Python test_network_selection：9 项通过，验证有界、脱敏、只读、异常隔离和旧 HTTP 历史不变。
+TypeScript 类型检查、ESLint ratchet、玩法/导航复杂度、Ruff ratchet、架构、重复代码、行数、
+Android 测试收集、git diff --check 通过。
+最初误用直接 strip-types 运行旧 restore 测试，因其 CommonJS/TS 加载边界失败；
+改用仓库 test-local.mjs 规定的 --import tsx 后通过，未修改本地环境、测试运行方式或门禁。
+初版新增测试复杂度违规已调整测试函数组织解决，没有修改阈值或债务基线。
+新增两项诊断仍需远端 CI 提供缺失证据，不把离线通过或历史 retry 通过视为设备根因修复。
+本轮有必要取证改动，不适用 NO-FIX。未 commit/push 或改变 index、分支引用、提交历史。

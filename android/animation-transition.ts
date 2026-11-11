@@ -162,7 +162,10 @@ export async function captureNativeTransition(device: AndroidDevice, name: strin
     observeTransition(observe, 'native-sampling-start');
     try {
       const pending = Promise.race([
-        implementation._send(samplingMethod),
+        implementation._send(samplingMethod).then(sample => {
+          observeTransition(observe, 'native-sampling-complete');
+          return sample;
+        }),
         setTimeout(30_000, undefined, { signal: timeout.signal }).then(() => { throw new Error('原生动画采样超时。'); }),
       ]);
       await setTimeout(300);
@@ -371,5 +374,5 @@ export async function captureTimedPrompt(device: AndroidDevice, name: string, te
  * @param event - 固定阶段名。
  */
 function observeTransition(observe: ((event: string) => void) | undefined, event: string): void {
-  observe?.(event);
+  try { observe?.(event); } catch { /* 诊断失败不得改变原始采样结果。 */ }
 }

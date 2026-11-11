@@ -99,6 +99,27 @@ class NetworkSelection:
     def __init__(self):
         self.events = []
         self.total = 0
+        self.connections = []
+        self.connection_total = 0
+
+    def connection(self, host, event):
+        # 启动首败可能没有 HTTP flow；独立保留 CONNECT/TLS 阶段，不挤掉请求历史。
+        try:
+            if event not in ('connect', 'tls-client-failed', 'tls-server-failed'):
+                return
+            if not staging(host):
+                return
+            self.connections.append({'at': round(time.time() * 1000), 'host': host, 'event': event})
+            self.connection_total += 1
+            del self.connections[:-200]
+        except Exception:
+            pass
+
+    def tls_failure(self, data, event):
+        try:
+            self.connection(data.context.server.address[0], event)
+        except Exception:
+            pass
 
     def request(self, flow):
         try:
@@ -163,4 +184,5 @@ class NetworkSelection:
             pass
 
     def snapshot(self):
-        return {'total': self.total, 'events': list(self.events)}
+        return {'total': self.total, 'events': list(self.events),
+                'connectionTotal': self.connection_total, 'connections': list(self.connections)}

@@ -14,6 +14,28 @@ def sample(path, body=None, status=200, host=HOST):
 
 
 class NetworkSelectionTests(unittest.TestCase):
+    def test_pre_http_diagnostics_are_bounded_private_and_read_only(self):
+        recorder = NetworkSelection()
+        server = SimpleNamespace(address=(HOST, 443), error='secret error')
+        data = SimpleNamespace(context=SimpleNamespace(server=server), ssl_conn='secret tls')
+        for _ in range(201):
+            recorder.connection(HOST, 'connect')
+        recorder.tls_failure(data, 'tls-client-failed')
+        recorder.tls_failure(data, 'tls-server-failed')
+        recorder.connection('secret.example.com', 'connect')
+        recorder.connection(HOST, 'secret event')
+        recorder.connection(None, 'connect')
+        recorder.tls_failure(None, 'tls-client-failed')
+        state = recorder.snapshot()
+        self.assertEqual(state['total'], 0)
+        self.assertEqual(state['events'], [])
+        self.assertEqual(state['connectionTotal'], 203)
+        self.assertEqual(len(state['connections']), 200)
+        self.assertEqual(state['connections'][-1]['event'], 'tls-server-failed')
+        self.assertNotIn('secret', json.dumps(state))
+        self.assertEqual(server.error, 'secret error')
+        self.assertEqual(data.ssl_conn, 'secret tls')
+
     def test_replay_records_only_injected_message_count_and_preserves_payload(self):
         recorder = NetworkSelection()
         payload = {'result': {'channel': 'zhajinhua>secret-room#secret-user',
