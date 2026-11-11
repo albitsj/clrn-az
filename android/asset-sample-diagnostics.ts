@@ -13,7 +13,7 @@ export type AssetSample = { attempt: number; frames: { capturedAt: number; png: 
  */
 export async function preserveAssetSamples(name: string, info: TestInfo, samples: AssetSample[],
   region: ScreenshotBounds, flightRegion?: ScreenshotBounds): Promise<void> {
-  if (name !== 'texas-prop-tea') return;
+  if (name !== 'texas-prop-tea' && name !== 'zhajinhua-prop-water') return;
   try {
     const regions = [region, ...(flightRegion ? [flightRegion] : [])];
     const attempts = samples.map(sample => ({ attempt: sample.attempt,

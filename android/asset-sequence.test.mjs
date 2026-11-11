@@ -50,30 +50,31 @@ test('目录中额外存在备用图不能放行素材主基准的明显差异',
   } finally { rmSync(directory, { recursive: true, force: true }); }
 });
 
-test('登记的飞行位置锚点缺失必须失败，不能因主图匹配而静默跳过', async () => {
-  const name = 'texas-prop-tea';
-  const body = ['start', 'peak', 'changed'].map(phase => PNG.sync.read(readFileSync(new URL(`${name}-${phase}.png`, snapshots))));
-  const flight = ['start', 'peak', 'changed'].map(phase => PNG.sync.read(readFileSync(new URL(`${name}-flight-${phase}.png`, snapshots))));
-  const frames = body.map((picture, index) => {
-    const canvas = new PNG({ width: picture.width + flight[index].width, height: Math.max(picture.height, flight[index].height) });
-    PNG.bitblt(picture, canvas, 0, 0, picture.width, picture.height, 0, 0);
-    PNG.bitblt(flight[index], canvas, 0, 0, flight[index].width, flight[index].height, picture.width, 0);
-    return PNG.sync.write(canvas);
+for (const name of ['texas-prop-tea', 'zhajinhua-prop-water']) {
+  test(`${name} 飞行锚点缺失及诊断失败仍保留原始异常`, async () => {
+    const body = ['start', 'peak', 'changed'].map(phase => PNG.sync.read(readFileSync(new URL(`${name}-${phase}.png`, snapshots))));
+    const flight = ['start', 'peak', 'changed'].map(phase => PNG.sync.read(readFileSync(new URL(`${name}-flight-${phase}.png`, snapshots))));
+    const frames = body.map((picture, index) => {
+      const canvas = new PNG({ width: picture.width + flight[index].width, height: Math.max(picture.height, flight[index].height) });
+      PNG.bitblt(picture, canvas, 0, 0, picture.width, picture.height, 0, 0);
+      PNG.bitblt(flight[index], canvas, 0, 0, flight[index].width, flight[index].height, picture.width, 0);
+      return PNG.sync.write(canvas);
+    });
+    const missing = `${name}-flight-peak${name === 'texas-prop-tea' ? '-alternate' : ''}.png`;
+    let diagnosticCalls = 0;
+    const info = { config: { updateSnapshots: 'none' }, /** 诊断不可写不得替换原始锚点异常。
+       * @param attachment - 附件名。
+       */ attach: async attachment => {
+        if (attachment === `${name}-raw-samples`) { diagnosticCalls++; throw new Error('unavailable'); }
+      },
+      /** 仅模拟一个已登记的真实锚点文件丢失。
+       * @param file - 基准名。
+       */
+      snapshotPath: file => fileURLToPath(new URL(file === missing ? `missing/${file}` : file, snapshots)) };
+    await assert.rejects(captureAssetSequence(deviceFor(frames), name, info,
+      { x: 0, y: 0, width: body[0].width, height: body[0].height }, async () => {},
+      { x: body[0].width, y: 0, width: flight[0].width, height: flight[0].height }),
+    error => error.code === 'ENOENT' && error.path.endsWith(missing));
+    assert.equal(diagnosticCalls, 1);
   });
-  const missing = `${name}-flight-peak-alternate.png`;
-  let diagnosticCalls = 0;
-  const info = { config: { updateSnapshots: 'none' }, /** 诊断不可写不得替换原始锚点异常。
-     * @param attachment - 附件名。
-     */ attach: async attachment => {
-      if (attachment === `${name}-raw-samples`) { diagnosticCalls++; throw new Error('unavailable'); }
-    },
-    /** 仅模拟一个已登记的真实锚点文件丢失。
-     * @param file - 基准名。
-     */
-    snapshotPath: file => fileURLToPath(new URL(file === missing ? `missing/${file}` : file, snapshots)) };
-  await assert.rejects(captureAssetSequence(deviceFor(frames), name, info,
-    { x: 0, y: 0, width: body[0].width, height: body[0].height }, async () => {},
-    { x: body[0].width, y: 0, width: flight[0].width, height: flight[0].height }),
-  error => error.code === 'ENOENT' && error.path.endsWith(missing));
-  assert.equal(diagnosticCalls, 1);
-});
+}

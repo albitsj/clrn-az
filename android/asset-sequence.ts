@@ -36,7 +36,7 @@ export async function captureAssetSequence(device: AndroidDevice, name: string, 
   try {
     await captureSampledSequence(device, name, info, region, trigger, samples, flightRegion);
   } finally {
-    if (name === 'texas-prop-tea') {
+    if (name === 'texas-prop-tea' || name === 'zhajinhua-prop-water') {
       await preserveAssetSamples(name, info, samples, region, flightRegion);
     }
   }
