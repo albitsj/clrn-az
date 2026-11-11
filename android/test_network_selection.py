@@ -14,6 +14,26 @@ def sample(path, body=None, status=200, host=HOST):
 
 
 class NetworkSelectionTests(unittest.TestCase):
+    def test_profile_transport_errors_are_classified_without_mutating_or_leaking_error(self):
+        recorder = NetworkSelection()
+        flow = sample('/v10/texas_holdem/room/secret-room/profile?token=secret')
+        flow.response = None
+        for message, kind in (('TLS certificate secret', 'tls'), ('secret timed out', 'timeout'),
+                              ('secret name or service', 'dns'), ('secret refused', 'refused'),
+                              ('secret no route', 'unreachable'), ('secret reset', 'closed'),
+                              ('secret unknown', 'other')):
+            flow.error = SimpleNamespace(msg=message)
+            original = flow.error
+            recorder.observe(flow, 'error')
+            self.assertEqual(recorder.events[-1]['failureKind'], kind)
+            self.assertIs(flow.error, original)
+            self.assertEqual(flow.error.msg, message)
+        flow.error = None
+        recorder.observe(flow, 'error')
+        self.assertEqual(recorder.events[-1]['failureKind'], 'other')
+        self.assertNotIn('secret', json.dumps(recorder.snapshot()))
+
+
     def test_pre_http_diagnostics_are_bounded_private_and_read_only(self):
         recorder = NetworkSelection()
         server = SimpleNamespace(address=(HOST, 443), error='secret error')

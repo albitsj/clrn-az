@@ -33,6 +33,23 @@ def room_diagnostic_path(path):
     return None
 
 
+def transport_details(flow, event, path):
+    if event == 'error' and path == '/v10/texas_holdem/room/{room}/profile':
+        return {'failureKind': transport_failure(flow)}
+    return {}
+
+
+def transport_failure(flow):
+    # 不复制错误原文；原文可能包含 URL、身份或凭据。
+    message = str(getattr(getattr(flow, 'error', None), 'msg', '')).lower()
+    for kind, pattern in (('timeout', r'timeout|timed out'), ('tls', r'tls|ssl|certificate'),
+                          ('dns', r'resolv|name or service'), ('refused', r'refused'),
+                          ('unreachable', r'unreachable|no route'), ('closed', r'closed|reset')):
+        if re.search(pattern, message):
+            return kind
+    return 'other'
+
+
 def wallet_details(body):
     if not isinstance(body, dict):
         return {}
@@ -117,6 +134,7 @@ class NetworkSelection:
         record = {'at': round(time.time() * 1000), 'event': event, 'host': flow.request.host,
                   'path': path, 'method': flow.request.method, **details}
         record.update(request_timing(flow.request))
+        record.update(transport_details(flow, event, path))
         if flow.response is not None:
             record['status'] = flow.response.status_code
             try:
