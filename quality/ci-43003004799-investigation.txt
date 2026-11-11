@@ -1,0 +1,70 @@
+CI diagnostic: 32229b40fd21a89c4e7bd1231f1178920ae14ea63a1a3177a8e10219d5b3491b
+Run: 43003004799; attempt: 1; HEAD: 9d2a8306ad3998fa30f124eca978d6284c1bb225
+The workspace branch was kevinanew/e2e-js-ts-3-6 and initially clean.
+No Git index, branch reference or history mutation was performed.
+
+Evidence acquisition
+- Verified headSha, attempt and all failed job IDs through the run API first.
+- Downloaded job logs and the run log archive into a new run/attempt/HEAD-specific
+  temporary directory. Failed downloads were not used. Each extracted ZIP was
+  integrity checked and extracted to a fresh directory.
+- Read artifacts android-staging-visual-social-en-all-43003004799-1
+  (13849452546), android-diagnostics-social-en-all-43003004799-1 (13849776562),
+  and android-staging-visual-texas-en-pregame-second-43003004799-1 (13849135437).
+
+1. Android remaining (texas / en / pregame-second), job 130464022956
+- First optional_pre_game attempt failed in the ownedRoom fixture teardown,
+  deletePrivateGameRoom -> NetworkClient.request, HTTP 500, server, attempts=1.
+  The failure event at 10:41:47.093Z names the regional hk-sn service and the
+  sanitized endpoint /v1/room/:roomId. The report confirms the same stack.
+- The next attempt's teardown succeeded. That does not erase the first failure.
+- The endpoint is explicitly replay=never: deletion may settle/refund a room.
+  No blind retry, ignored cleanup error, or weakened flaky gate was introduced.
+- The service returned an actual HTTP error, not the prior CONNECT/TLS failure.
+  Internal server cause remains unavailable in this repository; upstream service
+  investigation is needed. No speculative client behavior change was made.
+
+2. Android remaining (social / en), job 130464024239
+- First slot attempt failed at the independent-motion assertion for diamond reel 1.
+- All 20 diamond frames, start and end share image hash
+  c8eb2aa473daa5d8c4bf34266755a20499fba6cc. Viewed the image: stopped coin reels.
+  Native timestamps span 520555..521752 (1197 ms).
+- Retry begins with the same stopped image; frames 0..8 remain identical, frame 9
+  changes, and later frames visibly animate. Its timestamps span 648720..650783.
+- These counterexamples preclude calling a retry pass a fix, or asserting that
+  a longer observation window alone fixes the cause: first-attempt END is also
+  unchanged after the existing settle delay. Missing trigger/RPC evidence prevents
+  distinguishing an ignored tap, missing RPC, delayed response, or stalled render.
+- First-failure device log window has already rotated away: retained logcat.log.1
+  begins at 10:56:56, after the 10:56:17 assertion. The test previously did not
+  preserveAnimationFailure at the spin boundary.
+- Added failure-only preservation using that existing helper, host capture/tap
+  timestamps using the existing observer, and a read-only proxy spin count.
+  No device query is added while sampling. Count 1 versus 2 after diamond failure
+  distinguishes no second intercepted spin from an intercepted second spin.
+  Null means diagnostics unavailable, never zero or evidence of no RPC.
+- Sampling method, frame limit, crop, settle delay, reward assertions, snapshots,
+  independent-region assertions and failOnFlakyTests are unchanged.
+- Root-cause repair remains pending CI evidence; this is diagnostic progress.
+
+3. Android full regression, job 130489346995, and all 35 Android (...) jobs
+- Read each of the 35 gate job logs: each has COMPLETE_RESULT=failure and exits 1
+  from test "$COMPLETE_RESULT" = success. Full regression fails because remaining
+  failed. They are dependent failures; no independent assertion or gate defect.
+  The workflow and all merge gates remain intact.
+
+Read-only prior repair review
+- Inspected existing local/remote branches and relevant all-ref history first.
+- 2620f3a changes slot popup EXIT input; this failure is diamond SPIN. Retained.
+- 8c19d0d/800b07d cover reviewed phases and independent reel movement; neither
+  permits all-unchanged frames. Retained the strict existing assertions.
+- Existing preserveAnimationFailure is reused, not reimplemented.
+- 6e6fd1f diagnoses cleanup transport/header/body interruptions; this run received
+  HTTP 500, so copying that unrelated transport patch would not explain this error.
+
+Validation
+- Two targeted offline tests: original exception identity, credential exclusion,
+  failed diagnostic storage/proxy isolation, and no extra query on success.
+- TypeScript noEmit, ESLint for all changed code, line limits, Android game
+  complexity and git diff --check passed. No Android tests rerun locally.
+- CI must execute unchanged remote coverage and collect first-failure evidence.
