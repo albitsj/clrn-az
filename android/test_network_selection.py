@@ -14,6 +14,33 @@ def sample(path, body=None, status=200, host=HOST):
 
 
 class NetworkSelectionTests(unittest.TestCase):
+    def test_room_failure_diagnostics_redact_identity_and_never_replace_original_response(self):
+        recorder = NetworkSelection()
+        for path, method, redacted in (
+                ('/v3/pay_action/do', 'POST', '/v3/pay_action/do'),
+                ('/v10/texas_holdem/room/secret-room/enter', 'PUT', '/v10/texas_holdem/room/{room}/enter'),
+                ('/v10/texas_holdem/room/secret-room/profile', 'GET', '/v10/texas_holdem/room/{room}/profile'),
+                ('/v11/game_log/secret-user/play_session_record/secret-session', 'GET',
+                 '/v11/game_log/{user}/play_session_record'),
+                ('/v11/game_log/secret-user/round/secret-round', 'GET', '/v11/game_log/{user}/round')):
+            flow = sample(path + '?token=secret', {'ok': False, 'message': 'secret'}, status=500)
+            flow.request.method = method
+            flow.request.timestamp_start = 12.5
+            original = flow.response
+            recorder.observe(flow)
+            self.assertEqual(recorder.events[-1]['path'], redacted)
+            self.assertEqual(recorder.events[-1]['status'], 500)
+            self.assertEqual(recorder.events[-1]['requestAt'], 12500)
+            self.assertIs(recorder.events[-1]['ok'], False)
+            flow.response.json = lambda: (_ for _ in ()).throw(RuntimeError('secret'))
+            recorder.observe(flow)
+            self.assertIs(flow.response, original)
+            flow.response = None
+            recorder.observe(flow, 'request')
+            self.assertEqual(recorder.events[-1]['event'], 'request')
+            self.assertNotIn('status', recorder.events[-1])
+        self.assertNotIn('secret', json.dumps(recorder.snapshot()))
+
     def test_wallet_reads_record_contract_without_identity_balance_or_credentials(self):
         recorder = NetworkSelection()
         body = {'ok': True, 'result': {'currencies': [

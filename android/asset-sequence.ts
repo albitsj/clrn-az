@@ -43,6 +43,7 @@ export async function captureAssetSequence(device: AndroidDevice, name: string, 
   const implementation = (device as unknown as { _connection: { toImpl(device: AndroidDevice): {
     _send(method: string): Promise<NativeFrame[]> } } })._connection.toImpl(device);
   let screens: Buffer[] = [];
+  let sampledAt: number[] = [];
   let timeline: Buffer[] = [];
   let visible: { frame: Buffer; index: number; distance: number }[] = [];
   await sample();
@@ -67,7 +68,9 @@ export async function captureAssetSequence(device: AndroidDevice, name: string, 
       const pending = implementation._send('motionFrames');
       await setTimeout(300);
       await trigger();
-      screens = (await pending).map(frame => Buffer.from(frame.png, 'base64'));
+      const nativeFrames = await pending;
+      sampledAt = nativeFrames.map(frame => frame.capturedAt);
+      screens = nativeFrames.map(frame => Buffer.from(frame.png, 'base64'));
       timeline = screens.map(crop);
       expect(timeline.length).toBeGreaterThanOrEqual(10);
       expect(samePixels(before, timeline[0]), `${name} 必须在采样开始后播放`).toBe(true);
@@ -127,7 +130,19 @@ export async function captureAssetSequence(device: AndroidDevice, name: string, 
     expect(frameColorDistance(farthest.frame, alternate.frame), `${name} 飞行位置必须变化`).toBeGreaterThan(1);
     for (const [phase, frame] of [['start', flightStart], ['peak', farthest.frame],
       ['changed', alternate.frame]] as const) {
-      await compareFlightPhase(phase, frame);
+      try { await compareFlightPhase(phase, frame); }
+      catch (error) {
+        // 仅在原断言失败后保存同一次触发的全部帧；诊断失败不得替换原异常。
+        await attachFlightFailure().catch(() => undefined);
+        throw error;
+      }
+    }
+    /** 保留失败的原始采样顺序和时间，不再次触发或采样。 */
+    async function attachFlightFailure(): Promise<void> {
+      await info.attach(`${name}-flight-timing`, { body: JSON.stringify(sampledAt), contentType: 'application/json' });
+      for (const [index, frame] of flightFrames.entries()) {
+        await info.attach(`${name}-flight-sample-${index}`, { body: frame, contentType: 'image/png' });
+      }
     }
     /** 对飞行首帧和真实移动相位分别比较已审查位置。
      * @param phase - 飞行相位。

@@ -183,6 +183,7 @@ class AndroidVisualProxy:
             self.game.websocket_end(flow)
 
     async def request(self, flow):
+        self.network_selection.observe(flow, 'request')
         if self.selection_faults.request(flow):
             return
         if await self.launch.request(flow):

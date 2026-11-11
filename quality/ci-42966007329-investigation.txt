@@ -1,0 +1,115 @@
+CI 42966007329 / attempt 1 investigation
+诊断指纹：09cbb3383a171bd8b9befbd5188586809fbaf8694b53eb97190061289a7523f6
+PR 72；诊断、Actions API head_sha、本地 HEAD 均为 bc7ce2aa2fb0e426fdd351ffcfc9f01f727583fe。
+当前已在专用分支 kevinanew/android-js-ts-3-6-2；未修改 index、分支引用或提交历史。
+Actions attempt/1/jobs 逐一核对 job ID；附件名带 42966007329-1，三份 build-info 一致：
+APK android-staging-300004201-f3ba50029e9b；sha256 57f15755f3554920f595789d004ebbf44bc225439ef8d5375dc93c53139e1fd4。
+下载使用全新本轮目录；首次 unzip 文件名写入失败后，未读取失败解压目录。
+随后另建全新目录，用 Python 读取同一有效 ZIP 的完整顶层日志；附件各自新建空目录解压成功。
+HTML 报告内 ZIP 的 JSON 包括首次失败及 retry 1；未用重试通过替代根因分析。
+
+逐用例证据与处理
+
+130350627893 / Android remaining (texas / en / other)
+1. signed_in_texas_hall：hall-table 5133、hall-menu 5141 像素不同。
+首次两个 native-tree 均缺 ping-screen-container，masks 均无延迟遮罩；expected 对应区域已有遮罩。
+成功重试两个树均有该节点，masks 均加入 x610/y146/w100/h48 延迟遮罩。
+这不只是一次通过对照：缺少源节点到 addGameMasks 不生成遮罩的源码路径确定，
+新增离线树序列复现验证即使无前景面板，也必须等到同次树有来源才比较。
+修改 game-capture.ts：仅本轮英文 hall-table/hall-menu 等待该节点，复用原有遮罩、稳定布局和像素断言。
+历史 1d27beb（ci修复-master-dbad1f...）曾针对 zh-Hant preflop 修复同一竞态；复用必要逻辑，未移入不相关场景。
+反例：首次与成功重试 proxy-code 都是双节点列表，bounds 同为 x630/y1240/w61/h34；
+因此没有把双节点切换本身当作失败根因，没有固定节点或修改 proxy-code 遮罩/阈值。
+状态：已修复已证实的遮罩来源就绪竞态；待远端原生验证。
+
+2. signed_in_texas_records_v2：review-board-action-list 等待 45 秒失败。
+失败截图已回到牌桌，不是空战绩面板；uiautomator dump 失败，缺少当时原生树。
+现有网络报告仅覆盖健康、钱包、连接，无法区分第二次点击被遮罩截获、进入会话变化或战绩请求问题。
+代码已在切换 empty=false 后真实点击，且 gameTapTarget 已等待两次稳定边界；
+没有证据可直接延时、重试点击或改战绩 fixture。
+新增：关闭设备前只保存相关控件的 res/bounds/enabled；网络诊断记录去身份的会话战绩/round 路径。
+下轮判别：没有战绩请求则继续调查点击/关闭遮罩；请求失败则检查状态与时序；
+请求成功而列表不出现则对照会话及 fixture/原生树。诊断不保存正文、会话 ID 或自由错误文字。
+状态：未定位，已增加定向诊断，等待 CI 缺失证据；不是无需改动。
+
+130350628366 / Android remaining (texas / en / game-effects)
+3. signed_in_texas_game_effects：texas-prop-beer 飞行 changed 最小距离 15.542326203208557 > 15。
+原报告保存 20 个距离值、素材 peak=11/changed=14 和少数选中图，未保存全部飞行裁切帧及 capturedAt。
+当前实现已使用同一次 motionFrames 触发的 screens 做飞行比较；3ce5e57 已在 HEAD 历史中，不能重复实现。
+没有证据证明是路线变化、原生绘制漏帧还是采样漏相位，不能加备用锚点、提高阈值或再次触发。
+修改仅在原飞行比较失败后附上同一次 flightFrames 的全部裁切帧及原 capturedAt；不重新采样。
+下轮可用同一 frameColorDistance 对每个实际帧与既有锚点回放，区分漏采和素材/路线差异。
+状态：未定位，已增加定向诊断，等待 CI 缺失证据；不是无需改动。
+
+4. signed_in_texas_game_profiles：建房会话为 null；截图显示 Create game failed / Room already exists。
+之前 effects retry 在 06:20:12.787 已输出成功清理，而随后 profiles 仍失败。
+因此不能仅凭前一例失败就认定“完全未清理房间”；需要区分删除可见性、重复提交或上游拒绝。
+历史 e03e148（ci修复-master-e8bd...）处理创建响应丢失后的空闲房恢复；本轮是明确已有房间，且前例成功清理，
+不足以证明同一根因，未移入恢复/删除行为。
+新增脱敏建房 request/response/error、requestAt、HTTP status 和布尔 ok；不记录请求/响应正文。
+状态：未定位，已增加定向诊断，等待 CI 缺失证据；不是无需改动。
+
+130350627859 / Android remaining (texas / en / panels)
+5. signed_in_texas_panels：已取得本轮创建房间，但 splash 45 秒不消失；截图是 Connection Timeout。
+现有选线报告有普通 websocket connect/subscribe，却没有游戏 enter/profile 请求；
+这些账号连接 ACK 不能证明房间连接成功，不能据此延长 splash 等待或自动按 Retry。
+新增脱敏入房 enter/profile 请求开始、响应/错误与失败控件状态，以区分未发起、挂起、失败和成功后加载未结束。
+状态：未定位，已增加定向诊断，等待 CI 缺失证据；不是无需改动。
+
+6. signed_in_texas_panel_variants：建房 null，截图同样明确 Room already exists。
+前例 panels retry 06:11:47.661 已输出成功清理；与 profiles 反例相同，不猜测遗漏清理。
+采用与第4项同一个必要诊断，不重复实现，保留创建必须属于本轮的断言。
+状态：未定位，已增加定向诊断，等待 CI 缺失证据；不是无需改动。
+
+诊断安全及验证
+NetworkSelection.observe 捕获诊断自己的异常，原 response 对象不变；路径中的用户/房间/会话/局号全部删去。
+记录请求开始用于区分“没请求”与“请求未完成”，不改变转发或响应。
+飞行诊断在既有断言失败后运行；附件失败仍抛原异常，原阈值15、相位选择、采样次数/时序不变。
+失败控件诊断只用于上述 records/panels/panel_variants/game_profiles，且不保留文字或身份。
+Node 定向 7项通过（大厅来源就绪、原重连门禁、缺锚点及诊断失败保留原错误）。
+Python NetworkSelection 5项、生产代理入口 native_network 5项通过。
+JS完整 lint（含动画/玩法/导航复杂度）、TypeScript、Ruff ratchet、Python/JS行数、架构、重复门禁、diff检查通过。
+没有启动本地模拟器或重复运行远端矩阵；原生验收与新增证据由 CI 获取，未提交或推送。
+
+级联失败逐项检查
+130366954594 | Android full regression | remaining=failure 导致完整回归拒绝；汇总门禁正确，无需改动该门禁。
+130367597691 | Android (texas / en / panels) | 已读取本 job 日志：COMPLETE_RESULT=failure，退出1；继承完整回归失败，门禁无需改动。
+130367597697 | Android (texas / zh-Hant / other) | 已读取本 job 日志：COMPLETE_RESULT=failure，退出1；继承完整回归失败，门禁无需改动。
+130367597698 | Android (texas / en / pregame-second) | 已读取本 job 日志：COMPLETE_RESULT=failure，退出1；继承完整回归失败，门禁无需改动。
+130367597708 | Android (texas / zh-Hant / table) | 已读取本 job 日志：COMPLETE_RESULT=failure，退出1；继承完整回归失败，门禁无需改动。
+130367597721 | Android (zhajinhua / en / game-table) | 已读取本 job 日志：COMPLETE_RESULT=failure，退出1；继承完整回归失败，门禁无需改动。
+130367597733 | Android (texas / en / pregame-middle) | 已读取本 job 日志：COMPLETE_RESULT=failure，退出1；继承完整回归失败，门禁无需改动。
+130367597734 | Android (texas / zh-Hans / table) | 已读取本 job 日志：COMPLETE_RESULT=failure，退出1；继承完整回归失败，门禁无需改动。
+130367597735 | Android (texas / en / game-table) | 已读取本 job 日志：COMPLETE_RESULT=failure，退出1；继承完整回归失败，门禁无需改动。
+130367597736 | Android (texas / en / pregame-first) | 已读取本 job 日志：COMPLETE_RESULT=failure，退出1；继承完整回归失败，门禁无需改动。
+130367597746 | Android (texas / en / game-effects) | 已读取本 job 日志：COMPLETE_RESULT=failure，退出1；继承完整回归失败，门禁无需改动。
+130367597750 | Android (zhajinhua / en / pregame-first) | 已读取本 job 日志：COMPLETE_RESULT=failure，退出1；继承完整回归失败，门禁无需改动。
+130367597756 | Android (account / en) | 已读取本 job 日志：COMPLETE_RESULT=failure，退出1；继承完整回归失败，门禁无需改动。
+130367597763 | Android (texas / en / other) | 已读取本 job 日志：COMPLETE_RESULT=failure，退出1；继承完整回归失败，门禁无需改动。
+130367597768 | Android (zhajinhua / zh-Hant) | 已读取本 job 日志：COMPLETE_RESULT=failure，退出1；继承完整回归失败，门禁无需改动。
+130367597770 | Android (zhajinhua / en / pregame-second) | 已读取本 job 日志：COMPLETE_RESULT=failure，退出1；继承完整回归失败，门禁无需改动。
+130367597774 | Android (zhajinhua / en / game-effects) | 已读取本 job 日志：COMPLETE_RESULT=failure，退出1；继承完整回归失败，门禁无需改动。
+130367597777 | Android (guest / zh-Hant) | 已读取本 job 日志：COMPLETE_RESULT=failure，退出1；继承完整回归失败，门禁无需改动。
+130367597782 | Android (guest / zh-Hans) | 已读取本 job 日志：COMPLETE_RESULT=failure，退出1；继承完整回归失败，门禁无需改动。
+130367597783 | Android (records / zh-Hans) | 已读取本 job 日志：COMPLETE_RESULT=failure，退出1；继承完整回归失败，门禁无需改动。
+130367597787 | Android (wallet-help / en) | 已读取本 job 日志：COMPLETE_RESULT=failure，退出1；继承完整回归失败，门禁无需改动。
+130367597790 | Android (records / zh-Hant) | 已读取本 job 日志：COMPLETE_RESULT=failure，退出1；继承完整回归失败，门禁无需改动。
+130367597794 | Android (social / zh-Hans) | 已读取本 job 日志：COMPLETE_RESULT=failure，退出1；继承完整回归失败，门禁无需改动。
+130367597797 | Android (account / zh-Hans) | 已读取本 job 日志：COMPLETE_RESULT=failure，退出1；继承完整回归失败，门禁无需改动。
+130367597804 | Android (rooms / en) | 已读取本 job 日志：COMPLETE_RESULT=failure，退出1；继承完整回归失败，门禁无需改动。
+130367597805 | Android (zhajinhua / zh-Hans) | 已读取本 job 日志：COMPLETE_RESULT=failure，退出1；继承完整回归失败，门禁无需改动。
+130367597806 | Android (texas / zh-Hans / other) | 已读取本 job 日志：COMPLETE_RESULT=failure，退出1；继承完整回归失败，门禁无需改动。
+130367597815 | Android (rooms / zh-Hant) | 已读取本 job 日志：COMPLETE_RESULT=failure，退出1；继承完整回归失败，门禁无需改动。
+130367597819 | Android (account / zh-Hant) | 已读取本 job 日志：COMPLETE_RESULT=failure，退出1；继承完整回归失败，门禁无需改动。
+130367597855 | Android (wallet-help / zh-Hans) | 已读取本 job 日志：COMPLETE_RESULT=failure，退出1；继承完整回归失败，门禁无需改动。
+130367597867 | Android (wallet-help / zh-Hant) | 已读取本 job 日志：COMPLETE_RESULT=failure，退出1；继承完整回归失败，门禁无需改动。
+130367597882 | Android (guest / en) | 已读取本 job 日志：COMPLETE_RESULT=failure，退出1；继承完整回归失败，门禁无需改动。
+130367597886 | Android (rooms / zh-Hans) | 已读取本 job 日志：COMPLETE_RESULT=failure，退出1；继承完整回归失败，门禁无需改动。
+130367597932 | Android (social / en) | 已读取本 job 日志：COMPLETE_RESULT=failure，退出1；继承完整回归失败，门禁无需改动。
+130367597946 | Android (social / zh-Hant) | 已读取本 job 日志：COMPLETE_RESULT=failure，退出1；继承完整回归失败，门禁无需改动。
+130367598398 | Android (records / en) | 已读取本 job 日志：COMPLETE_RESULT=failure，退出1；继承完整回归失败，门禁无需改动。
+
+附件 ZIP（API 名称均带本轮 run/attempt）
+13834600597 | other | SHA256 ea68ae79854223797fe94c03d54f1002e70e5ef404e9f543e459e734a69036f5
+13834101473 | effects | SHA256 16ed4ea1261b7eaaaf4c8fb3d8bcf0956cfbbfecd3dd456e6cdb5d9513134fbe
+13833716816 | panels | SHA256 53d71a39f108a01d5e6afdd086d7b739b9414a67cc22266cdc88bcacf0d46263

@@ -15,6 +15,18 @@ def diagnostic_path(request):
         return path
     if request.method == 'PUT' and re.fullmatch(r'/v10/wallet/[^/]+', path):
         return '/v10/wallet/{user}'
+    if request.method == 'POST' and path == '/v3/pay_action/do':
+        return path
+    return room_diagnostic_path(path)
+
+
+def room_diagnostic_path(path):
+    for pattern, redacted in (
+            (r'/v10/texas_holdem/room/[^/]+/(enter|profile)', '/v10/texas_holdem/room/{room}/'),
+            (r'/v11/game_log/[^/]+/(play_session_record|round)/[^/]+', '/v11/game_log/{user}/')):
+        match = re.fullmatch(pattern, path)
+        if match:
+            return redacted + match[1]
     return None
 
 
@@ -49,21 +61,41 @@ def staging(host):
     return host == 'api.shafayouxi.org' or host.endswith('.api.staging.laiwan.shafayouxi.com')
 
 
+def request_timing(request):
+    started = getattr(request, 'timestamp_start', None)
+    return {'requestAt': round(started * 1000)} if type(started) in (int, float) else {}
+
+
+def response_outcome(body):
+    if isinstance(body, dict) and type(body.get('ok')) is bool:
+        return {'ok': body['ok']}
+    return {}
+
+
 class NetworkSelection:
     def __init__(self):
         self.events = []
         self.total = 0
 
     def observe(self, flow, event='response', **details):
+        # 诊断故障不得改变代理的响应或原始异常。
+        try:
+            self._observe(flow, event, **details)
+        except Exception:
+            pass
+
+    def _observe(self, flow, event, **details):
         path = diagnostic_path(flow.request)
         if not staging(flow.request.host) or path is None:
             return
         record = {'at': round(time.time() * 1000), 'event': event, 'host': flow.request.host,
                   'path': path, 'method': flow.request.method, **details}
+        record.update(request_timing(flow.request))
         if flow.response is not None:
             record['status'] = flow.response.status_code
             try:
                 body = flow.response.json()
+                record.update(response_outcome(body))
                 if path == '/v10/wallet/{user}':
                     record.update(wallet_details(body))
                 if path == HEALTH_PATH and isinstance(body, dict):
