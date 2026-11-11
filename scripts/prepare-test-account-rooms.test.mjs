@@ -34,6 +34,19 @@ test('空私人房只检查归属及列表，不执行删除', async context => 
   assert.deepEqual(JSON.parse(requests[1].body), { building_ids: [house.house_id] });
 });
 
+test('房间数量诊断不泄露会话且输出失败不改变准备结果', async context => {
+  const requests = network(context, [house, []]);
+  const diagnostics = [];
+  context.mock.method(console, 'error', (...args) => {
+    if (args[0] !== 'ROOM PREPARATION >') return;
+    diagnostics.push(args[1]);
+    throw new Error('diagnostic-output-failed');
+  });
+  await prepareTestAccountRooms(session);
+  assert.deepEqual(diagnostics, ['{"phase":"before-create","count":0}']);
+  assert.equal(requests.length, 2);
+});
+
 test('本账号空闲测试房必须复查详情、删除并回读为空', async context => {
   for (const name of ['TestRoom', 'E2E私局m123abc']) {
     const current = { ...room, room_name: name };

@@ -51,6 +51,7 @@ async function prepareRooms(client, session) {
   const body = { building_ids: [house.house_id] };
   const rooms = await request(client, session, '/v2/building/rooms', 'PUT', body);
   if (!Array.isArray(rooms)) throw new Error('测试私人房间列表无效');
+  roomListDiagnostic('before-create', rooms);
   if (rooms.length === 0) return;
   await recoverIdleRoom(client, session, house.house_id, rooms, body);
 }
@@ -71,8 +72,19 @@ async function recoverIdleRoom(client, session, houseId, rooms, body) {
   }
   await request(client, session, `/v1/room/${roomId}`, 'DELETE');
   const remaining = await request(client, session, '/v2/building/rooms', 'PUT', body);
+  roomListDiagnostic('after-cleanup', remaining);
   validateEmptyRooms(remaining);
   console.error(`已恢复本账号的空闲测试房间：${roomId}`);
+}
+
+/** Record only the existing response's count; diagnostics cannot change cleanup results.
+ * @param phase - Fixed preparation stage.
+ * @param rooms - Existing list response, never copied into logs.
+ */
+function roomListDiagnostic(phase, rooms) {
+  try {
+    console.error('ROOM PREPARATION >', JSON.stringify({ phase, count: Array.isArray(rooms) ? rooms.length : null }));
+  } catch { /* Diagnostic output cannot replace the original failure. */ }
 }
 
 /** Check immutable room ownership.
