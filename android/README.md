@@ -121,7 +121,7 @@ APK 与构建信息继续发布到 **kevinanew/clrn 的公开 Release**，下载
 
 ### 视频功能下线复核（#79）
 
-本轮固定 APK 为 `android-staging-300004701-2d714b4761fd`，应用提交
+本轮采集固定 APK 为 `android-staging-300004701-2d714b4761fd`，应用提交
 `2d714b4761fd99136184603bfcaa6ed01240e186`，SHA-256 为
 `fc69e10954f4703245cebb1c792b221d0f4e68591a28b01f7e537b36f7d73377`。
 该提交包含删除实时音视频的 [应用 PR #7093](https://github.com/kevinanew/laiwan_react_native/pull/7093)。
@@ -161,7 +161,26 @@ APK 与构建信息继续发布到 **kevinanew/clrn 的公开 Release**，下载
 仅选择 `signed_in_texas_(pre_game(_(first|middle|second))?|panels|panel_variants)$`。
 牌桌比较使用临时 CI 分支 `ci/issue-79-targeted-rtc`（`415ebce`），仅从调度矩阵去掉
 与该正则无交集的三个英文分片；保留八个相关分片，测试、截图及比较代码均与 master 相同。
-牌桌比较尚在执行；包含六张新基准与控件检查的三语言建房 compare 待运行。
+牌桌比较的八个分片已执行完毕，七个首次通过；其中繁体 `_panel_variants` 首次在 `ownedRoom` fixture 收尾的
+`deletePrivateGameRoom` 遇到业务 API HTTP 500，重试通过，报告为 flaky。
+现有 `failOnFlakyTests` 正常阻塞该分片；此失败不是 RTC 截图差异，不能计作首次通过，
+也不据此更新基准或放宽规则。
+
+包含六张新基准与控件检查的最终定向
+[compare 43015648189](https://github.com/albitsj/clrn-az/actions/runs/43015648189)
+使用临时 CI 分支 `ci/issue-79-focused-compare`（`9470bf1`）。它的测试代码和基准与
+修复提交 `7973602` 完全一致，仅将 CI 计划限定为三个建房分片和繁体 `_panel_variants`
+这一项重测，选择空闲的 CI 专用账号并保留原账号互斥锁，共 22 个相关用例。
+期间工作区合入新部署，故最终比较固定为
+`android-staging-300004801-66a9f2628138`（应用提交
+`66a9f2628138026338ccc774bab0c3f25babb5f2`）；它比采集包仅多一个短信服务单元测试文件的修改，
+继续包含视频下线改动，APK SHA-256 为
+`ba703c87155036c942b5a757f02ad3cb77cb170c03bacd2d8eb1fc49dd7d0bab`。
+最终工作流已成功：三语言建房各 7 个用例、繁体面板重测 1 个用例，合计 **22/22 首次通过**，
+无失败、flaky 或跳过；四份报告均核对完整应用提交及 APK SHA-256 一致。
+此前 HTTP 500 的失败记录仍保留，另轮定向重测首次通过，没有调整清理或 flaky 策略。
+本机另通过 `test_game_session.py` 的 4 项单元测试、动画基准清单完整性测试及改动文件的
+ESLint/Ruff 检查。仅主动运行本次相关测试；PR 自动触发的全量任务已取消，不作全量通过声明。
 
 应用修复集中在 [laiwan_react_native #7019](https://github.com/kevinanew/laiwan_react_native/pull/7019)，基准扩充及验证记录见 [clrn #25](https://github.com/kevinanew/clrn/pull/25)，其中注明测试提交、APK Release 和 CI 运行。未执行或失败的用例不计入通过数量。
 
