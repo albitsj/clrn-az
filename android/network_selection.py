@@ -13,15 +13,22 @@ def diagnostic_path(request):
     path = urlsplit(request.path).path
     if path in (*METADATA_PATHS, HEALTH_PATH, '/v2/centrifugo/connection/websocket'):
         return path
-    if request.method == 'GET' and re.fullmatch(r'/v10/texas_holdem/room/[^/]+/profile', path):
+    if request.method == 'POST' and path == '/v3/pay_action/do':
+        return path
+    if request.method == 'GET' and re.fullmatch(r'/v1/room/[^/]+', path):
+        return '/v1/room/{room}'
+    if re.fullmatch(r'/v10/texas_holdem/room/[^/]+/profile', path) and request.method == 'GET':
         return '/v10/texas_holdem/room/{room}/profile'
+    if re.fullmatch(r'/v10/texas_holdem/room/[^/]+/enter', path) and request.method == 'PUT':
+        return '/v10/texas_holdem/room/{room}/enter'
     if request.method == 'PUT' and re.fullmatch(r'/v10/wallet/[^/]+', path):
         return '/v10/wallet/{user}'
     return None
 
 
 def transport_details(flow, event, path):
-    if event == 'error' and path in (HEALTH_PATH, '/v10/texas_holdem/room/{room}/profile'):
+    if event == 'error' and path in (HEALTH_PATH, '/v3/pay_action/do', '/v1/room/{room}',
+                                     '/v10/texas_holdem/room/{room}/enter', '/v10/texas_holdem/room/{room}/profile'):
         return {'failureKind': transport_failure(flow)}
     return {}
 
@@ -68,6 +75,30 @@ def staging(host):
     return host == 'api.shafayouxi.org' or host.endswith('.api.staging.laiwan.shafayouxi.com')
 
 
+def request_timing(request):
+    started = getattr(request, 'timestamp_start', None)
+    return {'requestAt': round(started * 1000)} if type(started) in (int, float) else {}
+
+
+def response_outcome(body):
+    if isinstance(body, dict) and type(body.get('ok')) is bool:
+        return {'ok': body['ok'], 'authenticationFailed': body.get('error') == 'authentication_failed',
+                'duplicateSubmission': body.get('error_description') == '重复提交',
+                'roomAlreadyExists': body.get('error_description') == 'Room already exists'}
+    return {}
+
+
+def certificate_failure(message):
+    # 仅输出固定枚举，保留 certificate 总类以兼容已有报告。
+    for kind, pattern in (('unknown-ca', r'unknown[ _]ca'), ('expired', r'expired'),
+                          ('bad-certificate', r'bad[ _]certificate'),
+                          ('certificate-unknown', r'certificate[ _]unknown'),
+                          ('verify-failed', r'certificate verify failed')):
+        if re.search(pattern, message):
+            return kind
+    return 'other'
+
+
 class NetworkSelection:
     def __init__(self):
         self.events = []
@@ -75,7 +106,7 @@ class NetworkSelection:
         self.connections = []
         self.connection_total = 0
 
-    def connection(self, host, event, failure_kind=None):
+    def connection(self, host, event, failure_kind=None, certificate_failure=None):
         # 启动首败可能没有 HTTP flow；独立保留 CONNECT/TLS 阶段，不挤掉请求历史。
         try:
             if event not in ('connect', 'tls-client-failed', 'tls-server-failed'):
@@ -85,6 +116,8 @@ class NetworkSelection:
             record = {'at': round(time.time() * 1000), 'host': host, 'event': event}
             if failure_kind is not None:
                 record['failureKind'] = failure_kind
+            if certificate_failure is not None:
+                record['certificateFailure'] = certificate_failure
             self.connections.append(record)
             self.connection_total += 1
             del self.connections[:-200]
@@ -99,28 +132,38 @@ class NetworkSelection:
                 ('certificate', r'certificate|unknown ca|unknown_ca'), ('timeout', r'timeout|timed out'),
                 ('closed', r'closed|eof|disconnect|reset'), ('cancelled', r'cancel'),
                 ('protocol', r'protocol|cipher|version')) if re.search(pattern, message)), 'other')
-            self.connection(data.context.server.address[0], event, kind)
+            self.connection(data.context.server.address[0], event, kind,
+                            certificate_failure(message) if kind == 'certificate' else None)
         except Exception:
             pass
 
     def room_profile_request(self, flow):
         try:
-            if diagnostic_path(flow.request) in (HEALTH_PATH, '/v10/texas_holdem/room/{room}/profile'):
+            if diagnostic_path(flow.request) not in (None, *METADATA_PATHS,
+                                                     '/v2/centrifugo/connection/websocket', '/v10/wallet/{user}'):
                 self.observe(flow, 'request')
         except Exception:  # 取证不得改变请求路由或测试结果。
             pass
 
     def observe(self, flow, event='response', **details):
+        # 复用历史修复：取证失败不得中断响应处理。
+        try:
+            self._observe(flow, event, **details)
+        except Exception:
+            pass
+
+    def _observe(self, flow, event, **details):
         path = diagnostic_path(flow.request)
         if not staging(flow.request.host) or path is None:
             return
         record = {'at': round(time.time() * 1000), 'event': event, 'host': flow.request.host,
-                  'path': path, 'method': flow.request.method, **details}
+                  'path': path, 'method': flow.request.method, **request_timing(flow.request), **details}
         record.update(transport_details(flow, event, path))
         if flow.response is not None:
             record['status'] = flow.response.status_code
             try:
                 body = flow.response.json()
+                record.update(response_outcome(body))
                 if path == '/v10/wallet/{user}':
                     record.update(wallet_details(body))
                 if path == HEALTH_PATH and isinstance(body, dict):
