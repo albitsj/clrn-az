@@ -41,8 +41,8 @@ class ReplaySceneTests(unittest.TestCase):
             self.assertEqual(queue[4]['status']['player_id'], SELF)
             without = replay_scene('texas', SELF, {**settings, 'part': 'without-hand'})['queue']
             hand = replay_scene('texas', SELF, {**settings, 'part': 'hand'})['queue']
-            self.assertEqual(hand, [queue[3]])
-            self.assertEqual(without[:3] + hand + without[3:], queue)
+            self.assertEqual(hand, [queue[3], queue[2]])
+            self.assertEqual(without[:3] + hand[:1] + without[3:], queue)
 
     def test_table_variants_preserve_seat_counts(self):
         for table, count in (('standard', 5), ('observer', 4), ('full', 9), ('full-pots', 9)):

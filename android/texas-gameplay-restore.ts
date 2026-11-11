@@ -68,7 +68,7 @@ async function animateRestore(context: TexasContext, street: Street, opponent: b
    * @param event - 固定的采集或发送阶段名。
    */
   const observe = (event: string) => { events.push({ event, at: Date.now() }); };
-  /** 起手牌先建立背面牌位，再下发手牌；整批状态与手牌同帧渲染会跳过翻牌中间帧。 */
+  /** 分批恢复牌桌与手牌；hand 批次须包含后续座位更新，才能绘制已缓存的 hand_card。 */
   const publish = async () => {
     if (street !== 'preflop') { await send(restoreTable(street, opponent)); return; }
     observe('without-hand-send-start');

@@ -1,0 +1,170 @@
+CI 42956604145 / attempt 1 调查与修复
+
+诊断指纹：27f92592500d46fd3ebcb3b3da0dbbeb768f6c3b1bf9e400b2a2b7b9168affb6。
+run API HEAD=111beb0867ebbed2c47042cd2267104546b3f757，与当前 HEAD 一致。
+全部 job API 的 run_id、run_attempt、head_sha 均已核对；实际测试 checkout 为
+cd5e7cd910857e37627ba12140753d56db0b6e79（PR merge）。四个执行分片失败，
+完整回归及其余 35 个别名正确传播失败；分别读取并检查了全部 40 份失败 job 日志。
+开始时工作区干净，已有专用修复分支；没有 .codegraph，未建立索引。
+修改前只读检查全部本地/远端分支及相关修复提交。未操作 Git index、引用或历史。
+
+取证完整性
+
+本轮日志 ZIP testzip 通过；系统 unzip 因文件名写入错误退出，未读取该目录。
+改用全新 validated 目录、数字文件名提取已校验 ZIP。附件在含 run/attempt/HEAD
+标识的全新目录下载，各 ZIP CRC 通过后才解压。内嵌报告初次匹配到非 ZIP 资源，
+没有使用该结果；后以 PK 签名识别并校验后提取至新的 parsed-report-v2 目录。
+API 核对所有八个附件 workflow_run.id/head_sha 及名称 run/attempt，与上传 job 日志一致。
+附件根目录：/var/folders/wm/n_zjfmp140l4s4dtshsym9r80000gr/T/ci-42956604145-attempt1-111beb0-artifacts-z9ay2vji。
+四份报告 APK 身份相同：f3ba50029e9b33b90c09841e35b8cd838b304061 / build 300004201，
+SHA256=57f15755f3554920f595789d004ebbf44bc225439ef8d5375dc93c53139e1fd4。
+
+1. texas / en / game-table：已修复回放协议顺序竞态，原生验收待 CI
+
+首败 texas-preflop-cards 的 total=0；首尾均为 5c1527fb... 空白手牌区域。
+新增 replay-trace：04:07:02.027 开始录屏，03.041..03.082 发送 without-hand，
+03.484..03.492 发送 hand；设备 04:07:02.983 记录桌况/操作状态，03.410 记录 hand_card。
+发送在录屏内完成，设备已收到消息，排除单纯发送耗尽录屏窗口和消息未送达。
+
+继续只读取得 kevinanew/laiwan_react_native 固定 APK commit 的 GameScene.js、
+PlayerCard.js 及 board_game_react_native/player-container/Container.js：
+GameScene._handleSelfHandCard (1191 附近) 仅缓存消息，不绘制。
+_restoreTable -> Container.updateStatus -> onStatusUpdate -> 100ms 回调 ->
+_onContainerStatusUpdate (1061 附近) 才读取已缓存手牌并调用 _restoreSelfHandCards。
+因此先发送桌况、隔 400ms 再只发 hand_card，会在座位回调较快完成时永远留空，
+较慢完成时又能显示；这解释本轮及历史 42939951374、40649166168 的成功/空白反例。
+在 /tmp 用固定源码实际 _handleSelfHandCard 与 _onContainerStatusUpdate 方法复现：
+先回调后手牌：绘制次数0；后续桌况回调：1；先手牌后回调：1。
+这不是仅凭一次通过归因，也不再增加固定延时、重发或扩大采样窗口。
+
+仅让 table_scenes.queue_part 的 hand 批次在 hand_card 后附带同一 table_status，
+确保已缓存数据有后续座位更新回调。all、without-hand、原400ms、录屏、区域、
+首尾/轨迹断言、基准与重试门禁不变。修改现有协议测试核对批次事件和原桌况一致。
+保留 d5de5cb 时间线和此前所有诊断；仅修正旧注释对背面牌位的错误描述。
+
+2. texas / zh-Hans / other：安全隔离修复；上游首败仍保留
+
+hall 首败：建房响应成功，但 game-splash-screen-bg 45秒不消失；hierarchy 显示
+“连接超时 / 正在搜索服务器2”。network-selection 同次记录：香港、首尔健康响应
+backend_delay=9999，其余有连接错误或未完成请求；没有健康牌桌连接证据。
+此为实际 staging 选线不可用，不改变 APK 健康门槛或伪造健康响应。
+SelectionFaults 只由两个命名网络场景启用，本场景未启用，不能把该状态当注入故障。
+历史上启动成功不反驳本次真实健康探测失败；不因 retry 通过而认定已修复。
+
+controls 首败：首尔 POST /v3/pay_action/do 在10秒后 error，随后香港返回 HTTP200、
+ok=false；末屏“房间里有重复的牌局”。会话 room=null，缺创建成功响应 UUID，
+现有 ownedRoom 清理没有可登记房间。随后 controls retry1/2、table_states三次和
+panel_variants三次全部停在同一个已有房间页面（7f21d250...），不是控件等待不足。
+仅凭已有房间截图不能无条件删除，也不能重放可能已经完成的创建操作。
+
+在建房会话等待原60秒失败时，复用 scripts/prepare-test-account-rooms.mjs 的现有检查：
+只在当前独占账号下读取私人屋，核对仅一个本人 TestRoom、非官方、未开始、无人入座，
+详情再核对归属/状态后单次删除并回读为空；未知/活跃/其他用户的房间仍拒绝清理。
+这是隔离修复，避免未登记房间污染后续用例；不把第一次建房失败变为通过。
+恢复失败仍抛同一个原始建房异常，固定诊断文字不含会话或异常载荷。
+新增薄类型声明供 TypeScript 使用，不改包管理或依赖。
+
+上游首次创建传输失败与 hall 节点不可用在本仓库无需改动；不能承诺本修复会消除它们。
+历史 42715187841 也有 DELETE 响应丢失导致旧房间，当前复用已有严格恢复机制，
+没有放宽成任意房间删除。ce9ce47 只处理 Node 首节点繁忙选线，不能修复 APK 已发送
+创建写请求后的响应丢失；不改写请求重放策略。
+
+3. texas / en / other：已证实该失败无需改动
+
+signed_in_texas_records_v2 三张业务截图均完成；失败仅在独立 ownedRoom fixture：
+deletePrivateGameRoom -> DELETE /v1/room/:roomId -> HTTP500，attempts=1。
+同次 BUSINESS NETWORK 记录选择健康香港节点后业务 failure kind=server。
+这是上游清理接口明确返回的服务端失败，不是快照、余额或选线前 unavailable。
+删除可能结算/退款，保留 replay=never，不增加盲重试，不吞掉收尾异常。
+retry通过不作为无需改动的依据，依据是实际HTTP500和明确的失败边界。
+
+4. social / en：复用已有采集修复，待本轮 APK 的 CI 验收
+
+slot-popup-exit 首败 Infinity；完整起止符合正式基准，原轨迹46门槛拒绝采得的中途画面。
+读取原片984c5b78...：仅37个真实帧；退场附近间隔91.878/87.811/61.711ms。
+解码全部实际帧（passthrough、无fps滤镜）重放生产 middleCandidates / 
+assertReviewedVideoMiddle，仍为 Infinity；因此只删除fps=30不能解决本次缺相位。
+
+修改前检查历史 708a331、0ab2e8d、09e0ce2、feebc3b、2b15cb0、8a3cdba。
+历史 panelFrames 已失败，四核独立方案42760702191也失败，故不复用它们。
+原始帧初版09e0ce2在 Android 停止超时，故必须带上 feebc3b 的可中断wait/保险回收，
+不能只取初版。重新经 GitHub API 核对 42766681040/attempt1、job129665122293、
+HEAD8592a54、artifact13742025405，远端原日志明确为5 passed，无 flaky。
+这是同一个老虎机退场及同一生产轨迹门槛的多轮支持证据；其 APK 为较早7a24d8c，
+不能用它代替本轮固定APK的验收，也不能保证应用自身不会漏画相位。
+
+从2b15cb0只复用三个 surface-frame 模块和相关协议、真实shell、收尾及解码测试；
+适配当前 captureNativeTransition 已有 videoRecorder 扩展点，仅 slot-popup-exit 选择。
+不用移植旧分支的其他动画路由、驱动补丁、重复运行、账号筛选、Perfetto 或四核配置。
+真实关闭经 device.shell 异步执行一次，避免同步adb阻塞原始流接收。
+首个完整帧+PID握手后采集；只移除连续字节完全相同图像，保留每个变化帧和最后帧。
+沿用240x426源尺寸、Lanczos、完整720x680区域；原始帧预算240、变化帧64、最少20，
+原首尾视觉、46、列覆盖、错位反证、局部运动、重试及failOnFlakyTests全部保留。
+实际接收时间在 surface-source 明确标为 host-receipt-performance.now，不能当设备呈现时间；
+通用 video timeline 仍是原比较器的帧序号时间，定位应读取 surface-source。
+报告写入失败被隔离；采集或停止失败仍失败，不覆盖原始异常。
+历史失败证明没有一种“增加CPU/换区域/去fps就必过”的结论，本次是复用已有针对编码
+采集漏相位的有效候选；若本轮仍失败，须以实际变化帧及其时间线继续区分漏采与漏画。
+
+验证
+
+定向离线 Node 共79项通过：原76项（含动画正反例、协议、原始流、真实shell/ffmpeg、
+既有安全房间恢复），新增建房错误隔离2项和报告写入失败的真实像素适配1项。
+Python replay-scenes 11项通过；固定APK实际方法顺序复现通过。
+TypeScript、完整JS lint（含Android玩法/导航复杂度和精确历史门禁）、
+修改文件Ruff、E2E复杂度、行数、架构、重复代码、用例收集、git diff --check 通过。
+首次检查发现类型声明缺失、next生成式复杂度、测试JSDoc和边界替身默认导入问题，
+均仅在新增/修改范围内修正，未增加豁免或修改基线。
+没有本地启动模拟器或重复远端矩阵；原生最终验收由CI执行。
+
+逐项失败检查
+130313199469 | Android remaining (texas / en / other) | 上游DELETE HTTP500，无需改动该失败；保留错误
+130313199528 | Android remaining (texas / en / game-table) | 已修复hand_card回放顺序竞态；待CI原生验收
+130313199858 | Android remaining (texas / zh-Hans / other) | 已修复响应丢失后的安全隔离；原创建传输和hall选线上游失败保留
+130313200214 | Android remaining (social / en) | 已复用连续原始帧采集修复；待本轮APK的CI验收
+130326686610 | Android full regression | 正确拒绝remaining=failure，汇总门禁无需改动
+130326827798 | Android (texas / zh-Hans / other) | 已逐个核对COMPLETE_RESULT=failure、退出1；别名门禁无需改动
+130326827832 | Android (zhajinhua / zh-Hant) | 已逐个核对COMPLETE_RESULT=failure、退出1；别名门禁无需改动
+130326827834 | Android (texas / zh-Hans / table) | 已逐个核对COMPLETE_RESULT=failure、退出1；别名门禁无需改动
+130326827844 | Android (texas / en / pregame-first) | 已逐个核对COMPLETE_RESULT=failure、退出1；别名门禁无需改动
+130326827846 | Android (zhajinhua / en / pregame-first) | 已逐个核对COMPLETE_RESULT=failure、退出1；别名门禁无需改动
+130326827858 | Android (texas / en / panels) | 已逐个核对COMPLETE_RESULT=failure、退出1；别名门禁无需改动
+130326827864 | Android (texas / zh-Hant / other) | 已逐个核对COMPLETE_RESULT=failure、退出1；别名门禁无需改动
+130326827870 | Android (texas / en / pregame-middle) | 已逐个核对COMPLETE_RESULT=failure、退出1；别名门禁无需改动
+130326827873 | Android (texas / zh-Hant / table) | 已逐个核对COMPLETE_RESULT=failure、退出1；别名门禁无需改动
+130326827874 | Android (zhajinhua / en / pregame-second) | 已逐个核对COMPLETE_RESULT=failure、退出1；别名门禁无需改动
+130326827884 | Android (social / en) | 已逐个核对COMPLETE_RESULT=failure、退出1；别名门禁无需改动
+130326827892 | Android (guest / zh-Hans) | 已逐个核对COMPLETE_RESULT=failure、退出1；别名门禁无需改动
+130326827893 | Android (account / en) | 已逐个核对COMPLETE_RESULT=failure、退出1；别名门禁无需改动
+130326827895 | Android (account / zh-Hant) | 已逐个核对COMPLETE_RESULT=failure、退出1；别名门禁无需改动
+130326827899 | Android (guest / en) | 已逐个核对COMPLETE_RESULT=failure、退出1；别名门禁无需改动
+130326827900 | Android (zhajinhua / en / game-table) | 已逐个核对COMPLETE_RESULT=failure、退出1；别名门禁无需改动
+130326827901 | Android (texas / en / other) | 已逐个核对COMPLETE_RESULT=failure、退出1；别名门禁无需改动
+130326827902 | Android (social / zh-Hans) | 已逐个核对COMPLETE_RESULT=failure、退出1；别名门禁无需改动
+130326827910 | Android (guest / zh-Hant) | 已逐个核对COMPLETE_RESULT=failure、退出1；别名门禁无需改动
+130326827916 | Android (texas / en / pregame-second) | 已逐个核对COMPLETE_RESULT=failure、退出1；别名门禁无需改动
+130326827917 | Android (texas / en / game-table) | 已逐个核对COMPLETE_RESULT=failure、退出1；别名门禁无需改动
+130326827935 | Android (zhajinhua / zh-Hans) | 已逐个核对COMPLETE_RESULT=failure、退出1；别名门禁无需改动
+130326827955 | Android (texas / en / game-effects) | 已逐个核对COMPLETE_RESULT=failure、退出1；别名门禁无需改动
+130326827974 | Android (account / zh-Hans) | 已逐个核对COMPLETE_RESULT=failure、退出1；别名门禁无需改动
+130326827976 | Android (rooms / zh-Hant) | 已逐个核对COMPLETE_RESULT=failure、退出1；别名门禁无需改动
+130326827983 | Android (records / en) | 已逐个核对COMPLETE_RESULT=failure、退出1；别名门禁无需改动
+130326827989 | Android (zhajinhua / en / game-effects) | 已逐个核对COMPLETE_RESULT=failure、退出1；别名门禁无需改动
+130326828021 | Android (records / zh-Hans) | 已逐个核对COMPLETE_RESULT=failure、退出1；别名门禁无需改动
+130326828034 | Android (rooms / en) | 已逐个核对COMPLETE_RESULT=failure、退出1；别名门禁无需改动
+130326828078 | Android (rooms / zh-Hans) | 已逐个核对COMPLETE_RESULT=failure、退出1；别名门禁无需改动
+130326828081 | Android (social / zh-Hant) | 已逐个核对COMPLETE_RESULT=failure、退出1；别名门禁无需改动
+130326828113 | Android (wallet-help / en) | 已逐个核对COMPLETE_RESULT=failure、退出1；别名门禁无需改动
+130326828122 | Android (wallet-help / zh-Hans) | 已逐个核对COMPLETE_RESULT=failure、退出1；别名门禁无需改动
+130326828147 | Android (wallet-help / zh-Hant) | 已逐个核对COMPLETE_RESULT=failure、退出1；别名门禁无需改动
+130326828173 | Android (records / zh-Hant) | 已逐个核对COMPLETE_RESULT=failure、退出1；别名门禁无需改动
+
+附件ZIP SHA256
+13827649779: c7e372b02fbc13fa2b62ba34740c676dfa68acec254f2ebc81c4726c09b6e7e0
+13828051171: 68b0c0adb5067bf4c4b5798962e0ab656af001fe73bf272684b87a33d10c0edd
+13828081129: 0a97ed3817fec0375843db3c7da0ac971096047fc16f950ed75138176b99f0f9
+13828431953: c9067594f6a7f41debfcdb9dac2f7350cc05c3458e2537d9d2eaf387bbf4362d
+13828437880: 446de0dacfa41fa7b3f9aa773784b2257dee3c43faf0dd0392bd5b28928425dc
+13828856394: 37594fcb5bda3cda80447a451d5d93a938568bcb0e9a2d6b4c5031e68286a894
+13829105105: 3846fa65005651050a6da73b4fa536b93dae30d6e1ce101ba0b835ecbf3c2b40
+13829285152: c30154ed38a215c4edcddec0cb78b322a8be2aa3bc674fb2fa007225e2ebc160
