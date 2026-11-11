@@ -1,0 +1,337 @@
+{
+  "diagnosticFingerprint": "79465eaea77254af3058fdbb4975162a9051d772409fff881b5f7ebc025182e7",
+  "run": 42881911971,
+  "attempt": 1,
+  "head": "009d6ebce572a711b076df6c3f5cb267086b9c3d",
+  "branch": "kevinanew/e2e-js-ts-3-6",
+  "evidenceDirectory": "/tmp/ci-42881911971-attempt1-009d6eb-v9r7Qk",
+  "scope": "仅本轮失败；未修改 Git index、引用或历史；未执行设备回归，原门禁保留。",
+  "existingFixes": {
+    "cea4bfc": "复用六张高级选项基准及老虎机退场 panelFrames 和测试；不引入其他场景的 challengeFrames 或茶道具调用改动。",
+    "d0431eb": "复用普通首败的已有脱敏日志快照及异常隔离测试。",
+    "50cac25/0f372de/6087de1": "HEAD 已有的啤酒采样、上一场景 timeout 处理和空间反证均保留，不以不同失败原因扩展吞错。"
+  },
+  "failures": [
+    {
+      "job": "130060327049",
+      "name": "Android remaining (rooms / zh-Hans)",
+      "outcome": "已修复，待 CI 完整 compare 验收",
+      "rootCause": "上游删除 RTC 视频选项，底部对齐列表露出既有猜手牌项；旧基准仍有视频项。",
+      "change": "原字节复用 cea4bfc 六图中的对应两图；三次实际图均与已有修复一致。",
+      "evidence": [
+        {
+          "snapshot": "android/snapshots/android-35-x86_64-720x1280-zh-Hans/zh-Hans-signed-in-create-room-advanced-texas.png",
+          "sha256": "091ad1ccbdc4bd99850bee46970f50682eaeb0b75d67651e341fec76cb3df295",
+          "matchingAttempts": 3
+        },
+        {
+          "snapshot": "android/snapshots/android-35-x86_64-720x1280-zh-Hans/zh-Hans-signed-in-create-room-advanced-six-plus.png",
+          "sha256": "39465f9c568c521be703463adccf2c2201d22da8117a4449bd67beb0b9353038",
+          "matchingAttempts": 3
+        }
+      ],
+      "counterexamples": "炸金花高级选项和下方升盲、时长、资产、按钮不受该删除影响，未改其他图片或比较条件。"
+    },
+    {
+      "job": "130060326499",
+      "name": "Android remaining (rooms / zh-Hant)",
+      "outcome": "已修复，待 CI 完整 compare 验收",
+      "rootCause": "上游删除 RTC 视频选项，底部对齐列表露出既有猜手牌项；旧基准仍有视频项。",
+      "change": "原字节复用 cea4bfc 六图中的对应两图；三次实际图均与已有修复一致。",
+      "evidence": [
+        {
+          "snapshot": "android/snapshots/android-35-x86_64-720x1280-zh-Hant/zh-Hant-signed-in-create-room-advanced-texas.png",
+          "sha256": "ce9fb0ac81f13be4f491e54693a32f67a205b9ef03f6c8844852cbe59802b8af",
+          "matchingAttempts": 3
+        },
+        {
+          "snapshot": "android/snapshots/android-35-x86_64-720x1280-zh-Hant/zh-Hant-signed-in-create-room-advanced-six-plus.png",
+          "sha256": "d4f55af94da04cc7108fe022da3b3e93821c94e7e1f69dc7d86e46c0eda846a6",
+          "matchingAttempts": 3
+        }
+      ],
+      "counterexamples": "炸金花高级选项和下方升盲、时长、资产、按钮不受该删除影响，未改其他图片或比较条件。"
+    },
+    {
+      "job": "130060326057",
+      "name": "Android remaining (rooms / en)",
+      "outcome": "已修复，待 CI 完整 compare 验收",
+      "rootCause": "上游删除 RTC 视频选项，底部对齐列表露出既有猜手牌项；旧基准仍有视频项。",
+      "change": "原字节复用 cea4bfc 六图中的对应两图；三次实际图均与已有修复一致。",
+      "evidence": [
+        {
+          "snapshot": "android/snapshots/android-35-x86_64-720x1280-en/en-signed-in-create-room-advanced-texas.png",
+          "sha256": "e4d8ca39f18008c45d550987b496500ec9e5cfe45267dfcc1f9cca2e1c2fc5a7",
+          "matchingAttempts": 3
+        },
+        {
+          "snapshot": "android/snapshots/android-35-x86_64-720x1280-en/en-signed-in-create-room-advanced-six-plus.png",
+          "sha256": "53f0b460ce944ea08177e62653f1bd6d24a706ebafb7bb2b65c1a70a60e337cd",
+          "matchingAttempts": 3
+        }
+      ],
+      "counterexamples": "炸金花高级选项和下方升盲、时长、资产、按钮不受该删除影响，未改其他图片或比较条件。"
+    },
+    {
+      "job": "130060326386",
+      "name": "Android remaining (social / en)",
+      "outcome": "已复用针对采样缺相位的修复，真实设备稳定性待 CI 验收",
+      "rootCause": "slot-popup-exit 原始录屏首败未保留符合既有空间门禁的早期退场位置；三类奖励及滚轮断言此前已通过。",
+      "evidence": {
+        "replay": "按生产 fps=30、scale=720:1280:lanczos、crop=720:680:0:500 解码全部 MP4，原 middleCandidates/assertReviewedVideoMiddle 首败失败、retry1 通过。",
+        "first": {
+          "encodedFrames": 78,
+          "durationSeconds": 5.018378,
+          "decodedFrames": 151,
+          "result": "Infinity > 46"
+        },
+        "retry1": {
+          "encodedFrames": 54,
+          "durationSeconds": 3.4765,
+          "decodedFrames": 104,
+          "result": "通过"
+        },
+        "endpoints": "两次原生起点与终点附件各自相同。"
+      },
+      "change": "复用 cea4bfc 的 panelFrames、区域采样包装与 Java/TS 测试；仅 slot-popup-exit 使用。固定原区域 0,500,720,680，采样后编码 PNG；3.2 秒内保留所有变化和末帧，超过内存/帧预算直接失败。驱动身份与缓存校验同步。",
+      "counterexamples": "历史 run 42617216683 为失败/失败/通过，同样缺退场中间相位；不将一次重试通过当稳定性证明，不增加位置锚点、不改 46 门禁。既有错误闪屏、反向和横向错位、直接跳终点负向测试仍通过。"
+    },
+    {
+      "job": "130060325886",
+      "name": "Android remaining (social / zh-Hant)",
+      "outcome": "调查待 CI 补证，未声明已修复或无需改动",
+      "rootCauseConfirmed": "club-search-results 首败及 retry1 hierarchy 为 67/68 v1/status RETRY 弹窗；parity signed_in_slot setup 两张原图分别是 64 v1/status 与大厅上方通用 Network Error。原有 120 秒等待耗尽，retry2 通过仍被 failOnFlakyTests 拒绝。",
+      "missingEvidence": "最终 logcat.log.1 从 20:23:29 起，早于此的失败请求窗口已轮转；runtime.log 主要是 E 级，不能确认每次应用选线、代理传输和真实服务器响应。",
+      "change": "复用 d0431eb 在普通诊断前固定现有脱敏日志；worker setup catch 同样保存日志。两条失败路径在代理结束前只读已有 /android/network-selection 的脱敏快照。附件、代理查询失败均隔离，不改变采样、120 秒时限、RETRY 条件或断言。",
+      "counterexamples": "重试成功不证明与代码无关；节点 64/67/68 及通用 Network Error 的区别不支持只修单节点或仅扩大状态接口重试。历史启动 hold 预算修复针对 launch-branding 主动 hold，本轮 social 未主动 hold，不复制该不相关改动。",
+      "nextCI": "根据每次 failure/setup-diagnostics-*、startup-network-selection 和原截图交叉确认 v1/status 响应/transport error 与选线，若进入大厅后仍有对话框，继续核对请求来源；原检查继续失败直到实际根因修复。"
+    }
+  ],
+  "downstream": [
+    {
+      "job": "130107599882",
+      "name": "Android full regression",
+      "outcome": "已证实无需改动",
+      "evidence": "remaining=failure 导致完整回归拒绝，保持门禁。"
+    },
+    {
+      "job": "130108281134",
+      "name": "Android (texas / zh-Hans / table)",
+      "outcome": "已证实无需改动",
+      "evidence": "本 job 仅 test \"$COMPLETE_RESULT\" = success；实际 failure，退出 1，无独立测试失败。"
+    },
+    {
+      "job": "130108281401",
+      "name": "Android (texas / zh-Hans / other)",
+      "outcome": "已证实无需改动",
+      "evidence": "本 job 仅 test \"$COMPLETE_RESULT\" = success；实际 failure，退出 1，无独立测试失败。"
+    },
+    {
+      "job": "130108281183",
+      "name": "Android (texas / zh-Hant / table)",
+      "outcome": "已证实无需改动",
+      "evidence": "本 job 仅 test \"$COMPLETE_RESULT\" = success；实际 failure，退出 1，无独立测试失败。"
+    },
+    {
+      "job": "130108281131",
+      "name": "Android (texas / zh-Hant / other)",
+      "outcome": "已证实无需改动",
+      "evidence": "本 job 仅 test \"$COMPLETE_RESULT\" = success；实际 failure，退出 1，无独立测试失败。"
+    },
+    {
+      "job": "130108281142",
+      "name": "Android (texas / en / pregame-first)",
+      "outcome": "已证实无需改动",
+      "evidence": "本 job 仅 test \"$COMPLETE_RESULT\" = success；实际 failure，退出 1，无独立测试失败。"
+    },
+    {
+      "job": "130108281231",
+      "name": "Android (texas / en / pregame-middle)",
+      "outcome": "已证实无需改动",
+      "evidence": "本 job 仅 test \"$COMPLETE_RESULT\" = success；实际 failure，退出 1，无独立测试失败。"
+    },
+    {
+      "job": "130108281434",
+      "name": "Android (texas / en / pregame-second)",
+      "outcome": "已证实无需改动",
+      "evidence": "本 job 仅 test \"$COMPLETE_RESULT\" = success；实际 failure，退出 1，无独立测试失败。"
+    },
+    {
+      "job": "130108281329",
+      "name": "Android (texas / en / game-table)",
+      "outcome": "已证实无需改动",
+      "evidence": "本 job 仅 test \"$COMPLETE_RESULT\" = success；实际 failure，退出 1，无独立测试失败。"
+    },
+    {
+      "job": "130108281297",
+      "name": "Android (texas / en / game-effects)",
+      "outcome": "已证实无需改动",
+      "evidence": "本 job 仅 test \"$COMPLETE_RESULT\" = success；实际 failure，退出 1，无独立测试失败。"
+    },
+    {
+      "job": "130108281349",
+      "name": "Android (texas / en / panels)",
+      "outcome": "已证实无需改动",
+      "evidence": "本 job 仅 test \"$COMPLETE_RESULT\" = success；实际 failure，退出 1，无独立测试失败。"
+    },
+    {
+      "job": "130108281245",
+      "name": "Android (texas / en / other)",
+      "outcome": "已证实无需改动",
+      "evidence": "本 job 仅 test \"$COMPLETE_RESULT\" = success；实际 failure，退出 1，无独立测试失败。"
+    },
+    {
+      "job": "130108281451",
+      "name": "Android (zhajinhua / zh-Hans)",
+      "outcome": "已证实无需改动",
+      "evidence": "本 job 仅 test \"$COMPLETE_RESULT\" = success；实际 failure，退出 1，无独立测试失败。"
+    },
+    {
+      "job": "130108281248",
+      "name": "Android (zhajinhua / zh-Hant)",
+      "outcome": "已证实无需改动",
+      "evidence": "本 job 仅 test \"$COMPLETE_RESULT\" = success；实际 failure，退出 1，无独立测试失败。"
+    },
+    {
+      "job": "130108281283",
+      "name": "Android (zhajinhua / en / pregame-first)",
+      "outcome": "已证实无需改动",
+      "evidence": "本 job 仅 test \"$COMPLETE_RESULT\" = success；实际 failure，退出 1，无独立测试失败。"
+    },
+    {
+      "job": "130108281314",
+      "name": "Android (zhajinhua / en / pregame-second)",
+      "outcome": "已证实无需改动",
+      "evidence": "本 job 仅 test \"$COMPLETE_RESULT\" = success；实际 failure，退出 1，无独立测试失败。"
+    },
+    {
+      "job": "130108281271",
+      "name": "Android (zhajinhua / en / game-table)",
+      "outcome": "已证实无需改动",
+      "evidence": "本 job 仅 test \"$COMPLETE_RESULT\" = success；实际 failure，退出 1，无独立测试失败。"
+    },
+    {
+      "job": "130108281306",
+      "name": "Android (zhajinhua / en / game-effects)",
+      "outcome": "已证实无需改动",
+      "evidence": "本 job 仅 test \"$COMPLETE_RESULT\" = success；实际 failure，退出 1，无独立测试失败。"
+    },
+    {
+      "job": "130108281368",
+      "name": "Android (guest / zh-Hans)",
+      "outcome": "已证实无需改动",
+      "evidence": "本 job 仅 test \"$COMPLETE_RESULT\" = success；实际 failure，退出 1，无独立测试失败。"
+    },
+    {
+      "job": "130108281292",
+      "name": "Android (guest / zh-Hant)",
+      "outcome": "已证实无需改动",
+      "evidence": "本 job 仅 test \"$COMPLETE_RESULT\" = success；实际 failure，退出 1，无独立测试失败。"
+    },
+    {
+      "job": "130108281353",
+      "name": "Android (guest / en)",
+      "outcome": "已证实无需改动",
+      "evidence": "本 job 仅 test \"$COMPLETE_RESULT\" = success；实际 failure，退出 1，无独立测试失败。"
+    },
+    {
+      "job": "130108281330",
+      "name": "Android (account / zh-Hans)",
+      "outcome": "已证实无需改动",
+      "evidence": "本 job 仅 test \"$COMPLETE_RESULT\" = success；实际 failure，退出 1，无独立测试失败。"
+    },
+    {
+      "job": "130108281154",
+      "name": "Android (account / zh-Hant)",
+      "outcome": "已证实无需改动",
+      "evidence": "本 job 仅 test \"$COMPLETE_RESULT\" = success；实际 failure，退出 1，无独立测试失败。"
+    },
+    {
+      "job": "130108281279",
+      "name": "Android (account / en)",
+      "outcome": "已证实无需改动",
+      "evidence": "本 job 仅 test \"$COMPLETE_RESULT\" = success；实际 failure，退出 1，无独立测试失败。"
+    },
+    {
+      "job": "130108281357",
+      "name": "Android (social / zh-Hans)",
+      "outcome": "已证实无需改动",
+      "evidence": "本 job 仅 test \"$COMPLETE_RESULT\" = success；实际 failure，退出 1，无独立测试失败。"
+    },
+    {
+      "job": "130108281215",
+      "name": "Android (social / zh-Hant)",
+      "outcome": "已证实无需改动",
+      "evidence": "本 job 仅 test \"$COMPLETE_RESULT\" = success；实际 failure，退出 1，无独立测试失败。"
+    },
+    {
+      "job": "130108281179",
+      "name": "Android (social / en)",
+      "outcome": "已证实无需改动",
+      "evidence": "本 job 仅 test \"$COMPLETE_RESULT\" = success；实际 failure，退出 1，无独立测试失败。"
+    },
+    {
+      "job": "130108281562",
+      "name": "Android (rooms / zh-Hans)",
+      "outcome": "已证实无需改动",
+      "evidence": "本 job 仅 test \"$COMPLETE_RESULT\" = success；实际 failure，退出 1，无独立测试失败。"
+    },
+    {
+      "job": "130108281406",
+      "name": "Android (rooms / zh-Hant)",
+      "outcome": "已证实无需改动",
+      "evidence": "本 job 仅 test \"$COMPLETE_RESULT\" = success；实际 failure，退出 1，无独立测试失败。"
+    },
+    {
+      "job": "130108281273",
+      "name": "Android (rooms / en)",
+      "outcome": "已证实无需改动",
+      "evidence": "本 job 仅 test \"$COMPLETE_RESULT\" = success；实际 failure，退出 1，无独立测试失败。"
+    },
+    {
+      "job": "130108281328",
+      "name": "Android (wallet-help / zh-Hans)",
+      "outcome": "已证实无需改动",
+      "evidence": "本 job 仅 test \"$COMPLETE_RESULT\" = success；实际 failure，退出 1，无独立测试失败。"
+    },
+    {
+      "job": "130108281382",
+      "name": "Android (wallet-help / zh-Hant)",
+      "outcome": "已证实无需改动",
+      "evidence": "本 job 仅 test \"$COMPLETE_RESULT\" = success；实际 failure，退出 1，无独立测试失败。"
+    },
+    {
+      "job": "130108281257",
+      "name": "Android (wallet-help / en)",
+      "outcome": "已证实无需改动",
+      "evidence": "本 job 仅 test \"$COMPLETE_RESULT\" = success；实际 failure，退出 1，无独立测试失败。"
+    },
+    {
+      "job": "130108281453",
+      "name": "Android (records / zh-Hans)",
+      "outcome": "已证实无需改动",
+      "evidence": "本 job 仅 test \"$COMPLETE_RESULT\" = success；实际 failure，退出 1，无独立测试失败。"
+    },
+    {
+      "job": "130108281432",
+      "name": "Android (records / zh-Hant)",
+      "outcome": "已证实无需改动",
+      "evidence": "本 job 仅 test \"$COMPLETE_RESULT\" = success；实际 failure，退出 1，无独立测试失败。"
+    },
+    {
+      "job": "130108281574",
+      "name": "Android (records / en)",
+      "outcome": "已证实无需改动",
+      "evidence": "本 job 仅 test \"$COMPLETE_RESULT\" = success；实际 failure，退出 1，无独立测试失败。"
+    }
+  ],
+  "validation": [
+    "六张基准与同轮每张三次实际 PNG 全部逐字节一致。",
+    "两次原始老虎机 MP4 最小离线回放重现 FAIL/PASS。",
+    "8 项区域采样、Java 生产命令与首败诊断定向测试通过。",
+    "53 项原有转场及负向反证、区域采样、诊断测试全部通过。",
+    "新增启动快照测试 1 项、现有选线脱敏契约测试 4 项通过；代理读取或报告写入失败均保留原异常。",
+    "类型、JS/导航/玩法复杂度、历史债务、架构、重复代码、工作流及行数检查通过。",
+    "未本地运行 Android 设备测试，未提交或推送；远端结果待 ci-guard。"
+  ]
+}

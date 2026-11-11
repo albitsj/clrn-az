@@ -4,12 +4,14 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { artifacts, launchApplication, waitForHall } from './device';
 import { withAndroidProxy } from './proxy';
 import { captureFailure } from './diagnostics';
+import { preserveAnimationFailure } from './animation-diagnostics';
 import { selectLanguage } from './navigation';
+import { attachStartupNetwork } from './startup-network-diagnostics';
 
 export const locale = process.env.ANDROID_LOCALE || 'en';
 export const test = base.extend<{}, { application: { device: AndroidDevice; signedIn: boolean } }>({
   application: [async ({}, use, workerInfo) => {
-    await withAndroidProxy(async () => {
+    await withAndroidProxy(async proxy => {
       console.log('ANDROID > 安装 APK 并启动原生驱动');
       const device = await launchApplication();
       try {
@@ -19,6 +21,9 @@ export const test = base.extend<{}, { application: { device: AndroidDevice; sign
         await selectLanguage(device, locale);
         await use({ device, signedIn: false });
       } catch (error) {
+        await Promise.resolve().then(() => preserveAnimationFailure(
+          'setup', Date.now(), base.info())).catch(() => undefined);
+        await Promise.resolve().then(() => attachStartupNetwork(proxy, base.info())).catch(() => undefined);
         await mkdir(workerInfo.project.outputDir, { recursive: true });
         await device.screenshot().then(body => writeFile(`${workerInfo.project.outputDir}/setup-${locale}-${workerInfo.workerIndex}.png`, body)).catch(() => undefined);
         throw error;
