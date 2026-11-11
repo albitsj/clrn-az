@@ -14,10 +14,35 @@ def sample(path, body=None, status=200, host=HOST):
 
 
 class NetworkSelectionTests(unittest.TestCase):
+    def test_pre_http_diagnostics_are_bounded_private_and_read_only(self):
+        recorder = NetworkSelection()
+        server = SimpleNamespace(address=(HOST, 443), error='secret error')
+        data = SimpleNamespace(context=SimpleNamespace(server=server), ssl_conn='secret tls')
+        for _ in range(201):
+            recorder.connection(HOST, 'connect')
+        recorder.tls_failure(data, 'tls-client-failed')
+        recorder.tls_failure(data, 'tls-server-failed')
+        recorder.connection('secret.example.com', 'connect')
+        recorder.connection(HOST, 'secret event')
+        recorder.connection(None, 'connect')
+        recorder.tls_failure(None, 'tls-client-failed')
+        state = recorder.snapshot()
+        self.assertEqual(state['total'], 0)
+        self.assertEqual(state['events'], [])
+        self.assertEqual(state['connectionTotal'], 203)
+        self.assertEqual(len(state['connections']), 200)
+        self.assertEqual(state['connections'][-1]['event'], 'tls-server-failed')
+        self.assertNotIn('secret', json.dumps(state))
+        self.assertEqual(server.error, 'secret error')
+        self.assertEqual(data.ssl_conn, 'secret tls')
+
     def test_room_failure_diagnostics_redact_identity_and_never_replace_original_response(self):
         recorder = NetworkSelection()
         for path, method, redacted in (
                 ('/v3/pay_action/do', 'POST', '/v3/pay_action/do'),
+                ('/v1/room/secret-room', 'GET', '/v1/room/{room}'),
+                ('/v10/zhajinhua/room/secret-room/enter_and_sit', 'PUT',
+                 '/v10/zhajinhua/room/{room}/enter_and_sit'),
                 ('/v10/texas_holdem/room/secret-room/enter', 'PUT', '/v10/texas_holdem/room/{room}/enter'),
                 ('/v10/texas_holdem/room/secret-room/profile', 'GET', '/v10/texas_holdem/room/{room}/profile'),
                 ('/v11/game_log/secret-user/play_session_record/secret-session', 'GET',
@@ -39,6 +64,18 @@ class NetworkSelectionTests(unittest.TestCase):
             recorder.observe(flow, 'request')
             self.assertEqual(recorder.events[-1]['event'], 'request')
             self.assertNotIn('status', recorder.events[-1])
+        self.assertNotIn('secret', json.dumps(recorder.snapshot()))
+
+    def test_room_response_records_only_fixed_failure_flags(self):
+        recorder = NetworkSelection()
+        for code, description in (('authentication_failed', 'secret'), ('secret', '重复提交')):
+            body = {'ok': False, 'error': code, 'error_description': description, 'result': 'secret'}
+            flow = sample('/v3/pay_action/do', body)
+            flow.request.method = 'POST'
+            recorder.observe(flow)
+            self.assertEqual(recorder.events[-1]['authenticationFailed'], code == 'authentication_failed')
+            self.assertEqual(recorder.events[-1]['duplicateSubmission'], description == '重复提交')
+            self.assertIs(flow.response.json(), body)
         self.assertNotIn('secret', json.dumps(recorder.snapshot()))
 
     def test_wallet_reads_record_contract_without_identity_balance_or_credentials(self):

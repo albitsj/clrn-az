@@ -33,13 +33,21 @@ export async function waitForPlayerActionStart(device: AndroidDevice, testInfo: 
   const reference = readFileSync(path.join(__dirname,
     'snapshots/android-35-x86_64-720x1280-en/texas-player-action-call-start.png'));
   let current: Buffer | undefined;
+  const samples: { at: number; ready: boolean }[] = [];
   try {
     await expect.poll(async () => {
       current = motionParts(await gameScreenshot(device), [playerActionRegion]).regions[0];
-      return samePixels(current, reference);
+      const ready = samePixels(current, reference);
+      samples.push({ at: Date.now(), ready });
+      return ready;
     }, { message: '上一玩家动作必须完成退场后才能采集下一动作', timeout: 30_000, intervals: [250] }).toBe(true);
   } finally {
-    if (current) await testInfo.attach(`${name}-prepared-start`, { body: current, contentType: 'image/png' });
+    try {
+      if (current) await testInfo.attach(`${name}-prepared-start`, { body: current, contentType: 'image/png' });
+      await testInfo.attach(`${name}-prepared-timing`, {
+        body: JSON.stringify(samples), contentType: 'application/json',
+      });
+    } catch { /* 诊断失败不得替换原始准备异常或使成功用例失败。 */ }
   }
 }
 

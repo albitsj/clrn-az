@@ -67,6 +67,9 @@ test('真实首败仍有 call 标签时不能开始 raise，须等已有起点�
   assert.equal(probe.reads(), 3, '不能在旧 call 尚可见的前两次采样后返回');
   assert.equal(probe.attachments[0].name, 'texas-player-action-raise-prepared-start');
   assert.deepEqual(PNG.sync.read(probe.attachments[0].body).data, PNG.sync.read(ready).data);
+  const timing = JSON.parse(probe.attachments[1].body);
+  assert.deepEqual(timing.map(sample => sample.ready), [false, false, true]);
+  assert.ok(timing.every(sample => Number.isFinite(sample.at)));
 });
 
 for (const updateSnapshots of ['none', 'all']) {
@@ -82,3 +85,17 @@ for (const updateSnapshots of ['none', 'all']) {
     assert.deepEqual(PNG.sync.read(probe.attachments[0].body).data, PNG.sync.read(stale).data);
   });
 }
+
+
+test('准备附件失败不改变成功结果，也不覆盖原始设备异常', async () => {
+  const probe = readiness([stale, ready]);
+  /** 模拟报告写入失败。 */
+  probe.info.attach = async () => { throw new Error('attachment failed'); };
+  await probe.run();
+  assert.equal(probe.reads(), 2);
+  const original = new Error('original screen failure');
+  const device = { _connection: { /** 返回失败驱动。 */ toImpl: () => ({
+    /** 保留原始设备错误。 */ _send: async () => { throw original; },
+  }) } };
+  await assert.rejects(waitForPlayerActionStart(device, probe.info, 'raise'), error => error === original);
+});

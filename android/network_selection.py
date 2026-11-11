@@ -21,8 +21,11 @@ def diagnostic_path(request):
 
 
 def room_diagnostic_path(path):
+    if re.fullmatch(r'/v1/room/[^/]+', path):
+        return '/v1/room/{room}'
     for pattern, redacted in (
             (r'/v10/texas_holdem/room/[^/]+/(enter|profile)', '/v10/texas_holdem/room/{room}/'),
+            (r'/v10/zhajinhua/room/[^/]+/(enter_and_sit|profile)', '/v10/zhajinhua/room/{room}/'),
             (r'/v11/game_log/[^/]+/(play_session_record|round)/[^/]+', '/v11/game_log/{user}/')):
         match = re.fullmatch(pattern, path)
         if match:
@@ -68,7 +71,8 @@ def request_timing(request):
 
 def response_outcome(body):
     if isinstance(body, dict) and type(body.get('ok')) is bool:
-        return {'ok': body['ok']}
+        return {'ok': body['ok'], 'authenticationFailed': body.get('error') == 'authentication_failed',
+                'duplicateSubmission': body.get('error_description') == '重复提交'}
     return {}
 
 
@@ -76,6 +80,28 @@ class NetworkSelection:
     def __init__(self):
         self.events = []
         self.total = 0
+        self.connections = []
+        self.connection_total = 0
+
+    def connection(self, host, event):
+        # 启动首败可能没有 HTTP flow；独立保留 CONNECT/TLS 阶段，不挤掉请求历史。
+        try:
+            if event not in ('connect', 'tls-client-failed', 'tls-server-failed'):
+                return
+            if not staging(host):
+                return
+            self.connections.append({'at': round(time.time() * 1000), 'host': host, 'event': event})
+            self.connection_total += 1
+            del self.connections[:-200]
+        except Exception:
+            pass
+
+    def tls_failure(self, data, event):
+        try:
+            self.connection(data.context.server.address[0], event)
+        except Exception:
+            pass
+
 
     def observe(self, flow, event='response', **details):
         # 诊断故障不得改变代理的响应或原始异常。
@@ -131,4 +157,5 @@ class NetworkSelection:
                     self.observe(flow, 'websocket-ack', kind=kind)
 
     def snapshot(self):
-        return {'total': self.total, 'events': list(self.events)}
+        return {'total': self.total, 'events': list(self.events),
+                'connectionTotal': self.connection_total, 'connections': list(self.connections)}
