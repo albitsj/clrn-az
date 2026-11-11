@@ -1,161 +1,161 @@
 [
   {
     "file": "eslint.config.mjs",
-    "line": 17,
+    "line": 18,
     "column": 1,
     "function": "Function 'hasFetchProperty'",
     "complexity": 3
   },
   {
     "file": "eslint.config.mjs",
-    "line": 20,
+    "line": 21,
     "column": 14,
     "function": "Arrow function",
     "complexity": 2
   },
   {
     "file": "eslint.config.mjs",
-    "line": 29,
+    "line": 30,
     "column": 1,
     "function": "Function 'replacesFetch'",
     "complexity": 6
   },
   {
     "file": "eslint.config.mjs",
-    "line": 50,
+    "line": 51,
     "column": 3,
     "function": "Method 'create'",
     "complexity": 1
   },
   {
     "file": "eslint.config.mjs",
-    "line": 56,
+    "line": 57,
     "column": 5,
     "function": "Function 'check'",
     "complexity": 3
   },
   {
     "file": "eslint.config.mjs",
-    "line": 63,
+    "line": 64,
     "column": 5,
     "function": "Function 'pureRoutingSource'",
     "complexity": 6
   },
   {
     "file": "eslint.config.mjs",
-    "line": 85,
+    "line": 86,
     "column": 3,
     "function": "Method 'create'",
     "complexity": 1
   },
   {
     "file": "eslint.config.mjs",
-    "line": 91,
+    "line": 92,
     "column": 5,
     "function": "Function 'report'",
     "complexity": 1
   },
   {
     "file": "eslint.config.mjs",
-    "line": 99,
+    "line": 100,
     "column": 5,
     "function": "Function 'checkResponsePattern'",
     "complexity": 1
   },
   {
     "file": "eslint.config.mjs",
-    "line": 107,
+    "line": 108,
     "column": 5,
     "function": "Function 'checkPattern'",
     "complexity": 5
   },
   {
     "file": "eslint.config.mjs",
-    "line": 117,
+    "line": 118,
     "column": 5,
     "function": "Function 'checkObjectPattern'",
     "complexity": 5
   },
   {
     "file": "eslint.config.mjs",
-    "line": 130,
+    "line": 131,
     "column": 5,
     "function": "Function 'checkWrites'",
     "complexity": 1
   },
   {
     "file": "eslint.config.mjs",
-    "line": 131,
+    "line": 132,
     "column": 36,
     "function": "Arrow function",
     "complexity": 5
   },
   {
     "file": "eslint.config.mjs",
-    "line": 140,
+    "line": 141,
     "column": 5,
     "function": "Function 'checkLoop'",
     "complexity": 1
   },
   {
     "file": "eslint.config.mjs",
-    "line": 150,
+    "line": 151,
     "column": 7,
     "function": "Method 'VariableDeclarator'",
     "complexity": 1
   },
   {
     "file": "eslint.config.mjs",
-    "line": 157,
+    "line": 158,
     "column": 7,
     "function": "Method 'AssignmentPattern'",
     "complexity": 1
   },
   {
     "file": "eslint.config.mjs",
-    "line": 164,
+    "line": 165,
     "column": 7,
     "function": "Method 'MemberExpression'",
     "complexity": 3
   },
   {
     "file": "eslint.config.mjs",
-    "line": 171,
+    "line": 172,
     "column": 7,
     "function": "Method 'NewExpression'",
     "complexity": 2
   },
   {
     "file": "eslint.config.mjs",
-    "line": 178,
+    "line": 179,
     "column": 7,
     "function": "Method 'AssignmentExpression'",
     "complexity": 1
   },
   {
     "file": "eslint.config.mjs",
-    "line": 186,
+    "line": 187,
     "column": 7,
     "function": "Method 'CallExpression'",
     "complexity": 6
   },
   {
     "file": "eslint.config.mjs",
-    "line": 283,
+    "line": 284,
     "column": 1,
     "function": "Function 'definesProperty'",
     "complexity": 3
   },
   {
     "file": "eslint.config.mjs",
-    "line": 293,
+    "line": 294,
     "column": 1,
     "function": "Function 'setsGlobalProperty'",
     "complexity": 3
   },
   {
     "file": "eslint.config.mjs",
-    "line": 300,
+    "line": 301,
     "column": 1,
     "function": "Function 'routingPattern'",
     "complexity": 4
@@ -171,7 +171,7 @@
     "file": "scripts/android-game-complexity.mjs",
     "line": 18,
     "column": 8,
-    "function": "Async function 'checkScopedComplexity'",
+    "function": "Async function 'checkAndroidComplexity'",
     "complexity": 5
   },
   {
@@ -1429,28 +1429,28 @@
   },
   {
     "file": "android/asset-sequence.test.mjs",
-    "line": 64,
-    "column": 71,
+    "line": 69,
+    "column": 5,
     "function": "Async method 'attach'",
-    "complexity": 1
+    "complexity": 2
   },
   {
     "file": "android/asset-sequence.test.mjs",
-    "line": 68,
+    "line": 75,
     "column": 5,
     "function": "Method 'snapshotPath'",
     "complexity": 2
   },
   {
     "file": "android/asset-sequence.test.mjs",
-    "line": 70,
+    "line": 77,
     "column": 76,
     "function": "Async arrow function",
     "complexity": 1
   },
   {
     "file": "android/asset-sequence.test.mjs",
-    "line": 72,
+    "line": 79,
     "column": 9,
     "function": "Arrow function",
     "complexity": 2
@@ -1471,119 +1471,126 @@
   },
   {
     "file": "android/asset-sequence.ts",
-    "line": 50,
+    "line": 51,
     "column": 44,
     "function": "Arrow function",
     "complexity": 2
   },
   {
     "file": "android/asset-sequence.ts",
-    "line": 51,
+    "line": 52,
     "column": 47,
     "function": "Arrow function",
     "complexity": 2
   },
   {
     "file": "android/asset-sequence.ts",
-    "line": 56,
+    "line": 57,
     "column": 35,
     "function": "Arrow function",
     "complexity": 1
   },
   {
     "file": "android/asset-sequence.ts",
-    "line": 65,
+    "line": 66,
     "column": 3,
     "function": "Async function 'sample'",
     "complexity": 3
   },
   {
     "file": "android/asset-sequence.ts",
-    "line": 70,
-    "column": 43,
+    "line": 72,
+    "column": 42,
     "function": "Arrow function",
     "complexity": 1
   },
   {
     "file": "android/asset-sequence.ts",
-    "line": 74,
+    "line": 73,
+    "column": 40,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/asset-sequence.ts",
+    "line": 77,
     "column": 45,
     "function": "Arrow function",
     "complexity": 1
   },
   {
     "file": "android/asset-sequence.ts",
-    "line": 75,
+    "line": 78,
     "column": 22,
     "function": "Arrow function",
     "complexity": 1
   },
   {
     "file": "android/asset-sequence.ts",
-    "line": 90,
+    "line": 93,
     "column": 3,
     "function": "Async function 'compareAssetPhase'",
     "complexity": 3
   },
   {
     "file": "android/asset-sequence.ts",
-    "line": 98,
+    "line": 101,
     "column": 75,
     "function": "Arrow function",
     "complexity": 1
   },
   {
     "file": "android/asset-sequence.ts",
-    "line": 99,
+    "line": 102,
     "column": 24,
     "function": "Arrow function",
     "complexity": 1
   },
   {
     "file": "android/asset-sequence.ts",
-    "line": 107,
+    "line": 110,
     "column": 3,
     "function": "Function 'assetComparator'",
     "complexity": 3
   },
   {
     "file": "android/asset-sequence.ts",
-    "line": 113,
+    "line": 116,
     "column": 3,
     "function": "Async function 'captureFlight'",
-    "complexity": 2
+    "complexity": 3
   },
   {
     "file": "android/asset-sequence.ts",
-    "line": 118,
+    "line": 121,
     "column": 36,
     "function": "Arrow function",
     "complexity": 1
   },
   {
     "file": "android/asset-sequence.ts",
-    "line": 121,
+    "line": 124,
     "column": 52,
     "function": "Arrow function",
     "complexity": 1
   },
   {
     "file": "android/asset-sequence.ts",
-    "line": 122,
+    "line": 125,
     "column": 72,
     "function": "Arrow function",
     "complexity": 1
   },
   {
     "file": "android/asset-sequence.ts",
-    "line": 124,
+    "line": 127,
     "column": 49,
     "function": "Arrow function",
     "complexity": 2
   },
   {
     "file": "android/asset-sequence.ts",
-    "line": 125,
+    "line": 128,
     "column": 50,
     "function": "Arrow function",
     "complexity": 2
@@ -1591,41 +1598,55 @@
   {
     "file": "android/asset-sequence.ts",
     "line": 136,
+    "column": 46,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/asset-sequence.ts",
+    "line": 141,
+    "column": 5,
+    "function": "Async function 'attachFlightFailure'",
+    "complexity": 2
+  },
+  {
+    "file": "android/asset-sequence.ts",
+    "line": 151,
     "column": 5,
     "function": "Async function 'compareFlightPhase'",
     "complexity": 3
   },
   {
     "file": "android/asset-sequence.ts",
-    "line": 142,
+    "line": 157,
     "column": 23,
     "function": "Arrow function",
     "complexity": 1
   },
   {
     "file": "android/asset-sequence.ts",
-    "line": 143,
+    "line": 158,
     "column": 81,
     "function": "Arrow function",
     "complexity": 1
   },
   {
     "file": "android/asset-sequence.ts",
-    "line": 144,
+    "line": 159,
     "column": 30,
     "function": "Arrow function",
     "complexity": 1
   },
   {
     "file": "android/asset-sequence.ts",
-    "line": 144,
+    "line": 159,
     "column": 58,
     "function": "Arrow function",
     "complexity": 1
   },
   {
     "file": "android/asset-sequence.ts",
-    "line": 155,
+    "line": 170,
     "column": 1,
     "function": "Function 'registeredFlightAnchors'",
     "complexity": 2
@@ -3164,104 +3185,6 @@
     "complexity": 3
   },
   {
-    "file": "scripts/android-animation-complexity-fixture.mjs",
-    "line": 15,
-    "column": 1,
-    "function": "Function 'temporaryProject'",
-    "complexity": 3
-  },
-  {
-    "file": "scripts/android-animation-complexity-fixture.mjs",
-    "line": 17,
-    "column": 20,
-    "function": "Arrow function",
-    "complexity": 1
-  },
-  {
-    "file": "scripts/android-animation-complexity-fixture.mjs",
-    "line": 33,
-    "column": 1,
-    "function": "Async function 'diagnostics'",
-    "complexity": 1
-  },
-  {
-    "file": "scripts/android-animation-complexity-fixture.mjs",
-    "line": 35,
-    "column": 41,
-    "function": "Arrow function",
-    "complexity": 1
-  },
-  {
-    "file": "scripts/android-animation-complexity-fixture.mjs",
-    "line": 41,
-    "column": 1,
-    "function": "Function 'thresholdCases'",
-    "complexity": 3
-  },
-  {
-    "file": "scripts/android-animation-complexity-fixture.mjs",
-    "line": 43,
-    "column": 64,
-    "function": "Async arrow function",
-    "complexity": 1
-  },
-  {
-    "file": "scripts/android-animation-complexity-fixture.mjs",
-    "line": 49,
-    "column": 65,
-    "function": "Async arrow function",
-    "complexity": 1
-  },
-  {
-    "file": "scripts/android-animation-complexity-fixture.mjs",
-    "line": 67,
-    "column": 1,
-    "function": "Function 'syntaxCases'",
-    "complexity": 2
-  },
-  {
-    "file": "scripts/android-animation-complexity-fixture.mjs",
-    "line": 69,
-    "column": 81,
-    "function": "Async arrow function",
-    "complexity": 1
-  },
-  {
-    "file": "scripts/android-animation-complexity-fixture.mjs",
-    "line": 79,
-    "column": 1,
-    "function": "Function 'entryCases'",
-    "complexity": 1
-  },
-  {
-    "file": "scripts/android-animation-complexity-fixture.mjs",
-    "line": 80,
-    "column": 71,
-    "function": "Arrow function",
-    "complexity": 2
-  },
-  {
-    "file": "scripts/android-animation-complexity-fixture.mjs",
-    "line": 107,
-    "column": 1,
-    "function": "Function 'dependencyCase'",
-    "complexity": 1
-  },
-  {
-    "file": "scripts/android-animation-complexity-fixture.mjs",
-    "line": 108,
-    "column": 50,
-    "function": "Arrow function",
-    "complexity": 1
-  },
-  {
-    "file": "scripts/android-animation-complexity-fixture.mjs",
-    "line": 123,
-    "column": 8,
-    "function": "Function 'complexityContract'",
-    "complexity": 1
-  },
-  {
     "file": "scripts/android-animation-complexity.mjs",
     "line": 9,
     "column": 8,
@@ -3272,6 +3195,118 @@
     "file": "scripts/android-animation-scope.mjs",
     "line": 8,
     "column": 14,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/android-complexity-fixture.mjs",
+    "line": 11,
+    "column": 8,
+    "function": "Function 'temporaryComplexityProject'",
+    "complexity": 3
+  },
+  {
+    "file": "scripts/android-complexity-fixture.mjs",
+    "line": 13,
+    "column": 20,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/android-complexity-fixture.mjs",
+    "line": 18,
+    "column": 79,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/android-complexity-probes.mjs",
+    "line": 14,
+    "column": 1,
+    "function": "Async function 'diagnostics'",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/android-complexity-probes.mjs",
+    "line": 16,
+    "column": 41,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/android-complexity-probes.mjs",
+    "line": 22,
+    "column": 8,
+    "function": "Function 'registerComplexityChecks'",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/android-complexity-probes.mjs",
+    "line": 33,
+    "column": 1,
+    "function": "Function 'thresholdChecks'",
+    "complexity": 2
+  },
+  {
+    "file": "scripts/android-complexity-probes.mjs",
+    "line": 35,
+    "column": 58,
+    "function": "Async arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/android-complexity-probes.mjs",
+    "line": 54,
+    "column": 1,
+    "function": "Function 'syntaxChecks'",
+    "complexity": 2
+  },
+  {
+    "file": "scripts/android-complexity-probes.mjs",
+    "line": 56,
+    "column": 56,
+    "function": "Async arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/android-complexity-probes.mjs",
+    "line": 65,
+    "column": 1,
+    "function": "Function 'entrypointChecks'",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/android-complexity-probes.mjs",
+    "line": 66,
+    "column": 51,
+    "function": "Arrow function",
+    "complexity": 2
+  },
+  {
+    "file": "scripts/android-complexity-probes.mjs",
+    "line": 90,
+    "column": 1,
+    "function": "Function 'assertParseFailure'",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/android-complexity-probes.mjs",
+    "line": 103,
+    "column": 1,
+    "function": "Function 'missingDependencyCheck'",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/android-complexity-probes.mjs",
+    "line": 104,
+    "column": 39,
+    "function": "Arrow function",
+    "complexity": 2
+  },
+  {
+    "file": "scripts/android-complexity-probes.mjs",
+    "line": 106,
+    "column": 22,
     "function": "Arrow function",
     "complexity": 1
   }

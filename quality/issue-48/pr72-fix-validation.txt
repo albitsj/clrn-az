@@ -1,0 +1,84 @@
+PR #72 修复与验收交接（2026-11-11）
+
+范围与来源
+核对的 base 为 e8bd5e3ef7a533e5545a24098f5a1a9ea4cfabcc，原 head 为 332dc53857955a2b0eb98f92cf83498d232f937f；修复保留在工作树，没有提交、推送、修改分支或索引。
+已直接读取 https://github.com/albitsj/clrn-az/issues/48 正文、全部 Issue 评论（空）、https://github.com/albitsj/clrn-az/pull/72 正文和三条评论；未找到放宽范围或允许更新视觉基准的需求授权。
+审查文本只用于定位问题；修复依据是上述原始要求、Git 对比和独立执行结果。
+
+已修复的 P2 / 本 PR 负责问题
+F1：恢复下列六张正式基准的 base 原始字节，最终工作树的 android/snapshots 相对 base 无任何差异：
+android/snapshots/android-35-x86_64-720x1280-en/en-signed-in-create-room-advanced-texas.png
+android/snapshots/android-35-x86_64-720x1280-en/en-signed-in-create-room-advanced-six-plus.png
+android/snapshots/android-35-x86_64-720x1280-zh-Hans/zh-Hans-signed-in-create-room-advanced-texas.png
+android/snapshots/android-35-x86_64-720x1280-zh-Hans/zh-Hans-signed-in-create-room-advanced-six-plus.png
+android/snapshots/android-35-x86_64-720x1280-zh-Hant/zh-Hant-signed-in-create-room-advanced-texas.png
+android/snapshots/android-35-x86_64-720x1280-zh-Hant/zh-Hant-signed-in-create-room-advanced-six-plus.png
+仓库 Playwright 1.61.1 实际比较器 utils.getComparator('image/png') 在 threshold=0.1、maxDiffPixelRatio=0.005 下，独立复算原 head 对 base 的差异：en 每张 9946、zh-Hans 每张 6700、zh-Hant 每张 7081 像素，均超过 720×1280×0.005=4608。
+恢复后再次确认六图逐字节等于 base，原 head 的变化布局仍被该比较器拒绝；这证明正式验收边界已恢复，不是当前 APK 的设备 compare 通过证据。
+没有修改视觉阈值、遮罩、比较入口或自动更新设置，也没有撤销 Issue 要求的功能、测试、文档及复杂度交付。
+
+F2：将 network/selection.ts、network/selection.test.mjs 整体恢复为 base 原始字节，撤出吞掉 unavailable 后继续 discovery 的 bootstrapHost 行为及仅为该越界行为新增的用例，保留 base 的全部 19 项选线测试。
+独立对照使用 base 的 client/selection/transport/errors/types 与工作树的实际实现，提供同一离线 fetch 场景：两个 bootstrap 均 busy、仍能返回包含健康第三节点的 metadata、没有有效缓存、请求为不可重放 PUT。
+原 head 会 discovery 并向第三节点发送一次 PUT；base 与修复后均只发送两个健康探测，返回 unavailable、attempts=0，metadata 和业务请求数均为零。
+该离线验证只证明共享客户端的请求和错误传播契约恢复，不能代替真实弱网或设备验收；两个网络文件相对 base 已无差异。
+
+最终源码与全 diff 复查
+在完成上述回退后重新检查完整 base→工作树差异，覆盖动画转场拆分、所有默认参数、无接收者回调、采样先于触发、延迟边界只解析一次、首尾和中途相位断言、循环窗口上限、区域重叠/越界、光标与遮罩边界、录屏错误/原片保留/清理、状态导航、三语静态截图和新增诊断的错误隔离。
+本范围实际视口是 Android API 35、720×1280；正式静态图覆盖 en、zh-Hans、zh-Hant，动画保持既有英文限制；没有 Web 视口或产品界面代码改动。
+保留现有俱乐部历史输入、原始录像、原生交互和旁路诊断，未把历史待查现象直接当作新的产品缺陷修改；没有独立确认其他本 PR P0–P2 或 base P1 阻断项。
+重新生成 complexity-after.json，并更新 measurement.json 的当前 40 个扫描文件摘要：473 个函数均符合测试/辅助实现 ≤3、独立工具/根配置 ≤6；before 报告及其来源保持历史身份。
+原 validation.json、两份 CI investigation 文档中的历史结果仍是历史记录，不能单独证明最终工作树验收；本说明区分补查结果与待重跑项。
+
+本轮定向验证（命令均在同一目录、沿用启动环境缓存）
+cwd=/Users/kevina/orca/workspaces/clrn-az/android-js-ts-3-6-2
+UV_CACHE_DIR=/Users/kevina/orca/workspaces/clrn-az/android-js-ts-3-6-2/.ttyctl/uv-cache
+Node=v24.14.0；没有为单条命令更换 UV_CACHE_DIR。
+完整 argv、退出码、耗时和原始日志保存在 .ttyctl/pr72-fix/<检查名>.result.json / .log。
+
+npm run lint:js：退出 0，包含动画门禁、玩法门禁、导航门禁及原 ESLint 历史清单检查。
+npm run typecheck：退出 0。
+npm run lint:architecture、npm run lint:duplicates、npm run lint:lines：均退出 0；补查整个 PR 的模块拆分及更新后的测量交付。
+node scripts/android-animation-complexity.mjs --report：退出 0，473 个函数；最终 JSON 与源码摘要已同步到本目录。
+node --test scripts/android-animation-complexity.test.mjs scripts/android-game-complexity.test.mjs：28 项通过，退出 0。
+node --test scripts/android-navigation-complexity.test.mjs：17 项通过，退出 0；补查共享 temporaryComplexityProject 对导航门禁的影响。
+上述探针实际执行真实配置和 lint:js 入口，验证测试 3/4、工具 6/7 边界、嵌套回调、测试辅助、禁用注释、默认参数、可选链、短路、构造器/访问器，以及依赖缺失和解析失败的非零退出；没有修改生产检查开关。
+node --import tsx --test network/selection.test.mjs：19 项通过，退出 0。
+node --import tsx --test android/animation-baselines.test.mjs android/animation-locale.test.mjs android/animation-transition.test.mjs android/asset-sequence.test.mjs android/caret-mask.test.mjs android/loop-animation.test.mjs android/loop-keyframes.test.mjs android/motion-regions.test.mjs android/screenshot-policy.test.mjs android/video-frames.test.mjs android/video-motion.test.mjs android/club-empty-transition.test.mjs android/game-capture-ready.test.mjs android/game-capture-masks.test.mjs android/game-capture-retry.test.mjs android/reset-password-diagnostics.test.mjs android/game-input-caret.test.mjs：113 项通过，退出 0。
+这些测试执行真实像素/运动算法、正式动画参考和错误传播断言；包括静止、闪屏、横移/镜像、采样顺序、延迟边界、原异常保留和遮罩外变化的反例，并非仅断言 API 调用。
+ANDROID_LOCALE=en/zh-Hans/zh-Hant（分别运行） node node_modules/@playwright/test/cli.js test --config android/playwright.config.ts --list animation-transitions.spec.ts animation-assets.spec.ts club-skeleton-animation.spec.ts slot-animation.spec.ts launch-branding.spec.ts records.spec.ts parity.spec.ts：三语各收集 83 项/7 文件，均退出 0；这是收集，不是设备运行通过。
+PYTHONPATH=android uv run --no-project --with mitmproxy==12.2.3 python -m unittest test_network_selection：退出 2，pypi.org DNS 解析失败；不记为业务回归。
+PYTHONPATH=android uv run --offline --no-project --python 3.13 --with mitmproxy==12.2.3 python -m unittest test_network_selection：使用同一 UV 缓存及真实已缓存依赖，5 项通过，退出 0。
+node .ttyctl/pr72-fix/check-network.mjs before/after：独立网络对照均退出 0；after 的 base 与工作树结果一致。
+node .ttyctl/pr72-fix/check-baselines.mjs：退出 0，六图字节恢复、原 head 布局拒绝、正式基准和网络实现相对 base 无差异。
+首次比较器脚本因引用已不存在的 playwright/lib/utils.js 退出 1；按当前安装包真实导出改用 playwright-core/lib/coreBundle 的 utils.getComparator 后完成上述六图复算，没有调整依赖或比较规则。
+node --import tsx --test android/recorded-transitions.test.mjs：81 段原始录屏全部通过，零失败、零取消、零跳过，退出 0，耗时 697.06 秒；使用生产参数实际解码并执行空间、首尾和中途断言，原始录像与来源摘要保持不变，这仍是离线回放而非当前 APK 设备运行。
+本轮共通过 182 项定向单元/门禁测试（113+19+28+17+5）及 81 段原始录屏回放；用例收集及临时对照断言未混入这个计数。
+git diff --check：退出 0。
+
+已有原始报告的补查与有效性
+已直接读取 https://github.com/albitsj/clrn-az/actions/runs/42979593356 和 https://github.com/albitsj/clrn-az/actions/runs/42979593557 的 run 元数据，二者均指向原 head，attempt=1、conclusion=success。
+校验 .ttyctl/review-72-round1-evidence 中六份原始视觉归档的 SHA-256 与本轮重新读取的 GitHub artifact digest 相等，ZIP CRC 均通过，再解析 HTML 内嵌原始 JSON 的每次 retry/status，未将 skipped 或重试成功当首次通过。
+13838480586（guest/en）：原生启动插画/环境提示、游客确认动画、完整品牌页首次通过。
+13837259613（social/en）：大厅匹配动画、俱乐部菜单及空态、三卷轴/奖励动画首次通过。
+13838741775（account/en）：密码页及账号栈转场首次通过。
+13839540379（texas/en/other）：大厅及战绩首次通过。
+13838747512（texas/en/game-effects）：道具飞行/效果及建房资料首次通过。
+13837873628（texas/en/panels）：建房/入房面板及变体首次通过。
+上述指定用例均为 retry=0、status=passed；不据单轮通过宣称历史间歇现象的根因全部消失，诊断继续保留。
+报告实际检出的是合并快照 d909482a16c73318d67029981b5442652767325d，APK 为 android-staging-300004401-d962b1f72204，应用提交 d962b1f722048e474e25361ea89e78c4c53389b0，APK SHA-256 为 c86e565456b8d874cd298171eed957b00b524294bf16af6333a1962f90d365fb；不能与本地 deployments/staging.json 固定的 f3ba50029e9b 构建混同。
+另从 repository check 的原始 job 130386611179 日志核实 81 条“真实录屏”成功行及当时 532 项测试全部通过；这是旧快照的 CI 证据，不是本轮本地或最终 CI 通过。
+本轮再次获取了 rooms/en、rooms/zh-Hans、rooms/zh-Hant 的原始报告清单（artifact 13837649932、13839340547、13837493278），连接器也返回了下载引用；本机尝试以 Python urllib.request.urlopen(timeout=25) 保存英文归档时，因下载主机 DNS 失败退出 1（URLError: [Errno 8] nodename nor servname provided, or not known）。
+因此三语 rooms 报告属于“报告存在、当前本机读取失败”，不是没有报告，也不是已证实产品缺陷；未伪造其截图比较结果。
+修复改变六张正式基准和共享选线行为，旧 CI 不能证明修复后的三语 compare 或依赖选线的真实房间准备仍通过，需最终提交重新运行。
+
+真实验收的已验证障碍、未完成项及下一步
+准备环境时找到 SDK，并执行完整命令：/Users/kevina/Library/Android/sdk/platform-tools/adb devices -l。
+目录和 UV_CACHE_DIR 如上，退出码 1；ADB daemon 无法在 tcp:5037 安装 smartsocket listener，明确报 Operation not permitted，同时记录 USB interface plug-in 错误；日志在 .ttyctl/pr72-fix/adb-devices.log，原启动日志 /var/folders/wm/n_zjfmp140l4s4dtshsym9r80000gr/T/adb.504.log。
+没有将此权限失败当作业务回归或验收通过，也没有提权、改监听端口、解除沙箱或使用测试开关绕过真实初始化。
+/Users/kevina/Library/Android/sdk/emulator/emulator -list-avds：同目录、同缓存，退出 0，列出五个 AVD；ClrnVisualParity 配置为 API 35、720×1280、arm64-v8a，不是正式基准所需的 x86_64。
+本机未运行修复后的真实设备 compare；F1 的三语高级设置设备比较、F2 回退后的真实房间准备及相关代表动画验收尚未完成，不能宣布最终可合并。
+android/artifacts/current 当前没有已验证 APK；在 ADB 已被权限阻断后，没有继续执行会安装应用的原生入口或假定驱动已经准备完成。
+下一步应由可使用 API 35/x86_64 专用模拟器的 CI/宿主，在提交最终改动后，按该提交 deployments/staging.json 验证同一 APK 的 release、应用提交和 APK SHA-256，执行 compare 模式的三语 rooms 组（至少 advanced_texas 与 advanced_six_plus），并重跑 guest/en、social/en、account/en、texas/en/other、game-effects、panels 及依赖共享选线的业务测试。
+重跑须正常初始化、真实登录和请求、保留正式基准与现有 failOnFlakyTests，记录首次状态和 build-info；若固定 APK 的布局确已改版而不匹配 base，应独立审查该产品/基准变更并同步 base，不能在本复杂度 PR 再次接受新图或降低阈值。
+当前没有最终工作树的新 CI 报告；用户未显式提供 -t/--test，本地完整 make test、npm test 或等价全仓测试未执行，也未运行 make lint 或提交钩子，完整门禁交由宿主和远端 CI；定向成功不等于全仓通过。
+修复、原始证据有效性限制、报告读取失败与权限/资源障碍一并交给独立复审；没有以等待确认替代已授权的仓库内修复。

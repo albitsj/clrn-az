@@ -9,7 +9,7 @@
   },
   "beforeFunctions": 334,
   "beforeOverLimit": 34,
-  "afterFunctions": 468,
+  "afterFunctions": 473,
   "afterOverLimit": 0,
   "reportCommand": "node scripts/android-animation-complexity.mjs --report",
   "beforeMeasurement": "Unmodified HEAD sources copied to an isolated temporary directory; parsed using the same ESLint parser and classic rule, with max:0 only for reporting.",
@@ -138,11 +138,11 @@
   "afterSources": [
     {
       "file": "eslint.config.mjs",
-      "sha256": "c899e64d9db8d7670a4d7d294d0cb08e45f65b87d7ee016dd4bce4190170a5a3"
+      "sha256": "e7211ebf5e0d23223307418d00cdb8645d128e9f47819d955369078b3f8155ce"
     },
     {
       "file": "scripts/android-game-complexity.mjs",
-      "sha256": "bb3877e70b07d54dfe7036d050eebd2616114be2b5aa6c7e33e512197eb6d52e"
+      "sha256": "aa2d0a755bef6ed900b35507e7ec0b1e139b839f64f2392dd9eb2454432f4e6e"
     },
     {
       "file": "android/animation-assets.ts",
@@ -186,11 +186,11 @@
     },
     {
       "file": "android/asset-sequence.test.mjs",
-      "sha256": "45010f511d9f6a3dc07b5ef50c125f689eca2428eb5a450c0b44f7dae784954a"
+      "sha256": "5ccaa6cac634129a3ed0b4f28a47dac35b4415c715a384239133fa514b4ce092"
     },
     {
       "file": "android/asset-sequence.ts",
-      "sha256": "cedd123b97d7cc7ccf5d467d6768957e5c44dcda7bedc426e36156d1002f72fd"
+      "sha256": "6d03d12333fe0bb002a7783126d0cb03ee328d7a309354113934665326f8411e"
     },
     {
       "file": "android/caret-mask.test.mjs",
@@ -277,20 +277,24 @@
       "sha256": "eefe1e287a105574df81c7839c3aa090a15d9f42f94fdbf543d5b71044fe158e"
     },
     {
-      "file": "scripts/android-animation-complexity-fixture.mjs",
-      "sha256": "6910a6e4e8f755aeef1f151245d78caacf575b1075815be0d6a8688343b94937"
-    },
-    {
       "file": "scripts/android-animation-complexity.mjs",
-      "sha256": "b30db28e402b9e0c2a5c44c58a382dd5ed475c49b7e159ed38c22f654d26d127"
+      "sha256": "b48183983230a8e8c9178c8a416041fc6e0ec678742c6fdd3a12825a1a1d15b7"
     },
     {
       "file": "scripts/android-animation-complexity.test.mjs",
-      "sha256": "e69bf9e9de21553ae64279c05c3862ffb7d45a4353940165430350d50407dc31"
+      "sha256": "63ba82ea34c58402a2fbee556f00bd8af99b384f28e65561fcfac847c4368295"
     },
     {
       "file": "scripts/android-animation-scope.mjs",
-      "sha256": "0b32c90f797b310b7b38e8ff58b4b4fe307979242cb05e2a1628f6d44868f057"
+      "sha256": "b6ddaf15af49fa04b92588f568451e5284a0654e7e68aec1b87fa4074c604fca"
+    },
+    {
+      "file": "scripts/android-complexity-fixture.mjs",
+      "sha256": "7e4d14e3e1517a0af50a25fe431136ce89cbb034b5d3bdbbeae008ab8c84366f"
+    },
+    {
+      "file": "scripts/android-complexity-probes.mjs",
+      "sha256": "4f1e33d5913c45f5cf25983421a25c26bebf602bb321bdb5d1c43891d76d518e"
     }
   ],
   "highValueChanges": [
@@ -315,5 +319,7 @@
       "after": 3
     }
   ],
-  "legacyEntriesRemoved": 4
+  "legacyEntriesRemoved": 4,
+  "afterMeasurement": "PR #72 repair worktree based on 332dc53857955a2b0eb98f92cf83498d232f937f; ESLint production scope, parser and classic complexity; remeasured with Node v24.14.0. Original before report and source hashes remain historical.",
+  "afterValidation": "pr72-fix-validation.txt"
 }
