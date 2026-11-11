@@ -36,12 +36,13 @@ export function gamePanelSamplingMethod(game: 'texas-holdem' | 'zhajinhua', name
  * @param masks - 与面板无关的计时器等动态区域。
  * @param afterReady - 面板加载业务数据后再固定终点画面。
  * @param videoPhaseAnchors - 经原生录屏审查的其他有效相位。
+ * @param beforeEndScreenshot - 终点截图前等待独立遮罩，保留末帧完成断言。
  */
 export async function animateGamePanel(device: AndroidDevice, game: 'texas-holdem' | 'zhajinhua', name: string,
   button: string, region: ScreenshotBounds, testInfo?: TestInfo, phase?: 'enter' | 'exit',
   samplingMethod?: SamplingMethod,
   masks?: ScreenshotMask[], afterReady?: () => Promise<void>,
-  videoPhaseAnchors?: string[]): Promise<void> {
+  videoPhaseAnchors?: string[], beforeEndScreenshot?: () => Promise<void>): Promise<void> {
   if (!testInfo) { await gameTap(device, button); return; }
   phase = panelPhase(phase);
   samplingMethod = gamePanelSamplingMethod(game, name, phase, panelSampling(game, samplingMethod));
@@ -59,7 +60,7 @@ export async function animateGamePanel(device: AndroidDevice, game: 'texas-holde
     const press = panelPress(device, target, trace, liveRuleCheck(transition, samplingMethod));
     await captureNativeTransition(device, transition, testInfo, region, press,
       masks, [], 0, samplingMethod, undefined, afterReady, videoPhaseAnchors,
-      [], [], [], undefined, observe);
+      [], [], [], undefined, observe, beforeEndScreenshot);
   } catch (error) {
     await preservePanelFailure(transition, startedAt, testInfo);
     await preserveRuleFailure(device, transition, testInfo);

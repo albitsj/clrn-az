@@ -44,6 +44,29 @@ def ack_frames(message):
         return []
 
 
+def replay_details(message):
+    if not message.injected or not message.is_text or message.from_client:
+        return []
+    frames = [json.loads(line) for line in message.text.splitlines() if line.strip()]
+    return [details for frame in frames if (details := replay_frame_details(frame))]
+
+
+def replay_frame_details(frame):
+    if not isinstance(frame, dict) or 'id' in frame:
+        return None
+    result = frame.get('result')
+    if not isinstance(result, dict) or result.get('type', 0) != 0:
+        return None
+    channel = result.get('channel')
+    if not isinstance(channel, str) or not channel.startswith('zhajinhua>'):
+        return None
+    # 只记录消息数量；不保存频道、用户、房间或回放正文。
+    data = result.get('data')
+    payload = data.get('data') if isinstance(data, dict) else None
+    queue = payload.get('queue') if isinstance(payload, dict) else None
+    return {'messages': len(queue)} if isinstance(queue, list) else None
+
+
 def acknowledged(frame, kind):
     result = frame.get('result')
     if 'error' in frame or not isinstance(result, dict):
@@ -76,6 +99,13 @@ class NetworkSelection:
     def __init__(self):
         self.events = []
         self.total = 0
+
+    def request(self, flow):
+        try:
+            if diagnostic_path(flow.request) == HEALTH_PATH:
+                self.observe(flow, 'request')
+        except Exception:
+            pass
 
     def observe(self, flow, event='response', **details):
         # 复用已有修复的异常隔离，诊断失败不能中断原始响应处理。
@@ -111,6 +141,7 @@ class NetworkSelection:
         if not flow.websocket or urlsplit(flow.request.path).path != '/v2/centrifugo/connection/websocket':
             return
         message = flow.websocket.messages[-1]
+        self.observe_replay(flow, message)
         pending = flow.metadata.setdefault('network_selection_pending', {})
         for frame in ack_frames(message):
             request_id = frame['id']
@@ -123,6 +154,13 @@ class NetworkSelection:
                 kind = pending.pop(request_id, None)
                 if kind and acknowledged(frame, kind):
                     self.observe(flow, 'websocket-ack', kind=kind)
+
+    def observe_replay(self, flow, message):
+        try:
+            for details in replay_details(message):
+                self.observe(flow, 'websocket-replay', **details)
+        except Exception:
+            pass
 
     def snapshot(self):
         return {'total': self.total, 'events': list(self.events)}

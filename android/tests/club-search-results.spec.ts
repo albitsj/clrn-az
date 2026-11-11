@@ -7,6 +7,7 @@ import { dismissKeyboard } from '../keyboard';
 import { selectLanguage, signIn, tap } from '../navigation';
 import { withAndroidProxy } from '../proxy';
 import { captureDeviceFailure, closeDevice } from './support/lifecycle';
+import { preserveAnimationFailure } from '../animation-diagnostics';
 
 type ClubSearchStatus = { active: boolean; searchRequests: number; detailsRequests: number };
 
@@ -15,6 +16,7 @@ test('俱乐部搜索命中固定结果并显示原生卡片', async ({}, testIn
   test.setTimeout(420_000);
   await withAndroidProxy(async proxy => {
     let device: AndroidDevice | undefined;
+    const startedAt = Date.now();
     try {
       device = await launchApplication();
       await waitForHall(device);
@@ -45,6 +47,10 @@ test('俱乐部搜索命中固定结果并显示原生卡片', async ({}, testIn
       const locale = androidLocale();
       await compareScreenshot(device, `${locale}-signed-in-club-search-result`, testInfo);
     } catch (error) {
+      await proxy.command('android/network-selection').then(network => testInfo.attach('network-selection', {
+        body: JSON.stringify(network), contentType: 'application/json',
+      })).catch(() => undefined);
+      await preserveAnimationFailure('club-search-startup', startedAt, testInfo).catch(() => undefined);
       await captureDeviceFailure(device, testInfo);
       throw error;
     } finally {

@@ -14,6 +14,49 @@ def sample(path, body=None, status=200, host=HOST):
 
 
 class NetworkSelectionTests(unittest.TestCase):
+    def test_replay_records_only_injected_message_count_and_preserves_payload(self):
+        recorder = NetworkSelection()
+        payload = {'result': {'channel': 'zhajinhua>secret-room#secret-user',
+                             'data': {'data': {'stream': 'zhajinhua', 'queue': [
+                                 {'event': 'game_status', 'token': 'secret'}]}}}}
+        message = SimpleNamespace(injected=True, is_text=True, from_client=False, text=json.dumps(payload))
+        flow = sample('/v2/centrifugo/connection/websocket?token=secret', status=101)
+        flow.websocket = SimpleNamespace(messages=[message])
+        flow.metadata = {}
+        recorder.websocket_message(flow)
+        self.assertEqual(recorder.events[-1]['event'], 'websocket-replay')
+        self.assertEqual(recorder.events[-1]['messages'], 1)
+        self.assertNotIn('secret', json.dumps(recorder.snapshot()))
+        self.assertEqual(json.loads(message.text), payload)
+        for text in ('invalid-json', 'null', '{"id": 1}', '{"result": []}'):
+            message.text = text
+            recorder.observe_replay(flow, message)
+        message.text = json.dumps(payload)
+        message.injected = False
+        recorder.observe_replay(flow, message)
+        message.injected, message.from_client = True, True
+        recorder.observe_replay(flow, message)
+        self.assertEqual(recorder.total, 1)
+        recorder._observe = lambda *args, **kwargs: (_ for _ in ()).throw(RuntimeError('secret'))
+        message.from_client = False
+        recorder.observe_replay(flow, message)
+        self.assertEqual(recorder.total, 1)
+
+    def test_health_request_keeps_pending_timing_and_isolates_diagnostic_errors(self):
+        recorder = NetworkSelection()
+        flow = sample('/node/v1/status?token=secret')
+        flow.response = None
+        flow.request.timestamp_start = 123.5
+        recorder.request(flow)
+        self.assertEqual(recorder.events[-1]['event'], 'request')
+        self.assertEqual(recorder.events[-1]['requestAt'], 123500)
+        self.assertNotIn('status', recorder.events[-1])
+        self.assertNotIn('secret', json.dumps(recorder.snapshot()))
+        recorder.request(sample('/unrelated'))
+        recorder.request(SimpleNamespace(request=None))
+        self.assertEqual(recorder.total, 1)
+        self.assertIsNone(flow.response)
+
     def test_wallet_reads_record_contract_without_identity_balance_or_credentials(self):
         recorder = NetworkSelection()
         body = {'ok': True, 'result': {'currencies': [
