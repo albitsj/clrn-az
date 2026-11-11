@@ -125,8 +125,11 @@ APK 与构建信息继续发布到 **kevinanew/clrn 的公开 Release**，下载
 `2d714b4761fd99136184603bfcaa6ed01240e186`，SHA-256 为
 `fc69e10954f4703245cebb1c792b221d0f4e68591a28b01f7e537b36f7d73377`。
 该提交包含删除实时音视频的 [应用 PR #7093](https://github.com/kevinanew/laiwan_react_native/pull/7093)。
-已逐图确认英语、简体、繁体的 `signed-in-create-room-advanced-texas` 和
-`signed-in-create-room-advanced-six-plus` 六张旧基准均含视频开关，需要重新采集。
+已替换英语、简体、繁体的 `signed-in-create-room-advanced-texas` 和
+`signed-in-create-room-advanced-six-plus` 六张旧基准。新图均为本轮 x86_64 原生采集的
+完整 `720×1280` PNG，直接取自通过用例的同名截图附件，未裁切、拼接或重编码。
+逐图确认视频行消失；滚动到底后顶部露出原有的猜手牌选项，四项文本/语音开关、
+时长滑块、红色提示、资产和开局按钮均完整可见，未混入初始化、键盘或过渡画面。
 `parity.spec.ts` 在这六个场景截图前检查视频开关消失，并检查四项文本/语音开关、
 对应标题、回合时长标题及页尾提示完整位于导航栏和系统手势条之间。
 继续使用整屏截图、原有稳定性等待、滚动到底逻辑、遮罩与 0.5% 像素容差。
@@ -138,13 +141,27 @@ APK 与构建信息继续发布到 **kevinanew/clrn 的公开 Release**，下载
 核对房号归一化不会改写其他字段；旧值只用于透传回归，不代表真实启用视频。
 
 三语言建房定向 [reference 43009122979](https://github.com/albitsj/clrn-az/actions/runs/43009122979)
-仅选择 `signed_in_create_room`；三语言牌桌定向
+仅选择 `signed_in_create_room`，21 个用例全部首次通过，无 flaky、失败或跳过。
+同轮三语言 `build-info.json` 均与上述固定 APK 的完整提交和 SHA-256 一致。
+除六张目标图外，12 张普通表单/拼三张高级设置图的 RGBA 像素完全相同；
+玩法选择器的英文、简体、繁体分别只有 2024、1279、1803 个像素不同，均低于
+整屏 4608 像素的原有 0.5% 门槛，保留这 15 张原基准。
+
+| 新基准 | SHA-256 |
+| --- | --- |
+| `en-signed-in-create-room-advanced-texas.png` | `e4d8ca39f18008c45d550987b496500ec9e5cfe45267dfcc1f9cca2e1c2fc5a7` |
+| `en-signed-in-create-room-advanced-six-plus.png` | `53f0b460ce944ea08177e62653f1bd6d24a706ebafb7bb2b65c1a70a60e337cd` |
+| `zh-Hans-signed-in-create-room-advanced-texas.png` | `091ad1ccbdc4bd99850bee46970f50682eaeb0b75d67651e341fec76cb3df295` |
+| `zh-Hans-signed-in-create-room-advanced-six-plus.png` | `39465f9c568c521be703463adccf2c2201d22da8117a4449bd67beb0b9353038` |
+| `zh-Hant-signed-in-create-room-advanced-texas.png` | `ce9fb0ac81f13be4f491e54693a32f67a205b9ef03f6c8844852cbe59802b8af` |
+| `zh-Hant-signed-in-create-room-advanced-six-plus.png` | `d4f55af94da04cc7108fe022da3b3e93821c94e7e1f69dc7d86e46c0eda846a6` |
+
+三语言牌桌定向
 [compare 43011621623](https://github.com/albitsj/clrn-az/actions/runs/43011621623)
 仅选择 `signed_in_texas_(pre_game(_(first|middle|second))?|panels|panel_variants)$`。
 牌桌比较使用临时 CI 分支 `ci/issue-79-targeted-rtc`（`415ebce`），仅从调度矩阵去掉
 与该正则无交集的三个英文分片；保留八个相关分片，测试、截图及比较代码均与 master 相同。
-两轮尚在等待 CI runner，未取得新图，六张正式基准尚未替换；不能将排队状态视为验收通过。
-接收候选图后仍须在包含新基准的提交上另跑三语言建房 compare。
+牌桌比较尚在执行；包含六张新基准与控件检查的三语言建房 compare 待运行。
 
 应用修复集中在 [laiwan_react_native #7019](https://github.com/kevinanew/laiwan_react_native/pull/7019)，基准扩充及验证记录见 [clrn #25](https://github.com/kevinanew/clrn/pull/25)，其中注明测试提交、APK Release 和 CI 运行。未执行或失败的用例不计入通过数量。
 
