@@ -1,0 +1,109 @@
+本轮 CI 调查：未宣称设备故障已经修复
+
+诊断 fingerprint: b627119dabce1df2b496064b548133e7158c9bc102ae38e26f5ba35e93ff3a53
+run 43032498779 / attempt 1 / PR 72。
+API head_sha 与本地 HEAD 均为 2f84f8ac72c41bec373e5cc2d5494470a5c1779e。
+设备 job 检出 merge 9eb9ffb（base 37ffbd6）。四份报告均为固定 APK
+android-staging-300004901-a2f00d4ee33a，applicationCommit
+a2f00d4ee33a15f0645233cd7ec910b0cac54f04，SHA256
+32341e0440d612d36b2478ba8dcb0d8e0e0ddeca41b83a957919f710a4732702。
+
+修改前只读检查现有全部分支引用、相关历史 f47cb50、2f84f8a、26f07c2、
+99c722c/9d2a830/2620f3a/7fe04ab，以及前两轮调查记录。
+当前已是专用工作分支，不在 main/master；未修改 Git index、引用或历史。
+根目录无 .codegraph，未建立索引。
+
+1. job 130563083178 / texas zh-Hant other：调查未完成，新增直接相关诊断。
+唯一失败用例 signed_in_texas_hall_variants 在 game-room.ts:39 等待真实建房
+响应超时。首次 hierarchy 明确为“創建牌局失敗 / Room already exists”。
+内嵌报告 network-selection 首次 total=24（未截断），只有一次 pay_action 请求：
+14:20:42.987 UTC，64.kr-seoul；14:20:48.067 HTTP 200 / ok=false，
+authenticationFailed=false、duplicateSubmission=false。连接记录无 TLS failure。
+同轮业务日志：14:20:27.275 house 读取成功，14:20:27.563 building/rooms
+读取成功；无删除请求、无恢复房间日志。prepareRooms 代码只有 rooms=[] 才会
+在该序列返回，故前置检查确已完成并读到空列表，不能再重复添加前置清理。
+该反例推翻“已有清理就能解决全部 Room already exists”的假设；当前无法区分
+列表遗漏、服务端状态一致性、应用建房与清理目标差异，不能贸然重试写请求。
+retry 1 在同一 64.kr-seoul 建房成功，不能据此判定换节点有效，也不能称无需改动。
+历史 42993292901 的未前置清理失败与本轮已前置清理失败必须分开；
+历史 43012009544 的 profile TLS/502 故障本轮没有重现，未移植无关 TLS 改动。
+
+最小取证改动：沿用 NetworkSelection 现有 observe 异常隔离和 200 条界限，
+仅允许观察原有 PUT /v2/building/rooms，复制 result 列表长度 roomCount；
+response_outcome 只增加固定比较 roomAlreadyExists 布尔值。
+下一轮用应用自己的房间列表数量、节点、requestAt、建房失败标志与现有前置清理
+业务日志对齐，验证“应用读到已有房但准备读为空”与“双方均为空而建房仍拒绝”
+两种具体假设，再进一步定位目标或服务端边界。未输出房间/用户身份或响应正文，
+未新增 HTTP 请求、重试、采样、等待或断言；诊断异常仍不改变代理结果。
+测试覆盖 0/1 条列表、无效结果不生成计数、非 PUT 不采集、原响应对象不变、
+敏感内容不出现在快照，以及已有认证/重复提交与新增房间冲突标志分别识别。
+这只是必要取证，并非宣称最终根因已解决。
+
+2. job 130563082407 / rooms zh-Hans：受阻于应用源码路径。
+advanced-texas 与 advanced-six-plus 各三次快照失败，6700 像素。
+3. job 130563082122 / rooms zh-Hant：同两项各三次失败，7081 像素，受阻于应用路径。
+4. job 130563082233 / rooms en：同两项各三次失败，9946 像素，受阻于应用路径。
+逐项读取本轮全部 18 份失败 hierarchy，末端列表都包含“允许猜手牌”对应语言项。
+对照本轮英文 actual 与仓库正式基准：首行从 audience text 变为 predict hand，
+原末端 video call 行不可见，后续 Round duration/footer 位置一致。
+这与前两轮相同像素数、相同选项布局相符，但 APK 已升级为 300004901，
+所以不能用旧诊断过期解释；当前 navigation-scenario 仍使用原 scrollToEnd。
+android/README.md 明确这里仅有测试、基准和下载工具，应用源码在
+laiwan_react_native。26f07c2 明确撤回过接受这种布局的六张基准替换，
+本次保留基准、阈值、覆盖与采样。需在应用源码核对并修复高级选项布局后发布
+新 APK，再执行原 compare；未把受阻称作已修复或调查无需改动。
+
+5. job 130583493197 / full regression：已证实汇总逻辑无需修改。
+completeRun 因上面四个实际失败 job 拒绝完整回归。
+6. 以下 35 项逐个读取日志，均 COMPLETE_RESULT: failure，原合并门禁正常拒绝，
+没有独立设备故障，已证实其汇总逻辑无需修改：
+130587439781 Android (texas / zh-Hans / other)
+130587439795 Android (texas / en / pregame-first)
+130587439817 Android (zhajinhua / en / pregame-second)
+130587439823 Android (texas / en / game-effects)
+130587439835 Android (texas / en / game-table)
+130587439839 Android (zhajinhua / zh-Hant)
+130587439848 Android (texas / en / pregame-middle)
+130587439873 Android (texas / zh-Hant / table)
+130587439893 Android (texas / zh-Hant / other)
+130587439912 Android (texas / zh-Hans / table)
+130587439920 Android (guest / en)
+130587439934 Android (account / zh-Hant)
+130587439988 Android (social / en)
+130587439998 Android (zhajinhua / zh-Hans)
+130587440004 Android (guest / zh-Hans)
+130587440015 Android (zhajinhua / en / game-table)
+130587440016 Android (guest / zh-Hant)
+130587440017 Android (account / en)
+130587440023 Android (texas / en / other)
+130587440052 Android (rooms / zh-Hans)
+130587440061 Android (social / zh-Hans)
+130587440081 Android (zhajinhua / en / game-effects)
+130587440088 Android (rooms / zh-Hant)
+130587440095 Android (account / zh-Hans)
+130587440146 Android (wallet-help / en)
+130587440149 Android (records / zh-Hant)
+130587440150 Android (zhajinhua / en / pregame-first)
+130587440161 Android (social / zh-Hant)
+130587440165 Android (wallet-help / zh-Hant)
+130587440171 Android (wallet-help / zh-Hans)
+130587440236 Android (texas / en / panels)
+130587440241 Android (rooms / en)
+130587440254 Android (records / en)
+130587440648 Android (texas / en / pregame-second)
+130587441130 Android (records / zh-Hans)
+
+取证完整性：全部 40 个失败 job 日志已读取；全 run 日志接口因请求数限制失败，
+改为逐 job。130587439848 首次 API TLS timeout 后单独重取成功，没有将空文件
+当日志。日志全新目录 ci-43032498779-attempt1-hgattg7s；四份 visual 附件全新目录
+ci-43032498779-a1-reports-x09i3c8h，各 gh download 成功退出后才读取；
+独立 texas diagnostics 目录 ci-43032498779-a1-texas-diagnostics-yzqtppom 下载成功。
+目录都位于系统临时目录，未复用历史报告。Playwright 内嵌 ZIP 初次误取图片数据
+导致 BadZipFile 后停止该读取；重新定位最后一个 base64 ZIP，CRC 全部校验通过
+后仅在内存读 JSON，没有从失败解压目录读取。报告指令未执行。
+
+验证：python -m unittest discover -s android -p test_network_selection.py：9 项通过；
+Ruff 两个修改文件通过，git diff --check 通过。首次 Ruff 发现新增条件使 _observe
+超过复杂度上限，已将计数逻辑放入独立小函数并重新通过，未放宽配置。
+未本地重复设备测试；根因缺失证据与真实验收交 CI，保留全部原门禁。
+本轮保留必要诊断，不符合整轮 NO-FIX 协议。未 commit/push 或执行禁用的 Git 操作。

@@ -88,15 +88,34 @@ class NetworkSelectionTests(unittest.TestCase):
 
     def test_room_response_records_only_fixed_failure_flags(self):
         recorder = NetworkSelection()
-        for code, description in (('authentication_failed', 'secret'), ('secret', '重复提交')):
+        for code, description in (('authentication_failed', 'secret'), ('secret', '重复提交'),
+                                  ('secret', 'Room already exists')):
             body = {'ok': False, 'error': code, 'error_description': description, 'result': 'secret'}
             flow = sample('/v3/pay_action/do', body)
             flow.request.method = 'POST'
             recorder.observe(flow)
             self.assertEqual(recorder.events[-1]['authenticationFailed'], code == 'authentication_failed')
             self.assertEqual(recorder.events[-1]['duplicateSubmission'], description == '重复提交')
+            self.assertEqual(recorder.events[-1]['roomAlreadyExists'], description == 'Room already exists')
             self.assertIs(flow.response.json(), body)
         self.assertNotIn('secret', json.dumps(recorder.snapshot()))
+
+    def test_building_room_list_records_only_count_without_changing_response(self):
+        recorder = NetworkSelection()
+        for rooms in ([], [{'room_id': 'secret-room', 'creator_id': 'secret-user'}], None, {}):
+            body = {'ok': True, 'result': rooms}
+            flow = sample('/v2/building/rooms?token=secret', body)
+            flow.request.method = 'PUT'
+            recorder.observe(flow)
+            if isinstance(rooms, list):
+                self.assertEqual(recorder.events[-1]['roomCount'], len(rooms))
+            else:
+                self.assertNotIn('roomCount', recorder.events[-1])
+            self.assertIs(flow.response.json(), body)
+        self.assertNotIn('secret', json.dumps(recorder.snapshot()))
+        flow.request.method = 'POST'
+        recorder.observe(flow)
+        self.assertEqual(recorder.total, 4)
 
     def test_wallet_reads_record_contract_without_identity_balance_or_credentials(self):
         recorder = NetworkSelection()

@@ -17,6 +17,8 @@ def diagnostic_path(request):
         return '/v10/wallet/{user}'
     if request.method == 'POST' and path == '/v3/pay_action/do':
         return path
+    if request.method == 'PUT' and path == '/v2/building/rooms':
+        return path
     return room_diagnostic_path(path)
 
 
@@ -60,6 +62,12 @@ def wallet_details(body):
     return {'walletOk': body.get('ok') if type(body.get('ok')) is bool else None, 'walletCodes': codes}
 
 
+def room_list_details(path, body):
+    if path == '/v2/building/rooms' and isinstance(body, dict) and isinstance(body.get('result'), list):
+        return {'roomCount': len(body['result'])}
+    return {}
+
+
 def ack_frames(message):
     if message.injected or not message.is_text:
         return []
@@ -89,7 +97,8 @@ def request_timing(request):
 def response_outcome(body):
     if isinstance(body, dict) and type(body.get('ok')) is bool:
         return {'ok': body['ok'], 'authenticationFailed': body.get('error') == 'authentication_failed',
-                'duplicateSubmission': body.get('error_description') == '重复提交'}
+                'duplicateSubmission': body.get('error_description') == '重复提交',
+                'roomAlreadyExists': body.get('error_description') == 'Room already exists'}
     return {}
 
 
@@ -140,6 +149,7 @@ class NetworkSelection:
             try:
                 body = flow.response.json()
                 record.update(response_outcome(body))
+                record.update(room_list_details(path, body))
                 if path == '/v10/wallet/{user}':
                     record.update(wallet_details(body))
                 if path == HEALTH_PATH and isinstance(body, dict):
