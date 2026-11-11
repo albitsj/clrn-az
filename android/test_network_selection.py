@@ -17,7 +17,7 @@ class NetworkSelectionTests(unittest.TestCase):
     def test_pre_http_diagnostics_are_bounded_private_and_read_only(self):
         recorder = NetworkSelection()
         server = SimpleNamespace(address=(HOST, 443), error='secret error')
-        data = SimpleNamespace(context=SimpleNamespace(server=server), ssl_conn='secret tls')
+        data = SimpleNamespace(context=SimpleNamespace(server=server, client=server), ssl_conn='secret tls')
         for _ in range(201):
             recorder.connection(HOST, 'connect')
         recorder.tls_failure(data, 'tls-client-failed')
@@ -35,6 +35,23 @@ class NetworkSelectionTests(unittest.TestCase):
         self.assertNotIn('secret', json.dumps(state))
         self.assertEqual(server.error, 'secret error')
         self.assertEqual(data.ssl_conn, 'secret tls')
+
+    def test_tls_failure_copies_only_classification_from_the_failed_peer(self):
+        recorder = NetworkSelection()
+        server = SimpleNamespace(address=(HOST, 443), error='secret server timeout')
+        client = SimpleNamespace(error='secret client certificate unknown ca')
+        data = SimpleNamespace(context=SimpleNamespace(server=server, client=client))
+        recorder.tls_failure(data, 'tls-client-failed')
+        recorder.tls_failure(data, 'tls-server-failed')
+        self.assertEqual([item['failureKind'] for item in recorder.connections], ['certificate', 'timeout'])
+        for message, expected in (('secret EOF', 'closed'), ('secret cancelled', 'cancelled'),
+                                  ('secret protocol version', 'protocol'), ('secret', 'other'), (None, 'other')):
+            client.error = message
+            recorder.tls_failure(data, 'tls-client-failed')
+            self.assertEqual(recorder.connections[-1]['failureKind'], expected)
+        self.assertNotIn('secret', json.dumps(recorder.snapshot()))
+        recorder.tls_failure(SimpleNamespace(), 'tls-client-failed')
+        self.assertEqual(recorder.connection_total, 7)
 
     def test_health_request_and_transport_failure_preserve_flow_and_hide_error(self):
         recorder = NetworkSelection()

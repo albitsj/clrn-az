@@ -75,14 +75,17 @@ class NetworkSelection:
         self.connections = []
         self.connection_total = 0
 
-    def connection(self, host, event):
+    def connection(self, host, event, failure_kind=None):
         # 启动首败可能没有 HTTP flow；独立保留 CONNECT/TLS 阶段，不挤掉请求历史。
         try:
             if event not in ('connect', 'tls-client-failed', 'tls-server-failed'):
                 return
             if not staging(host):
                 return
-            self.connections.append({'at': round(time.time() * 1000), 'host': host, 'event': event})
+            record = {'at': round(time.time() * 1000), 'host': host, 'event': event}
+            if failure_kind is not None:
+                record['failureKind'] = failure_kind
+            self.connections.append(record)
             self.connection_total += 1
             del self.connections[:-200]
         except Exception:
@@ -90,7 +93,13 @@ class NetworkSelection:
 
     def tls_failure(self, data, event):
         try:
-            self.connection(data.context.server.address[0], event)
+            peer = data.context.client if event == 'tls-client-failed' else data.context.server
+            message = str(getattr(peer, 'error', '') or '').lower()
+            kind = next((kind for kind, pattern in (
+                ('certificate', r'certificate|unknown ca|unknown_ca'), ('timeout', r'timeout|timed out'),
+                ('closed', r'closed|eof|disconnect|reset'), ('cancelled', r'cancel'),
+                ('protocol', r'protocol|cipher|version')) if re.search(pattern, message)), 'other')
+            self.connection(data.context.server.address[0], event, kind)
         except Exception:
             pass
 

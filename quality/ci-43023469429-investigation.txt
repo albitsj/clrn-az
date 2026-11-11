@@ -1,0 +1,50 @@
+Diagnostic: 6f2d50c8bb4eee63b7c5a20473085287f2ef5874a018ea60b50b685299f05424
+Run 43023469429, attempt 1, PR HEAD 01b6ffff30b9520c9296622dba8bb1efe812d004.
+Job 130535469020 checked out PR merge 0a747690d4fa54a3c9e53f0b6d5c46d536f71da6
+(the checkout log explicitly names HEAD 01b6ffff and base 37ffbd6f).
+Run API identity and failed job IDs were verified before reading remote logs.
+Artifacts were downloaded successfully into a fresh run/attempt/HEAD-specific
+/tmp directory; the embedded report ZIP passed its integrity check before reading.
+
+Independent failure: Android remaining (guest / en), job 130535469020
+- network-64-unavailable fails at waitForNetworkSelection: 68 must receive 503.
+- Report network-selection attachment: 64 health response 503 at 1794403573175;
+  67 health response 200/backend_delay 96 at 1794403573647; metadata contains
+  64/67/68 at 1794403574010; 67 WebSocket connects and receives connect ACK.
+- 68 CONNECT at 1794403573209, tls-client-failed at 1794403573714, no HTTP
+  request/response. The request-stage fault injector cannot return its 503 before
+  a client HTTP request exists. The attachment has 17 events, below its 200 cap:
+  this is not evidence evicted from the bounded HTTP history.
+- Exact TLS cause is still unknown: certificate rejection, cancellation/closure,
+  timeout and protocol failure cannot be distinguished by the current event name.
+  The device runtime and rotated diagnostic logs do not retain this failure's
+  detailed TLS window. Later Chromium TLS errors belong to later tests and cannot
+  establish this cause.
+- Counterexample: network-without-64 in the same run sends an HTTP health request
+  to 68. A permanent 68 routing failure or permanently absent proxy trust is not
+  established. The successful 67 connection does not prove all fault injections ran.
+- Prior 1507e04/b77e67a wait for the complete event predicate and are retained.
+  Increasing that wait cannot reconstruct a failed pre-HTTP handshake. Existing
+  9d2a830 CONNECT/TLS observations are reused; their missing classification is
+  extended rather than replacing the recorder. Historical 43003004799 slot motion
+  and room-delete HTTP 500 failures do not occur as independent failures here.
+- Change: classify the failed TLS peer's error into fixed labels only, on the
+  existing TLS failure callback. Never copy error text, SSL objects or credentials.
+  Keep bounded history and best-effort exception isolation. No request, sampling,
+  timeout, assertion, retry, snapshot, test selection or merge gate is changed.
+- Status: diagnostic gap addressed; actual TLS/root-cause repair awaits the next
+  unchanged CI run's network-selection attachment. This is not a completed fix
+  or a claim that the failed test needs no change.
+
+Dependent failure: Android full regression, job 130558342249
+- complete command receives remaining.result=failure and throws the existing
+  full-regression error. This gate correctly rejects the independent failure.
+- Android (...) compatibility gates reject COMPLETE_RESULT=failure; retain them.
+
+Validation
+- PYTHONPATH=android python3 -m unittest android/test_network_selection.py: 9 pass.
+  Tests cover failed peer selection, fixed classifications, credential exclusion,
+  missing diagnostic data, read-only behavior and bounded history.
+- Ruff on both changed Python files, Python line limits and git diff --check pass.
+- No local Android rerun; CI must run its original complete coverage and gates.
+- No Git index, branch reference or history changes; no commit or push.
