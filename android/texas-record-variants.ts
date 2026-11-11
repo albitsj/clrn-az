@@ -40,9 +40,30 @@ export async function texasOptionalPreGame(context: TexasContext): Promise<void>
   await gameTap(device, 'texas-holdem-raise-blind-button');
   await gameReady(device, 'raise-blind-detail');
   await gameGone(device, 'raise-blind-loading');
-  await expect.poll(async () => (await gameNodes(device)).some(node => node.text?.includes('1/2')),
-    { timeout: 30_000 }).toBe(true);
+  await waitForBlindRows(context);
   await capture('raise_blinds');
   await gameTap(device, 'raise-blind-close-button');
   await gameGone(device, 'raise-blind-detail');
+}
+
+/** 只记录原有轮询读取的状态，区分空列表与加载重现；不增加读取或改变断言。
+ * @param context - 原生连接和本次报告。
+ */
+async function waitForBlindRows(context: TexasContext): Promise<void> {
+  const samples: { at: number; loading: boolean; detail: boolean; hasExpectedRow: boolean }[] = [];
+  try {
+    await expect.poll(async () => {
+      const nodes = await gameNodes(context.device);
+      const hasExpectedRow = nodes.some(node => node.text?.includes('1/2'));
+      samples.push({ at: Date.now(), loading: nodes.some(node => node.res === 'raise-blind-loading'),
+        detail: nodes.some(node => node.res === 'raise-blind-detail'), hasExpectedRow });
+      return hasExpectedRow;
+    }, { timeout: 30_000 }).toBe(true);
+  } finally {
+    try {
+      await context.diagnosticsInfo?.attach('raise-blind-readiness', {
+        body: JSON.stringify(samples), contentType: 'application/json',
+      });
+    } catch { /* 诊断写入失败不得覆盖原始异常或改变成功结果。 */ }
+  }
 }

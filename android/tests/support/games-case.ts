@@ -97,7 +97,7 @@ async function runTexasCase(context: Context, self: string, capture: Capture): P
   const { device, proxy, room, scenario, part, locale, testInfo } = context;
   if (scenario.pageLabel === 'signed_in_texas_pre_game') await runPreGame(context, capture, ['first', 'middle', 'second']);
   else await runTexasScenario(scenario.pageLabel, { device, proxy, room: room.value!.roomId, self, capture,
-    animationInfo: animationReport(gameAnimation(scenario, locale), testInfo) }, texasPhase(part));
+    animationInfo: animationReport(gameAnimation(scenario, locale), testInfo), diagnosticsInfo: testInfo }, texasPhase(part));
 }
 
 /** 拼三张开局与牌桌阶段沿用各自的原有入口。

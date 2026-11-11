@@ -1,0 +1,154 @@
+本轮 CI 调查与最小修复（真实设备 compare 待 CI）
+
+诊断 fingerprint: 267309926842c90552294fd32c46ee6f0d1bb94112f5481ca390559ac63c6b18
+run 43053721801 / attempt 1 / PR 72；API head_sha 与本地 HEAD 均为
+b4772ea5456f7296b5fd169b9253150e1ad98efb。设备 checkout merge 为 b626ebb。
+APK android-staging-300005201-01a395a72b11，applicationCommit
+01a395a72b11871f63752fbbada40a9b9eb81359；下载包内 APK 实际 SHA256 与
+build-info 一致：0e0c57736fad47160be9a85615b14686393ee7fe0123ff5166ca512472fe90af。
+
+修改前只读检查所有现有分支及相关历史 b4772ea、2f84f8a、f47cb50、26f07c2，
+4504a0d、239e05d、d61365e、f666940。根目录无 .codegraph，未创建索引。
+工作区起始干净，当前是 kevinanew/android-js-ts-3-6-2 专用分支，未变更分支、
+index 或历史；未 commit/push，也未执行用户禁止的 Git 操作。
+
+1. 130637758424 texas / zh-Hans / other：修复申请面板就绪竞态，待 CI 验收。
+唯一 flaky 为 signed_in_texas_panel_variants，首次 pending/resolved/more 各差
+5141 像素，retry 1 通过但 failOnFlakyTests 正确拒绝。逐项核对图片、原始树及
+masks：三张首败均缺网络遮罩，重试具有 x610 y146 w100 h48 的既有网络遮罩。
+pending 的 diff 位于 ping 和代理码动态区，没有申请内容差异。使用本轮原始
+PNG、原有生产 maskScreenshot/samePixels、原有正式基准离线对照：原 masks
+失败，补回同一既有 ping mask 后通过；这只是支持证据，不能代替真实设备验收。
+已有 stablePanels 只为英文 hall-table/menu 等待 ping，申请面板可能在网络控件
+暂缺的树上完成布局稳定检查，后续截图时网络区却已显示。复用该就绪机制，仅为
+本轮三张 zh-Hans applications 截图要求同一树同时包含 ping 与稳定前景。
+不扩大遮罩、修改阈值或基准。新增三条树序列回归（暂缺 ping、前景先稳定、ping
+稍后出现）验证比较只能在取得原有网络遮罩后开始。历史 f666940 的自动带入和
+当前 hall-table 修复具有相同机制；没有盲目覆盖其他未失败场景。
+
+2. 130637756944 zhajinhua / zh-Hans：复用连续采样修复，待 CI 验收。
+signed_in_zhajinhua_game 首次与 retry 1 均在四个玩家相位匹配失败，累计 matched
+分别为 [false,true,false,false]、[true,false,true,false]，retry 2 通过仍为失败。
+本轮报告原有截图 step：首败与 retry 1 各 15 帧，截图开始约相隔 1.8–2.3 秒，
+单次截图约 0.65–1.06 秒；原循环在 PNG 截图、切区及像素比较之后才请求下一帧。
+匹配缺失玩家不固定，且最后失败帧不足以区分所有中间相位，不能以单次成功排除
+真实像素回归。已有 4504a0d/239e05d/d61365e 专门修复相同的稀疏闪烁采样问题，
+但不在当前分支。仅复用 game-animation 与 challengeFrames 边界及其回归输入：
+设备连续保存真实位图后编码；四秒观察及两秒背景稳定依据实际单调设备时间戳，
+首帧延迟不会耗尽观察窗；保留每位玩家原始匹配帧、四位运动和全背景像素断言。
+不复制这些提交中的聊天、资产动画、房间入口或其他无关修改。
+原生 challengeFrames 独立上限 110 帧、45ms 间隔、首帧后 4600ms；普通
+motionFrames 仍是 20 帧/3200ms。60 秒响应和 120 秒外层预算来自已存在修复，
+只容纳连续帧编码与严格比较，未增加测试重试或改变被测应用时钟。
+驱动 patch 7→8，下载/缓存/加载校验同步保持严格；cache key 仍含构建脚本摘要。
+采样时间戳附件失败被隔离；失败截图附件失败也不能覆盖原始异常。
+复用历史真实失败帧的 7 条生产入口回归，覆盖持续漏相位、静止伪动画、头像
+像素损坏、背景损坏、观察窗不足、乱序设备时间戳。临时 Java 模拟直接执行本轮
+生产 case，首帧延迟 0/700/1500ms 均保留四秒观察、帧上限、时间戳与位图回收，
+普通命令边界不变。当前 CI 仍需验证新 APK；若反例重现，用完整设备时间戳和
+既有失败附件继续调查，不能视作已最终证明没有视觉回归。
+
+3. 130637758410 texas / en / pregame-second：调查未完成，新增直接相关诊断。
+唯一 flaky 为 signed_in_texas_optional_pre_game，在 texas-record-variants.ts
+等待可见文本 1/2 超时。首次 last-screen 与 hierarchy 均为 Raise Blind Detail
+标题与列头，内容为空；retry 1 有内容并通过。这与只漏掉文本节点不同，不能
+通过延时、放宽断言或重开面板接受。原有 loading 消失断言早于持续行就绪轮询，
+现有记录缺少轮询期间 loading 是否重现的状态，无法区分“瞬时无 loading 后
+又加载”与“一直无 loading、数据或渲染缺失”。APK ZIP 及 Hermes bundle 已
+读取，确认存在 raise-blind-loading 和 RaiseBlindRules 等入口；当前 API 对
+应用源码仓库返回 404，无法凭符号名推断完整数据协议。
+仅将原有每次 gameNodes 结果中的时间、loading/detail 是否存在、原有 1/2
+谓词结果存入 raise-blind-readiness 附件；不增加读取、改变 timeout/intervals、
+采样或断言，不记录文本/身份。成功和失败均保留同种证据以检验上述明确假设，
+附件故障不能覆盖异常或改变结果。3 条回归验证空列表原始失败、失败时附件
+不可写、成功时附件不可写，以及只执行原来的那一次设备读取。
+下一轮 CI 如重现，依据该时序与既有 network-selection/窗口日志定位；当前
+不能宣称这一项已修复或无需修改。
+
+4. 130637756854 texas / en / other：受阻于真实清理请求传输故障，未放行。
+唯一 flaky signed_in_texas_controls 实际截图流程成功，首败发生于 fixture
+清理 deletePrivateGameRoom：16:20:52.515，67.hk-sn，DELETE /v1/room/:roomId，
+kind=network，attempts=1；retry 1 成功。失败不在控件采样/用例正文，不修改
+无关控件。network/staging.ts 已明确 DELETE 可能触发结算退款，replay=never；
+不能因网络响应丢失盲目再次删除，也不能吞掉清理失败。现有本账号前置准备
+仍保留，不能用它替代本次清理成功断言。现有结构化日志已证实请求传输失败，
+但不证明具体上游故障位置；需 67 节点同时间请求/连接日志判别服务执行状态。
+本仓不具备这些服务端证据，未将 retry 通过作为无需修复依据。
+
+5. 130637758531 guest / zh-Hant：受阻于账号准备 get-or-create 超时，未放行。
+设备用例尚未开始；16:23:32.443，67.hk-sn，PUT /v10/house/user/:userId，
+kind=timeout、attempts=1，准备测试私人房间失败。这个接口虽使用 PUT，现有
+已审查策略明确会 get-or-create，replay=never。没有证据说明只读或幂等，不能
+重放写请求或删除准备步骤。与上项同一节点但不同时间/接口，不能仅据此证明
+两者同一服务端根因；需上游执行状态和请求日志。本次未更改该策略或门禁。
+
+6. 130637756582 rooms / zh-Hans：受阻于应用源码路径。
+advanced_texas 与 advanced_six_plus 各三次失败，差异各 6700 像素。
+7. 130637756442 rooms / zh-Hant：同两项各三次失败，各 7081 像素，应用路径受阻。
+8. 130637756308 rooms / en：同两项各三次失败，各 9946 像素，应用路径受阻。
+逐项读取本轮 18 份 hierarchy 和相应截图/错误。三语列表首行均为允许猜手牌，
+与正式基准首行观众文字、末行视频通话的布局不同，底部时长控件及 footer 相同。
+英文两图及正式基准已目视核对，中文附件逐项核对同一选项。差异数量与历史
+43032498779 一致，但 APK 已更新至 300005201，因此不是过期诊断。
+本仓 android/README.md 明确应用源码属于 laiwan_react_native；本仓只存测试、
+基准和下载器。26f07c2 已明确撤回替换这六张基准的做法。本轮保留基准和
+scrollToEnd，不用替换图片或改变滚动接受应用布局变化。需要在获授权的应用
+源码路径修复并发布 APK，然后用原三语言 compare 验收。
+
+9. 130663760115 Android full regression：已证实汇总逻辑无需修改。
+因上述 8 个实际失败 job 拒绝完整回归，错误为当前提交的 Android 完整回归未通过。
+以下 35 个 job 各自完整读取，均仅检查 COMPLETE_RESULT=failure，已证实其
+门禁逻辑无需修改，无独立设备失败。保留所有汇总与 failOnFlakyTests 门禁：
+130669260268 Android (texas / zh-Hans / table)：完整回归门禁连带失败，无独立设备执行或修复点。
+130669260306 Android (texas / zh-Hans / other)：完整回归门禁连带失败，无独立设备执行或修复点。
+130669260309 Android (zhajinhua / en / pregame-second)：完整回归门禁连带失败，无独立设备执行或修复点。
+130669260312 Android (texas / en / pregame-first)：完整回归门禁连带失败，无独立设备执行或修复点。
+130669260338 Android (texas / en / other)：完整回归门禁连带失败，无独立设备执行或修复点。
+130669260350 Android (texas / en / game-table)：完整回归门禁连带失败，无独立设备执行或修复点。
+130669260358 Android (texas / en / pregame-middle)：完整回归门禁连带失败，无独立设备执行或修复点。
+130669260363 Android (texas / en / game-effects)：完整回归门禁连带失败，无独立设备执行或修复点。
+130669260364 Android (texas / zh-Hant / table)：完整回归门禁连带失败，无独立设备执行或修复点。
+130669260367 Android (zhajinhua / zh-Hant)：完整回归门禁连带失败，无独立设备执行或修复点。
+130669260370 Android (zhajinhua / zh-Hans)：完整回归门禁连带失败，无独立设备执行或修复点。
+130669260382 Android (texas / zh-Hant / other)：完整回归门禁连带失败，无独立设备执行或修复点。
+130669260403 Android (texas / en / panels)：完整回归门禁连带失败，无独立设备执行或修复点。
+130669260406 Android (zhajinhua / en / game-table)：完整回归门禁连带失败，无独立设备执行或修复点。
+130669260407 Android (zhajinhua / en / game-effects)：完整回归门禁连带失败，无独立设备执行或修复点。
+130669260415 Android (guest / en)：完整回归门禁连带失败，无独立设备执行或修复点。
+130669260422 Android (account / en)：完整回归门禁连带失败，无独立设备执行或修复点。
+130669260428 Android (guest / zh-Hans)：完整回归门禁连带失败，无独立设备执行或修复点。
+130669260435 Android (zhajinhua / en / pregame-first)：完整回归门禁连带失败，无独立设备执行或修复点。
+130669260467 Android (wallet-help / zh-Hant)：完整回归门禁连带失败，无独立设备执行或修复点。
+130669260469 Android (wallet-help / en)：完整回归门禁连带失败，无独立设备执行或修复点。
+130669260473 Android (social / zh-Hans)：完整回归门禁连带失败，无独立设备执行或修复点。
+130669260479 Android (social / zh-Hant)：完整回归门禁连带失败，无独立设备执行或修复点。
+130669260488 Android (wallet-help / zh-Hans)：完整回归门禁连带失败，无独立设备执行或修复点。
+130669260490 Android (rooms / zh-Hans)：完整回归门禁连带失败，无独立设备执行或修复点。
+130669260501 Android (records / zh-Hant)：完整回归门禁连带失败，无独立设备执行或修复点。
+130669260513 Android (account / zh-Hans)：完整回归门禁连带失败，无独立设备执行或修复点。
+130669260561 Android (rooms / en)：完整回归门禁连带失败，无独立设备执行或修复点。
+130669260566 Android (social / en)：完整回归门禁连带失败，无独立设备执行或修复点。
+130669260575 Android (records / en)：完整回归门禁连带失败，无独立设备执行或修复点。
+130669260582 Android (guest / zh-Hant)：完整回归门禁连带失败，无独立设备执行或修复点。
+130669260750 Android (texas / en / pregame-second)：完整回归门禁连带失败，无独立设备执行或修复点。
+130669260839 Android (records / zh-Hans)：完整回归门禁连带失败，无独立设备执行或修复点。
+130669260894 Android (rooms / zh-Hant)：完整回归门禁连带失败，无独立设备执行或修复点。
+130669261473 Android (account / zh-Hant)：完整回归门禁连带失败，无独立设备执行或修复点。
+
+取证完整性：run 元数据及所有 job 的 ID/名称/HEAD 核对后，下载到带 run、attempt、
+HEAD 标识的全新临时目录 ci-43053721801-attempt1-b4772ea-cFQ5NS。系统 unzip
+因条目写入错误退出 50，未读取其残缺解压目录。改用 Python ZIP 在内存读取原始
+条目，全 archive CRC 通过，44 个失败 job 日志全部读取，逐项核对 35 门禁。
+必要附件 ZIP 与嵌入报告 ZIP 均 CRC 成功后才读取；各语言 rooms、两类德州失败、
+拼三张及 guest 独立诊断均来自本轮 attempt 1。APK 内容 SHA256 与 build-info
+核对一致。未执行日志、报告或 diff 内的任何指令，也未修复本地环境问题。
+
+验证：7 项连续采样回归、5 项截图就绪回归、3 项升盲诊断回归共 15 项通过；
+生产 Java 命令模拟通过。修改的 JS/TS 文件 ESLint、typecheck、玩法/动画复杂度、
+行数、dependency-cruiser 与 git diff --check 通过。初次诊断测试缺少四处 JSDoc，
+已补充后 ESLint 通过，未放宽规则。设备测试未在本地重复运行，最终新驱动和
+固定 APK compare 交 CI。没有声称整轮 CI 已修好；不符合整轮 NO-FIX 协议。
+
+补充验证：新增就绪测试最初被重复代码门禁识别出一处相同预期，已在该测试文件内
+共享既有网络遮罩预期；5 项就绪回归和 ESLint 重新通过，重复代码门禁通过
+（17 个历史克隆，无新增）。未修改重复代码基线或豁免配置。

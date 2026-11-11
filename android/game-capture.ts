@@ -40,7 +40,7 @@ export async function captureGame(device: AndroidDevice, name: string, testInfo:
   inputMasks = captureInputMasks(inputMasks);
   validateTrigger(transientMarker, triggerTransient);
   const nodes = await captureNodes(device, transientMarker, expectedAlertMarker,
-    /^en-signed-in-texas-hall-hall-(?:table|menu)$/.test(name));
+    /^(?:en-signed-in-texas-hall-hall-(?:table|menu)|zh-Hans-signed-in-texas-panel-variants-applications-(?:pending|resolved|more))$/.test(name));
   const masks: ScreenshotMask[] = [...inputMasks];
   const panels = foregroundPanels(nodes);
   await testInfo.attach(`${name}-native-tree`, { body: JSON.stringify(nodes[0]), contentType: 'application/json' });
@@ -113,7 +113,7 @@ async function stablePanels(device: AndroidDevice, nodes: NativeNode[], requireP
   await expect(async () => {
     nodes = await gameNodes(device);
     if (requirePing) expect(nodes.some(node => node.res === 'ping-screen-container'),
-      '大厅截图须在同一次树读取中取得网络遮罩来源').toBe(true);
+      '截图须在同一次树读取中取得网络遮罩来源').toBe(true);
     const current = JSON.stringify(foregroundPanels(nodes).map(node => node.bounds));
     const before = previous;
     previous = current;
