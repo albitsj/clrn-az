@@ -1,0 +1,101 @@
+{
+  "name": "texas-holdem-chat-actions-return-enter",
+  "source": {
+    "run": 42560149951,
+    "job": 128974940115,
+    "attempt": 1,
+    "locale": "en",
+    "region": {
+      "x": 60,
+      "y": 800,
+      "width": 600,
+      "height": 390
+    }
+  },
+  "images": {
+    "start.png": "c498d14108099b374a1b8c3c606a0c46cbb2f70d7195f761f03c7515f65760aa",
+    "end.png": "07eaf93a1546f1f5f98b0fc24aa3843a5d5041764c4a471e59bd2615726f34f3"
+  },
+  "frames": [
+    [
+      360267,
+      "start.png"
+    ],
+    [
+      360328,
+      "start.png"
+    ],
+    [
+      360389,
+      "start.png"
+    ],
+    [
+      360450,
+      "start.png"
+    ],
+    [
+      360511,
+      "start.png"
+    ],
+    [
+      360588,
+      "start.png"
+    ],
+    [
+      360651,
+      "start.png"
+    ],
+    [
+      360739,
+      "start.png"
+    ],
+    [
+      360879,
+      "start.png"
+    ],
+    [
+      361057,
+      "start.png"
+    ],
+    [
+      361121,
+      "end.png"
+    ],
+    [
+      361181,
+      "end.png"
+    ],
+    [
+      361243,
+      "end.png"
+    ],
+    [
+      361304,
+      "end.png"
+    ],
+    [
+      361365,
+      "end.png"
+    ],
+    [
+      361426,
+      "end.png"
+    ],
+    [
+      361487,
+      "end.png"
+    ],
+    [
+      361547,
+      "end.png"
+    ],
+    [
+      361607,
+      "end.png"
+    ],
+    [
+      361667,
+      "end.png"
+    ]
+  ]
+}
