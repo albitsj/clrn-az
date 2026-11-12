@@ -14,13 +14,35 @@ from unittest.mock import patch
 from ci_diagnostics import Collector, run, stop, stop_daemon
 from diagnostics_io import capture
 from diagnostics_lifecycle import group_members, request_shutdown, stop_captures, wait_emulator
-from diagnostics_wrappers import install_binaries, restore, shutdown
+from diagnostics_wrappers import install_binaries, restore, shutdown, startup_input
 
 
 ROOT = Path(__file__).resolve().parent
 
 
 class LifecycleTests(unittest.TestCase):
+    def test_startup_unlock_diagnostics_preserve_status_without_retry(self):
+        command = ['/sdk/adb', '-s', 'emulator-5554', 'shell', 'input', 'keyevent', '82']
+        for status in (0, 255, -signal.SIGTERM):
+            with self.subTest(status=status), \
+                    patch('diagnostics_wrappers.subprocess.call', return_value=status) as invoke, \
+                    patch('ci_diagnostics.collector', side_effect=OSError('unavailable')):
+                self.assertEqual(startup_input(command), status if status >= 0 else 128 - status)
+                invoke.assert_called_once_with(command)
+
+    def test_startup_unlock_failure_probes_survive_collection_failure(self):
+        command = ['/sdk/adb', '-s', 'emulator-5554', 'shell', 'input', 'keyevent', '82']
+        with patch('diagnostics_wrappers.subprocess.call', return_value=255), \
+                patch('ci_diagnostics.collector', return_value=self.diagnostics), \
+                patch.object(self.diagnostics, 'sample', side_effect=OSError('offline')), \
+                patch('diagnostics_wrappers.capture', side_effect=[1, OSError('offline'), 0]) as probe:
+            self.assertEqual(startup_input(command), 255)
+        self.assertEqual([call.args[0][3:] for call in probe.call_args_list],
+                         [['get-state'], ['shell', 'getprop', 'sys.boot_completed'],
+                          ['shell', 'service', 'check', 'input']])
+        self.assertIn('phase=startup-unlock exit=255', self.contents('adb'))
+        self.assertIn('kind=input-service exit=0', self.contents('adb'))
+
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory()
         self.addCleanup(self.temporary.cleanup)
