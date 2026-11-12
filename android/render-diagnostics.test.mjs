@@ -38,4 +38,7 @@ test('聊天渲染诊断只保留数字统计，不重置统计且设备或附�
     /** 附件失败不能替换原始动画异常。 */ attach: async () => { throw new Error('PRIVATE_REPORT_ERROR'); },
   });
   assert.equal(attachments.length, 1);
+  await preserveRenderStatistics('texas-holdem-chat-exit', info);
+  assert.equal(attachments[1][0], 'texas-holdem-chat-exit-render-statistics');
+  assert.deepEqual(calls.at(-1), ['shell', 'dumpsys', 'gfxinfo', 'test.application', 'framestats']);
 });

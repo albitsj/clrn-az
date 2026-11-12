@@ -3,6 +3,7 @@ import { captureNativeTransition } from './animation-transition';
 import { adb } from './device';
 import { gameConnected, gameGone, gameReady, gameTap as tap } from './game-controls';
 import { animateGamePanel } from './game-panel-animation';
+import { captureChatExitWithDiagnostics } from './game-chat-exit-diagnostics';
 
 import type { PreGameContext } from './game-pregame-context';
 import { captureGameThemes, closeAnimatedGameMask } from './game-pregame-helpers';
@@ -77,11 +78,10 @@ export async function closeChatDrawer(context: PreGameContext, closeChat: () => 
  * @param closeChat - 点击真实遮罩。
  */
 async function captureChatExit(context: PreGameContext, closeChat: () => void): Promise<void> {
-  const { device, game, animationInfo } = context;
+  const { device, game } = context;
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
-      await captureNativeTransition(device, `${game}-chat-exit`, animationInfo!,
-        { x: 110, y: 760, width: 140, height: 500 }, closeChat, [], [], 0, 'videoFrames');
+      await captureChatExitWithDiagnostics(context, closeChat);
       break;
     } catch (error) {
       // 模拟器录屏偶尔在 300ms 退场期间重复上一帧；只对缺失中途采样重新触发真实抽屉。

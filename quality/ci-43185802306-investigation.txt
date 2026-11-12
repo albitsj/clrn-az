@@ -1,0 +1,135 @@
+本轮 CI 定向调查与补证；不声称远端失败已根治
+CI-Diagnostic-SHA256: f30b4311012dbdad5f5bc12cbf6d0bec45498910bcb9595d476efd4958156262
+run 43185802306 / attempt 1 / PR 72
+HEAD 54833bd92732af8827873625b3a6501c27ee7228，与本地及全部失败 job API 一致。
+实际 PR merge checkout 119c8cfcbcc923a3c71a93d8a9a4c1a832d5f935：
+日志明确为该 HEAD 合入 base 5e150f5856ca010eff3a62f858a3016dc1a0cbf8。
+工作区原先干净，分支 kevinanew/android-js-ts-3-6-2，无 .codegraph。
+修改前只读检查 git branch -a、git log --all 及相关提交：
+54833bd、6742a71、22cbdee、e0a3b66、26f07c2、0dbf3b8。
+未修改 index、分支引用或历史，未创建/切换分支、未提交或推送。
+
+取证
+先核对 run/attempt/HEAD/job，再读取全部 40 个失败 job 日志。
+四份测试报告与一份 Texas 诊断均使用全新目录：
+/tmp/ci-43185802306-attempt1-54833bd-o88AY0
+gh run download 成功后才读取；内嵌 Playwright ZIP CRC 检查通过后解压到新目录。
+报告 artifact ID：
+13930459212 texas/en/pregame-second
+13932122875 rooms/en
+13931219490 rooms/zh-Hans
+13931607946 rooms/zh-Hant
+名称均带本轮 run 与 attempt；四份 build-info 均为：
+android-staging-300006201-d8f7a932befe
+applicationCommit d8f7a932befe03c4d6db7554bface9a67fd7be4e
+APK SHA256 62e3f142c68059258314852411dcd2878d56baf2232eb0011e3bd3302f776f40
+
+Texas / en / pregame-second：调查未完成，已增加最小脱敏取证
+signed_in_texas_pre_game_second 在 captureChatExit 的三次内部采集均失败，
+NativeTransition.compareMotion 报“必须采到起点和终点之间的真实动画帧”，
+Playwright retry1 通过，failOnFlakyTests 按原规则拒绝整项。
+optional_pre_game 通过。不能把 retry 通过视为无需改动。
+完整读取原始 MP4、首尾 PNG、region、timeline、progress 和成功重试附件。
+首轮三个视频和重试成功视频的原始帧数分别为 192、183、191、184，
+用原 middleCandidates 规则检查全部原始帧，候选分别为 [35]、[]、[]、[35,36]。
+生产 fps=30 解码后三次失败候选皆为空，成功重试选中 index32。
+三个首败 total 都为 34.53760476190476，原生首尾 PNG 完全相同；
+失败 progress 从约 0.153 直接跳至 1.019，成功有约 1.093 的真实过渡。
+这支持首个视频存在被 30fps 重采样遗漏的相位，但第二、第三次原片本身
+也没有合格中间相位，反证“只改解码即可根治”。未据此更改解码/阈值/录屏方式。
+没有证据能区分应用未绘制中间帧、录屏未收到中间帧或输入与呈现的延迟，
+不能猜测添加等待、切换采样或扩大重试。
+查看本轮 texas-diagnostics：logcat.log.1 始于 09:27:20，
+adb.log.1 始于 09:27:03；09:23—09:24 的首败窗口已轮转。
+host.log.1 仍有窗口数据，但不足以区分应用绘制与录屏漏采；
+未把后续重试期间的系统告警或网络错误归因给首败。
+历史聊天入场录像、操作按钮采样末尾全为起点的故障，与本轮退场已采到
+终点的证据不同，不移植旧修复；已有入场日志/渲染统计保存函数可复用。
+改动：game-chat-exit-diagnostics.ts 包装原单次采集，记录原触发开始/完成
+及已有 observe 阶段；在每次失败后、原重开抽屉动作之前，复用
+preserveAnimationFailure 和 preserveRenderStatistics 保存已有日志与数字帧统计。
+成功和失败均保存脱敏时间线供对照，每次内部尝试独立附加，不改变三次上限。
+render-diagnostics.ts 仅将已有只读 gfxinfo 诊断范围扩展至 Texas 聊天退场。
+不新增采样期间设备查询，不重置渲染统计，不保存控件文字/身份/异常载荷。
+诊断及附件失败均隔离，继续抛出原错误；采样参数、等待、触发次数、
+候选条件、正式快照、所有断言及远端门禁不变。
+下一轮 CI 对照原片与本次触发时间线、失败现场 logcat 及 gfxinfo：
+若原片有相位而解码丢失，定向检查重采样；若原片无相位，结合渲染帧时间
+与输入时间调查应用呈现或录屏。任何方案均须解释本轮两个原片无候选的反例。
+
+rooms 三语：已定位持续布局差异，受验收范围阻挡
+advanced_texas 与 advanced_six_plus 的首次和两次 retry 全失败：
+en 9946、zh-Hans 6700、zh-Hant 7081 差异像素，超过原有阈值。
+查看实际/预期 PNG：新增 Allow predict the hand（猜手牌）选项，
+玩家视频通话设置等行重新排列；非瞬态滑动，也非房间请求异常。
+18 张 actual 与 e0a3b66 的布局候选图比较：16 张逐字节相同；
+zh-Hans six-plus retry2 及 zh-Hant six-plus 首次仅在系统手势条
+(468,1255)—(468,1256) 两个像素不同，主体布局一致。
+历史 run 43159761148 的 applicationCommit 为 34712ea...；
+本轮已更换 d8f7a932... APK，仍有同样布局及相同差异数，反证旧报告或
+短暂动画造成差异。已有 e0a3b66 更新六图的改动不能重复引入。
+重新读取 PR 评论：
+https://github.com/albitsj/clrn-az/pull/72#issuecomment-6791879766
+https://github.com/albitsj/clrn-az/pull/72#issuecomment-6810639864
+历史 26f07c2 / 0dbf3b8 撤回基准更新，Issue #48 的验收要求不通过更新
+视觉基准取得通过。新增设置需要先独立审查/合入并同步 base，
+再以固定 APK 跑三语 compare；本仓是测试仓，本轮未证实可在此修正应用布局。
+保留六图和门禁，不声明无需修复或已经通过。
+
+汇总与别名门禁：已证实自身无需改动
+Android full regression 日志明确“当前提交的 Android 完整回归未通过”，
+其余 35 项均只执行 test "$COMPLETE_RESULT" = success，
+环境 COMPLETE_RESULT=failure。逐项读取日志，未发现独立测试异常。
+它们正确传播上述四个实际分片失败，不能降低或绕过。
+
+验证
+仅运行原片的定向离线分析与诊断边界测试，没有本地运行设备/完整回归。
+node --import tsx --test android/game-chat-exit-diagnostics.test.mjs android/render-diagnostics.test.mjs：
+4 项通过，验证原参数、单次触发、逐次现场保存和诊断失败不覆盖原错误。
+相关五个 TS/MJS 文件 ESLint、tsc --noEmit、Android 玩法复杂度门禁、
+行数检查、重复代码门禁、git diff --check 均通过。
+初次 ESLint 发现未使用变量和函数复杂度 4，已删除该变量并提取定向
+现场保存函数；修正后通过，未改门禁。
+远端设备验证及聊天实际根因仍待 CI，未写 NO-FIX 协议。
+
+逐项结果
+131082973127 Android remaining (rooms / zh-Hant): 受阻；两个高级建房场景三次均为持续布局差异，保留原视觉验收。
+131082974239 Android remaining (texas / en / pregame-second): 调查未完成；退场原片与30fps候选缺失已核对，已补首败诊断，待 CI 取证。
+131082975110 Android remaining (rooms / en): 受阻；两个高级建房场景三次均为持续布局差异，保留原视觉验收。
+131082975154 Android remaining (rooms / zh-Hans): 受阻；两个高级建房场景三次均为持续布局差异，保留原视觉验收。
+131105248288 Android full regression: 已证实汇总门禁自身无需改动；完整回归失败正确传播。
+131105382905 Android (texas / en / pregame-middle): 已证实别名门禁自身无需改动；COMPLETE_RESULT=failure。
+131105382928 Android (texas / zh-Hans / other): 已证实别名门禁自身无需改动；COMPLETE_RESULT=failure。
+131105382953 Android (zhajinhua / en / pregame-first): 已证实别名门禁自身无需改动；COMPLETE_RESULT=failure。
+131105382961 Android (texas / en / panels): 已证实别名门禁自身无需改动；COMPLETE_RESULT=failure。
+131105382965 Android (zhajinhua / zh-Hans): 已证实别名门禁自身无需改动；COMPLETE_RESULT=failure。
+131105382980 Android (texas / en / pregame-second): 已证实别名门禁自身无需改动；COMPLETE_RESULT=failure。
+131105383005 Android (texas / en / other): 已证实别名门禁自身无需改动；COMPLETE_RESULT=failure。
+131105383021 Android (account / en): 已证实别名门禁自身无需改动；COMPLETE_RESULT=failure。
+131105383030 Android (social / zh-Hans): 已证实别名门禁自身无需改动；COMPLETE_RESULT=failure。
+131105383033 Android (texas / en / game-effects): 已证实别名门禁自身无需改动；COMPLETE_RESULT=failure。
+131105383035 Android (texas / zh-Hans / table): 已证实别名门禁自身无需改动；COMPLETE_RESULT=failure。
+131105383037 Android (zhajinhua / en / game-effects): 已证实别名门禁自身无需改动；COMPLETE_RESULT=failure。
+131105383044 Android (texas / en / game-table): 已证实别名门禁自身无需改动；COMPLETE_RESULT=failure。
+131105383046 Android (account / zh-Hans): 已证实别名门禁自身无需改动；COMPLETE_RESULT=failure。
+131105383052 Android (social / en): 已证实别名门禁自身无需改动；COMPLETE_RESULT=failure。
+131105383061 Android (account / zh-Hant): 已证实别名门禁自身无需改动；COMPLETE_RESULT=failure。
+131105383070 Android (texas / zh-Hant / table): 已证实别名门禁自身无需改动；COMPLETE_RESULT=failure。
+131105383090 Android (wallet-help / zh-Hans): 已证实别名门禁自身无需改动；COMPLETE_RESULT=failure。
+131105383091 Android (guest / zh-Hant): 已证实别名门禁自身无需改动；COMPLETE_RESULT=failure。
+131105383093 Android (zhajinhua / zh-Hant): 已证实别名门禁自身无需改动；COMPLETE_RESULT=failure。
+131105383097 Android (rooms / zh-Hans): 已证实别名门禁自身无需改动；COMPLETE_RESULT=failure。
+131105383100 Android (zhajinhua / en / pregame-second): 已证实别名门禁自身无需改动；COMPLETE_RESULT=failure。
+131105383106 Android (zhajinhua / en / game-table): 已证实别名门禁自身无需改动；COMPLETE_RESULT=failure。
+131105383107 Android (texas / zh-Hant / other): 已证实别名门禁自身无需改动；COMPLETE_RESULT=failure。
+131105383109 Android (guest / en): 已证实别名门禁自身无需改动；COMPLETE_RESULT=failure。
+131105383147 Android (guest / zh-Hans): 已证实别名门禁自身无需改动；COMPLETE_RESULT=failure。
+131105383153 Android (rooms / en): 已证实别名门禁自身无需改动；COMPLETE_RESULT=failure。
+131105383155 Android (wallet-help / zh-Hant): 已证实别名门禁自身无需改动；COMPLETE_RESULT=failure。
+131105383157 Android (rooms / zh-Hant): 已证实别名门禁自身无需改动；COMPLETE_RESULT=failure。
+131105383189 Android (records / en): 已证实别名门禁自身无需改动；COMPLETE_RESULT=failure。
+131105383218 Android (records / zh-Hant): 已证实别名门禁自身无需改动；COMPLETE_RESULT=failure。
+131105383259 Android (texas / en / pregame-first): 已证实别名门禁自身无需改动；COMPLETE_RESULT=failure。
+131105383260 Android (records / zh-Hans): 已证实别名门禁自身无需改动；COMPLETE_RESULT=failure。
+131105383266 Android (wallet-help / en): 已证实别名门禁自身无需改动；COMPLETE_RESULT=failure。
+131105383371 Android (social / zh-Hant): 已证实别名门禁自身无需改动；COMPLETE_RESULT=failure。
