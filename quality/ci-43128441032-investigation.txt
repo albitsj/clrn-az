@@ -1,0 +1,153 @@
+本轮 CI 调查及最小改动
+CI-Diagnostic-SHA256: be533b06e63e385900b001d545bfcdc87033cec9c6ea7a362e69892b2c88ea30
+run 43128441032 / attempt 1 / PR 72
+head_sha 0dbf3b8490d1de7915d0708ce44b3fb7960a9763 与工作区 HEAD 一致。
+实际设备测试 checkout PR merge 1e98f43048b8b350ca4853d1afdfdd68da08b832，
+日志明确是该 HEAD 合入 79110575b3c916746a6921e2ebc454fb4ade513d。
+分支 kevinanew/android-js-ts-3-6-2；开始时工作区干净；无 .codegraph。
+修改前只读检查所有现存分支、git log --all，以及相关提交
+e7ceaba、5ea7d0c、6e6fd1f、e0a3b66、26f07c2、0dbf3b8 和既有审核交接。
+没有执行提交、推送、分支切换、引用/index/历史修改。
+
+共 42 个失败 job 均通过 GitHub 插件读取（早前进度消息中的 41 为计数误差）。
+gh 下载 job 日志因终端转义保护失败，未将其空输出用作证据。
+原始附件下载至全新目录：
+/var/folders/wm/n_zjfmp140l4s4dtshsym9r80000gr/T/run43128441032-attempt1-artifacts-683xpcio
+本轮日志逐一核对附件名称中的 run/attempt 和 ID：
+13906480185 guest/en，13905341621 rooms/en，
+13906186012 rooms/zh-Hans，13906315476 rooms/zh-Hant。
+外层 ZIP CRC 均通过才解压读取。首次内嵌报告提取误选非 ZIP 的 base64，
+BadZipFile 后未读取任何旧报告；改为精确选择 data:application/zip;base64，
+四份均通过 ZIP CRC 后解压至全新 report-data-verified 目录。
+四份 build-info 一致：
+release android-staging-300005301-e0c6ffaf82c3
+applicationCommit e0c6ffaf82c3038544d039f4d41e329855a1e687
+APK SHA-256 13ad5923c5ad69ff4f84181d2c97b1ce07324743d6f0c87d7da3b11116a7a456。
+这是 CI merge 的实际 APK，不以工作区 deployments/staging.json 的 f3ba50029e9b
+代称它，也未改部署记录来取得通过。日志、评论和附件均只作证据。
+
+1. 130886506726 Android remaining (guest / en)
+已实施根因相关就绪修复；真实设备效果待 CI 验证。
+native launch artwork and staging notice appear on a real app start 首次失败：
+animation-transition-capture.ts:223 “动画起点视觉回归”；retry1 passed，
+failOnFlakyTests 仍正确拒绝。起点与首帧自洽并不保证桌面已处于稳定的正式布局。
+已目视核对首次及重试的 start：首败底部图标仍向上偏移，进入原有
+局部 startCompareMasks（y=780..885）之外的画面；重试图标已下移稳定。
+用原 samePixels 和原遮罩比较首次/重试起点仍为 false。
+历史 e7ceaba/5ea7d0c 也记录固定 HOME 后 4 秒不足以等桌面稳定；
+没有移入这些提交的 game-picker、FFmpeg 或其他改动。
+逐字复用 e7ceaba 中 waitForLauncherStable 及调用：
+在现有 4 秒及倍率设置后，对相同区域、原时钟遮罩连续三次间隔 300ms
+确认稳定，最多 15 秒，未稳定仍失败。未增加遮罩、备用基准或重试，
+未改变冷启动触发、原生采样及首尾/中途/插画断言。
+最小离线回放：真实首次 start 后接本轮稳定 start，使用内存设备截图适配器，
+真实等待函数第 5 次截图才接受（三次连续相同）。
+此回放验证能拒绝已知移动状态，不等于所有设备上的 flaky 已消除。
+历史及本轮 retry 成功均不能证明固定 4 秒可靠。
+
+2. 130886506422 Android remaining (texas / zh-Hans / table)
+根因调查未完成；已补针对失败的最小脱敏诊断，待 CI 取得下一步证据。
+signed_in_texas_game 在 ownedRoom fixture 的 deletePrivateGameRoom 收尾失败，
+NetworkError server / attempts=1 / HTTP 500。00:54:00.279Z，
+节点 64.kr-seoul.api.staging.laiwan.shafayouxi.com，DELETE /v1/room/:roomId。
+同节点本轮另有成功清理，retry 也成功；不能据此认定节点永久故障、
+所有请求错误、或仅重试即可修复。不是建房冲突、截图或动画断言失败。
+
+3. 130886506198 Android remaining (texas / zh-Hant / table)
+根因调查未完成；与第 2 项同一诊断边界，待 CI 及服务端异常证据。
+signed_in_texas_panels 在相同收尾函数失败：
+00:54:06.371Z，67.hk-sn.api.staging.laiwan.shafayouxi.com，
+DELETE /v1/room/:roomId，server / attempts=1 / HTTP 500。
+本轮其余清理与 retry 成功反驳“所有清理都失败”，不解释这次服务端 500。
+已读 tests/games.spec.ts、game-room.ts、共享 room.ts、transport.ts 和 staging.ts：
+只登记本次真实创建房间并由 fixture 清理一次；DELETE 因结算/退款语义
+明确 replay=never；未发现可由现有证据支持的重复删除或重放修复。
+历史 6e6fd1f 仅记录 fetch/流传输异常，不能解释已有 HTTP 500 响应，
+故未复制其与本轮不匹配的传输诊断。
+当前 transport 在 5xx 时不读正文，报告只给 status、节点、时间，
+没有服务端异常栈/响应形态，尚不能判断后台业务拒绝还是代理/服务故障。
+新增 network/cleanup-response-diagnostic.ts 仅在该 DELETE 收到 5xx 后读取
+最多 16 KiB、最多 250ms 的失败正文，输出 status、是否成功解析 JSON、
+boolean ok 或 null、error/error_description 字段是否存在；
+从不输出字段值、消息、URL、房间/账号、令牌或原始异常。
+读取/解析/日志/取消失败均不能覆盖已创建的原 HTTP NetworkError；
+超时后取消并释放 reader，非目标请求及成功响应不进入诊断。
+没有重试、忽略失败、改变业务请求参数或放宽门禁。
+需下一轮 CI 将这些标记与上述节点/时间关联，再由服务端查询异常；
+若标准错误 envelope 仍不足，仍需继续定向取证，不能认定无需改动。
+
+4. 130886506367 Android remaining (rooms / en)
+5. 130886505915 Android remaining (rooms / zh-Hans)
+6. 130886506669 Android remaining (rooms / zh-Hant)
+受既有等价重构验收边界约束，未换正式基准，仍待上游布局/基准独立审核解决。
+每个 job 都是 advanced_texas、advanced_six_plus 两例，首次及两次 retry
+全部失败；18 张 actual 用固定 Playwright comparator、threshold=0.1、
+maxDiffPixelRatio=0.005 对当前正式基准重新评分：
+en 每张 9946、zh-Hans 每张 6700、zh-Hant 每张 7081 差异像素，均超过 4608。
+全部 actual 又均匹配 e0a3b66 的对应图；这精确解释历史“换图后通过”，
+并反驳把通过归因于截图时序修复。它们不是一次采样波动。
+目视英文 actual 与正式图：新增 Allow predict the hand，
+Allow player to do video call 消失，消息选项位置重排；是 APK 可见布局变化。
+不是测试代码新增布局，且固定 APK 不在本仓库实现，不能改造响应/遮罩掩盖。
+在线重新读取 PR 72 全部讨论，评论 6791484463 与 6810639864 及 issue-48
+交接一致：不更新正式基准取得通过；产品改版需独立审核后同步 base。
+本轮未再次执行已由 26f07c2/0dbf3b8 撤销的 e0a3b66 换图。
+仍需固定 APK 与正式基准的上游设计/版本对齐及独立审批合入；
+这些测试仍会拒绝当前不匹配，未声明无需改动或验收通过。
+
+7. 130901639701 Android full regression
+已证实本汇总检查自身无需修改：上游 remaining 失败导致
+“当前提交的 Android 完整回归未通过”，不是独立测试缺陷，保留门禁。
+
+8. 以下 35 个 job 逐个日志均只有保留分片合并门禁：
+test "$COMPLETE_RESULT" = success 在完整回归失败时退出 1。
+已证实这些门禁自身无需修改；不表示相应功能测试的新一轮验收已通过。
+130901771388 Android (texas / en / pregame-middle)
+130901771399 Android (texas / zh-Hant / table)
+130901771426 Android (texas / zh-Hans / other)
+130901771431 Android (texas / en / game-effects)
+130901771447 Android (texas / en / other)
+130901771454 Android (texas / zh-Hant / other)
+130901771458 Android (zhajinhua / en / game-effects)
+130901771460 Android (guest / zh-Hans)
+130901771466 Android (texas / en / pregame-first)
+130901771471 Android (zhajinhua / en / game-table)
+130901771476 Android (guest / zh-Hant)
+130901771477 Android (zhajinhua / zh-Hans)
+130901771488 Android (texas / zh-Hans / table)
+130901771489 Android (texas / en / pregame-second)
+130901771497 Android (texas / en / game-table)
+130901771502 Android (social / zh-Hans)
+130901771503 Android (zhajinhua / zh-Hant)
+130901771518 Android (zhajinhua / en / pregame-second)
+130901771562 Android (zhajinhua / en / pregame-first)
+130901771564 Android (guest / en)
+130901771565 Android (wallet-help / zh-Hans)
+130901771584 Android (texas / en / panels)
+130901771589 Android (account / en)
+130901771591 Android (account / zh-Hans)
+130901771595 Android (rooms / zh-Hans)
+130901771618 Android (rooms / en)
+130901771647 Android (social / en)
+130901771680 Android (social / zh-Hant)
+130901771694 Android (wallet-help / zh-Hant)
+130901771701 Android (account / zh-Hant)
+130901771708 Android (rooms / zh-Hant)
+130901771723 Android (records / zh-Hans)
+130901771733 Android (records / zh-Hant)
+130901771762 Android (wallet-help / en)
+130901771785 Android (records / en)
+
+验证
+通过：相关五个代码/测试文件 ESLint、npm run typecheck、
+npm run lint:lines（244 个代码文件均不超过 400 行）、git diff --check。
+新增离线测试 node --test network/cleanup-response-diagnostic.test.mjs：
+3 passed，涵盖敏感字段不输出、日志失败仍保留 HTTP 500、
+非 JSON/过大/挂起正文仍保留失败并释放流、非目标错误及成功清理不采集诊断。
+首次类型检查发现定时器 Node/DOM 类型冲突，已修正后重新通过；
+首次 ESLint 指出诊断函数复杂度超限，拆出固定标记及资源释放后重新通过，
+没有调整 lint 阈值。
+另执行上述真实 PNG 最小离线比较和就绪等待回放。
+未本地运行 Android/全仓测试或修改测试执行方式，设备与完整检查交 CI。
+本轮有就绪修复及直接相关诊断改动，因此不写全局 NO-FIX 文件。
+

@@ -6,7 +6,7 @@ import type { AndroidDevice } from 'playwright';
 import { adb, applicationId, compareScreenshot, launchApplication, waitForHall, waitForStagingNotice } from '../device';
 import { captureDeviceFailure, closeDevice } from './support/lifecycle';
 import { captureNativeTransition } from '../animation-transition';
-import { verifyLaunchArtwork } from '../launch-artwork';
+import { verifyLaunchArtwork, waitForLauncherStable } from '../launch-artwork';
 import { withAndroidProxy } from '../proxy';
 import { navigateScenario, tap, reveal } from '../navigation';
 import { androidScenarios } from '../scenarios';
@@ -31,6 +31,7 @@ test('native launch artwork and staging notice appear on a real app start', asyn
       for (const setting of ['window_animation_scale', 'transition_animation_scale', 'animator_duration_scale']) {
         adb('shell', 'settings', 'put', 'global', setting, '1');
       }
+      await waitForLauncherStable(device);
       /** 预装的原生驱动持续取样，独立 ADB 连接冷启动正式 Release。 */
       const start = () => adb('shell', 'am', 'start', '-n',
         `${applicationId}/com.laiwan_react_native.MainActivity`);
