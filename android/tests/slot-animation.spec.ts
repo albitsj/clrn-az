@@ -14,6 +14,7 @@ import { captureMovingKeyframes } from '../loop-keyframes';
 import { waitAbsent } from '../native-state';
 import { gameReady, gameScreenshot } from '../game-controls';
 import { motionParts, samePixels } from '../motion-regions';
+import { withSlotDiagnostics } from '../slot-diagnostics';
 
 test('all three native slot reels and reward types animate from real spin responses', async ({}, testInfo) => {
   test.skip(!englishGroup('social'), '老虎机动画只在英文社交任务采集一次');
@@ -54,12 +55,24 @@ test('all three native slot reels and reward types animate from real spin respon
       ] as const) {
         await proxy.command('android/slot', { currency });
         const button = await device.info({ res: 'spin-button' });
+        const events: { event: string; at: number }[] = [];
+        /** Record host timestamps without device queries.
+         * @param event - Existing sampling stage or actual tap boundary.
+         */
+        const observe = (event: string) => { events.push({ event, at: Date.now() }); };
         /** 点击正式老虎机的旋转按钮，网络夹具只固定奖励响应。 */
-        const pressSpin = () => adb('shell', 'input', 'tap',
-          String(Math.round(button.bounds.x + button.bounds.width / 2)),
-          String(Math.round(button.bounds.y + button.bounds.height / 2)));
-        await captureNativeTransition(device, `slot-${currency}-reels`, testInfo,
-          { x: 124, y: 420, width: 469, height: 362 }, pressSpin, [], reels, 1500);
+        const pressSpin = () => {
+          observe('tap-start');
+          adb('shell', 'input', 'tap',
+            String(Math.round(button.bounds.x + button.bounds.width / 2)),
+            String(Math.round(button.bounds.y + button.bounds.height / 2)));
+          observe('tap-complete');
+        };
+        const name = `slot-${currency}-reels`;
+        await withSlotDiagnostics(name, events, () => captureNativeTransition(device!, name, testInfo,
+          { x: 124, y: 420, width: 469, height: 362 }, pressSpin, [], reels, 1500,
+          'motionFrames', undefined, undefined, [], [], [], [], undefined, observe),
+        () => proxy.command<{ spins: number }>('android/slot'), testInfo);
         const prize = await device.info({ res: reward });
         expect(Number(prize.text), `${currency} 应显示真实奖励`).toBeGreaterThan(0);
       }
@@ -67,9 +80,8 @@ test('all three native slot reels and reward types animate from real spin respon
       expect(status.spins, '三种奖励必须分别由真实旋转 RPC 触发').toBe(3);
       const close = await gameReady(device, 'close-button');
       /** 正常关闭老虎机，采集面板退场。能量不足会自动关闭面板，无法再点击该按钮。 */
-      const pressClose = () => adb('shell', 'input', 'tap',
-        String(Math.round(close.bounds.x + close.bounds.width / 2)),
-        String(Math.round(close.bounds.y + close.bounds.height / 2)));
+      const pressClose = () => device!.shell(`input tap ${Math.round(close.bounds.x + close.bounds.width / 2)} `
+        + `${Math.round(close.bounds.y + close.bounds.height / 2)}`);
       await captureNativeTransition(device, 'slot-popup-exit', testInfo,
         { x: 0, y: 500, width: 720, height: 680 }, pressClose, [], [], 0, 'videoFrames');
       await waitAbsent(device, { res: 'slot-machine-view' });

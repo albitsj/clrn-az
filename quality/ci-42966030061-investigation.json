@@ -1,0 +1,267 @@
+{
+  "diagnosticFingerprint": "6985c37a3faba0a8cdfd9fda35c57c1e50b96a590bc6c88c50c55605b3aa966a",
+  "run": 42966030061,
+  "attempt": 1,
+  "head": "b3d59c9c952652e4f98538d3f34e9c51e049f2f4",
+  "application": {
+    "commit": "f3ba50029e9b33b90c09841e35b8cd838b304061",
+    "build": 300004201
+  },
+  "evidence": {
+    "socialArtifact": 13832446311,
+    "socialZipSha256": "cfbba56c89aa2623a197cf6d99fa3cbdc4c150fafdb6fe1267405b0fd5313545",
+    "texasArtifact": 13834045478,
+    "texasZipSha256": "3f38d94cd56efb054a2a7189a368823f7300e064247d25c3518b7ac5f39246a7",
+    "identity": "下载前核对 run、attempt、HEAD 和 job 清单；本轮独立新目录中下载及解压。"
+  },
+  "failures": [
+    {
+      "job": 130344567939,
+      "test": "slot-animation.spec.ts:18",
+      "status": "fix-applied-awaiting-ci",
+      "failure": "slot-popup-exit 在 assertReviewedVideoMiddle 返回 Infinity；不是入场、滚轮或奖励断言失败。",
+      "cause": "panelFrames 保留的退场帧没有满足既有空间轨迹门禁的相位。首败 capturedAt 为 641066,641801,641845,641907,641985,642026,642141,642709,644240,644260。",
+      "replay": "本轮首败及 retry1 各10个实际原生帧，middleCandidates 各3个；同一生产比较器分别拒绝/接受。不能把重试通过等同根因消失。",
+      "history": "b3d59c9 已复用 cea4bfc 的 panelFrames，但历史 42745222012 及本轮仍有漏相位反例。原始连续帧候选的早版停止链有9次超时，不能单独复用0ab2e8d或09e0ce2。8a3cdba记录修正后的42766681040/attempt1/job129665122293，HEAD8592a54c，5次retry0通过；本轮已重新核验历史run身份及该job日志5 passed。四核单独候选10次中9次失败，未采用。",
+      "change": "从8a3cdba复用surface-frame-{protocol,recording,images}及相关测试，含保险sleep回收修正；仅slot-popup-exit选择连续真实原始帧，单次异步点击避免阻塞接收。补入e03e148已有的附件失败不改变像素结果的必要保护及测试。",
+      "gates": "保留原ROI 0,500,720,680、基准、距离46、列结构、错位反证、局部运动、首尾条件、重试与failOnFlakyTests。",
+      "limit": "历史验证使用build300003601，不能代表本轮build300004201已远端通过；须由本轮CI验证。"
+    },
+    {
+      "job": 130344569401,
+      "test": "games.spec.ts:27 en / texas / signed_in_texas_table_states",
+      "status": "diagnostics-added-awaiting-ci",
+      "failure": "drawer-menu-item-exit 45秒未出现；失败截图显示Network Error-room_profile。",
+      "confirmed": "首败logcat在06:15:07记录节点67房间profile GET的Network Error、hasResponse=false，06:15:25节点64重试仍失败；随后no proxy available。",
+      "counterevidence": "同轮健康探测200和websocket重连成功不代表profile请求成功；retry1通过也未排除间歇故障。现有network-selection未记录该业务路径，不能确定是模拟器到代理传输还是上游失败。",
+      "history": "检查了3933b44专用adb reverse候选及调查报告；历史桥接故障存在，但本轮证据尚不足以据此改变代理传输。未复用不确定相关的传输修复，也未增加菜单重试或关闭错误弹窗。",
+      "change": "仅扩展既有NetworkSelection，白名单GET /v10/texas_holdem/room/{room}/profile，记录代理收到请求、响应状态及固定类别传输错误；不复制身份、查询参数、正文或错误原文。新增request诊断异常被隔离。",
+      "nextEvidence": "CI现有network-selection附件可区分请求是否到达代理以及上游响应/传输失败，结合已有logcat和截图继续定位。未宣称无需改动或已修复。"
+    }
+  ],
+  "downstream": [
+    {
+      "job": 130362102498,
+      "name": "Android full regression",
+      "status": "confirmed-no-independent-change",
+      "evidence": "日志验证完整回归未通过"
+    },
+    {
+      "job": 130362259852,
+      "name": "Android (texas / zh-Hant / other)",
+      "status": "confirmed-no-independent-change",
+      "evidence": "日志明确COMPLETE_RESULT: failure，保留分片合并门禁退出1"
+    },
+    {
+      "job": 130362259866,
+      "name": "Android (zhajinhua / en / pregame-first)",
+      "status": "confirmed-no-independent-change",
+      "evidence": "日志明确COMPLETE_RESULT: failure，保留分片合并门禁退出1"
+    },
+    {
+      "job": 130362259875,
+      "name": "Android (texas / en / game-table)",
+      "status": "confirmed-no-independent-change",
+      "evidence": "日志明确COMPLETE_RESULT: failure，保留分片合并门禁退出1"
+    },
+    {
+      "job": 130362259881,
+      "name": "Android (guest / zh-Hant)",
+      "status": "confirmed-no-independent-change",
+      "evidence": "日志明确COMPLETE_RESULT: failure，保留分片合并门禁退出1"
+    },
+    {
+      "job": 130362259891,
+      "name": "Android (account / en)",
+      "status": "confirmed-no-independent-change",
+      "evidence": "日志明确COMPLETE_RESULT: failure，保留分片合并门禁退出1"
+    },
+    {
+      "job": 130362259894,
+      "name": "Android (account / zh-Hans)",
+      "status": "confirmed-no-independent-change",
+      "evidence": "日志明确COMPLETE_RESULT: failure，保留分片合并门禁退出1"
+    },
+    {
+      "job": 130362259895,
+      "name": "Android (zhajinhua / zh-Hans)",
+      "status": "confirmed-no-independent-change",
+      "evidence": "日志明确COMPLETE_RESULT: failure，保留分片合并门禁退出1"
+    },
+    {
+      "job": 130362259897,
+      "name": "Android (rooms / zh-Hans)",
+      "status": "confirmed-no-independent-change",
+      "evidence": "日志明确COMPLETE_RESULT: failure，保留分片合并门禁退出1"
+    },
+    {
+      "job": 130362259909,
+      "name": "Android (texas / en / game-effects)",
+      "status": "confirmed-no-independent-change",
+      "evidence": "日志明确COMPLETE_RESULT: failure，保留分片合并门禁退出1"
+    },
+    {
+      "job": 130362259916,
+      "name": "Android (zhajinhua / zh-Hant)",
+      "status": "confirmed-no-independent-change",
+      "evidence": "日志明确COMPLETE_RESULT: failure，保留分片合并门禁退出1"
+    },
+    {
+      "job": 130362259918,
+      "name": "Android (social / zh-Hans)",
+      "status": "confirmed-no-independent-change",
+      "evidence": "日志明确COMPLETE_RESULT: failure，保留分片合并门禁退出1"
+    },
+    {
+      "job": 130362259922,
+      "name": "Android (zhajinhua / en / game-effects)",
+      "status": "confirmed-no-independent-change",
+      "evidence": "日志明确COMPLETE_RESULT: failure，保留分片合并门禁退出1"
+    },
+    {
+      "job": 130362259924,
+      "name": "Android (texas / en / pregame-second)",
+      "status": "confirmed-no-independent-change",
+      "evidence": "日志明确COMPLETE_RESULT: failure，保留分片合并门禁退出1"
+    },
+    {
+      "job": 130362259925,
+      "name": "Android (texas / en / pregame-middle)",
+      "status": "confirmed-no-independent-change",
+      "evidence": "日志明确COMPLETE_RESULT: failure，保留分片合并门禁退出1"
+    },
+    {
+      "job": 130362259927,
+      "name": "Android (texas / en / pregame-first)",
+      "status": "confirmed-no-independent-change",
+      "evidence": "日志明确COMPLETE_RESULT: failure，保留分片合并门禁退出1"
+    },
+    {
+      "job": 130362259928,
+      "name": "Android (texas / zh-Hant / table)",
+      "status": "confirmed-no-independent-change",
+      "evidence": "日志明确COMPLETE_RESULT: failure，保留分片合并门禁退出1"
+    },
+    {
+      "job": 130362259930,
+      "name": "Android (texas / en / panels)",
+      "status": "confirmed-no-independent-change",
+      "evidence": "日志明确COMPLETE_RESULT: failure，保留分片合并门禁退出1"
+    },
+    {
+      "job": 130362259937,
+      "name": "Android (wallet-help / zh-Hans)",
+      "status": "confirmed-no-independent-change",
+      "evidence": "日志明确COMPLETE_RESULT: failure，保留分片合并门禁退出1"
+    },
+    {
+      "job": 130362259938,
+      "name": "Android (texas / en / other)",
+      "status": "confirmed-no-independent-change",
+      "evidence": "日志明确COMPLETE_RESULT: failure，保留分片合并门禁退出1"
+    },
+    {
+      "job": 130362259942,
+      "name": "Android (zhajinhua / en / game-table)",
+      "status": "confirmed-no-independent-change",
+      "evidence": "日志明确COMPLETE_RESULT: failure，保留分片合并门禁退出1"
+    },
+    {
+      "job": 130362259945,
+      "name": "Android (social / zh-Hant)",
+      "status": "confirmed-no-independent-change",
+      "evidence": "日志明确COMPLETE_RESULT: failure，保留分片合并门禁退出1"
+    },
+    {
+      "job": 130362259946,
+      "name": "Android (zhajinhua / en / pregame-second)",
+      "status": "confirmed-no-independent-change",
+      "evidence": "日志明确COMPLETE_RESULT: failure，保留分片合并门禁退出1"
+    },
+    {
+      "job": 130362259947,
+      "name": "Android (texas / zh-Hans / other)",
+      "status": "confirmed-no-independent-change",
+      "evidence": "日志明确COMPLETE_RESULT: failure，保留分片合并门禁退出1"
+    },
+    {
+      "job": 130362259950,
+      "name": "Android (wallet-help / zh-Hant)",
+      "status": "confirmed-no-independent-change",
+      "evidence": "日志明确COMPLETE_RESULT: failure，保留分片合并门禁退出1"
+    },
+    {
+      "job": 130362259957,
+      "name": "Android (records / zh-Hans)",
+      "status": "confirmed-no-independent-change",
+      "evidence": "日志明确COMPLETE_RESULT: failure，保留分片合并门禁退出1"
+    },
+    {
+      "job": 130362259959,
+      "name": "Android (guest / zh-Hans)",
+      "status": "confirmed-no-independent-change",
+      "evidence": "日志明确COMPLETE_RESULT: failure，保留分片合并门禁退出1"
+    },
+    {
+      "job": 130362259961,
+      "name": "Android (texas / zh-Hans / table)",
+      "status": "confirmed-no-independent-change",
+      "evidence": "日志明确COMPLETE_RESULT: failure，保留分片合并门禁退出1"
+    },
+    {
+      "job": 130362259976,
+      "name": "Android (rooms / en)",
+      "status": "confirmed-no-independent-change",
+      "evidence": "日志明确COMPLETE_RESULT: failure，保留分片合并门禁退出1"
+    },
+    {
+      "job": 130362259981,
+      "name": "Android (guest / en)",
+      "status": "confirmed-no-independent-change",
+      "evidence": "日志明确COMPLETE_RESULT: failure，保留分片合并门禁退出1"
+    },
+    {
+      "job": 130362259988,
+      "name": "Android (rooms / zh-Hant)",
+      "status": "confirmed-no-independent-change",
+      "evidence": "日志明确COMPLETE_RESULT: failure，保留分片合并门禁退出1"
+    },
+    {
+      "job": 130362260011,
+      "name": "Android (records / en)",
+      "status": "confirmed-no-independent-change",
+      "evidence": "日志明确COMPLETE_RESULT: failure，保留分片合并门禁退出1"
+    },
+    {
+      "job": 130362260015,
+      "name": "Android (social / en)",
+      "status": "confirmed-no-independent-change",
+      "evidence": "日志明确COMPLETE_RESULT: failure，保留分片合并门禁退出1"
+    },
+    {
+      "job": 130362260043,
+      "name": "Android (records / zh-Hant)",
+      "status": "confirmed-no-independent-change",
+      "evidence": "日志明确COMPLETE_RESULT: failure，保留分片合并门禁退出1"
+    },
+    {
+      "job": 130362260050,
+      "name": "Android (account / zh-Hant)",
+      "status": "confirmed-no-independent-change",
+      "evidence": "日志明确COMPLETE_RESULT: failure，保留分片合并门禁退出1"
+    },
+    {
+      "job": 130362260080,
+      "name": "Android (wallet-help / en)",
+      "status": "confirmed-no-independent-change",
+      "evidence": "日志明确COMPLETE_RESULT: failure，保留分片合并门禁退出1"
+    }
+  ],
+  "validation": [
+    "71项定向Node测试通过，含实际ffmpeg解码、shell停止、原空间门禁正反例；另补1项附件写入失败保留原像素测试。",
+    "6项NetworkSelection测试通过，含脱敏、请求错误隔离和响应不变。",
+    "TypeScript、定向ESLint、Ruff、行数、Android玩法复杂度和git diff --check通过。",
+    "未运行本地Android端到端；本轮远端验证待CI。"
+  ],
+  "scope": "未修改Git index、分支引用或提交历史；当前为现有专用分支；未commit/push。"
+}

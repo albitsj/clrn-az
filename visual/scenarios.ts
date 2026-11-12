@@ -1,3 +1,5 @@
+import { buildScenario, getActiveLocales, scenarioLabel } from './scenarios-build';
+export { getActiveLocales, scenarioLabel } from './scenarios-build';
 export * from './scenarioTypes';
 import {
   PAGES,
@@ -20,10 +22,7 @@ export * from './cases/hall/guest';
 export * from './cases/club/guest';
 export * from './cases/auth/scenarios';
 import {
-  LOCALES,
   VIEWPORTS,
-  VISUAL_DEVICE_ID,
-  type LocaleCode,
   type LocaleDef,
   type PageDef,
   type ScenarioGroup,
@@ -111,94 +110,6 @@ export const SIGNED_IN_PAGES: GroupedPageDef[] = [
 ];
 
 /**
- * 解析语言筛选配置，拒绝不支持的语言代码。
- * @param raw - 原始语言筛选配置。
- */
-function parseLocaleFilter(raw: string | undefined): LocaleCode[] | 'all' {
-  const value = (raw || 'zh-Hans').trim();
-  if (!value || value === 'all') {
-    return 'all';
-  }
-
-  const allowed = new Set(LOCALES.map((locale) => locale.code));
-  const selected = value
-    .split(',')
-    .map((item) => item.trim())
-    .filter((item): item is LocaleCode => allowed.has(item as LocaleCode));
-
-  if (selected.length === 0) {
-    throw new Error(
-      `VISUAL_LOCALES 无效: "${raw}"。可用值: ${LOCALES.map((l) => l.code).join(', ')}, all`,
-    );
-  }
-
-  return selected;
-}
-
-/**
- * 根据环境配置选出本轮使用的语言，支持全量语言模式。
- * @param env - 环境配置，默认读取当前进程。
- */
-export function getActiveLocales(env: NodeJS.ProcessEnv = process.env): LocaleDef[] {
-  const filter = parseLocaleFilter(env.VISUAL_LOCALES);
-  if (filter === 'all') {
-    return LOCALES;
-  }
-  return LOCALES.filter((locale) => filter.includes(locale.code));
-}
-
-/**
- * 场景 label：`{locale}_{viewport}_{page}`，便于在目录与 HTML 报告中按「语言 → 视口」分组。
- * 例：`zh-Hans_desktop_hall`、`zh-Hans_mobile_signed_in_me`
- * @param locale - 本场景的语言配置。
- * @param viewport - 本场景的浏览器视口配置。
- * @param pageLabel - 页面定义中的场景标签。
- * @param suffix - 需要追加到场景标签的可选后缀。
- */
-export function scenarioLabel(
-  locale: LocaleDef,
-  viewport: ViewportDef,
-  pageLabel: string,
-  suffix = '',
-): string {
-  const base = `${locale.code}_${viewport.label}_${pageLabel}`;
-  return suffix ? `${base}_${suffix}` : base;
-}
-
-/**
- * 合并页面、语言、视口与覆盖选项，生成一个完整视觉场景。
- * @param page - 待展开的页面定义。
- * @param locale - 本场景的语言配置。
- * @param viewport - 本场景的浏览器视口配置。
- * @param overrides - 覆盖页面默认设置的场景选项。
- */
-function buildScenario(
-  page: PageDef,
-  locale: LocaleDef,
-  viewport: ViewportDef,
-  overrides: Partial<VisualScenario> & { label?: string; pageLabel?: string } = {},
-): VisualScenario {
-  return {
-    label: overrides.label ?? scenarioLabel(locale, viewport, page.label),
-    group: 'hall',
-    path: overrides.path ?? page.path,
-    pageLabel: overrides.pageLabel ?? page.label,
-    locale: locale.code,
-    viewport,
-    readyText: page.readyText?.[locale.code],
-    visualReadySelector: page.visualReadySelector,
-    signIn: false,
-    deviceId: VISUAL_DEVICE_ID,
-    tabTestId: '',
-    navClickTestIds: [],
-    waitForLoading: true,
-    fixedTexts: [],
-    hideSelectors: [],
-    ...overrides,
-  };
-}
-
-/**
  * 单个「语言 × 视口」下的全部页面场景（大厅 → 登录页 → 登录后 tabs）
  * @param locale - 本场景的语言配置。
  * @param viewport - 本场景的浏览器视口配置。
@@ -275,41 +186,62 @@ function buildLocaleViewportScenarios(locale: LocaleDef, viewport: ViewportDef):
     }),
   );
 
-  // 登录支线纯静态表单/文档页，仅 mobile（desktop 只差左右留白）
-  if (viewport.label === 'mobile') {
-    const mobileLoginSideScenarios = [
-      LOGIN_FORGOT_PASSWORD_SCENARIO,
-      LOGIN_FORGOT_PASSWORD_EMAIL_SCENARIO,
-      LOGIN_PHONE_SCENARIO,
-      LOGIN_FORGOT_PASSWORD_SMS_SCENARIO,
-      LOGIN_PICK_COUNTRY_CODE_SCENARIO,
-      LOGIN_USER_AGREEMENT_SCENARIO,
-      LOGIN_USER_PRIVACY_SCENARIO,
-      {
-        labelSuffix: 'login_language',
-        navClickTestIds: ['hall-sign-in-button', 'switch-language-button'],
-        visualReadySelector: '[data-testid="switch-language-container"]',
-      },
-      {
-        labelSuffix: 'login_phone_password',
-        navClickTestIds: [...LOGIN_PHONE_SCENARIO.navClickTestIds, 'password-sign-in-button'],
-        visualReadySelector: '[data-testid="password-input"] input',
-      },
-    ];
-    for (const sideScenario of mobileLoginSideScenarios) {
-      scenarios.push(
-        buildScenario(hallPage, locale, viewport, {
-          label: scenarioLabel(locale, viewport, sideScenario.labelSuffix),
-          group: 'auth',
-          pageLabel: sideScenario.labelSuffix,
-          navClickTestIds: sideScenario.navClickTestIds,
-          visualReadySelector: sideScenario.visualReadySelector,
-          readyText: undefined,
-        }),
-      );
-    }
-  }
+  scenarios.push(...mobileLoginScenarios(hallPage, locale, viewport));
+  scenarios.push(...guestTabScenarios(hallPage, locale, viewport));
+  scenarios.push(...signedInScenarios(hallPage, locale, viewport));
+  return scenarios;
+}
 
+/** Build the mobile-only login branches in their original order.
+ * @param hallPage - Base hall definition.
+ * @param locale - Current locale.
+ * @param viewport - Current viewport.
+ */
+function mobileLoginScenarios(hallPage: PageDef, locale: LocaleDef, viewport: ViewportDef): VisualScenario[] {
+  if (viewport.label !== 'mobile') return [];
+  const scenarios: VisualScenario[] = [];
+  // 登录支线纯静态表单/文档页，仅 mobile（desktop 只差左右留白）
+  const mobileLoginSideScenarios = [
+    LOGIN_FORGOT_PASSWORD_SCENARIO,
+    LOGIN_FORGOT_PASSWORD_EMAIL_SCENARIO,
+    LOGIN_PHONE_SCENARIO,
+    LOGIN_FORGOT_PASSWORD_SMS_SCENARIO,
+    LOGIN_PICK_COUNTRY_CODE_SCENARIO,
+    LOGIN_USER_AGREEMENT_SCENARIO,
+    LOGIN_USER_PRIVACY_SCENARIO,
+    {
+      labelSuffix: 'login_language',
+      navClickTestIds: ['hall-sign-in-button', 'switch-language-button'],
+      visualReadySelector: '[data-testid="switch-language-container"]',
+    },
+    {
+      labelSuffix: 'login_phone_password',
+      navClickTestIds: [...LOGIN_PHONE_SCENARIO.navClickTestIds, 'password-sign-in-button'],
+      visualReadySelector: '[data-testid="password-input"] input',
+    },
+  ];
+  for (const sideScenario of mobileLoginSideScenarios) {
+    scenarios.push(
+      buildScenario(hallPage, locale, viewport, {
+        label: scenarioLabel(locale, viewport, sideScenario.labelSuffix),
+        group: 'auth',
+        pageLabel: sideScenario.labelSuffix,
+        navClickTestIds: sideScenario.navClickTestIds,
+        visualReadySelector: sideScenario.visualReadySelector,
+        readyText: undefined,
+      }),
+    );
+  }
+  return scenarios;
+}
+
+/** Build guest tabs with their existing group and readiness selectors.
+ * @param hallPage - Base hall definition.
+ * @param locale - Current locale.
+ * @param viewport - Current viewport.
+ */
+function guestTabScenarios(hallPage: PageDef, locale: LocaleDef, viewport: ViewportDef): VisualScenario[] {
+  const scenarios: VisualScenario[] = [];
   for (const [pageLabel, tabTestId, readyId] of [
     ['guest_message', 'message-tab', 'not-sign-in-container'],
     ['guest_me', 'settings-tab', 'after-sign-in-see-asset-text'],
@@ -324,31 +256,49 @@ function buildLocaleViewportScenarios(locale: LocaleDef, viewport: ViewportDef):
     }));
   }
 
-  for (const signedInPage of SIGNED_IN_PAGES) {
-    if (signedInPage.viewports && !signedInPage.viewports.includes(viewport.label)) {
-      continue;
-    }
-    scenarios.push(
-      buildScenario(hallPage, locale, viewport, {
-        label: scenarioLabel(locale, viewport, signedInPage.label),
-        group: signedInPage.group,
-        pageLabel: signedInPage.label,
-        signIn: true,
-        tabTestId: signedInPage.tabTestId,
-        navClickTestIds: signedInPage.navClickTestIds ?? [],
-        fixedTexts: signedInPage.fixedTexts ?? [],
-        hideSelectors: signedInPage.hideSelectors ?? [],
-        snapshotStates: signedInPage.snapshotStates,
-        visualReadySelector: signedInPage.visualReadySelector,
-        resetScrollSelector: signedInPage.resetScrollSelector,
-        visualGoneSelector: signedInPage.visualGoneSelector,
-        // 登录后页面用选择器判定就绪，不再依赖大厅未登录文案
-        readyText: undefined,
-      }),
-    );
-  }
-
   return scenarios;
+}
+
+/** Filter signed-in pages before expanding their presentation defaults.
+ * @param hallPage - Base hall definition.
+ * @param locale - Current locale.
+ * @param viewport - Current viewport.
+ */
+function signedInScenarios(hallPage: PageDef, locale: LocaleDef, viewport: ViewportDef): VisualScenario[] {
+  return SIGNED_IN_PAGES.filter(page => supportsViewport(page, viewport.label))
+    .map(page => signedInScenario(hallPage, page, locale, viewport));
+}
+
+/** Apply an optional viewport allowlist.
+ * @param page - Signed-in page definition.
+ * @param viewport - Selected viewport.
+ */
+function supportsViewport(page: GroupedPageDef, viewport: ViewportLabel): boolean {
+  return !page.viewports || page.viewports.includes(viewport);
+}
+
+/** Expand one signed-in page with selector-based readiness.
+ * @param hallPage - Base hall definition.
+ * @param signedInPage - Signed-in definition.
+ * @param locale - Current locale.
+ * @param viewport - Current viewport.
+ */
+function signedInScenario(hallPage: PageDef, signedInPage: GroupedPageDef, locale: LocaleDef, viewport: ViewportDef): VisualScenario {
+  return buildScenario(hallPage, locale, viewport, {
+    label: scenarioLabel(locale, viewport, signedInPage.label),
+    group: signedInPage.group,
+    pageLabel: signedInPage.label,
+    signIn: true,
+    tabTestId: signedInPage.tabTestId,
+    ...signedInNavigation(signedInPage),
+    hideSelectors: signedInPage.hideSelectors ?? [],
+    snapshotStates: signedInPage.snapshotStates,
+    visualReadySelector: signedInPage.visualReadySelector,
+    resetScrollSelector: signedInPage.resetScrollSelector,
+    visualGoneSelector: signedInPage.visualGoneSelector,
+    // 登录后页面用选择器判定就绪，不再依赖大厅未登录文案
+    readyText: undefined,
+  });
 }
 
 /**
@@ -387,4 +337,11 @@ export function pageCountForViewport(viewportLabel: ViewportLabel): number {
  */
 export function expectedScenarioCount(env: NodeJS.ProcessEnv = process.env): number {
   return buildScenarios(env).length;
+}
+
+/** Resolve optional navigation and fixed text lists.
+ * @param page - Signed-in definition.
+ */
+function signedInNavigation(page: GroupedPageDef) {
+  return { navClickTestIds: page.navClickTestIds ?? [], fixedTexts: page.fixedTexts ?? [] };
 }

@@ -13,18 +13,6 @@
   },
   {
     "tool": "eslint",
-    "file": "android/asset-sequence.ts",
-    "rule": "complexity",
-    "line": 32,
-    "column": 8,
-    "endLine": 32,
-    "endColumn": 43,
-    "message": "Async function 'captureAssetSequence' has a complexity of 14. Maximum allowed is 10.",
-    "sourceHash": "105713442b77e694727e8e1b606b938291f3d621f19d195bfec218a8d60a5296",
-    "reason": "既有原生界面、截图或测试工具控制流；本次不改变设备行为，修改时降低该处复杂度/嵌套，禁止恶化。"
-  },
-  {
-    "tool": "eslint",
     "file": "android/motion-regions.ts",
     "rule": "complexity",
     "line": 33,
@@ -45,42 +33,6 @@
     "endColumn": 38,
     "message": "Async function 'screenshotMasks' has a complexity of 12. Maximum allowed is 10.",
     "sourceHash": "3678cbd65b64339d79e003a79e44eff30627da05cea39de3d8a9a8d004ad3276",
-    "reason": "既有原生界面、截图或测试工具控制流；本次不改变设备行为，修改时降低该处复杂度/嵌套，禁止恶化。"
-  },
-  {
-    "tool": "eslint",
-    "file": "scripts/ci-accounts.mjs",
-    "rule": "complexity",
-    "line": 81,
-    "column": 8,
-    "endLine": 81,
-    "endColumn": 37,
-    "message": "Function 'ciAccountCredentials' has a complexity of 17. Maximum allowed is 10.",
-    "sourceHash": "0b56601bc061257548e625dea36961bad1048a48ae5b8f0f074980c0b25b9dc2",
-    "reason": "既有原生界面、截图或测试工具控制流；本次不改变设备行为，修改时降低该处复杂度/嵌套，禁止恶化。"
-  },
-  {
-    "tool": "eslint",
-    "file": "scripts/with-test-account.mjs",
-    "rule": "complexity",
-    "line": 39,
-    "column": 1,
-    "endLine": 39,
-    "endColumn": 19,
-    "message": "Async function 'run' has a complexity of 14. Maximum allowed is 10.",
-    "sourceHash": "bdd8dd311fd5f56403f6521df5bc89856a5b09e97d8cfe158f050fe54b1ee6b5",
-    "reason": "既有原生界面、截图或测试工具控制流；本次不改变设备行为，修改时降低该处复杂度/嵌套，禁止恶化。"
-  },
-  {
-    "tool": "eslint",
-    "file": "visual/scenarios.ts",
-    "rule": "complexity",
-    "line": 206,
-    "column": 1,
-    "endLine": 206,
-    "endColumn": 38,
-    "message": "Function 'buildLocaleViewportScenarios' has a complexity of 12. Maximum allowed is 10.",
-    "sourceHash": "282695cc3c3475682ca8a7658c74c0dcec8fb795c3e82eb71defc5a37d2d4fbc",
     "reason": "既有原生界面、截图或测试工具控制流；本次不改变设备行为，修改时降低该处复杂度/嵌套，禁止恶化。"
   },
   {

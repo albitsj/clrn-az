@@ -104,7 +104,7 @@ function missingDependencyCheck(config) {
   test('缺少 ESLint 依赖时入口非零退出', context => {
     const directory = mkdtempSync(join(tmpdir(), 'android-complexity-missing-'));
     context.after(() => rmSync(directory, { recursive: true, force: true }));
-    for (const file of [`${config.name}-complexity.mjs`, `${config.name}-scope.mjs`, 'android-game-complexity.mjs', 'android-game-scope.mjs']) {
+    for (const file of [`${config.name}-complexity.mjs`, `${config.name}-scope.mjs`, 'android-game-complexity.mjs', 'android-game-scope.mjs', 'shared-complexity-runner.mjs']) {
       writeFileSync(join(directory, file), readFileSync(`scripts/${file}`, 'utf8'));
     }
     const result = spawnSync(process.execPath, [join(directory, `${config.name}-complexity.mjs`)], { encoding: 'utf8' });

@@ -4,6 +4,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { adb } from './device';
+import { preserveAnimationFailure } from './animation-diagnostics';
 
 /**
  * 保留失败截图和完整控件树；失败后 Playwright 会重建 worker，允许释放原生驱动。
@@ -11,6 +12,8 @@ import { adb } from './device';
  * @param testInfo - 当前失败报告。
  */
 export async function captureFailure(device: AndroidDevice, testInfo: TestInfo): Promise<void> {
+  // 先固定已有脱敏日志，避免诊断及重试轮转掉首败请求窗口。
+  await preserveAnimationFailure('failure', Date.now(), testInfo).catch(() => undefined);
   await device.screenshot().then(async body => {
     const filename = testInfo.outputPath('last-screen.png');
     await writeFile(filename, body);

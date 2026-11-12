@@ -6,9 +6,7 @@ import { readFileSync } from 'node:fs';
  */
 export function validateDeployment(record) {
   const match = /^android-staging-([1-9][0-9]{0,8})-([a-f0-9]{12})$/.exec(record?.release_tag);
-  if (record?.environment !== 'staging' || !/^[a-f0-9]{40}$/.test(record.sha)
-    || !match || !record.sha.startsWith(match[2])
-    || typeof record.deployed_at !== 'string' || !Number.isFinite(Date.parse(record.deployed_at))) {
+  if (!validIdentity(record, match) || !validTimestamp(record.deployed_at)) {
     throw new Error('Android staging 部署记录无效或 Release 与应用提交不一致。');
   }
   return record;
@@ -20,4 +18,20 @@ export function validateDeployment(record) {
  */
 export function readDeploymentRecord(file) {
   return validateDeployment(JSON.parse(readFileSync(file, 'utf8')));
+}
+
+/** Verify the release belongs to the staging application commit.
+ * @param record - Deployment record.
+ * @param match - Parsed release tag.
+ */
+function validIdentity(record, match) {
+  return record?.environment === 'staging' && /^[a-f0-9]{40}$/.test(record.sha)
+    && Boolean(match) && record.sha.startsWith(match[2]);
+}
+
+/** Require a parseable deployment time.
+ * @param value - Recorded time.
+ */
+function validTimestamp(value) {
+  return typeof value === 'string' && Number.isFinite(Date.parse(value));
 }

@@ -1,0 +1,56 @@
+// Issue #47: extracted modules retain the responsibility prefix and the same limit.
+export const sharedSupport = [
+  'scripts/shared-test-*.mjs',
+  'e2e/helpers/game-scenes*.{js,jsx,mjs,cjs,ts,tsx,mts,cts}',
+  'e2e/helpers/mitmproxy-client*.{js,jsx,mjs,cjs,ts,tsx,mts,cts}',
+  'e2e/helpers/mitmproxy-process*.{js,jsx,mjs,cjs,ts,tsx,mts,cts}',
+  'e2e/helpers/mitmproxy-session*.{js,jsx,mjs,cjs,ts,tsx,mts,cts}',
+  'e2e/helpers/zhajinhua-scenes*.{js,jsx,mjs,cjs,ts,tsx,mts,cts}',
+  'scripts/account-network-fixture*.{js,jsx,mjs,cjs,ts,tsx,mts,cts}',
+  'scripts/ci-accounts*.{js,jsx,mjs,cjs,ts,tsx,mts,cts}',
+  'scripts/configure-ci-account*.{js,jsx,mjs,cjs,ts,tsx,mts,cts}',
+  'scripts/plan-ci-accounts*.{js,jsx,mjs,cjs,ts,tsx,mts,cts}',
+  'scripts/prepare-test-account*.{js,jsx,mjs,cjs,ts,tsx,mts,cts}',
+  'scripts/with-test-account*.{js,jsx,mjs,cjs,ts,tsx,mts,cts}',
+  'visual/cases/**/*.{js,jsx,mjs,cjs,ts,tsx,mts,cts}',
+  'visual/scenarioTypes*.{js,jsx,mjs,cjs,ts,tsx,mts,cts}',
+  'visual/scenarios*.{js,jsx,mjs,cjs,ts,tsx,mts,cts}',
+  'visual/src/support/requestError*.{js,jsx,mjs,cjs,ts,tsx,mts,cts}',
+  'visual/test-account*.{js,jsx,mjs,cjs,ts,tsx,mts,cts}',
+  'visual/visual-suite*.{js,jsx,mjs,cjs,ts,tsx,mts,cts}'
+];
+export const sharedTools = [
+  'scripts/android-game-complexity.mjs',
+  '.dependency-cruiser.cjs',
+  'eslint.config.mjs',
+  'lint-lines*.mjs',
+  'scripts/lint-duplicates*.mjs',
+  'scripts/lint-ratchet*.mjs',
+  'scripts/lint-shell*.mjs',
+  'scripts/measure-quality*.mjs',
+  'scripts/network-reference*.mjs',
+  'scripts/network-syntax*.mjs',
+  'scripts/quality-history*.mjs',
+  'scripts/source-files*.mjs',
+  'scripts/staging-deployment*.mjs',
+  'scripts/test-local*.mjs',
+  'scripts/shared-complexity*.mjs',
+  'scripts/shared-scope*.mjs'
+];
+export const sharedChecks = [
+  'scripts/android-game-complexity.test.mjs',
+  'scripts/lint.test.mjs',
+  'scripts/quality*.test.mjs',
+  'scripts/lint-duplicates*.test.mjs',
+  'scripts/lint-ratchet*.test.mjs',
+  'scripts/lint-shell*.test.mjs',
+  'scripts/measure-quality*.test.mjs',
+  'scripts/network-reference*.test.mjs',
+  'scripts/network-syntax*.test.mjs',
+  'scripts/quality-history*.test.mjs',
+  'scripts/source-files*.test.mjs',
+  'scripts/staging-deployment*.test.mjs',
+  'scripts/test-local*.test.mjs',
+  'scripts/shared-complexity*.test.mjs',
+  'scripts/shared-scope*.test.mjs'
+];

@@ -7,6 +7,7 @@ import { dismissKeyboard } from '../keyboard';
 import { selectLanguage, signIn, tap } from '../navigation';
 import { withAndroidProxy } from '../proxy';
 import { captureDeviceFailure, closeDevice } from './support/lifecycle';
+import { attachStartupNetwork } from '../startup-network-diagnostics';
 
 type ClubSearchStatus = { active: boolean; searchRequests: number; detailsRequests: number };
 
@@ -45,6 +46,7 @@ test('俱乐部搜索命中固定结果并显示原生卡片', async ({}, testIn
       const locale = androidLocale();
       await compareScreenshot(device, `${locale}-signed-in-club-search-result`, testInfo);
     } catch (error) {
+      await attachStartupNetwork(proxy, testInfo);
       await captureDeviceFailure(device, testInfo);
       throw error;
     } finally {

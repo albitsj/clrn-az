@@ -1,0 +1,131 @@
+{
+  "issue": 47,
+  "baselineRevision": "cb680d8bc6e074ce714ba9ff170c0d1429439369",
+  "nodeVersion": "v24.14.0",
+  "fullTestSuiteRun": false,
+  "checks": [
+    {
+      "command": "npm run lint:js",
+      "exitCode": 0,
+      "details": "Existing lint:js invokes the independent shared gate first; the pre-commit and CI lint chain is unchanged."
+    },
+    {
+      "command": "node scripts/lint-ratchet.mjs dependency-cruiser",
+      "exitCode": 0
+    },
+    {
+      "command": "node scripts/lint-duplicates.mjs",
+      "exitCode": 0,
+      "details": "No new clone fingerprints; shared ESLint runner avoids duplicating the existing Android gate."
+    },
+    {
+      "command": "node lint-lines.mjs",
+      "exitCode": 0,
+      "details": "Existing 400-line policy retained; extracted modules remain in the complexity scope."
+    },
+    {
+      "command": "npm run typecheck",
+      "exitCode": 0
+    },
+    {
+      "command": "node --import tsx --test --test-reporter=dot e2e/helpers/mitmproxy-session.test.mjs scripts/ci-accounts.test.mjs scripts/prepare-test-account.test.mjs scripts/prepare-test-account-rooms.test.mjs scripts/staging-deployment.test.mjs scripts/with-test-account.test.mjs visual/cases/_shared/room.test.ts",
+      "exitCode": 0,
+      "files": 7,
+      "passed": 40,
+      "failed": 0
+    },
+    {
+      "command": "node --import tsx --test --test-reporter=dot scripts/lint.test.mjs scripts/quality.test.mjs scripts/quality-routing.test.mjs scripts/quality-projection.test.mjs",
+      "exitCode": 0,
+      "files": 4,
+      "passed": 46,
+      "failed": 0
+    },
+    {
+      "command": "node --test --test-reporter=spec scripts/shared-complexity.test.mjs scripts/android-game-complexity.test.mjs",
+      "exitCode": 0,
+      "files": 2,
+      "passed": 42,
+      "failed": 0
+    },
+    {
+      "command": "node_modules/.bin/playwright test --config android/playwright.config.ts --list android/tests/games.spec.ts",
+      "exitCode": 0,
+      "collected": 18,
+      "details": "Collection only; no device or staging requests."
+    },
+    {
+      "command": "node scripts/shared-complexity.mjs --report",
+      "exitCode": 0,
+      "artifact": "complexity-after.json"
+    },
+    {
+      "command": "git diff --check",
+      "exitCode": 0
+    }
+  ],
+  "thresholdProbes": {
+    "tests": "3 passes; 4 fails",
+    "tools": "6 passes; 7 fails",
+    "nestedCallbacks": true,
+    "constructorsAndAccessors": true,
+    "helpersWithoutTestSuffix": true,
+    "inlineDisableBlocked": true,
+    "defaultParametersOptionalChainsShortCircuitCounted": true,
+    "missingDependencyNonzero": true,
+    "parseFailureNonzero": true,
+    "reportParseFailureNonzero": true,
+    "actualLintJsBlocksViolation": true,
+    "temporaryProjectsCleaned": true
+  },
+  "differentialValidation": {
+    "baselineRevision": "cb680d8bc6e074ce714ba9ff170c0d1429439369",
+    "method": "Import temporary git-show copies beside current modules under node --import tsx; compare full buildScenarios results/errors, test-account results/errors, and restoreTable objects using assert.deepEqual; delete temporary sources in finally.",
+    "scenarioMatrices": 108,
+    "accountTopUpCases": 144,
+    "tableOptionCases": 240,
+    "result": "identical"
+  },
+  "legacyEntriesRemoved": [
+    {
+      "tool": "eslint",
+      "file": "scripts/ci-accounts.mjs",
+      "rule": "complexity",
+      "line": 81,
+      "column": 8,
+      "endLine": 81,
+      "endColumn": 37,
+      "message": "Function 'ciAccountCredentials' has a complexity of 17. Maximum allowed is 10.",
+      "sourceHash": "0b56601bc061257548e625dea36961bad1048a48ae5b8f0f074980c0b25b9dc2",
+      "reason": "既有原生界面、截图或测试工具控制流；本次不改变设备行为，修改时降低该处复杂度/嵌套，禁止恶化。"
+    },
+    {
+      "tool": "eslint",
+      "file": "scripts/with-test-account.mjs",
+      "rule": "complexity",
+      "line": 39,
+      "column": 1,
+      "endLine": 39,
+      "endColumn": 19,
+      "message": "Async function 'run' has a complexity of 14. Maximum allowed is 10.",
+      "sourceHash": "bdd8dd311fd5f56403f6521df5bc89856a5b09e97d8cfe158f050fe54b1ee6b5",
+      "reason": "既有原生界面、截图或测试工具控制流；本次不改变设备行为，修改时降低该处复杂度/嵌套，禁止恶化。"
+    },
+    {
+      "tool": "eslint",
+      "file": "visual/scenarios.ts",
+      "rule": "complexity",
+      "line": 206,
+      "column": 1,
+      "endLine": 206,
+      "endColumn": 38,
+      "message": "Function 'buildLocaleViewportScenarios' has a complexity of 12. Maximum allowed is 10.",
+      "sourceHash": "282695cc3c3475682ca8a7658c74c0dcec8fb795c3e82eb71defc5a37d2d4fbc",
+      "reason": "既有原生界面、截图或测试工具控制流；本次不改变设备行为，修改时降低该处复杂度/嵌套，禁止恶化。"
+    }
+  ],
+  "realRuntimeValidation": {
+    "status": "not-run",
+    "details": "This refactor preserves native interactions, proxy protocol payloads and animation timing. Unit tests and collection do not constitute a fixed-build device run or a live mitmproxy/staging run."
+  }
+}

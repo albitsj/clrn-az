@@ -110,6 +110,18 @@ class AndroidVisualProxy:
     def error(self, flow):
         self.network_selection.observe(flow, 'error')
 
+    def http_connect(self, flow):
+        try:
+            self.network_selection.connection(flow.request.host, 'connect')
+        except Exception:
+            pass
+
+    def tls_failed_client(self, data):
+        self.network_selection.tls_failure(data, 'tls-client-failed')
+
+    def tls_failed_server(self, data):
+        self.network_selection.tls_failure(data, 'tls-server-failed')
+
     def websocket_start(self, flow):
         self.network_selection.observe(flow, 'websocket-connected')
 
@@ -183,6 +195,7 @@ class AndroidVisualProxy:
             self.game.websocket_end(flow)
 
     async def request(self, flow):
+        self.network_selection.room_profile_request(flow)
         if self.selection_faults.request(flow):
             return
         if await self.launch.request(flow):

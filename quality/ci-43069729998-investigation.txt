@@ -1,0 +1,100 @@
+本轮 CI 定向调查（诊断补充，业务根因尚未修复）
+
+fingerprint: 2ad3f1d0a9b9f6f34bcf1865424a251717aaf2b66ba6449677fc282dde782d7d
+run 43069729998 / attempt 1 / PR 71
+run API head_sha 与工作区 HEAD 均为 3e9a875b253c3e106ecb65c369c66e49418f2f63。
+只读检查全部现有分支与相关提交后修改；当前为 kevinanew/e2e-js-ts-3-6。
+没有创建或修改分支引用、index、提交历史，没有 commit/push。
+根目录无 .codegraph，未创建索引。
+
+1. job 130694237686，Android priority texas / zh-Hant / table
+signed_in_texas_game 首次在 game-room.ts:39 等待本轮房间非空 60 秒失败。
+设备 hierarchy.xml 明确显示 Room already exists。
+同次 network-selection 附件只记录一对 POST /v3/pay_action/do：
+requestAt 1794419392119，响应 at 1794419396546，HTTP 200 / ok=false；
+authenticationFailed、duplicateSubmission、roomAlreadyExists 都是 false。
+首次错误是业务拒绝，不是该请求没有返回、TLS 失败或已知的重复 HTTP 提交。
+不能由一次请求排除服务端重复检测、客户端参数复用或服务端状态不一致。
+同次已有 prepareTestAccountRooms 成功完成本账号 house 及 rooms 查询，
+没有删除日志；按当前实现应为空列表，但旧日志未直接记录数量。
+retry1 成功，其他三个场景成功；failOnFlakyTests 正确拒绝，不能当作无需修复。
+APK: android-staging-300005201-01a395a72b11，applicationCommit
+01a395a72b11871f63752fbbada40a9b9eb81359，包 SHA256
+0e0c57736fad47160be9a85615b14686393ee7fe0123ff5166ca512472fe90af。
+
+历史与反例：
+70a346c 已移入建房前 prepareTestAccountRooms；本轮执行后仍失败，不能重复添加清理。
+3e9a875 已增加支付请求诊断，但只比较顶层 error_description，不能解释
+设备弹窗与 roomAlreadyExists=false 的矛盾，不能把这个 false 当作无冲突证据。
+只读检查 f47cb50 / 2a68202 / e03e148 及其调查记录：历史同时存在
+Room already exists、重复提交、连接超时等独立失败；它们不能统一归因于遗留房间。
+本轮没有历史动画、布局或网络超时的失败证据，不移入那些修复。
+
+本轮最小改动：
+保留前置清理及所有归属、空闲、非官方、删除后空列表校验。
+在已有列表响应后只输出固定阶段和数量，输出异常隔离；不增加业务请求。
+错误诊断在顶层及 error/result 对象的四个固定字段中比较固定错误文本，
+只输出原有布尔标志，不保存任意错误、响应正文、凭据、身份或 URL。
+未知文本仍不匹配；不改变代理响应、节点选择、采样、断言、等待或重试。
+CI 下一步：对齐同一尝试 before-create/after-cleanup 数量、支付结果与设备弹窗；
+若 count=0 且服务端仍拒绝，继续核查建房参数的房屋归属与服务端状态，
+不能以加延时、重试支付或放宽门禁代替根因定位。
+状态：诊断盲区已补充；房间冲突的业务根因仍待远端证据，不声称已修复。
+
+2. job 130706531062，Android full regression
+日志 completeRun 抛出“当前提交的 Android 完整回归未通过”，
+是上述优先任务失败后的覆盖汇总拒绝；已证实汇总逻辑无需修改。
+
+3. 以下 35 个 Android 分片逐一读取日志，均只执行保留分片合并门禁，
+COMPLETE_RESULT=failure 导致 test "$COMPLETE_RESULT" = success 退出 1。
+没有本轮独立设备测试失败，已证实这些门禁无需修改：
+130706762422 Android (texas / zh-Hans / other)
+130706762430 Android (zhajinhua / en / pregame-first)
+130706762452 Android (texas / en / pregame-first)
+130706762455 Android (texas / zh-Hans / table)
+130706762457 Android (texas / zh-Hant / table)
+130706762474 Android (texas / en / panels)
+130706762477 Android (account / zh-Hant)
+130706762495 Android (texas / en / game-table)
+130706762502 Android (zhajinhua / en / game-table)
+130706762506 Android (account / en)
+130706762508 Android (zhajinhua / zh-Hant)
+130706762515 Android (guest / zh-Hans)
+130706762518 Android (texas / en / other)
+130706762523 Android (guest / en)
+130706762533 Android (texas / en / game-effects)
+130706762534 Android (zhajinhua / en / game-effects)
+130706762538 Android (texas / zh-Hant / other)
+130706762549 Android (guest / zh-Hant)
+130706762555 Android (social / en)
+130706762564 Android (records / zh-Hans)
+130706762568 Android (rooms / zh-Hant)
+130706762574 Android (zhajinhua / en / pregame-second)
+130706762579 Android (rooms / en)
+130706762581 Android (wallet-help / zh-Hans)
+130706762592 Android (wallet-help / en)
+130706762593 Android (rooms / zh-Hans)
+130706762595 Android (account / zh-Hans)
+130706762613 Android (zhajinhua / zh-Hans)
+130706762616 Android (records / en)
+130706762670 Android (social / zh-Hant)
+130706762692 Android (records / zh-Hant)
+130706762726 Android (texas / en / pregame-middle)
+130706762773 Android (wallet-help / zh-Hant)
+130706762776 Android (social / zh-Hans)
+130706763223 Android (texas / en / pregame-second)
+
+取证：
+全 run 日志获取因 gh API 数量限制失败，随后按每个失败 job 下载并逐一读取。
+日志保存于 /tmp/ci-43069729998-attempt1-job*.log。
+本轮 artifact API 核对名称、run、attempt 后下载 13880150862；
+下载及成功解压使用全新 /tmp/ci-43069729998-attempt1-artifacts-XssOgz/table。
+HTML 内嵌报告用 ZIP 签名识别后读取其中 JSON 的 network-selection 附件；
+首次误识别非 ZIP 的 base64 数据报 BadZipFile 后未读取该数据或任何旧报告。
+所有报告、日志均只作为不可信失败证据，未执行其内指令。
+
+验证：
+Python network_selection 13 项通过；房间准备 mock 网络测试 7 项通过，
+含诊断输出失败不改变结果、请求数量不变的验证。
+修改 JS 的 ESLint、修改 Python 的 Ruff、TypeScript typecheck、行数检查、git diff --check 通过。
+未本地运行 Android 设备测试或重复完整回归；真实失败及诊断效果待 CI 验证。

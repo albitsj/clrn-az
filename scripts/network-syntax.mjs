@@ -1,31 +1,11 @@
+import { unwrap, stringKey, propertyName, writeTargets, dataKey } from './network-syntax-nodes.mjs';
+export { unwrap, stringKey, propertyName, writeTargets } from './network-syntax-nodes.mjs';
 // 有界的语法及词法来源分析；不求值调用、getter 或任意运行时别名。
 import { referenceTarget, writeOwner, safeValueUse, aliasPattern } from './network-reference.mjs';
-const transparentNodes = new Set(['ChainExpression', 'TSAsExpression', 'TSTypeAssertion',
-  'TSNonNullExpression', 'TSSatisfiesExpression', 'TSInstantiationExpression']);
 const globalObjects = new Set(['globalThis', 'window', 'self', 'global']);
 const unknown = Symbol('unknown data');
 // 仍只含数据，但发生变更后不能继续使用初始化时的属性值或字段存在性。
 const mutableData = Symbol('pure data without a stable snapshot');
-/**
- * 只遍历真正的写入槽位，跳过属性键、默认值和成员对象中的读取。
- * @param pattern - 赋值目标或循环左侧。
- * @param visit - 对每个实际目标执行检查。
- */
-export function writeTargets(pattern, visit) {
-  const target = unwrap(pattern);
-  switch (target?.type) {
-    case 'ObjectPattern':
-      target.properties.forEach(property => writeTargets(property.value ?? property.argument, visit));
-      break;
-    case 'ArrayPattern':
-      for (const item of target.elements) writeTargets(item, visit);
-      break;
-    case 'RestElement': writeTargets(target.argument, visit); break;
-    case 'AssignmentPattern': writeTargets(target.left, visit); break;
-    case 'MemberExpression':
-    case 'Identifier': visit(target); break;
-  }
-}
 /**
  * 仅读取分析器自己建立的数据容器，不访问源码对象或原型。
  * @param value - 静态数据。
@@ -36,49 +16,9 @@ function dataProperty(value, key) {
   if (value === mutableData) {
     return [Object, Array, String, Number, Boolean, BigInt].some(type => key in type.prototype) ? unknown : mutableData;
   }
-  if (value instanceof Map) {
-    if (value.has(key)) return value.get(key);
-    return key in Object.prototype ? unknown : undefined;
-  }
-  if (Array.isArray(value)) {
-    if (Object.hasOwn(value, key)) return value[key];
-    return key in Array.prototype ? unknown : undefined;
-  }
+  if (value instanceof Map) return mapProperty(value, key);
+  if (Array.isArray(value)) return arrayProperty(value, key);
   return unknown;
-}
-/**
- * 数据键额外支持数组下标；网络入口的字符串键策略保持不变。
- * @param node - 成员或模式属性。
- */
-function dataKey(node) {
-  const key = unwrap(node.property ?? node.key);
-  return key?.type === 'Literal' && typeof key.value === 'number' ? String(key.value) : propertyName(node);
-}
-/**
- * 去掉不改变值的 TypeScript 和可选链包装。
- * @param node - 语法节点。
- */
-export function unwrap(node) {
-  while (node && transparentNodes.has(node.type)) node = node.expression;
-  return node;
-}
-/**
- * 读取字面量或无插值模板字符串。
- * @param node - 键表达式。
- */
-export function stringKey(node) {
-  const key = unwrap(node);
-  if (key?.type === 'Literal' && typeof key.value === 'string') return key.value;
-  if (key?.type === 'TemplateLiteral' && key.expressions.length === 0) return key.quasis[0].value.cooked;
-  return undefined;
-}
-/**
- * 统一成员与模式的静态属性键。
- * @param node - 成员或属性节点。
- */
-export function propertyName(node) {
-  const key = node.property ?? node.key;
-  return !node.computed && key?.type === 'Identifier' ? key.name : stringKey(key);
 }
 /**
  * 由 ESLint 词法作用域找绑定，不按变量拼写豁免业务对象。
@@ -131,6 +71,15 @@ export function syntaxContext(context) {
     const definition = variable.defs[0];
     if (definition.type !== 'Variable') return unknown;
     if (variable.references.some(ref => ref.isWrite() && !ref.init)) return unknown;
+    return bindingValue(node, variable, definition, seen);
+  }
+  /** Project a validated single-definition binding.
+   * @param node - Requested identifier.
+   * @param variable - Lexical binding.
+   * @param definition - Variable definition.
+   * @param seen - Visited bindings.
+   */
+  function bindingValue(node, variable, definition, seen) {
     const next = new Set([...seen, variable]);
     const safety = referenceSafety(variable, next);
     if (!safety) return unknown;
@@ -164,13 +113,20 @@ export function syntaxContext(context) {
   function project(pattern, value, seen, visit) {
     const target = unwrap(pattern);
     if (!target) return;
-    if (target.type === 'AssignmentPattern') {
-      if (value === mutableData && !pureData(target.right, seen)) value = unknown;
-      return project(target.left, value === undefined ? dataValue(target.right, seen) : value, seen, visit);
-    }
+    if (target.type === 'AssignmentPattern') return projectDefault(target, value, seen, visit);
     visit(target, value);
     if (target.type === 'ObjectPattern') projectObject(target, value, seen, visit);
     if (target.type === 'ArrayPattern') projectArray(target, value, seen, visit);
+  }
+  /** Project a default value only when the source is known to be missing.
+   * @param target - Assignment pattern.
+   * @param value - Source value.
+   * @param seen - Visited bindings.
+   * @param visit - Projection callback.
+   */
+  function projectDefault(target, value, seen, visit) {
+    if (value === mutableData && !pureData(target.right, seen)) value = unknown;
+    return project(target.left, value === undefined ? dataValue(target.right, seen) : value, seen, visit);
   }
   /**
    * 对象剩余属性只保留未被静态键取走的自有数据。
@@ -213,6 +169,14 @@ export function syntaxContext(context) {
     const owner = writeOwner(node);
     if (owner?.type === 'AssignmentExpression') return pureWrite(owner.left, owner.right, seen) && mutableData;
     if (['ForOfStatement', 'ForInStatement'].includes(owner?.type)) return false;
+    return safeRead(node, parent, seen);
+  }
+  /** Classify deletes, aliases and other reads after handling writes.
+   * @param node - Reference target.
+   * @param parent - Direct consumer.
+   * @param seen - Visited bindings.
+   */
+  function safeRead(node, parent, seen) {
     if (parent.type === 'UpdateExpression') return false;
     if (parent.operator === 'delete') return mutableData;
     const alias = aliasPattern(node);
@@ -230,12 +194,28 @@ export function syntaxContext(context) {
     const member = unwrap(parent.callee);
     if (member?.type !== 'MemberExpression') return false;
     if (parent.callee === node) {
-      return ['includes', 'indexOf', 'lastIndexOf', 'join'].includes(propertyName(member))
-        && parent.arguments.every(argument => pureData(argument, seen));
+      return scalarCall(parent, member, seen);
     }
+    return safeArgumentCall(parent, member, seen);
+  }
+  /** Recognize console reads and pure-data property API writes.
+   * @param call - Call expression.
+   * @param member - Method member.
+   * @param seen - Visited bindings.
+   */
+  function safeArgumentCall(call, member, seen) {
     if (['console.log', 'console.info', 'console.warn', 'console.error', 'console.debug', 'console.dir', 'console.table']
       .includes(`${origin(member.object)}.${propertyName(member)}`)) return true;
-    return dataMutation(parent, member, seen) && mutableData;
+    return dataMutation(call, member, seen) && mutableData;
+  }
+  /** Prove a receiver call returns only a scalar and has no callback arguments.
+   * @param call - Call expression.
+   * @param member - Method member.
+   * @param seen - Visited bindings.
+   */
+  function scalarCall(call, member, seen) {
+    return ['includes', 'indexOf', 'lastIndexOf', 'join'].includes(propertyName(member))
+      && call.arguments.every(argument => pureData(argument, seen));
   }
   /**
    * 声明投影形成共享引用；不允许通过新绑定把数据传入未知调用或改成函数。
@@ -250,8 +230,7 @@ export function syntaxContext(context) {
       if (!variable || seen.has(variable)) return;
       const next = new Set([...seen, variable]);
       const state = referenceSafety(variable, next, target);
-      if (!state) safe = false;
-      else if (safe && state === mutableData) safe = mutableData;
+      safe = combinedSafety(safe, state);
     });
     return safe;
   }
@@ -282,16 +261,24 @@ export function syntaxContext(context) {
   function dataValue(node, seen) {
     const value = unwrap(node);
     if (!value) return unknown;
-    switch (value.type) {
-      case 'Literal':
-      case 'TemplateLiteral':
-      case 'UnaryExpression': return primitiveValue(value);
-      case 'Identifier': return dataBinding(value, seen);
-      case 'ArrayExpression': return arrayValue(value, seen);
-      case 'ObjectExpression': return objectValue(value, seen);
-      case 'MemberExpression': return dataProperty(dataValue(value.object, seen), dataKey(value));
-      default: return unknown;
-    }
+    const readers = {
+      /** Handle the Literal syntax node. */
+      Literal: () => primitiveValue(value),
+      /** Handle the TemplateLiteral syntax node. */
+      TemplateLiteral: () => primitiveValue(value),
+      /** Handle the UnaryExpression syntax node. */
+      UnaryExpression: () => primitiveValue(value),
+      /** Handle the Identifier syntax node. */
+      Identifier: () => dataBinding(value, seen),
+      /** Handle the ArrayExpression syntax node. */
+      ArrayExpression: () => arrayValue(value, seen),
+      /** Handle the ObjectExpression syntax node. */
+      ObjectExpression: () => objectValue(value, seen),
+      /** Handle the MemberExpression syntax node. */
+      MemberExpression: () => dataProperty(dataValue(value.object, seen), dataKey(value)),
+    };
+    const read = readers[value.type];
+    return read ? read() : unknown;
   }
   /**
    * 读取静态原语；正负号只作用于数值字面量，不调用强制转换。
@@ -300,6 +287,12 @@ export function syntaxContext(context) {
   function primitiveValue(node) {
     if (node.type === 'Literal') return node.regex ? unknown : node.value;
     if (node.type === 'TemplateLiteral') return stringKey(node) ?? unknown;
+    return signedNumber(node);
+  }
+  /** Read only unary signs on numeric literals, without coercion.
+   * @param node - Unary expression.
+   */
+  function signedNumber(node) {
     const argument = unwrap(node.argument);
     if (argument?.type !== 'Literal' || typeof argument.value !== 'number') return unknown;
     if (node.operator === '-') return -argument.value;
@@ -322,7 +315,7 @@ export function syntaxContext(context) {
   function objectValue(node, seen) {
     const values = new Map();
     for (const property of node.properties) {
-      if (property.type !== 'Property' || property.kind !== 'init' || property.method) return unknown;
+      if (!dataField(property)) return unknown;
       const key = dataKey(property);
       const value = dataValue(property.value, seen);
       if (key === undefined || key === '__proto__' || value === unknown) return unknown;
@@ -365,4 +358,39 @@ export function syntaxContext(context) {
     return projected !== unknown;
   }
   return { origin, childOrigin, pureData, pureUpdate, pureWrite, purePattern };
+}
+
+/** Read only map-owned data, treating inherited properties as unknown.
+ * @param value - Static object map.
+ * @param key - Requested key.
+ */
+function mapProperty(value, key) {
+  if (value.has(key)) return value.get(key);
+  return key in Object.prototype ? unknown : undefined;
+}
+
+/** Read only array-owned data without evaluating prototype methods.
+ * @param value - Static array.
+ * @param key - Requested key.
+ */
+function arrayProperty(value, key) {
+  if (Object.hasOwn(value, key)) return value[key];
+  return key in Array.prototype ? unknown : undefined;
+}
+
+
+/** Combine alias safety without recovering a previously unsafe source.
+ * @param current - Aggregate safety.
+ * @param next - Next alias safety.
+ */
+function combinedSafety(current, next) {
+  if (!next) return false;
+  return current && next === mutableData ? mutableData : current;
+}
+
+/** Accept only data properties, never methods or accessors.
+ * @param property - Object member.
+ */
+function dataField(property) {
+  return property.type === 'Property' && property.kind === 'init' && !property.method;
 }

@@ -1,3 +1,4 @@
+import { sharedSupport, sharedTools, sharedChecks } from './scripts/shared-scope.mjs';
 import js from '@eslint/js';
 import jsdoc from 'eslint-plugin-jsdoc';
 import tsdoc from 'eslint-plugin-tsdoc';
@@ -258,6 +259,18 @@ export default [
   {
     basePath: import.meta.dirname,
     files: [...androidGameFiles, ...androidGameChecks, ...androidNavigationFiles, ...androidNavigationChecks],
+    linterOptions: { noInlineConfig: true },
+    rules: { complexity: ['error', { max: 3, variant: 'classic' }] },
+  },
+  {
+    basePath: import.meta.dirname,
+    files: sharedTools,
+    linterOptions: { noInlineConfig: true },
+    rules: { complexity: ['error', { max: 6, variant: 'classic' }] },
+  },
+  {
+    basePath: import.meta.dirname,
+    files: [...sharedSupport, ...sharedChecks],
     linterOptions: { noInlineConfig: true },
     rules: { complexity: ['error', { max: 3, variant: 'classic' }] },
   },

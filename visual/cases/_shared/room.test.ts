@@ -17,10 +17,12 @@ test('收尾独立选线删除本轮房间，不复用 APK 的故障节点', asy
   await deletePrivateGameRoom(room);
   assert.equal(requests.length, 1);
   assert.equal(requests[0].url, `${testNode}/v1/room/${room.roomId}`);
-  assert.equal(requests[0].options?.method, 'DELETE');
-  assert.deepEqual(requests[0].options?.headers, { 'Content-Type': 'application/json', Authorization: room.authorization });
-  assert.equal(requests[0].options?.redirect, 'error');
-  assert.ok(requests[0].options?.signal instanceof AbortSignal);
+  const options = requests[0].options;
+  assert.ok(options);
+  assert.equal(options.method, 'DELETE');
+  assert.deepEqual(options.headers, { 'Content-Type': 'application/json', Authorization: room.authorization });
+  assert.equal(options.redirect, 'error');
+  assert.ok(options.signal instanceof AbortSignal);
   await assert.rejects(deletePrivateGameRoom({ ...room, roomId: '../other' }), /有效 UUID/);
   assert.equal(requests.length, 1);
 });

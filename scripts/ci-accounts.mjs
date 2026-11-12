@@ -17,7 +17,7 @@ export const executionAccounts = ciAccounts.slice(30);
  * @returns 本任务使用的公开账号名。
  */
 export function allocateCiAccount(runId, offset = 0) {
-  if (typeof runId !== 'string' || !runId || /\D/.test(runId) || !Number.isSafeInteger(offset) || offset < 0 || offset >= executionAccounts.length) {
+  if (!validAllocation(runId, offset)) {
     throw new Error('CI 账号分配需要有效运行 ID 和账号槽位偏移。');
   }
   return executionAccounts[Number((BigInt(runId) + BigInt(offset)) % BigInt(executionAccounts.length))];
@@ -58,8 +58,8 @@ export function androidAccountMatrix(runId, selectedGroup = 'all', selectedLocal
   const shardOffsets = {
     'texas/zh-Hans': 24, 'texas/zh-Hant': 25, 'texas/en': 26, 'zhajinhua/en': 32,
   };
-  if (selectedGroup !== 'all' && !groups.includes(selectedGroup)) throw new Error('未知安卓业务组。');
-  if (selectedLocale !== 'all' && !locales.includes(selectedLocale)) throw new Error('未知安卓语言。');
+  validateSelection(selectedGroup, groups, '未知安卓业务组。');
+  validateSelection(selectedLocale, locales, '未知安卓语言。');
   return { include: executionOrder.filter(group => selectedGroup === 'all' || group === selectedGroup)
     .flatMap(group => locales.filter(locale => selectedLocale === 'all' || locale === selectedLocale)
       .flatMap(locale => {
@@ -79,24 +79,125 @@ export function androidAccountMatrix(runId, selectedGroup = 'all', selectedLocal
  * @returns 指定 CI 账号的用户名和密码。
  */
 export function ciAccountCredentials(serialized, username) {
-  let pool;
-  try { pool = JSON.parse(serialized); } catch { throw new Error('CLRN_CI_TEST_ACCOUNTS Secret 缺失或不是有效 JSON。'); }
-  if (!Array.isArray(pool?.accounts) || ![executionAccounts.length, ciAccounts.length].includes(pool.accounts.length)) {
-    throw new Error('CI Secret 必须包含完整的 70 个 Android 专用账号，或迁移前的 100 个账号。');
-  }
+  const accounts = secretAccounts(serialized);
   const seen = new Set();
-  for (const account of pool.accounts) {
-    if (!ciAccounts.includes(account?.username) || seen.has(account.username)
-      || account.status !== 'ready' || typeof account.password !== 'string'
-      || !account.password.trim() || account.password.length > 20 || /[\r\n\0]/.test(account.password)) {
-      throw new Error('CI Secret 包含重复、未就绪或无效凭据；请核对账号池备份。');
-    }
+  for (const account of accounts) {
+    validatePoolAccount(account, seen);
     seen.add(account.username);
   }
+  validatePartition(seen, username);
+  const selected = accounts.find(account => account.username === username);
+  if (!selected) throw new Error('所选账号不属于 CI 专用池。');
+  return { username: selected.username, password: selected.password };
+}
+
+/** Parse credentials without exposing the secret or JSON diagnostics.
+ * @param serialized - Secret JSON.
+ */
+function parseSecret(serialized) {
+  try { return JSON.parse(serialized); }
+  catch { throw new Error('CLRN_CI_TEST_ACCOUNTS Secret 缺失或不是有效 JSON。'); }
+}
+
+/** Require an account array before inspecting its length.
+ * @param serialized - Secret JSON.
+ */
+function secretAccounts(serialized) {
+  const accounts = parseSecret(serialized)?.accounts;
+  if (!Array.isArray(accounts)) throw new Error('CI Secret 必须包含完整的 70 个 Android 专用账号，或迁移前的 100 个账号。');
+  validatePoolSize(accounts);
+  return accounts;
+}
+
+/** Accept only the complete current pool or the migration pool.
+ * @param accounts - Parsed array.
+ */
+function validatePoolSize(accounts) {
+  if (![executionAccounts.length, ciAccounts.length].includes(accounts.length)) {
+    throw new Error('CI Secret 必须包含完整的 70 个 Android 专用账号，或迁移前的 100 个账号。');
+  }
+}
+
+/** Check membership before reading the remaining credential fields.
+ * @param account - Secret entry.
+ * @param seen - Previously registered names.
+ */
+function validatePoolAccount(account, seen) {
+  validatePoolName(account?.username, seen);
+  validateReadyCredentials(account);
+}
+
+/** Reject unknown or duplicate names.
+ * @param username - Entry name.
+ * @param seen - Registered names.
+ */
+function validatePoolName(username, seen) {
+  if (!ciAccounts.includes(username) || seen.has(username)) {
+    throw new Error('CI Secret 包含重复、未就绪或无效凭据；请核对账号池备份。');
+  }
+}
+
+/** Require a ready account with a UI-compatible password.
+ * @param account - Known pool entry.
+ */
+function validateReadyCredentials(account) {
+  if (account.status !== 'ready' || !validPassword(account.password)) {
+    throw new Error('CI Secret 包含重复、未就绪或无效凭据；请核对账号池备份。');
+  }
+}
+
+/** Check password type before inspecting its contents.
+ * @param value - Secret password.
+ */
+function validPassword(value) {
+  return typeof value === 'string' && validPasswordText(value);
+}
+
+/** Preserve the H5 password restrictions.
+ * @param value - String password.
+ */
+function validPasswordText(value) {
+  return Boolean(value.trim()) && value.length <= 20 && !/[\r\n\0]/.test(value);
+}
+
+/** Enforce the repository-specific partition after validating the entire pool.
+ * @param seen - Validated account names.
+ * @param username - Selected account.
+ */
+function validatePartition(seen, username) {
   if (!executionAccounts.every(name => seen.has(name)) || !executionAccounts.includes(username)) {
     throw new Error('所选账号或 Secret 不属于本仓库的专用账号分区。');
   }
-  const selected = pool.accounts.find(account => account.username === username);
-  if (!selected) throw new Error('所选账号不属于 CI 专用池。');
-  return { username: selected.username, password: selected.password };
+}
+
+/** Require a nonempty decimal run identifier.
+ * @param value - GitHub run ID.
+ */
+function validRunId(value) {
+  if (typeof value !== 'string') return false;
+  return Boolean(value) && !/\D/.test(value);
+}
+
+/** Check the available account partition bounds.
+ * @param value - Slot offset.
+ */
+function validOffset(value) {
+  return Number.isSafeInteger(value) && value >= 0 && value < executionAccounts.length;
+}
+
+/** Validate both inputs before converting the run ID to BigInt.
+ * @param runId - GitHub run identifier.
+ * @param offset - Slot offset.
+ */
+function validAllocation(runId, offset) {
+  return validRunId(runId) && validOffset(offset);
+}
+
+/** Validate a named matrix dimension while permitting all entries.
+ * @param selected - Requested dimension.
+ * @param allowed - Registered values.
+ * @param message - Existing diagnostic.
+ */
+function validateSelection(selected, allowed, message) {
+  if (selected !== 'all' && !allowed.includes(selected)) throw new Error(message);
 }

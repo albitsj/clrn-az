@@ -23,8 +23,16 @@ export function getVisualDeviceId(env: NodeJS.ProcessEnv = process.env): string 
  */
 export function getVisualTestAccount(env: NodeJS.ProcessEnv = process.env) {
   const suite = getVisualSuite(env);
-  const defaultUsername = suite === 'texas' ? TEXAS_TEST_USERNAME
-    : suite === 'zhajinhua' ? ZHAJINHUA_TEST_USERNAME : APP_TEST_USERNAME;
+  const defaultUsername = { texas: TEXAS_TEST_USERNAME, zhajinhua: ZHAJINHUA_TEST_USERNAME,
+    app: APP_TEST_USERNAME, all: APP_TEST_USERNAME }[suite];
+  return accountCredentials(env, defaultUsername);
+}
+
+/** Apply the current account overrides.
+ * @param env - Process configuration.
+ * @param defaultUsername - Suite account.
+ */
+function accountCredentials(env: NodeJS.ProcessEnv, defaultUsername: string) {
   return {
     username: env.VISUAL_USERNAME || defaultUsername,
     password: env.VISUAL_PASSWORD || DEFAULT_TEST_PASSWORD,
@@ -37,9 +45,17 @@ export function getVisualTestAccount(env: NodeJS.ProcessEnv = process.env) {
  * @param env - 环境配置，默认读取当前进程。
  */
 export function canTopUpVisualAccount(username: string, env: NodeJS.ProcessEnv = process.env): boolean {
-  const isFixedTestAccount = username === APP_TEST_USERNAME || username === TEXAS_TEST_USERNAME
-    || username === ZHAJINHUA_TEST_USERNAME;
+  const isFixedTestAccount = [APP_TEST_USERNAME, TEXAS_TEST_USERNAME, ZHAJINHUA_TEST_USERNAME].includes(username);
   const isCurrentAccount = username === getVisualTestAccount(env).username;
-  const isCiPoolAccount = env.GITHUB_ACTIONS === 'true' && ciManifest.accounts.includes(username);
-  return (isFixedTestAccount || isCiPoolAccount) && isCurrentAccount;
+  const isCiPoolAccount = ciPoolAccount(username, env);
+  if (!isCurrentAccount) return false;
+  return [isFixedTestAccount, isCiPoolAccount].includes(true);
+}
+
+/** Check the CI-only account pool.
+ * @param username - Candidate account.
+ * @param env - Current environment.
+ */
+function ciPoolAccount(username: string, env: NodeJS.ProcessEnv): boolean {
+  return env.GITHUB_ACTIONS === 'true' && ciManifest.accounts.includes(username);
 }

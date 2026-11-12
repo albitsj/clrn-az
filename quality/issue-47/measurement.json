@@ -1,0 +1,535 @@
+{
+  "issue": 47,
+  "baselineRevision": "cb680d8bc6e074ce714ba9ff170c0d1429439369",
+  "metric": "ESLint 10.12.0 classic complexity; max:0 reports every function, including nested callbacks, default parameters, optional chains and short-circuit expressions",
+  "limits": {
+    "testsAndSupport": 3,
+    "independentToolsAndRootConfig": 6
+  },
+  "before": {
+    "functions": 497,
+    "overLimit": 73,
+    "maxTestAndSupport": 17,
+    "maxTool": 10
+  },
+  "after": {
+    "functions": 677,
+    "overLimit": 0,
+    "maxTestAndSupport": 3,
+    "maxTool": 6
+  },
+  "reportCommand": "node scripts/shared-complexity.mjs --report",
+  "baselineMethod": "ESLint.lintText(git show <baselineRevision>:<file>, {filePath:<file>}) with the same parser, no inline config and classic complexity max:0",
+  "beforeSources": [
+    {
+      "file": ".dependency-cruiser.cjs",
+      "sha256": "d40daff27b7bc8bb5e03efd044b7ed69f5c319cb421cdf2914607e693055a554"
+    },
+    {
+      "file": "e2e/helpers/game-scenes.ts",
+      "sha256": "5f1f1f5c1b6849237c7141aa8666c666649e828fe9005bb80596a3f5a3d02af2"
+    },
+    {
+      "file": "e2e/helpers/mitmproxy-client.ts",
+      "sha256": "6c7789a022c24758627e88594a60bde11ab546d666dec85996068fbfaccad8be"
+    },
+    {
+      "file": "e2e/helpers/mitmproxy-process.ts",
+      "sha256": "dcd0939ed607cec79ecb65df273ca46df72ec53e3c813cedaabb6c7f4b1ed77e"
+    },
+    {
+      "file": "e2e/helpers/mitmproxy-session.test.mjs",
+      "sha256": "b6a1d2fd20b4c6380cc13b77d1cf4422fa2edaad08c6b48d8837b43b5c01c695"
+    },
+    {
+      "file": "e2e/helpers/mitmproxy-session.ts",
+      "sha256": "e15d7e84b23e099370ae27a871519875e8d69677ba7fa92f34f7bdca885ae840"
+    },
+    {
+      "file": "e2e/helpers/zhajinhua-scenes.ts",
+      "sha256": "73dccd81e2f1925da4aa0677d8807f3a7bd0bb60bd8871c9bf47c357d9432be5"
+    },
+    {
+      "file": "eslint.config.mjs",
+      "sha256": "563d0a61dc19e7bd70564eb3bed682e3821c1d0b4f743583d72e6f088c4e3444"
+    },
+    {
+      "file": "lint-lines.mjs",
+      "sha256": "1f9c1f92da273cdb657ab2e1fa5b16dee37f7c2df0aae3ffc5ab2ee397a87a3e"
+    },
+    {
+      "file": "scripts/account-network-fixture.mjs",
+      "sha256": "70d5dbe0478df2b8124a1be9d249402b4fc29b3467536ed84d34bc9a14371754"
+    },
+    {
+      "file": "scripts/android-game-complexity.mjs",
+      "sha256": "f5b95b44886e0d0236fdc31a56ae541a0d4c087c31c35cd81a3b8be3388367d6"
+    },
+    {
+      "file": "scripts/android-game-complexity.test.mjs",
+      "sha256": "fa85d38ad8a2dae259be7534d75e071d12236b0de07ab4c47b8938505d47224f"
+    },
+    {
+      "file": "scripts/ci-accounts.mjs",
+      "sha256": "9ec0aa0cf7eaa4f04e2819fae1749b36b2aa10635642e8581e238456b9e9a2f1"
+    },
+    {
+      "file": "scripts/ci-accounts.test.mjs",
+      "sha256": "917acad50379c8914e21fc5a496d607c09c0d4d2de1f83bb62b06b319b72b819"
+    },
+    {
+      "file": "scripts/configure-ci-account.mjs",
+      "sha256": "9a017b189b91660296d4944065cf81f3f05b0fcad4d3596b2c800de577a3318e"
+    },
+    {
+      "file": "scripts/lint-duplicates.mjs",
+      "sha256": "1b0a4dbc29ae13b89c606c08045683d3a78dc8519dac9370de5a960b534b6c3f"
+    },
+    {
+      "file": "scripts/lint-ratchet.mjs",
+      "sha256": "d0f8e2de9afe3c0ba1b1b47ef1ee8188198360d67654359f50fc1cc186135e50"
+    },
+    {
+      "file": "scripts/lint-shell.mjs",
+      "sha256": "fa7d52ff4c6c3bb24591c524a633443e3e4295c12adb6a78f84b6fe8db92be00"
+    },
+    {
+      "file": "scripts/lint.test.mjs",
+      "sha256": "a31e20e5a1136d634eb6254d72e414e73e78d1977506db9bf4abb5bceed9bb6d"
+    },
+    {
+      "file": "scripts/measure-quality.mjs",
+      "sha256": "46b1ae461919159c672fed1827df993307eb98dd4bbcac1a56c529c2815d0e81"
+    },
+    {
+      "file": "scripts/network-reference.mjs",
+      "sha256": "f436c0e5c6e3a33becdb69223e4fdf030d19d0db25b7d39600f293e0274c255f"
+    },
+    {
+      "file": "scripts/network-syntax.mjs",
+      "sha256": "87402171667b89ec6d8dea54a696fd417b301467f475392c7462a07095154855"
+    },
+    {
+      "file": "scripts/plan-ci-accounts.mjs",
+      "sha256": "7a1e31ecc20ee08f50a608a05307be1325713a5db331b84f808cd561d63eddae"
+    },
+    {
+      "file": "scripts/prepare-test-account-rooms.mjs",
+      "sha256": "67453430bc7de65fa5d0bdde82191e4b9031edf32edaef4289cc3ebe55113744"
+    },
+    {
+      "file": "scripts/prepare-test-account-rooms.test.mjs",
+      "sha256": "b8a08416d44b840b9758efc0c0f1ee6034ae957e9ea455ecee1f13c751028d3b"
+    },
+    {
+      "file": "scripts/prepare-test-account.mjs",
+      "sha256": "6e2a1476d793aa1220b3abe0d42842b3b5a6a2235a8dcc4189c44ac404a6f5ee"
+    },
+    {
+      "file": "scripts/prepare-test-account.test.mjs",
+      "sha256": "31e4d7dbeecd77fd4c67252b30213912e067c69369305b4924f7d20b5a71ce60"
+    },
+    {
+      "file": "scripts/quality-history.mjs",
+      "sha256": "705f068e117d1761cf850f6e7712f1bc3939a3ef3b96f57b569d5246a8d8da2a"
+    },
+    {
+      "file": "scripts/quality-projection.test.mjs",
+      "sha256": "2560f428dbf6504c47abebb9866db15e3ef2369611e69b4ae7db5fdab8644aa2"
+    },
+    {
+      "file": "scripts/quality-routing.test.mjs",
+      "sha256": "164550e823faf693b1e8397f59b54a929a71592c01f3dc91eae0759e36b190a1"
+    },
+    {
+      "file": "scripts/quality.test.mjs",
+      "sha256": "a0e14042ddc436565085d6e5643c42ac4c986dede57d77ff6e69e36005122143"
+    },
+    {
+      "file": "scripts/source-files.mjs",
+      "sha256": "2bed25ebcdb377145633fb6874014da5bda767b74e617a7063841859dc01ffc8"
+    },
+    {
+      "file": "scripts/staging-deployment.mjs",
+      "sha256": "2a177401d54cdd5a733d598a2b4568c890a648640fc0b1b3108243052005cce5"
+    },
+    {
+      "file": "scripts/staging-deployment.test.mjs",
+      "sha256": "f3b7fda936f03678ca7bd110394fcb32b764841d2e237807fbdabfd27694b1e1"
+    },
+    {
+      "file": "scripts/test-local.mjs",
+      "sha256": "f491ceffa9110abfde5aad7121cb9e7bf635b25ffee19e09e86bc117a09db1ac"
+    },
+    {
+      "file": "scripts/with-test-account.mjs",
+      "sha256": "203dc5e00eedf5f6f5268570400f5c168f24694b7cac1a6aabf764fa7b7356f8"
+    },
+    {
+      "file": "scripts/with-test-account.test.mjs",
+      "sha256": "ab975be9e1f9fc4d2fd1764ac078e31dd3b86174b66ac8310200eacddfa12105"
+    },
+    {
+      "file": "visual/cases/_shared/room.test.ts",
+      "sha256": "88b1a0bf0f243a30e295fd22198a75c5b2a8c9c9b45aa49c8d17379d449f1179"
+    },
+    {
+      "file": "visual/cases/_shared/room.ts",
+      "sha256": "101842abbfb2f15636d5528d4fb8502c74008bb5ed709503e294973d7092b81c"
+    },
+    {
+      "file": "visual/cases/account/scenarios.ts",
+      "sha256": "1a186d54664038906aa864568a28738f175e40b4e7b62c0632e8ef41fe6c090d"
+    },
+    {
+      "file": "visual/cases/auth/scenarios.ts",
+      "sha256": "470608a129d29bf97495188b3d33b088e23f6d62c1e38fd4d46b61673539cbb4"
+    },
+    {
+      "file": "visual/cases/club/guest.ts",
+      "sha256": "1d711b68837c68e1239e875766f869cb8d28fa5b0e57dde04f3fca7c6973ba4d"
+    },
+    {
+      "file": "visual/cases/club/scenarios.ts",
+      "sha256": "797bf15a5a9db9da7c21c933a77099e6e08b18ec0ff7c98b4a7cf69c4d7a7c58"
+    },
+    {
+      "file": "visual/cases/game-record/proxy.ts",
+      "sha256": "61f2db97b8cffaf1c459a898955b1abb3f40cd6009e5645b06611facbd67effc"
+    },
+    {
+      "file": "visual/cases/game-record/scenarios.ts",
+      "sha256": "3457d97a717298d086569fb68d4b842dbd103a39940fa06379d5a28ecaba804c"
+    },
+    {
+      "file": "visual/cases/hall/guest.ts",
+      "sha256": "67cd4a077b687a2604be85c1b6ee8fd6e5a6f262f7ce93c55dc51bcea96d0e3a"
+    },
+    {
+      "file": "visual/cases/hall/scenarios.ts",
+      "sha256": "6cd3d39a16039527d5ef0fd5367f81a0b95f2a14a2aaf4fbbe34d285c16d55ca"
+    },
+    {
+      "file": "visual/cases/help/scenarios.ts",
+      "sha256": "578cde9c68f190c909ccd8fa773e7f0b93de7801f90ad389f8fbfc56db7ba2ef"
+    },
+    {
+      "file": "visual/cases/message/scenarios.ts",
+      "sha256": "ccbfb372598544e548f8962d6792ac7239ed14aa3169cca652cf3fa9a4092ad8"
+    },
+    {
+      "file": "visual/cases/private-room/scenarios.ts",
+      "sha256": "8e993b277c290e2e4152b0f9150a8b376580a9a7f9dcf5feb7e42a9245f7e258"
+    },
+    {
+      "file": "visual/cases/texas-holdem/proxy.ts",
+      "sha256": "3d2dbcc7e55d68e4b2a3702740703bc69689384423e13db0be01007aa093392d"
+    },
+    {
+      "file": "visual/cases/texas-holdem/room.ts",
+      "sha256": "c782253b7e64170f53e58612a7b4e3c432134947d9bfb2ffa0662baaae1aa4ab"
+    },
+    {
+      "file": "visual/cases/texas-holdem/scenarios.ts",
+      "sha256": "3ad8f984a3d0770a843a8b6f39809833ba4ffbad11fbe46bb74b4e1729f3ad3d"
+    },
+    {
+      "file": "visual/cases/wallet/scenarios.ts",
+      "sha256": "6e32d70bf4b5a05ef5e9473431668afa97e7c1d8798a213e0eb68e80a9ec5630"
+    },
+    {
+      "file": "visual/cases/zhajinhua/scenarios.ts",
+      "sha256": "78b2b258ddce67da3dc0f2fc6a06e7f0566078414a4a5245d079bf3fc2dd24b8"
+    },
+    {
+      "file": "visual/scenarioTypes.ts",
+      "sha256": "d2a661aac40d52e5ea5a9cda8ad66c64fb7760da6723dfff1f43a17c4f600c3d"
+    },
+    {
+      "file": "visual/scenarios.ts",
+      "sha256": "67d295bcf7ec94b1432d26d8b8d132d09303205509e7d1e063c9cae0cc720e1e"
+    },
+    {
+      "file": "visual/src/support/requestError.ts",
+      "sha256": "3f3261b578b976d4da82cf0830dbeff69873692ee6a370fab233e55c4e5b44dc"
+    },
+    {
+      "file": "visual/test-account.ts",
+      "sha256": "5d1e55c3825ae250f74327174c121a2d51e034d4297bd761cbabf1aa66ae2e7b"
+    },
+    {
+      "file": "visual/visual-suite.ts",
+      "sha256": "5bc1572daf72649a5a0e90d3ef0153fc324cd6da40f86e560ba9420f14d41daf"
+    }
+  ],
+  "afterSources": [
+    {
+      "file": ".dependency-cruiser.cjs",
+      "sha256": "d40daff27b7bc8bb5e03efd044b7ed69f5c319cb421cdf2914607e693055a554"
+    },
+    {
+      "file": "e2e/helpers/game-scenes.ts",
+      "sha256": "8a0779bf47baec89ca0287bb74d1ad8b3760584af7812cb4cf94c4c8927bc325"
+    },
+    {
+      "file": "e2e/helpers/mitmproxy-client.ts",
+      "sha256": "6c7789a022c24758627e88594a60bde11ab546d666dec85996068fbfaccad8be"
+    },
+    {
+      "file": "e2e/helpers/mitmproxy-process.ts",
+      "sha256": "cea6eafe2e6ddc00637226c2493c09c420298b2b2d731be5ed1f8b20841c2abc"
+    },
+    {
+      "file": "e2e/helpers/mitmproxy-session.test.mjs",
+      "sha256": "b6a1d2fd20b4c6380cc13b77d1cf4422fa2edaad08c6b48d8837b43b5c01c695"
+    },
+    {
+      "file": "e2e/helpers/mitmproxy-session.ts",
+      "sha256": "ba9a844eaed8b2167259291ec62659145e05523f927314ba5633b31500843d6c"
+    },
+    {
+      "file": "e2e/helpers/zhajinhua-scenes.ts",
+      "sha256": "73dccd81e2f1925da4aa0677d8807f3a7bd0bb60bd8871c9bf47c357d9432be5"
+    },
+    {
+      "file": "eslint.config.mjs",
+      "sha256": "28064d3a739ffdc7bddfc1f6c3b6f40c5833213b4fe971b66cff956b30024ad6"
+    },
+    {
+      "file": "lint-lines.mjs",
+      "sha256": "1f9c1f92da273cdb657ab2e1fa5b16dee37f7c2df0aae3ffc5ab2ee397a87a3e"
+    },
+    {
+      "file": "scripts/account-network-fixture.mjs",
+      "sha256": "3df5689be0361b7c46f458a9c21878b3db4a4a7364ceb904250fe0e49555c077"
+    },
+    {
+      "file": "scripts/android-game-complexity.mjs",
+      "sha256": "72ae65e0aa32316c1351acaf0df0f6b6ef8953535174a49a2d43bf3e018cc374"
+    },
+    {
+      "file": "scripts/android-game-complexity.test.mjs",
+      "sha256": "0832974a2ff1236c5bc567b067e66a775ed35d766eeab9c3867798de13ac2cf6"
+    },
+    {
+      "file": "scripts/ci-accounts.mjs",
+      "sha256": "3872d342678aee9cae1d892a56c374dc16436c7335cecd32dcaaabe3b6ab3888"
+    },
+    {
+      "file": "scripts/ci-accounts.test.mjs",
+      "sha256": "b3a86a5d20e3960ac155bf843a37ecf590e07016fab47a3cb3d168604727545e"
+    },
+    {
+      "file": "scripts/configure-ci-account.mjs",
+      "sha256": "9a017b189b91660296d4944065cf81f3f05b0fcad4d3596b2c800de577a3318e"
+    },
+    {
+      "file": "scripts/lint-duplicates.mjs",
+      "sha256": "1b0a4dbc29ae13b89c606c08045683d3a78dc8519dac9370de5a960b534b6c3f"
+    },
+    {
+      "file": "scripts/lint-ratchet.mjs",
+      "sha256": "4ed470f2f1e57d0b9c0d18e94712668cbb293b146c4571744b093cdb07a46b2e"
+    },
+    {
+      "file": "scripts/lint-shell.mjs",
+      "sha256": "fa7d52ff4c6c3bb24591c524a633443e3e4295c12adb6a78f84b6fe8db92be00"
+    },
+    {
+      "file": "scripts/lint.test.mjs",
+      "sha256": "a31e20e5a1136d634eb6254d72e414e73e78d1977506db9bf4abb5bceed9bb6d"
+    },
+    {
+      "file": "scripts/measure-quality.mjs",
+      "sha256": "46b1ae461919159c672fed1827df993307eb98dd4bbcac1a56c529c2815d0e81"
+    },
+    {
+      "file": "scripts/network-reference.mjs",
+      "sha256": "3f562181eaf003f168f9f195779a32ce65786fc7ef57aab5d453bd859747e7fb"
+    },
+    {
+      "file": "scripts/network-syntax-nodes.mjs",
+      "sha256": "2d13eb95f95295ee47e5c2da5f7b90936bffbac2b96a7e634a77929e1007e2c2"
+    },
+    {
+      "file": "scripts/network-syntax.mjs",
+      "sha256": "0afb11e517dd405ef74363a6da7531a193f53559b069ec50b63ca985c93bdd10"
+    },
+    {
+      "file": "scripts/plan-ci-accounts.mjs",
+      "sha256": "7a1e31ecc20ee08f50a608a05307be1325713a5db331b84f808cd561d63eddae"
+    },
+    {
+      "file": "scripts/prepare-test-account-rooms.mjs",
+      "sha256": "2a1d9b4326b60961e7cf19fe0e5a9882a08812c3838406476005e526765be1e5"
+    },
+    {
+      "file": "scripts/prepare-test-account-rooms.test.mjs",
+      "sha256": "35603f2559b22ceb6155ff8c2cb88d31f9397f30bb8401b288f556f670b29bfc"
+    },
+    {
+      "file": "scripts/prepare-test-account.mjs",
+      "sha256": "33c41e063bac2389fd00b741c6e09fcc7dd40b81536e88a0e3fb06767b589ac5"
+    },
+    {
+      "file": "scripts/prepare-test-account.test.mjs",
+      "sha256": "000f7fbef30680f8636bd64a92bbf57158d4172cd533e157534c712878073831"
+    },
+    {
+      "file": "scripts/quality-history.mjs",
+      "sha256": "541a4516d663aabe83ffba481273e659f9b5017d25cb8216ce479c029b1084f2"
+    },
+    {
+      "file": "scripts/quality-projection.test.mjs",
+      "sha256": "19b0143ce6ad138e439c18c52caa14fa41a93f9d390b7be9e6dfc20581ad6edf"
+    },
+    {
+      "file": "scripts/quality-routing.test.mjs",
+      "sha256": "3da21b9bde773ae668c192e26a1e9405bcbae31667b7145d31f0baad5ba54985"
+    },
+    {
+      "file": "scripts/quality.test.mjs",
+      "sha256": "d0893cdcae910511c36f6ded2dc2a05ca3800281f1eb0b6d9439f9fc6ab686b7"
+    },
+    {
+      "file": "scripts/shared-complexity-runner.mjs",
+      "sha256": "3902fc13c76816a9670ec5164b90173e719dba144f0e7fdfa33e0bd600a13f7f"
+    },
+    {
+      "file": "scripts/shared-complexity.mjs",
+      "sha256": "41477c04810d7d12fdb9b6519dddf32d620ce0e24d48f5000bffba7b56e47020"
+    },
+    {
+      "file": "scripts/shared-complexity.test.mjs",
+      "sha256": "dc78502090a3093ae0973875b3d9882143bc8611aee76d47f306d9e86868e904"
+    },
+    {
+      "file": "scripts/shared-scope.mjs",
+      "sha256": "7b667c3ed4c532746c4081cae85de06fe0b8d9e83566731f5d665a06106a208a"
+    },
+    {
+      "file": "scripts/shared-test-cases.mjs",
+      "sha256": "9a4c514f56221704f6d9a61c873a829a1b79afbab6c5212360fc8cf4ce5b8273"
+    },
+    {
+      "file": "scripts/source-files.mjs",
+      "sha256": "2bed25ebcdb377145633fb6874014da5bda767b74e617a7063841859dc01ffc8"
+    },
+    {
+      "file": "scripts/staging-deployment.mjs",
+      "sha256": "195753964a651cfb70a63cad9dc2662356359dabe3a3bb49b5ad61fa292d2091"
+    },
+    {
+      "file": "scripts/staging-deployment.test.mjs",
+      "sha256": "f3b7fda936f03678ca7bd110394fcb32b764841d2e237807fbdabfd27694b1e1"
+    },
+    {
+      "file": "scripts/test-local.mjs",
+      "sha256": "f491ceffa9110abfde5aad7121cb9e7bf635b25ffee19e09e86bc117a09db1ac"
+    },
+    {
+      "file": "scripts/with-test-account.mjs",
+      "sha256": "64e977ae7f0f30c2c56961e65724b9cf6fad0cae00a3c11e8427aa01acda2db9"
+    },
+    {
+      "file": "scripts/with-test-account.test.mjs",
+      "sha256": "ab975be9e1f9fc4d2fd1764ac078e31dd3b86174b66ac8310200eacddfa12105"
+    },
+    {
+      "file": "visual/cases/_shared/room.test.ts",
+      "sha256": "972886b0b09051c88712a551b3f95eafba5c22afc7c82dec84dfdb05b70c285c"
+    },
+    {
+      "file": "visual/cases/_shared/room.ts",
+      "sha256": "fb5f95a63dc8ad94541233e0b123d49f690d205c0389ee2f2d838527a3009ff1"
+    },
+    {
+      "file": "visual/cases/account/scenarios.ts",
+      "sha256": "1a186d54664038906aa864568a28738f175e40b4e7b62c0632e8ef41fe6c090d"
+    },
+    {
+      "file": "visual/cases/auth/scenarios.ts",
+      "sha256": "470608a129d29bf97495188b3d33b088e23f6d62c1e38fd4d46b61673539cbb4"
+    },
+    {
+      "file": "visual/cases/club/guest.ts",
+      "sha256": "1d711b68837c68e1239e875766f869cb8d28fa5b0e57dde04f3fca7c6973ba4d"
+    },
+    {
+      "file": "visual/cases/club/scenarios.ts",
+      "sha256": "797bf15a5a9db9da7c21c933a77099e6e08b18ec0ff7c98b4a7cf69c4d7a7c58"
+    },
+    {
+      "file": "visual/cases/game-record/proxy.ts",
+      "sha256": "61f2db97b8cffaf1c459a898955b1abb3f40cd6009e5645b06611facbd67effc"
+    },
+    {
+      "file": "visual/cases/game-record/scenarios.ts",
+      "sha256": "3457d97a717298d086569fb68d4b842dbd103a39940fa06379d5a28ecaba804c"
+    },
+    {
+      "file": "visual/cases/hall/guest.ts",
+      "sha256": "67cd4a077b687a2604be85c1b6ee8fd6e5a6f262f7ce93c55dc51bcea96d0e3a"
+    },
+    {
+      "file": "visual/cases/hall/scenarios.ts",
+      "sha256": "6cd3d39a16039527d5ef0fd5367f81a0b95f2a14a2aaf4fbbe34d285c16d55ca"
+    },
+    {
+      "file": "visual/cases/help/scenarios.ts",
+      "sha256": "578cde9c68f190c909ccd8fa773e7f0b93de7801f90ad389f8fbfc56db7ba2ef"
+    },
+    {
+      "file": "visual/cases/message/scenarios.ts",
+      "sha256": "ccbfb372598544e548f8962d6792ac7239ed14aa3169cca652cf3fa9a4092ad8"
+    },
+    {
+      "file": "visual/cases/private-room/scenarios.ts",
+      "sha256": "8e993b277c290e2e4152b0f9150a8b376580a9a7f9dcf5feb7e42a9245f7e258"
+    },
+    {
+      "file": "visual/cases/texas-holdem/proxy.ts",
+      "sha256": "3d2dbcc7e55d68e4b2a3702740703bc69689384423e13db0be01007aa093392d"
+    },
+    {
+      "file": "visual/cases/texas-holdem/room.ts",
+      "sha256": "c782253b7e64170f53e58612a7b4e3c432134947d9bfb2ffa0662baaae1aa4ab"
+    },
+    {
+      "file": "visual/cases/texas-holdem/scenarios.ts",
+      "sha256": "3ad8f984a3d0770a843a8b6f39809833ba4ffbad11fbe46bb74b4e1729f3ad3d"
+    },
+    {
+      "file": "visual/cases/wallet/scenarios.ts",
+      "sha256": "6e32d70bf4b5a05ef5e9473431668afa97e7c1d8798a213e0eb68e80a9ec5630"
+    },
+    {
+      "file": "visual/cases/zhajinhua/scenarios.ts",
+      "sha256": "78b2b258ddce67da3dc0f2fc6a06e7f0566078414a4a5245d079bf3fc2dd24b8"
+    },
+    {
+      "file": "visual/scenarioTypes.ts",
+      "sha256": "d2a661aac40d52e5ea5a9cda8ad66c64fb7760da6723dfff1f43a17c4f600c3d"
+    },
+    {
+      "file": "visual/scenarios-build.ts",
+      "sha256": "bf768101adc87e4a139adbef7f1efc94ee65a17dd34e8ecdb9aed41e672da6bc"
+    },
+    {
+      "file": "visual/scenarios.ts",
+      "sha256": "a2ae9d27d0aeea997711877ab03f77584cf28c96cde5dee06774e291fde17396"
+    },
+    {
+      "file": "visual/src/support/requestError.ts",
+      "sha256": "3f3261b578b976d4da82cf0830dbeff69873692ee6a370fab233e55c4e5b44dc"
+    },
+    {
+      "file": "visual/test-account.ts",
+      "sha256": "797b5ff2d7a1ef6c5834778545250732d1a79f747bd0a11de1ae5e5c3af41ecd"
+    },
+    {
+      "file": "visual/visual-suite.ts",
+      "sha256": "e0436a074f9b451c8d51dba3fd81bef8e9594d34d8572c3d9010e2be6177bce8"
+    }
+  ]
+}
