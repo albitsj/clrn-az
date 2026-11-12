@@ -110,19 +110,31 @@ def error_matches(body, expected):
 
 
 def creation_identity(flow, account):
-    # 仅核对失败建房请求与已认证会话的身份；不输出字段原值，不影响请求。
+    # 成功请求也保留对照；不输出字段原值，不影响请求。
     try:
         if (not account or flow.request.method != 'POST'
                 or urlsplit(flow.request.path).path != '/v3/pay_action/do'
-                or flow.response.json().get('ok') is not False):
+                or type(flow.response.json().get('ok')) is not bool):
             return {}
         request = json.loads(flow.request.content)
         user = request.get('user_id')
         authorization = flow.request.headers.get('authorization')
         return {'creationUserMatchesSession': user == account['userId'] if user else None,
-                'creationAuthMatchesSession': authorization == account['authorization'] if authorization else None}
+                'creationAuthMatchesSession': authorization == account['authorization'] if authorization else None,
+                'creationBearerMatchesSession': bearer_matches(authorization, account['authorization'])}
     except Exception:
         return {}
+
+
+def bearer_matches(actual, expected):
+    # scheme 大小写和分隔空白不代表令牌变化；凭据本身仍逐字比较。
+    if not isinstance(actual, str) or not isinstance(expected, str):
+        return None
+    actual_match = re.fullmatch(r'(?i:Bearer)[ \t]+([^\s]+)[ \t]*', actual)
+    expected_match = re.fullmatch(r'(?i:Bearer)[ \t]+([^\s]+)[ \t]*', expected)
+    if not actual_match or not expected_match:
+        return None
+    return actual_match[1] == expected_match[1]
 
 
 class NetworkSelection:

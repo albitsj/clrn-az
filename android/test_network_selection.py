@@ -3,7 +3,7 @@
 import json
 from types import SimpleNamespace
 import unittest
-from network_selection import NetworkSelection, creation_identity
+from network_selection import NetworkSelection, creation_identity, bearer_matches
 
 HOST = '67.hk.api.staging.laiwan.shafayouxi.com'
 
@@ -24,14 +24,28 @@ class NetworkSelectionTests(unittest.TestCase):
             flow.request.headers = {'authorization': authorization}
             before = flow.request.content
             flags = creation_identity(flow, account)
-            self.assertEqual(flags, {'creationUserMatchesSession': expected, 'creationAuthMatchesSession': expected})
+            self.assertEqual(flags, {'creationUserMatchesSession': expected, 'creationAuthMatchesSession': expected,
+                                    'creationBearerMatchesSession': True if expected is True else None})
             self.assertNotIn('secret', json.dumps(flags))
             self.assertEqual(flow.request.content, before)
         flow.request.content = b'not json secret'
         self.assertEqual(creation_identity(flow, account), {})
         flow.response.json = lambda: {'ok': True}
+        flow.request.content = json.dumps({'user_id': 'secret-user'}).encode()
+        flow.request.headers = {'authorization': 'bearer\tsecret-token'}
+        self.assertEqual(creation_identity(flow, account), {
+            'creationUserMatchesSession': True, 'creationAuthMatchesSession': False,
+            'creationBearerMatchesSession': True})
+        flow.response.json = lambda: (_ for _ in ()).throw(RuntimeError('secret'))
         self.assertEqual(creation_identity(flow, account), {})
         self.assertEqual(creation_identity(flow, None), {})
+
+    def test_bearer_comparison_distinguishes_format_from_token_mismatch(self):
+        for actual, expected in (('Bearer secret-token', True), ('bearer\tsecret-token ', True),
+                                 ('BEARER other-token', False), ('Bearer SECRET-token', False),
+                                 ('Basic secret-token', None), ('Bearer', None),
+                                 ('Bearer secret token', None), (None, None), ({}, None)):
+            self.assertIs(bearer_matches(actual, 'Bearer secret-token'), expected)
 
     def test_room_error_variants_remain_fixed_flags_without_copying_body(self):
         recorder = NetworkSelection()

@@ -1,0 +1,96 @@
+本轮 CI 定向调查；建房业务失败仍待 CI 补证，不声称已根治
+CI-Diagnostic-SHA256: 568de035457e718a2a411d88e0d8f444587e9cbc0ecbaa3fdf9fb84874ba6168
+run 43203178297 / attempt 1 / PR 72
+API HEAD 29f3e49839ef1a15266444c614652189258729ea 与本地一致。
+实际 checkout afd8ad88e283b213e1b8da7f2d97360c577a3263；日志明确为该 HEAD
+合入 base 5e150f5856ca010eff3a62f858a3016dc1a0cbf8。
+原工作区干净，专用分支 kevinanew/android-js-ts-3-6-2，无 .codegraph。
+修改前只读检查全部分支和历史，以及 network_selection.py / game_session.py
+相关全分支历史；复用 3c4aac2 的身份诊断，不重复实现已有房间清理和错误分类。
+未改 index、分支引用或历史，未创建/切换分支、提交或推送。
+
+取证
+逐一下载并读取全部 37 个失败 job 日志；gh 默认因控制字符拒绝输出，
+首次空文件不作证据，后以 --allow-escape-sequences 下载成功的 verified 日志核对。
+新目录 /tmp/ci-43203178297-attempt1-29f3e49-swDxoJ。
+主失败 artifact 13938648200，名称 android-staging-visual-texas-zh-Hant-other-43203178297-1。
+外层 SHA256 a442c4c8d01351ee64e03e81966af2cb26feb627d756ab0642198301983269aa
+与上传日志一致；外层 ZIP 和内嵌 Playwright ZIP 均 CRC 检查通过后解压至新目录。
+build-info: android-staging-300006201-d8f7a932befe，applicationCommit
+ d8f7a932befe03c4d6db7554bface9a67fd7be4e；APK SHA256
+62e3f142c68059258314852411dcd2878d56baf2232eb0011e3bd3302f776f40。
+
+1. 131138343260 Android remaining (texas / zh-Hant / other)：待补证
+signed_in_texas_hall 首次 game-room.ts:39 在 60000ms 内未得到 session.room。
+代理记录 1794481473927 发出 POST /v3/pay_action/do；1794481476772 返回
+64.kr-seoul / HTTP 200 / ok=false / roomAlreadyExists=true。
+last-screen.png 明确显示“创建牌局失败 / Room already exists”。
+此前同节点三次房间列表 roomCount=0。creationUserMatchesSession=true，
+creationAuthMatchesSession=false；既有诊断本轮首次证明原文不相等。
+GameSession 正确不登记失败响应，未见成功房间被漏登记证据。
+retry1 在同节点创建成功，其余五例通过；failOnFlakyTests 正确拒绝整项。
+这反驳固定节点永久故障、单纯增加等待、或重试成功即无需修改的判断。
+历史 43154337744 也有列表为空却 roomAlreadyExists 的同类失败；已有每例
+prepareTestAccountRooms 并未根治，不能重复加清理或绕过失败。
+
+根因边界及本轮最小改动
+已确认直接失败原因是建房业务拒绝，不是截图比较或成功登记遗漏。
+仍未确认 Authorization 不等是认证方案大小写/空白差异还是真实令牌差异；
+原实现仅逐字比较且只记录失败请求，成功 retry 没有身份对照，不能据此改认证。
+复用 creation_identity，保留原两个标记，增加 creationBearerMatchesSession：
+仅忽略 Bearer scheme 大小写和分隔空白，令牌仍逐字比较，无法解析为 null。
+将该现有只读诊断扩展至 ok=true 的响应，供同例重试及其他成功例对照。
+仅输出布尔/null，不输出身份、令牌、摘要或原正文；异常仍被隔离返回空标记。
+不改变 flow、房间登记、等待、采样、断言、重试、远端执行或任何门禁。
+下一轮 CI：原文 false 但 Bearer true 排除真实令牌不同；Bearer false 则沿应用
+会话更新/建房请求身份继续定位；成功请求同样 false 会反驳该差异是充分原因。
+若真实令牌一致仍被拒绝，需要按上述时间/节点关联服务端房间存在性检查，
+不能以重试成功归因。当前报告和 APK 无原始令牌，不能离线恢复该比较结果。
+未写 NO-FIX，不把调查未完成声明为无需改动。
+
+验证
+仅运行 python3 -m unittest discover -s android -p test_network_selection.py：12 项通过。
+覆盖大小写/空白格式差异、真实令牌不同、缺失/畸形数据、成功对照、诊断异常隔离及脱敏。
+git diff --check 通过；未本地重复 Android 测试。远端业务验证待 CI。
+
+2. 131155462771 Android full regression：自身已证实无需改动
+日志 accounts/driver/apk/priority=success，remaining=failure；
+completeRun 按原门禁抛出“当前提交的 Android 完整回归未通过”。
+
+3—37. 以下各失败 job 已逐项读取，均仅 COMPLETE_RESULT=failure 导致 exit 1，
+自身已证实无需改动；这不代表各业务在本轮重新运行成功：
+131155620714 Android (texas / en / game-effects)：上游完整回归失败的合并门禁，保留原检查。
+131155620723 Android (texas / en / pregame-first)：上游完整回归失败的合并门禁，保留原检查。
+131155620762 Android (texas / en / pregame-middle)：上游完整回归失败的合并门禁，保留原检查。
+131155620764 Android (zhajinhua / en / game-effects)：上游完整回归失败的合并门禁，保留原检查。
+131155620796 Android (texas / zh-Hant / table)：上游完整回归失败的合并门禁，保留原检查。
+131155620801 Android (texas / en / panels)：上游完整回归失败的合并门禁，保留原检查。
+131155620809 Android (guest / en)：上游完整回归失败的合并门禁，保留原检查。
+131155620811 Android (zhajinhua / en / pregame-second)：上游完整回归失败的合并门禁，保留原检查。
+131155620816 Android (texas / en / game-table)：上游完整回归失败的合并门禁，保留原检查。
+131155620826 Android (texas / zh-Hans / table)：上游完整回归失败的合并门禁，保留原检查。
+131155620831 Android (texas / zh-Hant / other)：上游完整回归失败的合并门禁，保留原检查。
+131155620850 Android (zhajinhua / en / game-table)：上游完整回归失败的合并门禁，保留原检查。
+131155620855 Android (account / zh-Hant)：上游完整回归失败的合并门禁，保留原检查。
+131155620856 Android (guest / zh-Hant)：上游完整回归失败的合并门禁，保留原检查。
+131155620872 Android (guest / zh-Hans)：上游完整回归失败的合并门禁，保留原检查。
+131155620882 Android (zhajinhua / zh-Hans)：上游完整回归失败的合并门禁，保留原检查。
+131155620902 Android (account / zh-Hans)：上游完整回归失败的合并门禁，保留原检查。
+131155620906 Android (account / en)：上游完整回归失败的合并门禁，保留原检查。
+131155620908 Android (rooms / zh-Hans)：上游完整回归失败的合并门禁，保留原检查。
+131155620926 Android (wallet-help / zh-Hant)：上游完整回归失败的合并门禁，保留原检查。
+131155620929 Android (wallet-help / zh-Hans)：上游完整回归失败的合并门禁，保留原检查。
+131155620931 Android (social / zh-Hans)：上游完整回归失败的合并门禁，保留原检查。
+131155620934 Android (zhajinhua / zh-Hant)：上游完整回归失败的合并门禁，保留原检查。
+131155620950 Android (rooms / zh-Hant)：上游完整回归失败的合并门禁，保留原检查。
+131155620957 Android (social / zh-Hant)：上游完整回归失败的合并门禁，保留原检查。
+131155620966 Android (records / zh-Hant)：上游完整回归失败的合并门禁，保留原检查。
+131155621028 Android (texas / en / other)：上游完整回归失败的合并门禁，保留原检查。
+131155621047 Android (zhajinhua / en / pregame-first)：上游完整回归失败的合并门禁，保留原检查。
+131155621079 Android (records / zh-Hans)：上游完整回归失败的合并门禁，保留原检查。
+131155621102 Android (texas / zh-Hans / other)：上游完整回归失败的合并门禁，保留原检查。
+131155621106 Android (wallet-help / en)：上游完整回归失败的合并门禁，保留原检查。
+131155621118 Android (social / en)：上游完整回归失败的合并门禁，保留原检查。
+131155621140 Android (texas / en / pregame-second)：上游完整回归失败的合并门禁，保留原检查。
+131155621146 Android (rooms / en)：上游完整回归失败的合并门禁，保留原检查。
+131155621240 Android (records / en)：上游完整回归失败的合并门禁，保留原检查。
