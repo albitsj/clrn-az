@@ -1,0 +1,2340 @@
+[
+  {
+    "file": "android/animation-assets.ts",
+    "line": 9,
+    "column": 8,
+    "function": "Function 'animatedWebpFrames'",
+    "complexity": 8
+  },
+  {
+    "file": "android/animation-assets.ts",
+    "line": 28,
+    "column": 8,
+    "function": "Function 'comparePackagedAnimations'",
+    "complexity": 3
+  },
+  {
+    "file": "android/animation-assets.ts",
+    "line": 31,
+    "column": 37,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/animation-baselines.test.mjs",
+    "line": 5,
+    "column": 36,
+    "function": "Arrow function",
+    "complexity": 9
+  },
+  {
+    "file": "android/animation-baselines.test.mjs",
+    "line": 21,
+    "column": 33,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/animation-locale.test.mjs",
+    "line": 5,
+    "column": 34,
+    "function": "Arrow function",
+    "complexity": 3
+  },
+  {
+    "file": "android/animation-locale.test.mjs",
+    "line": 6,
+    "column": 26,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/animation-locale.test.mjs",
+    "line": 8,
+    "column": 22,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/animation-locale.test.mjs",
+    "line": 13,
+    "column": 28,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/animation-locale.test.mjs",
+    "line": 15,
+    "column": 22,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/animation-locale.ts",
+    "line": 5,
+    "column": 8,
+    "function": "Function 'requireEnglishAnimation'",
+    "complexity": 4
+  },
+  {
+    "file": "android/animation-transition.test.mjs",
+    "line": 25,
+    "column": 1,
+    "function": "Async function 'compare'",
+    "complexity": 3
+  },
+  {
+    "file": "android/animation-transition.test.mjs",
+    "line": 27,
+    "column": 55,
+    "function": "Method 'toImpl'",
+    "complexity": 1
+  },
+  {
+    "file": "android/animation-transition.test.mjs",
+    "line": 31,
+    "column": 5,
+    "function": "Async method '_send'",
+    "complexity": 3
+  },
+  {
+    "file": "android/animation-transition.test.mjs",
+    "line": 33,
+    "column": 33,
+    "function": "Arrow function",
+    "complexity": 3
+  },
+  {
+    "file": "android/animation-transition.test.mjs",
+    "line": 36,
+    "column": 35,
+    "function": "Async method 'attach'",
+    "complexity": 1
+  },
+  {
+    "file": "android/animation-transition.test.mjs",
+    "line": 40,
+    "column": 5,
+    "function": "Method 'snapshotPath'",
+    "complexity": 1
+  },
+  {
+    "file": "android/animation-transition.test.mjs",
+    "line": 42,
+    "column": 66,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/animation-transition.test.mjs",
+    "line": 46,
+    "column": 39,
+    "function": "Async arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/animation-transition.test.mjs",
+    "line": 50,
+    "column": 46,
+    "function": "Async arrow function",
+    "complexity": 3
+  },
+  {
+    "file": "android/animation-transition.test.mjs",
+    "line": 60,
+    "column": 35,
+    "function": "Async arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/animation-transition.test.mjs",
+    "line": 64,
+    "column": 38,
+    "function": "Async arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/animation-transition.test.mjs",
+    "line": 87,
+    "column": 1,
+    "function": "Function 'historicalFrame'",
+    "complexity": 2
+  },
+  {
+    "file": "android/animation-transition.test.mjs",
+    "line": 92,
+    "column": 41,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/animation-transition.test.mjs",
+    "line": 100,
+    "column": 71,
+    "function": "Async arrow function",
+    "complexity": 2
+  },
+  {
+    "file": "android/animation-transition.test.mjs",
+    "line": 102,
+    "column": 49,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/animation-transition.test.mjs",
+    "line": 103,
+    "column": 75,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/animation-transition.test.mjs",
+    "line": 117,
+    "column": 1,
+    "function": "Function 'shiftedBrightness'",
+    "complexity": 3
+  },
+  {
+    "file": "android/animation-transition.test.mjs",
+    "line": 128,
+    "column": 50,
+    "function": "Async arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/animation-transition.test.mjs",
+    "line": 135,
+    "column": 33,
+    "function": "Async arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/animation-transition.test.mjs",
+    "line": 139,
+    "column": 35,
+    "function": "Async arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/animation-transition.test.mjs",
+    "line": 149,
+    "column": 1,
+    "function": "Function 'horizontallyShifted'",
+    "complexity": 1
+  },
+  {
+    "file": "android/animation-transition.test.mjs",
+    "line": 159,
+    "column": 70,
+    "function": "Async arrow function",
+    "complexity": 2
+  },
+  {
+    "file": "android/animation-transition.test.mjs",
+    "line": 165,
+    "column": 22,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/animation-transition.test.mjs",
+    "line": 174,
+    "column": 55,
+    "function": "Async arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/animation-transition.test.mjs",
+    "line": 179,
+    "column": 42,
+    "function": "Async arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/animation-transition.test.mjs",
+    "line": 198,
+    "column": 1,
+    "function": "Function 'compareVideo'",
+    "complexity": 1
+  },
+  {
+    "file": "android/animation-transition.test.mjs",
+    "line": 203,
+    "column": 29,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/animation-transition.test.mjs",
+    "line": 207,
+    "column": 29,
+    "function": "Arrow function",
+    "complexity": 3
+  },
+  {
+    "file": "android/animation-transition.test.mjs",
+    "line": 214,
+    "column": 20,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/animation-transition.test.mjs",
+    "line": 218,
+    "column": 29,
+    "function": "Arrow function",
+    "complexity": 3
+  },
+  {
+    "file": "android/animation-transition.test.mjs",
+    "line": 226,
+    "column": 20,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/animation-transition.test.mjs",
+    "line": 230,
+    "column": 29,
+    "function": "Arrow function",
+    "complexity": 3
+  },
+  {
+    "file": "android/animation-transition.test.mjs",
+    "line": 238,
+    "column": 20,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/animation-transition.test.mjs",
+    "line": 242,
+    "column": 29,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/animation-transition.test.mjs",
+    "line": 243,
+    "column": 20,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/animation-transition.test.mjs",
+    "line": 252,
+    "column": 1,
+    "function": "Async function 'compareRecordedVideo'",
+    "complexity": 6
+  },
+  {
+    "file": "android/animation-transition.test.mjs",
+    "line": 261,
+    "column": 34,
+    "function": "Async arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/animation-transition.test.mjs",
+    "line": 269,
+    "column": 24,
+    "function": "Arrow function",
+    "complexity": 2
+  },
+  {
+    "file": "android/animation-transition.test.mjs",
+    "line": 276,
+    "column": 86,
+    "function": "Method 'toImpl'",
+    "complexity": 1
+  },
+  {
+    "file": "android/animation-transition.test.mjs",
+    "line": 280,
+    "column": 5,
+    "function": "Async method '_send'",
+    "complexity": 3
+  },
+  {
+    "file": "android/animation-transition.test.mjs",
+    "line": 283,
+    "column": 51,
+    "function": "Async method 'attach'",
+    "complexity": 1
+  },
+  {
+    "file": "android/animation-transition.test.mjs",
+    "line": 288,
+    "column": 5,
+    "function": "Method 'snapshotPath'",
+    "complexity": 1
+  },
+  {
+    "file": "android/animation-transition.test.mjs",
+    "line": 291,
+    "column": 38,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/animation-transition.test.mjs",
+    "line": 298,
+    "column": 44,
+    "function": "Async arrow function",
+    "complexity": 2
+  },
+  {
+    "file": "android/animation-transition.test.mjs",
+    "line": 303,
+    "column": 14,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/animation-transition.test.mjs",
+    "line": 310,
+    "column": 59,
+    "function": "Async arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/animation-transition.test.mjs",
+    "line": 312,
+    "column": 56,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/animation-transition.test.mjs",
+    "line": 319,
+    "column": 48,
+    "function": "Async arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/animation-transition.test.mjs",
+    "line": 326,
+    "column": 48,
+    "function": "Async arrow function",
+    "complexity": 3
+  },
+  {
+    "file": "android/animation-transition.test.mjs",
+    "line": 342,
+    "column": 35,
+    "function": "Async arrow function",
+    "complexity": 2
+  },
+  {
+    "file": "android/animation-transition.test.mjs",
+    "line": 357,
+    "column": 48,
+    "function": "Async arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/animation-transition.ts",
+    "line": 21,
+    "column": 8,
+    "function": "Function 'frameColorDistance'",
+    "complexity": 5
+  },
+  {
+    "file": "android/animation-transition.ts",
+    "line": 35,
+    "column": 8,
+    "function": "Function 'framePaletteDistance'",
+    "complexity": 6
+  },
+  {
+    "file": "android/animation-transition.ts",
+    "line": 57,
+    "column": 8,
+    "function": "Function 'middleCandidates'",
+    "complexity": 2
+  },
+  {
+    "file": "android/animation-transition.ts",
+    "line": 62,
+    "column": 38,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/animation-transition.ts",
+    "line": 65,
+    "column": 18,
+    "function": "Arrow function",
+    "complexity": 4
+  },
+  {
+    "file": "android/animation-transition.ts",
+    "line": 76,
+    "column": 8,
+    "function": "Function 'assertReviewedVideoMiddle'",
+    "complexity": 1
+  },
+  {
+    "file": "android/animation-transition.ts",
+    "line": 81,
+    "column": 41,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/animation-transition.ts",
+    "line": 84,
+    "column": 73,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/animation-transition.ts",
+    "line": 86,
+    "column": 37,
+    "function": "Arrow function",
+    "complexity": 7
+  },
+  {
+    "file": "android/animation-transition.ts",
+    "line": 122,
+    "column": 8,
+    "function": "Async function 'captureNativeTransition'",
+    "complexity": 33
+  },
+  {
+    "file": "android/animation-transition.ts",
+    "line": 135,
+    "column": 61,
+    "function": "Async arrow function",
+    "complexity": 3
+  },
+  {
+    "file": "android/animation-transition.ts",
+    "line": 143,
+    "column": 32,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/animation-transition.ts",
+    "line": 160,
+    "column": 25,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/animation-transition.ts",
+    "line": 166,
+    "column": 75,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/animation-transition.ts",
+    "line": 177,
+    "column": 38,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/animation-transition.ts",
+    "line": 180,
+    "column": 27,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/animation-transition.ts",
+    "line": 180,
+    "column": 67,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/animation-transition.ts",
+    "line": 186,
+    "column": 54,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/animation-transition.ts",
+    "line": 204,
+    "column": 39,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/animation-transition.ts",
+    "line": 206,
+    "column": 32,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/animation-transition.ts",
+    "line": 215,
+    "column": 62,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/animation-transition.ts",
+    "line": 219,
+    "column": 49,
+    "function": "Arrow function",
+    "complexity": 2
+  },
+  {
+    "file": "android/animation-transition.ts",
+    "line": 232,
+    "column": 18,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/animation-transition.ts",
+    "line": 240,
+    "column": 63,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/animation-transition.ts",
+    "line": 243,
+    "column": 57,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/animation-transition.ts",
+    "line": 244,
+    "column": 24,
+    "function": "Arrow function",
+    "complexity": 2
+  },
+  {
+    "file": "android/animation-transition.ts",
+    "line": 248,
+    "column": 21,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/animation-transition.ts",
+    "line": 264,
+    "column": 8,
+    "function": "Async function 'captureTransientTransition'",
+    "complexity": 6
+  },
+  {
+    "file": "android/animation-transition.ts",
+    "line": 271,
+    "column": 32,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/animation-transition.ts",
+    "line": 278,
+    "column": 44,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/animation-transition.ts",
+    "line": 287,
+    "column": 35,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/animation-transition.ts",
+    "line": 288,
+    "column": 43,
+    "function": "Arrow function",
+    "complexity": 2
+  },
+  {
+    "file": "android/animation-transition.ts",
+    "line": 290,
+    "column": 37,
+    "function": "Arrow function",
+    "complexity": 2
+  },
+  {
+    "file": "android/animation-transition.ts",
+    "line": 291,
+    "column": 26,
+    "function": "Arrow function",
+    "complexity": 2
+  },
+  {
+    "file": "android/animation-transition.ts",
+    "line": 301,
+    "column": 24,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/animation-transition.ts",
+    "line": 315,
+    "column": 8,
+    "function": "Async function 'captureTimedPrompt'",
+    "complexity": 8
+  },
+  {
+    "file": "android/animation-transition.ts",
+    "line": 322,
+    "column": 32,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/animation-transition.ts",
+    "line": 327,
+    "column": 39,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/animation-transition.ts",
+    "line": 333,
+    "column": 33,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/animation-transition.ts",
+    "line": 338,
+    "column": 33,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/animation-transition.ts",
+    "line": 340,
+    "column": 37,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/animation-transition.ts",
+    "line": 341,
+    "column": 18,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/animation-transition.ts",
+    "line": 346,
+    "column": 56,
+    "function": "Arrow function",
+    "complexity": 2
+  },
+  {
+    "file": "android/animation-transition.ts",
+    "line": 363,
+    "column": 48,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/animation-transition.ts",
+    "line": 373,
+    "column": 1,
+    "function": "Function 'observeTransition'",
+    "complexity": 2
+  },
+  {
+    "file": "android/asset-sequence.test.mjs",
+    "line": 17,
+    "column": 1,
+    "function": "Function 'deviceFor'",
+    "complexity": 1
+  },
+  {
+    "file": "android/asset-sequence.test.mjs",
+    "line": 18,
+    "column": 42,
+    "function": "Method 'toImpl'",
+    "complexity": 1
+  },
+  {
+    "file": "android/asset-sequence.test.mjs",
+    "line": 22,
+    "column": 5,
+    "function": "Async method '_send'",
+    "complexity": 3
+  },
+  {
+    "file": "android/asset-sequence.test.mjs",
+    "line": 25,
+    "column": 29,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/asset-sequence.test.mjs",
+    "line": 29,
+    "column": 43,
+    "function": "Async arrow function",
+    "complexity": 3
+  },
+  {
+    "file": "android/asset-sequence.test.mjs",
+    "line": 31,
+    "column": 57,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/asset-sequence.test.mjs",
+    "line": 42,
+    "column": 73,
+    "function": "Async method 'attach'",
+    "complexity": 1
+  },
+  {
+    "file": "android/asset-sequence.test.mjs",
+    "line": 46,
+    "column": 7,
+    "function": "Method 'snapshotPath'",
+    "complexity": 1
+  },
+  {
+    "file": "android/asset-sequence.test.mjs",
+    "line": 49,
+    "column": 47,
+    "function": "Async arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/asset-sequence.test.mjs",
+    "line": 53,
+    "column": 47,
+    "function": "Async arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/asset-sequence.test.mjs",
+    "line": 55,
+    "column": 55,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/asset-sequence.test.mjs",
+    "line": 56,
+    "column": 57,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/asset-sequence.test.mjs",
+    "line": 57,
+    "column": 44,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/asset-sequence.test.mjs",
+    "line": 64,
+    "column": 71,
+    "function": "Async method 'attach'",
+    "complexity": 1
+  },
+  {
+    "file": "android/asset-sequence.test.mjs",
+    "line": 68,
+    "column": 5,
+    "function": "Method 'snapshotPath'",
+    "complexity": 2
+  },
+  {
+    "file": "android/asset-sequence.test.mjs",
+    "line": 70,
+    "column": 76,
+    "function": "Async arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/asset-sequence.test.mjs",
+    "line": 72,
+    "column": 9,
+    "function": "Arrow function",
+    "complexity": 2
+  },
+  {
+    "file": "android/asset-sequence.ts",
+    "line": 32,
+    "column": 8,
+    "function": "Async function 'captureAssetSequence'",
+    "complexity": 14
+  },
+  {
+    "file": "android/asset-sequence.ts",
+    "line": 39,
+    "column": 32,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/asset-sequence.ts",
+    "line": 52,
+    "column": 41,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/asset-sequence.ts",
+    "line": 56,
+    "column": 43,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/asset-sequence.ts",
+    "line": 57,
+    "column": 20,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/asset-sequence.ts",
+    "line": 68,
+    "column": 44,
+    "function": "Arrow function",
+    "complexity": 2
+  },
+  {
+    "file": "android/asset-sequence.ts",
+    "line": 69,
+    "column": 47,
+    "function": "Arrow function",
+    "complexity": 2
+  },
+  {
+    "file": "android/asset-sequence.ts",
+    "line": 74,
+    "column": 35,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/asset-sequence.ts",
+    "line": 83,
+    "column": 75,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/asset-sequence.ts",
+    "line": 84,
+    "column": 24,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/asset-sequence.ts",
+    "line": 96,
+    "column": 36,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/asset-sequence.ts",
+    "line": 99,
+    "column": 52,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/asset-sequence.ts",
+    "line": 100,
+    "column": 72,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/asset-sequence.ts",
+    "line": 102,
+    "column": 49,
+    "function": "Arrow function",
+    "complexity": 2
+  },
+  {
+    "file": "android/asset-sequence.ts",
+    "line": 103,
+    "column": 50,
+    "function": "Arrow function",
+    "complexity": 2
+  },
+  {
+    "file": "android/asset-sequence.ts",
+    "line": 113,
+    "column": 23,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/asset-sequence.ts",
+    "line": 114,
+    "column": 81,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/asset-sequence.ts",
+    "line": 115,
+    "column": 30,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/asset-sequence.ts",
+    "line": 115,
+    "column": 58,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/caret-mask.test.mjs",
+    "line": 8,
+    "column": 40,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/caret-mask.test.mjs",
+    "line": 14,
+    "column": 43,
+    "function": "Arrow function",
+    "complexity": 3
+  },
+  {
+    "file": "android/caret-mask.ts",
+    "line": 9,
+    "column": 8,
+    "function": "Function 'translateCaret'",
+    "complexity": 1
+  },
+  {
+    "file": "android/caret-mask.ts",
+    "line": 21,
+    "column": 8,
+    "function": "Function 'caretMask'",
+    "complexity": 10
+  },
+  {
+    "file": "android/launch-artwork.ts",
+    "line": 13,
+    "column": 8,
+    "function": "Async function 'verifyLaunchArtwork'",
+    "complexity": 2
+  },
+  {
+    "file": "android/launch-artwork.ts",
+    "line": 16,
+    "column": 36,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/launch-artwork.ts",
+    "line": 21,
+    "column": 37,
+    "function": "Arrow function",
+    "complexity": 4
+  },
+  {
+    "file": "android/launch-artwork.ts",
+    "line": 23,
+    "column": 50,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/launch-artwork.ts",
+    "line": 36,
+    "column": 64,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/loop-animation.test.mjs",
+    "line": 16,
+    "column": 1,
+    "function": "Function 'parts'",
+    "complexity": 6
+  },
+  {
+    "file": "android/loop-animation.test.mjs",
+    "line": 28,
+    "column": 34,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/loop-animation.test.mjs",
+    "line": 33,
+    "column": 20,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/loop-animation.test.mjs",
+    "line": 36,
+    "column": 34,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/loop-animation.test.mjs",
+    "line": 40,
+    "column": 21,
+    "function": "Arrow function",
+    "complexity": 3
+  },
+  {
+    "file": "android/loop-animation.ts",
+    "line": 14,
+    "column": 8,
+    "function": "Function 'changedMotionRegions'",
+    "complexity": 2
+  },
+  {
+    "file": "android/loop-animation.ts",
+    "line": 16,
+    "column": 34,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/loop-animation.ts",
+    "line": 28,
+    "column": 8,
+    "function": "Async function 'verifyLoopAnimation'",
+    "complexity": 9
+  },
+  {
+    "file": "android/loop-animation.ts",
+    "line": 38,
+    "column": 56,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/loop-animation.ts",
+    "line": 41,
+    "column": 32,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/loop-animation.ts",
+    "line": 48,
+    "column": 54,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/loop-animation.ts",
+    "line": 54,
+    "column": 38,
+    "function": "Arrow function",
+    "complexity": 2
+  },
+  {
+    "file": "android/loop-animation.ts",
+    "line": 57,
+    "column": 31,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/loop-keyframes.ts",
+    "line": 16,
+    "column": 1,
+    "function": "Function 'brightness'",
+    "complexity": 2
+  },
+  {
+    "file": "android/loop-keyframes.ts",
+    "line": 35,
+    "column": 8,
+    "function": "Async function 'captureLoopKeyframes'",
+    "complexity": 7
+  },
+  {
+    "file": "android/loop-keyframes.ts",
+    "line": 47,
+    "column": 40,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/loop-keyframes.ts",
+    "line": 48,
+    "column": 34,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/loop-keyframes.ts",
+    "line": 49,
+    "column": 41,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/loop-keyframes.ts",
+    "line": 54,
+    "column": 56,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/loop-keyframes.ts",
+    "line": 58,
+    "column": 39,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/loop-keyframes.ts",
+    "line": 59,
+    "column": 49,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/loop-keyframes.ts",
+    "line": 60,
+    "column": 45,
+    "function": "Arrow function",
+    "complexity": 2
+  },
+  {
+    "file": "android/loop-keyframes.ts",
+    "line": 61,
+    "column": 46,
+    "function": "Arrow function",
+    "complexity": 2
+  },
+  {
+    "file": "android/loop-keyframes.ts",
+    "line": 73,
+    "column": 48,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/loop-keyframes.ts",
+    "line": 90,
+    "column": 8,
+    "function": "Async function 'captureMovingKeyframes'",
+    "complexity": 10
+  },
+  {
+    "file": "android/loop-keyframes.ts",
+    "line": 102,
+    "column": 41,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/loop-keyframes.ts",
+    "line": 103,
+    "column": 34,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/loop-keyframes.ts",
+    "line": 103,
+    "column": 57,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/loop-keyframes.ts",
+    "line": 106,
+    "column": 39,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/loop-keyframes.ts",
+    "line": 108,
+    "column": 40,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/loop-keyframes.ts",
+    "line": 116,
+    "column": 63,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/loop-keyframes.ts",
+    "line": 117,
+    "column": 57,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/loop-keyframes.ts",
+    "line": 117,
+    "column": 77,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/loop-keyframes.ts",
+    "line": 131,
+    "column": 8,
+    "function": "Async function 'captureConcurrentMotion'",
+    "complexity": 3
+  },
+  {
+    "file": "android/loop-keyframes.ts",
+    "line": 134,
+    "column": 37,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/loop-keyframes.ts",
+    "line": 136,
+    "column": 40,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/loop-keyframes.ts",
+    "line": 145,
+    "column": 45,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/motion-regions.test.mjs",
+    "line": 17,
+    "column": 1,
+    "function": "Function 'frame'",
+    "complexity": 6
+  },
+  {
+    "file": "android/motion-regions.test.mjs",
+    "line": 27,
+    "column": 39,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/motion-regions.test.mjs",
+    "line": 41,
+    "column": 37,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/motion-regions.test.mjs",
+    "line": 42,
+    "column": 20,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/motion-regions.test.mjs",
+    "line": 43,
+    "column": 20,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/motion-regions.test.mjs",
+    "line": 47,
+    "column": 44,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/motion-regions.test.mjs",
+    "line": 60,
+    "column": 1,
+    "function": "Function 'changedPixels'",
+    "complexity": 3
+  },
+  {
+    "file": "android/motion-regions.test.mjs",
+    "line": 70,
+    "column": 44,
+    "function": "Arrow function",
+    "complexity": 2
+  },
+  {
+    "file": "android/motion-regions.test.mjs",
+    "line": 81,
+    "column": 43,
+    "function": "Arrow function",
+    "complexity": 2
+  },
+  {
+    "file": "android/motion-regions.test.mjs",
+    "line": 95,
+    "column": 29,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/motion-regions.test.mjs",
+    "line": 99,
+    "column": 20,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/motion-regions.ts",
+    "line": 12,
+    "column": 8,
+    "function": "Function 'samePixels'",
+    "complexity": 3
+  },
+  {
+    "file": "android/motion-regions.ts",
+    "line": 29,
+    "column": 8,
+    "function": "Function 'motionParts'",
+    "complexity": 1
+  },
+  {
+    "file": "android/motion-regions.ts",
+    "line": 33,
+    "column": 36,
+    "function": "Arrow function",
+    "complexity": 11
+  },
+  {
+    "file": "android/record-extra.ts",
+    "line": 17,
+    "column": 8,
+    "function": "Async function 'recordDialog'",
+    "complexity": 3
+  },
+  {
+    "file": "android/record-extra.ts",
+    "line": 30,
+    "column": 1,
+    "function": "Async function 'swipeRecord'",
+    "complexity": 1
+  },
+  {
+    "file": "android/record-extra.ts",
+    "line": 45,
+    "column": 1,
+    "function": "Async function 'deleteRecord'",
+    "complexity": 1
+  },
+  {
+    "file": "android/record-extra.ts",
+    "line": 56,
+    "column": 8,
+    "function": "Async function 'recordDeletion'",
+    "complexity": 1
+  },
+  {
+    "file": "android/record-extra.ts",
+    "line": 78,
+    "column": 8,
+    "function": "Async function 'legacyRecordEnd'",
+    "complexity": 1
+  },
+  {
+    "file": "android/record-extra.ts",
+    "line": 82,
+    "column": 30,
+    "function": "Async arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/record-extra.ts",
+    "line": 96,
+    "column": 25,
+    "function": "Async arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/record-extra.ts",
+    "line": 125,
+    "column": 8,
+    "function": "Async function 'v2RecordErrors'",
+    "complexity": 1
+  },
+  {
+    "file": "android/record-extra.ts",
+    "line": 132,
+    "column": 52,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/record-navigation.ts",
+    "line": 13,
+    "column": 8,
+    "function": "Function 'recordRow'",
+    "complexity": 1
+  },
+  {
+    "file": "android/record-navigation.ts",
+    "line": 24,
+    "column": 8,
+    "function": "Async function 'pressRecordControl'",
+    "complexity": 1
+  },
+  {
+    "file": "android/record-navigation.ts",
+    "line": 35,
+    "column": 8,
+    "function": "Async function 'scrollRecords'",
+    "complexity": 3
+  },
+  {
+    "file": "android/record-navigation.ts",
+    "line": 47,
+    "column": 8,
+    "function": "Async function 'reopenRecords'",
+    "complexity": 1
+  },
+  {
+    "file": "android/record-navigation.ts",
+    "line": 61,
+    "column": 8,
+    "function": "Function 'recordSnapshots'",
+    "complexity": 1
+  },
+  {
+    "file": "android/record-navigation.ts",
+    "line": 68,
+    "column": 5,
+    "function": "Async method 'capture'",
+    "complexity": 4
+  },
+  {
+    "file": "android/record-navigation.ts",
+    "line": 82,
+    "column": 36,
+    "function": "Async arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/record-navigation.ts",
+    "line": 92,
+    "column": 5,
+    "function": "Method 'complete'",
+    "complexity": 1
+  },
+  {
+    "file": "android/recorded-transitions.test.mjs",
+    "line": 18,
+    "column": 107,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/recorded-transitions.test.mjs",
+    "line": 27,
+    "column": 1,
+    "function": "Function 'digest'",
+    "complexity": 1
+  },
+  {
+    "file": "android/recorded-transitions.test.mjs",
+    "line": 31,
+    "column": 11,
+    "function": "Arrow function",
+    "complexity": 2
+  },
+  {
+    "file": "android/recorded-transitions.test.mjs",
+    "line": 39,
+    "column": 54,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/recorded-transitions.test.mjs",
+    "line": 43,
+    "column": 10,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/recorded-transitions.test.mjs",
+    "line": 49,
+    "column": 1,
+    "function": "Function 'original'",
+    "complexity": 1
+  },
+  {
+    "file": "android/recorded-transitions.test.mjs",
+    "line": 56,
+    "column": 97,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/recorded-transitions.test.mjs",
+    "line": 64,
+    "column": 41,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/recorded-transitions.test.mjs",
+    "line": 65,
+    "column": 38,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/recorded-transitions.test.mjs",
+    "line": 67,
+    "column": 45,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/screenshot-policy.test.mjs",
+    "line": 16,
+    "column": 41,
+    "function": "Arrow function",
+    "complexity": 3
+  },
+  {
+    "file": "android/screenshot-policy.test.mjs",
+    "line": 59,
+    "column": 50,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/screenshot-policy.test.mjs",
+    "line": 59,
+    "column": 74,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/screenshot-policy.test.mjs",
+    "line": 61,
+    "column": 48,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/screenshot-policy.test.mjs",
+    "line": 61,
+    "column": 76,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/screenshot-policy.test.mjs",
+    "line": 62,
+    "column": 31,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/screenshot-policy.test.mjs",
+    "line": 62,
+    "column": 55,
+    "function": "Arrow function",
+    "complexity": 2
+  },
+  {
+    "file": "android/screenshot-policy.test.mjs",
+    "line": 69,
+    "column": 44,
+    "function": "Arrow function",
+    "complexity": 4
+  },
+  {
+    "file": "android/screenshot-policy.test.mjs",
+    "line": 82,
+    "column": 20,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/screenshot.ts",
+    "line": 15,
+    "column": 8,
+    "function": "Async function 'focusedCaretMask'",
+    "complexity": 8
+  },
+  {
+    "file": "android/screenshot.ts",
+    "line": 16,
+    "column": 52,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/screenshot.ts",
+    "line": 39,
+    "column": 8,
+    "function": "Async function 'screenshotMasks'",
+    "complexity": 12
+  },
+  {
+    "file": "android/screenshot.ts",
+    "line": 45,
+    "column": 76,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/screenshot.ts",
+    "line": 51,
+    "column": 92,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/screenshot.ts",
+    "line": 66,
+    "column": 8,
+    "function": "Function 'maskScreenshot'",
+    "complexity": 6
+  },
+  {
+    "file": "android/scroll-end.ts",
+    "line": 11,
+    "column": 8,
+    "function": "Async function 'scrollToEnd'",
+    "complexity": 4
+  },
+  {
+    "file": "android/scroll-end.ts",
+    "line": 20,
+    "column": 27,
+    "function": "Async arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/video-frames.test.mjs",
+    "line": 10,
+    "column": 1,
+    "function": "Function 'recording'",
+    "complexity": 2
+  },
+  {
+    "file": "android/video-frames.test.mjs",
+    "line": 19,
+    "column": 26,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/video-frames.test.mjs",
+    "line": 31,
+    "column": 7,
+    "function": "Method 'spawn'",
+    "complexity": 1
+  },
+  {
+    "file": "android/video-frames.test.mjs",
+    "line": 35,
+    "column": 7,
+    "function": "Method 'execFileSync'",
+    "complexity": 2
+  },
+  {
+    "file": "android/video-frames.test.mjs",
+    "line": 38,
+    "column": 25,
+    "function": "Method 'mkdirSync'",
+    "complexity": 1
+  },
+  {
+    "file": "android/video-frames.test.mjs",
+    "line": 39,
+    "column": 28,
+    "function": "Method 'readdirSync'",
+    "complexity": 1
+  },
+  {
+    "file": "android/video-frames.test.mjs",
+    "line": 39,
+    "column": 81,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/video-frames.test.mjs",
+    "line": 40,
+    "column": 23,
+    "function": "Method 'readFileSync'",
+    "complexity": 1
+  },
+  {
+    "file": "android/video-frames.test.mjs",
+    "line": 43,
+    "column": 49,
+    "function": "Async method 'setTimeout'",
+    "complexity": 1
+  },
+  {
+    "file": "android/video-frames.test.mjs",
+    "line": 48,
+    "column": 7,
+    "function": "Method 'adb'",
+    "complexity": 5
+  },
+  {
+    "file": "android/video-frames.test.mjs",
+    "line": 57,
+    "column": 5,
+    "function": "Async method 'run'",
+    "complexity": 2
+  },
+  {
+    "file": "android/video-frames.test.mjs",
+    "line": 62,
+    "column": 20,
+    "function": "Async arrow function",
+    "complexity": 2
+  },
+  {
+    "file": "android/video-frames.test.mjs",
+    "line": 71,
+    "column": 13,
+    "function": "Async method 'attach'",
+    "complexity": 2
+  },
+  {
+    "file": "android/video-frames.test.mjs",
+    "line": 84,
+    "column": 44,
+    "function": "Async arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/video-frames.test.mjs",
+    "line": 88,
+    "column": 42,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/video-frames.test.mjs",
+    "line": 91,
+    "column": 42,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/video-frames.test.mjs",
+    "line": 94,
+    "column": 51,
+    "function": "Async arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/video-frames.test.mjs",
+    "line": 97,
+    "column": 43,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/video-frames.test.mjs",
+    "line": 99,
+    "column": 52,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/video-frames.test.mjs",
+    "line": 104,
+    "column": 49,
+    "function": "Async arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/video-frames.test.mjs",
+    "line": 107,
+    "column": 45,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/video-frames.test.mjs",
+    "line": 109,
+    "column": 44,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/video-frames.test.mjs",
+    "line": 113,
+    "column": 43,
+    "function": "Async arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/video-frames.test.mjs",
+    "line": 116,
+    "column": 43,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/video-frames.test.mjs",
+    "line": 117,
+    "column": 42,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/video-frames.test.mjs",
+    "line": 118,
+    "column": 42,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/video-frames.ts",
+    "line": 19,
+    "column": 8,
+    "function": "Async function 'recordNativeVideoFrames'",
+    "complexity": 8
+  },
+  {
+    "file": "android/video-frames.ts",
+    "line": 31,
+    "column": 36,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/video-frames.ts",
+    "line": 32,
+    "column": 56,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/video-frames.ts",
+    "line": 34,
+    "column": 33,
+    "function": "Arrow function",
+    "complexity": 2
+  },
+  {
+    "file": "android/video-frames.ts",
+    "line": 38,
+    "column": 61,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/video-frames.ts",
+    "line": 53,
+    "column": 51,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/video-frames.ts",
+    "line": 55,
+    "column": 27,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/video-frames.ts",
+    "line": 59,
+    "column": 29,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/video-frames.ts",
+    "line": 61,
+    "column": 73,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/video-frames.ts",
+    "line": 73,
+    "column": 1,
+    "function": "Function 'stopRecorder'",
+    "complexity": 3
+  },
+  {
+    "file": "android/video-frames.ts",
+    "line": 83,
+    "column": 1,
+    "function": "Async function 'preserveFailedVideo'",
+    "complexity": 1
+  },
+  {
+    "file": "android/video-motion.test.mjs",
+    "line": 14,
+    "column": 1,
+    "function": "Function 'panel'",
+    "complexity": 3
+  },
+  {
+    "file": "android/video-motion.test.mjs",
+    "line": 27,
+    "column": 37,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/video-motion.test.mjs",
+    "line": 32,
+    "column": 43,
+    "function": "Arrow function",
+    "complexity": 2
+  },
+  {
+    "file": "android/video-motion.ts",
+    "line": 11,
+    "column": 1,
+    "function": "Function 'areaSamples'",
+    "complexity": 1
+  },
+  {
+    "file": "android/video-motion.ts",
+    "line": 12,
+    "column": 52,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/video-motion.ts",
+    "line": 14,
+    "column": 83,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/video-motion.ts",
+    "line": 26,
+    "column": 1,
+    "function": "Function 'areaPixel'",
+    "complexity": 4
+  },
+  {
+    "file": "android/video-motion.ts",
+    "line": 35,
+    "column": 26,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/video-motion.ts",
+    "line": 41,
+    "column": 8,
+    "function": "Function 'videoThumbnail'",
+    "complexity": 3
+  },
+  {
+    "file": "android/video-motion.ts",
+    "line": 57,
+    "column": 1,
+    "function": "Function 'videoColumnMotion'",
+    "complexity": 6
+  },
+  {
+    "file": "android/video-motion.ts",
+    "line": 67,
+    "column": 28,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/video-motion.ts",
+    "line": 75,
+    "column": 8,
+    "function": "Function 'preservesVideoColumns'",
+    "complexity": 5
+  },
+  {
+    "file": "android/video-motion.ts",
+    "line": 90,
+    "column": 61,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/video-motion.ts",
+    "line": 97,
+    "column": 8,
+    "function": "Function 'alignedVideoDistance'",
+    "complexity": 6
+  },
+  {
+    "file": "android/video-motion.ts",
+    "line": 120,
+    "column": 1,
+    "function": "Function 'transposedThumbnail'",
+    "complexity": 3
+  },
+  {
+    "file": "android/video-motion.ts",
+    "line": 136,
+    "column": 8,
+    "function": "Function 'misplacedVideoFrame'",
+    "complexity": 3
+  },
+  {
+    "file": "android/video-motion.ts",
+    "line": 142,
+    "column": 39,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/video-motion.ts",
+    "line": 143,
+    "column": 25,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/video-motion.ts",
+    "line": 150,
+    "column": 8,
+    "function": "Function 'mirroredThumbnail'",
+    "complexity": 3
+  },
+  {
+    "file": "android/video-motion.ts",
+    "line": 165,
+    "column": 8,
+    "function": "Function 'localMotionDistance'",
+    "complexity": 9
+  },
+  {
+    "file": "android/video-motion.ts",
+    "line": 169,
+    "column": 47,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "android/video-motion.ts",
+    "line": 181,
+    "column": 52,
+    "function": "Arrow function",
+    "complexity": 5
+  },
+  {
+    "file": "eslint.config.mjs",
+    "line": 16,
+    "column": 1,
+    "function": "Function 'hasFetchProperty'",
+    "complexity": 3
+  },
+  {
+    "file": "eslint.config.mjs",
+    "line": 19,
+    "column": 14,
+    "function": "Arrow function",
+    "complexity": 2
+  },
+  {
+    "file": "eslint.config.mjs",
+    "line": 28,
+    "column": 1,
+    "function": "Function 'replacesFetch'",
+    "complexity": 6
+  },
+  {
+    "file": "eslint.config.mjs",
+    "line": 49,
+    "column": 3,
+    "function": "Method 'create'",
+    "complexity": 1
+  },
+  {
+    "file": "eslint.config.mjs",
+    "line": 55,
+    "column": 5,
+    "function": "Function 'check'",
+    "complexity": 3
+  },
+  {
+    "file": "eslint.config.mjs",
+    "line": 62,
+    "column": 5,
+    "function": "Function 'pureRoutingSource'",
+    "complexity": 6
+  },
+  {
+    "file": "eslint.config.mjs",
+    "line": 84,
+    "column": 3,
+    "function": "Method 'create'",
+    "complexity": 1
+  },
+  {
+    "file": "eslint.config.mjs",
+    "line": 90,
+    "column": 5,
+    "function": "Function 'report'",
+    "complexity": 1
+  },
+  {
+    "file": "eslint.config.mjs",
+    "line": 98,
+    "column": 5,
+    "function": "Function 'checkResponsePattern'",
+    "complexity": 1
+  },
+  {
+    "file": "eslint.config.mjs",
+    "line": 106,
+    "column": 5,
+    "function": "Function 'checkPattern'",
+    "complexity": 5
+  },
+  {
+    "file": "eslint.config.mjs",
+    "line": 116,
+    "column": 5,
+    "function": "Function 'checkObjectPattern'",
+    "complexity": 5
+  },
+  {
+    "file": "eslint.config.mjs",
+    "line": 129,
+    "column": 5,
+    "function": "Function 'checkWrites'",
+    "complexity": 1
+  },
+  {
+    "file": "eslint.config.mjs",
+    "line": 130,
+    "column": 36,
+    "function": "Arrow function",
+    "complexity": 5
+  },
+  {
+    "file": "eslint.config.mjs",
+    "line": 139,
+    "column": 5,
+    "function": "Function 'checkLoop'",
+    "complexity": 1
+  },
+  {
+    "file": "eslint.config.mjs",
+    "line": 149,
+    "column": 7,
+    "function": "Method 'VariableDeclarator'",
+    "complexity": 1
+  },
+  {
+    "file": "eslint.config.mjs",
+    "line": 156,
+    "column": 7,
+    "function": "Method 'AssignmentPattern'",
+    "complexity": 1
+  },
+  {
+    "file": "eslint.config.mjs",
+    "line": 163,
+    "column": 7,
+    "function": "Method 'MemberExpression'",
+    "complexity": 3
+  },
+  {
+    "file": "eslint.config.mjs",
+    "line": 170,
+    "column": 7,
+    "function": "Method 'NewExpression'",
+    "complexity": 2
+  },
+  {
+    "file": "eslint.config.mjs",
+    "line": 177,
+    "column": 7,
+    "function": "Method 'AssignmentExpression'",
+    "complexity": 1
+  },
+  {
+    "file": "eslint.config.mjs",
+    "line": 185,
+    "column": 7,
+    "function": "Method 'CallExpression'",
+    "complexity": 6
+  },
+  {
+    "file": "eslint.config.mjs",
+    "line": 270,
+    "column": 1,
+    "function": "Function 'definesProperty'",
+    "complexity": 3
+  },
+  {
+    "file": "eslint.config.mjs",
+    "line": 280,
+    "column": 1,
+    "function": "Function 'setsGlobalProperty'",
+    "complexity": 3
+  },
+  {
+    "file": "eslint.config.mjs",
+    "line": 287,
+    "column": 1,
+    "function": "Function 'routingPattern'",
+    "complexity": 4
+  },
+  {
+    "file": "scripts/android-game-complexity.mjs",
+    "line": 9,
+    "column": 8,
+    "function": "Async function 'checkAndroidGameComplexity'",
+    "complexity": 6
+  },
+  {
+    "file": "scripts/android-game-complexity.mjs",
+    "line": 21,
+    "column": 27,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/android-game-complexity.mjs",
+    "line": 28,
+    "column": 1,
+    "function": "Function 'functionMeasurements'",
+    "complexity": 2
+  },
+  {
+    "file": "scripts/android-game-complexity.mjs",
+    "line": 30,
+    "column": 41,
+    "function": "Arrow function",
+    "complexity": 1
+  },
+  {
+    "file": "scripts/android-game-complexity.mjs",
+    "line": 30,
+    "column": 89,
+    "function": "Arrow function",
+    "complexity": 1
+  }
+]

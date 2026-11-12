@@ -32,10 +32,10 @@ export function motionParts(bytes: Buffer, regions: ScreenshotBounds[]): { outsi
   let score = 0;
   const parts = regions.map(region => {
     const { x, y, width, height } = region;
-    if (![x, y, width, height].every(Number.isInteger) || x < 0 || y < 0 || width <= 0 || height <= 0
-      || x + width > picture.width || y + height > picture.height) throw new Error('动画比较分区超出实际截图');
+    validateRegion(region, picture);
     const part = new PNG({ width, height });
-    for (let row = 0; row < height; row++) for (let column = 0; column < width; column++) {
+    for (let index = 0; index < width * height; index++) {
+      const row = Math.floor(index / width), column = index % width;
       const pixel = (y + row) * picture.width + x + column;
       if (covered[pixel]) throw new Error('动画比较分区不能重叠');
       covered[pixel] = 1;
@@ -47,4 +47,16 @@ export function motionParts(bytes: Buffer, regions: ScreenshotBounds[]): { outsi
     return PNG.sync.write(part);
   });
   return { outside: PNG.sync.write(picture), regions: parts, score };
+}
+
+/** 拒绝非整数、负数、空区域及超出截图的边界。
+ * @param region - 请求分区。
+ * @param picture - 原始截图。
+ */
+function validateRegion(region: ScreenshotBounds, picture: PNG): void {
+  const { x, y, width, height } = region;
+  if (![x, y, width, height].every(Number.isInteger)) throw new Error('动画比较分区超出实际截图');
+  const limits = [x >= 0, y >= 0, width > 0, height > 0,
+    x + width <= picture.width, y + height <= picture.height];
+  if (!limits.every(Boolean)) throw new Error('动画比较分区超出实际截图');
 }

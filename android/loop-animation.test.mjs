@@ -15,9 +15,10 @@ const { framePaletteDistance } = require('./loop-keyframes.ts');
  */
 function parts(left, right, outside = 0) {
   const png = new PNG({ width: 6, height: 2 });
-  for (let y = 0; y < 2; y++) for (let x = 0; x < 6; x++) {
+  for (let pixel = 0; pixel < 12; pixel++) {
+    const y = Math.floor(pixel / 6), x = pixel % 6;
     const offset = (y * 6 + x) * 4;
-    png.data.fill(x < 2 ? left : x < 4 ? right : outside, offset, offset + 3);
+    png.data.fill([left, right, outside][Math.floor(x / 2)], offset, offset + 3);
     png.data[offset + 3] = 255;
   }
   return motionParts(PNG.sync.write(png), [

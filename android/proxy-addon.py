@@ -14,7 +14,7 @@ from club_search_fixture import ClubSearchFixture
 from username_lookup import username_lookup_response
 from game_session import GameSession
 from launch_network import LaunchNetwork
-from network_selection import NetworkSelection
+from network_selection import NetworkSelection, creation_identity
 from selection_faults import SelectionFaults, SCENES as NETWORK_SCENES
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'e2e/mitmproxy'))
 from response_overrides import is_staging
@@ -82,7 +82,8 @@ class AndroidVisualProxy:
 
     def response(self, flow):
         self.selection_faults.response(flow)
-        self.network_selection.observe(flow)
+        self.network_selection.observe(flow, **creation_identity(
+            flow, self.game_session.account if self.game_session else None))
         if (not flow.response or flow.response.status_code != 200
                 or (flow.request.host != 'api.shafayouxi.org'
                     and not flow.request.host.endswith('.api.staging.laiwan.shafayouxi.com'))):
@@ -109,6 +110,18 @@ class AndroidVisualProxy:
 
     def error(self, flow):
         self.network_selection.observe(flow, 'error')
+
+    def http_connect(self, flow):
+        try:
+            self.network_selection.connection(flow.request.host, 'connect')
+        except Exception:
+            pass
+
+    def tls_failed_client(self, data):
+        self.network_selection.tls_failure(data, 'tls-client-failed')
+
+    def tls_failed_server(self, data):
+        self.network_selection.tls_failure(data, 'tls-server-failed')
 
     def websocket_start(self, flow):
         self.network_selection.observe(flow, 'websocket-connected')
@@ -183,6 +196,7 @@ class AndroidVisualProxy:
             self.game.websocket_end(flow)
 
     async def request(self, flow):
+        self.network_selection.observe(flow, 'request')
         if self.selection_faults.request(flow):
             return
         if await self.launch.request(flow):

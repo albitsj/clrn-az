@@ -1,0 +1,135 @@
+本轮 CI 调查与最小诊断改动；远端失败尚未全部修复
+CI-Diagnostic-SHA256: 4e1797fca30765962ea81c07fadfbcde746af72dd410b5a35248e1961692394d
+run 43154337744 / attempt 1 / PR 72
+HEAD bba912a9eaa6ad6b50984dd91ea42a6d34e6bbec；API run/job 均核对一致。
+实际 checkout 为 b9361dacfb7c53f9da1cc8b5e1accb9f623bffb7，
+日志明确是 HEAD 合入 79110575b3c916746a6921e2ebc454fb4ade513d。
+分支 kevinanew/android-js-ts-3-6-2，初始工作区干净，无 .codegraph。
+修改前只读检查全部现存分支、git log --all 及相关提交
+bba912a/e65d1bb/0dbf3b8/e0a3b66/7973602/26f07c2。
+未修改 Git index、引用或历史，未执行提交、推送或分支切换。
+
+取证
+全部 41 个失败 job 已逐一通过 GitHub 插件取得日志并核对。
+gh api/gh run view 的日志下载未返回有效内容，空文件不作证据。
+新目录 /tmp/ci-43154337744-attempt1-bba912a9-artifacts；
+附件元数据全部属于本轮 run/HEAD，名称均带 43154337744-1。
+13916366590 texas/en/other；13915399900 texas/zh-Hans/other；
+13915743682 rooms/en；13915599290 rooms/zh-Hans；13915788715 rooms/zh-Hant。
+五个外层 ZIP 和五个精确匹配 data:application/zip;base64 的内嵌报告
+均 testzip/CRC 通过后解压到新目录；未读取已有目录中的旧报告。
+读取报告 JSON 时首次把明文 attachment.body 当 base64 导致异常，
+随后按报告的真实明文 JSON 格式解析，未使用该失败解析产生的内容。
+实际 build-info 为 android-staging-300005301-e0c6ffaf82c3，
+applicationCommit e0c6ffaf82c3038544d039f4d41e329855a1e687，
+APK SHA-256 13ad5923c5ad69ff4f84181d2c97b1ce07324743d6f0c87d7da3b11116a7a456。
+
+逐项结果与反证
+1. 130970804805 Android priority (texas / en / other)
+signed_in_texas_records_v2 首次 game-room.ts:39 等待 session.room 超时。
+附件在 1794457970428 记录 64.kr-seoul POST /v3/pay_action/do：
+HTTP 200、ok=false、roomAlreadyExists=true。新标记验证上一轮
+bba912a 的固定错误匹配有效，已不是诊断漏识别。
+之前三次列表均 roomCount=0；同节点 retry 创建成功，不能解释为
+固定节点永久故障，也不能凭已有清理或 retry 成功认定根因修复。
+GameSession 正确拒绝登记失败创建响应，未发现成功房间漏登记证据。
+仍需验证真实支付请求的 user_id/Authorization 与已登录会话是否一致，
+以区分测试请求身份错配与服务端房间存在性状态不一致。
+本轮只在失败建房响应增加 creationUserMatchesSession /
+creationAuthMatchesSession 布尔/缺失标记；不输出身份、令牌或原始正文。
+诊断解析异常返回空标记，不修改请求/响应、成功登记、等待或原超时。
+下一轮标记一致时，仍需服务端按上述节点/时间查询拒绝原因；
+标记不一致时应沿构造请求的应用端继续定位，不能直接猜测修复。
+业务故障调查未完成，非“无需修改”。
+
+2. 130970804670 Android priority (texas / zh-Hans / other)
+同一记录用例成功建房并运行，ownedRoom fixture 在
+visual/cases/_shared/room.ts:115 收尾 DELETE /v1/room/:roomId
+于 04:32:00.119 UTC 得到 HTTP 500、attempts=1。
+ROOM CLEANUP RESPONSE 确认为 bodyKind=non-json；这排除了
+空正文、诊断读取超时及 JSON 错误信封，但还不能确认服务端/网关来源。
+同轮其余删除及 retry 成功，历史也有相同失败；不能证明所有 DELETE
+或某固定节点永久异常。也没有重复删除、UUID 错配的证据。
+保留不可重放策略和原始异常；未忽略 500、增加重试或改 fixture。
+复用原 16 KiB/250ms 有界诊断，增加完整非 JSON 正文的固定 HTML title
+分类：500-internal-server-error / server-error-500 / gateway-error /
+unrecognized。只输出枚举，不输出 title、正文、headers 或身份。
+标题只作为后续定位错误处理层的线索，不等同于证明故障服务；
+未知标题或再次失败仍需按请求时间、节点关联服务端/网关异常。
+读取/取消/输出失败仍不能覆盖原 HTTP 500；未改采样或断言。
+业务根因仍待 CI 新证据，非已根治。
+
+3. 130970804692 Android priority (rooms / zh-Hans)
+4. 130970804816 Android priority (rooms / zh-Hant)
+5. 130970804791 Android priority (rooms / en)
+各 advanced_texas / advanced_six_plus 首次及两次 retry 全部截图失败。
+本轮 18 张 actual 用当前 Playwright 1.61.1 原比较器，
+threshold=0.1 / maxDiffPixelRatio=0.005 复核：
+每张差异分别 zh-Hans=6700、zh-Hant=7081、en=9946，均超过 4608。
+18 张均匹配历史 e0a3b66 六图（与独立 7973602 图一致）。
+目视英文 expected/actual，新增 Allow predict the hand、
+移除 video call，文本/语音选项重排；本轮与历史同 APK、同差异，
+反驳偶发动画采样或等待不足假设。
+首次离线比较尝试错误使用 coreBundle 顶层导出，TypeError 后改用
+真实 utils.getComparator 重跑全部 18 张，以上为成功执行的结果。
+已重新读取 PR 评论 6791484463、6791879766、6810639864：
+既有审核要求本等价重构不更新视觉基准来通过；26f07c2/0dbf3b8
+已落实撤回六图更新。重复移入 e0a3b66 会撤销该既有修复。
+因此这三项受已落实的验收边界阻挡，未改图、扩大遮罩或阈值。
+需要独立布局/基准审核合入并同步 base，之后跑三语固定 APK compare。
+不是“调查未完成所以无需改动”，也不声称本轮设备已通过。
+
+6. 130978379730 Android full regression
+日志明确上游 priority=result failure，汇总正确失败，自身无需修改。
+7—41. 以下各项逐一核对，均仅因 COMPLETE_RESULT=failure 退出 1；
+自身无需修改，不代表这些业务在本轮重新运行或已通过：
+130980836501 Android (texas / zh-Hant / other)：日志仅检查 COMPLETE_RESULT=failure，保留门禁，自身无需修改。
+130980836514 Android (texas / zh-Hant / table)：日志仅检查 COMPLETE_RESULT=failure，保留门禁，自身无需修改。
+130980836520 Android (texas / zh-Hans / other)：日志仅检查 COMPLETE_RESULT=failure，保留门禁，自身无需修改。
+130980836522 Android (zhajinhua / zh-Hant)：日志仅检查 COMPLETE_RESULT=failure，保留门禁，自身无需修改。
+130980836528 Android (texas / en / other)：日志仅检查 COMPLETE_RESULT=failure，保留门禁，自身无需修改。
+130980836541 Android (texas / en / game-effects)：日志仅检查 COMPLETE_RESULT=failure，保留门禁，自身无需修改。
+130980836555 Android (texas / en / game-table)：日志仅检查 COMPLETE_RESULT=failure，保留门禁，自身无需修改。
+130980836562 Android (guest / zh-Hans)：日志仅检查 COMPLETE_RESULT=failure，保留门禁，自身无需修改。
+130980836571 Android (zhajinhua / en / pregame-second)：日志仅检查 COMPLETE_RESULT=failure，保留门禁，自身无需修改。
+130980836572 Android (texas / zh-Hans / table)：日志仅检查 COMPLETE_RESULT=failure，保留门禁，自身无需修改。
+130980836582 Android (zhajinhua / zh-Hans)：日志仅检查 COMPLETE_RESULT=failure，保留门禁，自身无需修改。
+130980836587 Android (zhajinhua / en / game-table)：日志仅检查 COMPLETE_RESULT=failure，保留门禁，自身无需修改。
+130980836595 Android (zhajinhua / en / pregame-first)：日志仅检查 COMPLETE_RESULT=failure，保留门禁，自身无需修改。
+130980836608 Android (texas / en / panels)：日志仅检查 COMPLETE_RESULT=failure，保留门禁，自身无需修改。
+130980836613 Android (texas / en / pregame-second)：日志仅检查 COMPLETE_RESULT=failure，保留门禁，自身无需修改。
+130980836628 Android (guest / zh-Hant)：日志仅检查 COMPLETE_RESULT=failure，保留门禁，自身无需修改。
+130980836650 Android (texas / en / pregame-first)：日志仅检查 COMPLETE_RESULT=failure，保留门禁，自身无需修改。
+130980836661 Android (guest / en)：日志仅检查 COMPLETE_RESULT=failure，保留门禁，自身无需修改。
+130980836705 Android (texas / en / pregame-middle)：日志仅检查 COMPLETE_RESULT=failure，保留门禁，自身无需修改。
+130980836728 Android (zhajinhua / en / game-effects)：日志仅检查 COMPLETE_RESULT=failure，保留门禁，自身无需修改。
+130980836753 Android (records / zh-Hans)：日志仅检查 COMPLETE_RESULT=failure，保留门禁，自身无需修改。
+130980836756 Android (account / en)：日志仅检查 COMPLETE_RESULT=failure，保留门禁，自身无需修改。
+130980836757 Android (records / zh-Hant)：日志仅检查 COMPLETE_RESULT=failure，保留门禁，自身无需修改。
+130980836766 Android (wallet-help / zh-Hant)：日志仅检查 COMPLETE_RESULT=failure，保留门禁，自身无需修改。
+130980836785 Android (social / en)：日志仅检查 COMPLETE_RESULT=failure，保留门禁，自身无需修改。
+130980836799 Android (rooms / en)：日志仅检查 COMPLETE_RESULT=failure，保留门禁，自身无需修改。
+130980836822 Android (social / zh-Hant)：日志仅检查 COMPLETE_RESULT=failure，保留门禁，自身无需修改。
+130980836824 Android (account / zh-Hant)：日志仅检查 COMPLETE_RESULT=failure，保留门禁，自身无需修改。
+130980836825 Android (rooms / zh-Hans)：日志仅检查 COMPLETE_RESULT=failure，保留门禁，自身无需修改。
+130980836829 Android (records / en)：日志仅检查 COMPLETE_RESULT=failure，保留门禁，自身无需修改。
+130980836845 Android (account / zh-Hans)：日志仅检查 COMPLETE_RESULT=failure，保留门禁，自身无需修改。
+130980836859 Android (wallet-help / zh-Hans)：日志仅检查 COMPLETE_RESULT=failure，保留门禁，自身无需修改。
+130980836862 Android (rooms / zh-Hant)：日志仅检查 COMPLETE_RESULT=failure，保留门禁，自身无需修改。
+130980836910 Android (social / zh-Hans)：日志仅检查 COMPLETE_RESULT=failure，保留门禁，自身无需修改。
+130980836932 Android (wallet-help / en)：日志仅检查 COMPLETE_RESULT=failure，保留门禁，自身无需修改。
+
+改动与验证
+只修改失败路径脱敏诊断及相应测试，不修改执行方式、请求次数、
+采样、断言、正式图、failOnFlakyTests 或其他门禁。
+node --test network/cleanup-response-diagnostic.test.mjs：4 passed，
+包括原状态传播、完整固定标题、未知/敏感内容不泄露、
+超时/过大/读错释放、输出异常不覆盖原失败、非目标路径不采集。
+PYTHONPATH=android python3 -m unittest test_network_selection：11 passed，
+包括一致/不一致/缺失身份、解析异常、成功路径不采集、请求字节不变。
+修改的 TS/MJS ESLint、修改的 Python Ruff、npm run typecheck、
+npm run lint:lines、git diff --check 均通过。
+未在本地启动 Android 或重复全套测试，完整设备验证交给 CI。
+未使用 NO-FIX 协议，因为本轮仍有直接相关的诊断改动；
+两个业务失败仍待新证据，三语截图明确受阻，未冒称全部修复。
+

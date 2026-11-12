@@ -6,7 +6,7 @@ import type { AndroidDevice } from 'playwright';
 import { adb, applicationId, compareScreenshot, launchApplication, waitForHall, waitForStagingNotice } from '../device';
 import { captureDeviceFailure, closeDevice } from './support/lifecycle';
 import { captureNativeTransition } from '../animation-transition';
-import { verifyLaunchArtwork } from '../launch-artwork';
+import { verifyLaunchArtwork, waitForLauncherStable } from '../launch-artwork';
 import { withAndroidProxy } from '../proxy';
 import { navigateScenario, tap, reveal } from '../navigation';
 import { androidScenarios } from '../scenarios';
@@ -31,6 +31,7 @@ test('native launch artwork and staging notice appear on a real app start', asyn
       for (const setting of ['window_animation_scale', 'transition_animation_scale', 'animator_duration_scale']) {
         adb('shell', 'settings', 'put', 'global', setting, '1');
       }
+      await waitForLauncherStable(device);
       /** 预装的原生驱动持续取样，独立 ADB 连接冷启动正式 Release。 */
       const start = () => adb('shell', 'am', 'start', '-n',
         `${applicationId}/com.laiwan_react_native.MainActivity`);
@@ -176,8 +177,9 @@ test('club more menu fades into and out of the Android screen', async ({}, testI
       const pressRoomsTab = () => adb('shell', 'input', 'tap',
         String(Math.round(roomsTab.bounds.x + roomsTab.bounds.width / 2)),
         String(Math.round(roomsTab.bounds.y + roomsTab.bounds.height / 2)));
+      // motionFrames 的 20 帧上限可能在空态淡入完成前耗尽；沿用长原生采样及全部像素断言。
       await captureNativeTransition(device, 'club-rooms-empty-enter', testInfo,
-        { x: 100, y: 420, width: 520, height: 200 }, pressRoomsTab);
+        { x: 100, y: 420, width: 520, height: 200 }, pressRoomsTab, [], [], 0, 'launchFrames');
       await device.wait({ res: 'club-rooms-empty-view' });
     } finally { await closeDevice(device); }
   });

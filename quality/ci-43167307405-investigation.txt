@@ -1,0 +1,99 @@
+CI 定向取证交付（不是远端失败已修复的声明）
+CI-Diagnostic-SHA256: 26578f21b54aa2eac6cb82cffcf73b75e00ede4dfe398d54ad619f627f89c326
+run 43167307405 / attempt 1 / HEAD bbef384ed52500eab695225485a8f24bd257acfc
+API headSha、分支及本地 HEAD 一致；实际 PR merge checkout 为 b9f699e。
+修改前只读检查全部分支、历史提交 e0a3b66、7973602、22cbdee、bbef384
+及 quality/ci-43159761148-investigation.txt；没有 .codegraph。
+未更改 index、分支引用或历史，没有提交或推送。
+
+证据
+五个原始视觉附件经 gh run download 成功下载解压至全新目录
+/tmp/ci-43167307405-a1-bbef384-D2dMKj，完成前未读取报告内容。
+API artifact 元数据确认 run、attempt 名称及 HEAD；本轮 texas/en artifact
+13921960213，rooms/en 13921541933、zh-Hans 13922020141、zh-Hant 13922140047。
+内嵌 texas/en Playwright ZIP 经 testzip CRC 成功后解压至 decoded-verified。
+本轮 APK android-staging-300005401-34712ea65665；应用提交
+34712ea6566538aa71f28b4eb69cbc849e90681d，SHA256
+833c03bd4ac2b6ffbb5579bb285f59180b137c69bd963512e78146251ba2821c。
+全量 --log-failed 请求数过多，改为逐 job 读取；TLS 失败未当作远端根因。
+其余 35 个别名 job 已逐项读取，均为 COMPLETE_RESULT: failure。
+
+131012541463 texas/en/game-table：调查仍未完成，交付下一轮必要诊断。
+失败点 texas-operation-buttons 中间帧数为 0；20 帧 progress 全 0，
+设备 uptime 362535..363966，total=27.99654222222222。
+主机 native-sampling-start=1794464971778，trigger-start=1794464972079，
+trigger-complete=1794464972088，native-sampling-complete=1794464980815。
+retry 请求同样 9ms 完成，但第 6 帧开始出现中间相位。
+反例：历史曾怀疑会话查询/控制请求太晚；本轮请求在原采样开始后 310ms
+已完成，因此不能把根因归于慢请求，也不能靠延长采样、缩短触发等待或重试通过结案。
+仍缺设备采样窗口与应用日志的同一时钟对应：_send 完成含压缩传输约 9s，
+原 uptime 时间线不能定位墙钟上的真实采样窗口。
+仅在原 motionFrames/challengeFrames 帧加入 capturedAtEpochMs，与原 uptime
+一起保存 device-clock 附件；诊断附件失败被隔离，继续原断言。
+驱动 patch 8→9，三个校验点同步，缓存键原已包含构建脚本哈希。
+未改帧数、循环截止条件、sleep、300ms 触发、400ms settle、区域或视觉断言。
+下一轮应结合设备 logcat 墙钟核对真实采样、WebSocket 投递及应用呈现先后，
+同时检查设备/主机时钟偏差；不得直接把两个机器的 epoch 当作已同步。
+若窗口覆盖回放而画面不动，再定向查应用事件处理；若窗口不覆盖，则查驱动排队。
+新增测试验证两种时钟原值对应、无业务数据、诊断失败仍抛原动画断言。
+
+rooms 三语：受现有验收边界阻挡，未替换基准。
+本轮 advanced_texas / advanced_six_plus 的 18 张 actual（各首次及两次 retry）
+全部与历史 e0a3b66 候选字节相同，而工作区正式基准与候选不同。
+已目视核对英文 actual/expected：新增 Allow predict the hand，移除视频选项并重排。
+与历史失败完全一致；不是偶发滚动/等待问题，重复更新基准会重复已撤回的修复。
+重新读取 PR #72 评论 6791484463、6791879766、6810639864：Issue #48
+的等价重构验收不允许更新视觉基准取得通过；产品布局需先独立审核合入并同步 base。
+7973602 已有独立修复，不在本任务中更改引用、合并历史或重复移入其图片。
+本轮不削弱正式比较，仍需上游验收/基线同步后 CI compare。
+
+逐项结果
+131012541463 Android priority (texas / en / game-table): 调查未完成；新增设备采样墙钟诊断，待 CI 定位窗口/呈现延迟。
+131012541301 Android priority (rooms / zh-Hans): 受阻；高级建房两张布局差异各三次复现，需独立基准验收及同步。
+131012541396 Android priority (rooms / zh-Hant): 受阻；高级建房两张布局差异各三次复现，需独立基准验收及同步。
+131012541305 Android priority (rooms / en): 受阻；高级建房两张布局差异各三次复现，需独立基准验收及同步。
+131021236913 Android full regression: 汇总实现无需改动；priority=failure、remaining=skipped，正确拒绝完整覆盖。
+131023398034 Android (texas / zh-Hans / table): 别名门禁实现无需改动；日志 COMPLETE_RESULT=failure，正确继承汇总失败。
+131023398079 Android (texas / zh-Hans / other): 别名门禁实现无需改动；日志 COMPLETE_RESULT=failure，正确继承汇总失败。
+131023398077 Android (texas / zh-Hant / table): 别名门禁实现无需改动；日志 COMPLETE_RESULT=failure，正确继承汇总失败。
+131023398139 Android (texas / zh-Hant / other): 别名门禁实现无需改动；日志 COMPLETE_RESULT=failure，正确继承汇总失败。
+131023398120 Android (texas / en / pregame-first): 别名门禁实现无需改动；日志 COMPLETE_RESULT=failure，正确继承汇总失败。
+131023398197 Android (texas / en / pregame-middle): 别名门禁实现无需改动；日志 COMPLETE_RESULT=failure，正确继承汇总失败。
+131023398053 Android (texas / en / pregame-second): 别名门禁实现无需改动；日志 COMPLETE_RESULT=failure，正确继承汇总失败。
+131023398126 Android (texas / en / game-table): 别名门禁实现无需改动；日志 COMPLETE_RESULT=failure，正确继承汇总失败。
+131023398151 Android (texas / en / game-effects): 别名门禁实现无需改动；日志 COMPLETE_RESULT=failure，正确继承汇总失败。
+131023398057 Android (texas / en / panels): 别名门禁实现无需改动；日志 COMPLETE_RESULT=failure，正确继承汇总失败。
+131023398117 Android (texas / en / other): 别名门禁实现无需改动；日志 COMPLETE_RESULT=failure，正确继承汇总失败。
+131023398155 Android (zhajinhua / zh-Hans): 别名门禁实现无需改动；日志 COMPLETE_RESULT=failure，正确继承汇总失败。
+131023398219 Android (zhajinhua / zh-Hant): 别名门禁实现无需改动；日志 COMPLETE_RESULT=failure，正确继承汇总失败。
+131023398130 Android (zhajinhua / en / pregame-first): 别名门禁实现无需改动；日志 COMPLETE_RESULT=failure，正确继承汇总失败。
+131023398147 Android (zhajinhua / en / pregame-second): 别名门禁实现无需改动；日志 COMPLETE_RESULT=failure，正确继承汇总失败。
+131023398203 Android (zhajinhua / en / game-table): 别名门禁实现无需改动；日志 COMPLETE_RESULT=failure，正确继承汇总失败。
+131023398115 Android (zhajinhua / en / game-effects): 别名门禁实现无需改动；日志 COMPLETE_RESULT=failure，正确继承汇总失败。
+131023398048 Android (guest / zh-Hans): 别名门禁实现无需改动；日志 COMPLETE_RESULT=failure，正确继承汇总失败。
+131023398090 Android (guest / zh-Hant): 别名门禁实现无需改动；日志 COMPLETE_RESULT=failure，正确继承汇总失败。
+131023398217 Android (guest / en): 别名门禁实现无需改动；日志 COMPLETE_RESULT=failure，正确继承汇总失败。
+131023398150 Android (account / zh-Hans): 别名门禁实现无需改动；日志 COMPLETE_RESULT=failure，正确继承汇总失败。
+131023398250 Android (account / zh-Hant): 别名门禁实现无需改动；日志 COMPLETE_RESULT=failure，正确继承汇总失败。
+131023398189 Android (account / en): 别名门禁实现无需改动；日志 COMPLETE_RESULT=failure，正确继承汇总失败。
+131023398121 Android (social / zh-Hans): 别名门禁实现无需改动；日志 COMPLETE_RESULT=failure，正确继承汇总失败。
+131023398114 Android (social / zh-Hant): 别名门禁实现无需改动；日志 COMPLETE_RESULT=failure，正确继承汇总失败。
+131023398134 Android (social / en): 别名门禁实现无需改动；日志 COMPLETE_RESULT=failure，正确继承汇总失败。
+131023398228 Android (rooms / zh-Hans): 别名门禁实现无需改动；日志 COMPLETE_RESULT=failure，正确继承汇总失败。
+131023398113 Android (rooms / zh-Hant): 别名门禁实现无需改动；日志 COMPLETE_RESULT=failure，正确继承汇总失败。
+131023398080 Android (rooms / en): 别名门禁实现无需改动；日志 COMPLETE_RESULT=failure，正确继承汇总失败。
+131023398307 Android (wallet-help / zh-Hans): 别名门禁实现无需改动；日志 COMPLETE_RESULT=failure，正确继承汇总失败。
+131023398234 Android (wallet-help / zh-Hant): 别名门禁实现无需改动；日志 COMPLETE_RESULT=failure，正确继承汇总失败。
+131023398123 Android (wallet-help / en): 别名门禁实现无需改动；日志 COMPLETE_RESULT=failure，正确继承汇总失败。
+131023398377 Android (records / zh-Hans): 别名门禁实现无需改动；日志 COMPLETE_RESULT=failure，正确继承汇总失败。
+131023398258 Android (records / zh-Hant): 别名门禁实现无需改动；日志 COMPLETE_RESULT=failure，正确继承汇总失败。
+131023398304 Android (records / en): 别名门禁实现无需改动；日志 COMPLETE_RESULT=failure，正确继承汇总失败。
+
+验证
+原动画转场及既有定向诊断测试 54 passed（含真实帧与反例，未启动本地设备）。
+新增设备墙钟 2 项定向测试通过；修改文件 ESLint、typecheck、动画复杂度、
+行数及 git diff --check 通过；原生 Java 编译及真实 Android compare 留给 CI。
+新测试首次直接 ESM 导入触发既有 motion-regions.ts 的 require 限制，
+已采用现有测试相同的 createRequire 加载方式，未修改无关模块。
+初次新增测试辅助函数复杂度超限已拆分；单文件超过 400 行已移至独立测试文件，
+没有修改复杂度或行数门槛。本次留下实际必要诊断改动，不写 NO-FIX。

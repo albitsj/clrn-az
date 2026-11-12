@@ -73,7 +73,7 @@ runs:
       run: |
         test -s .ttyctl/android-driver/android-driver-target.apk
         test -s .ttyctl/android-driver/android-driver.apk
-        node -e 'const source = require("./.ttyctl/android-driver/source.json"); if (source.revision !== "39e3553a4f283a41134d75d7e404484bd9e6865a" || source.patch !== 7) process.exit(1)'
+        node -e 'const source = require("./.ttyctl/android-driver/source.json"); if (source.revision !== "39e3553a4f283a41134d75d7e404484bd9e6865a" || source.patch !== 9) process.exit(1)'
     - name: 准备固定 Android 系统镜像
       shell: bash
       run: |

@@ -18,8 +18,7 @@ export type AnimationRegion = ScreenshotBounds | (() => Promise<ScreenshotBounds
  */
 export async function recordNativeVideoFrames(name: string, region: AnimationRegion,
   trigger: () => unknown, testInfo: TestInfo): Promise<Buffer[]> {
-  const serial = process.env.ANDROID_SERIAL || '';
-  if (!/^emulator-\d+$/.test(serial)) throw new Error('录屏仅允许专用 Android 模拟器。');
+  const serial = recordingSerial();
   const directory = path.resolve('.ttyctl', `video-${name}-${Date.now()}`);
   mkdirSync(directory, { recursive: true });
   const remote = `/sdcard/clrn-visual-${process.pid}.mp4`;
@@ -43,27 +42,14 @@ export async function recordNativeVideoFrames(name: string, region: AnimationReg
     adb('pull', remote, video);
     await testInfo.attach(`${name}-native-video`, { path: video, contentType: 'video/mp4' });
     attached = true;
-    const frames = path.join(directory, 'frames');
-    mkdirSync(frames);
-    const { x, y, width, height } = typeof region === 'function' ? await region() : region;
-    execFileSync('ffmpeg', ['-y', '-v', 'error', '-i', video, '-vf',
-      `fps=30,scale=720:1280:flags=lanczos,crop=${width}:${height}:${x}:${y}`,
-      path.join(frames, 'frame-%04d.png')],
-    { timeout: 30_000 });
-    const files = readdirSync(frames).filter(file => file.endsWith('.png')).sort();
-    if (files.length < 20) throw new Error('原生录屏不足 20 帧，无法审查弹层转场。');
-    return files.map(file => readFileSync(path.join(frames, file)));
+    return await decodeFrames(directory, video, region);
   } catch (failure) {
     // 入口核对或点击失败时也先停录并保存原片，不能在 finally 中直接删除现场。
-    stopRecorder(recorder);
-    await finished.catch(() => undefined);
-    if (!attached) {
-      await preserveFailedVideo(name, remote, video, testInfo).catch(() => undefined);
-    }
+    await preserveRecordingFailure(recorder, finished, attached, name, remote, video, testInfo);
     throw failure;
   } finally {
     stopRecorder(recorder);
-    try { adb('shell', 'rm', '-f', remote); } catch { /* 清理失败不能覆盖原始采集错误。 */ }
+    removeRecording(remote);
   }
 }
 
@@ -83,4 +69,50 @@ function stopRecorder(recorder: ChildProcess): void {
 async function preserveFailedVideo(name: string, remote: string, video: string, info: TestInfo): Promise<void> {
   adb('pull', remote, video);
   await info.attach(`${name}-native-video`, { path: video, contentType: 'video/mp4' });
+}
+
+/** 按录屏结束后解析的边界解码原始相位。
+ * @param directory - 隔离目录。
+ * @param video - 原片路径。
+ * @param region - 固定或延迟边界。
+ */
+async function decodeFrames(directory: string, video: string, region: AnimationRegion): Promise<Buffer[]> {
+  const frames = path.join(directory, 'frames');
+  mkdirSync(frames);
+  const { x, y, width, height } = typeof region === 'function' ? await region() : region;
+  execFileSync('ffmpeg', ['-y', '-v', 'error', '-i', video, '-vf',
+    `fps=30,scale=720:1280:flags=lanczos,crop=${width}:${height}:${x}:${y}`,
+    path.join(frames, 'frame-%04d.png')],
+  { timeout: 30_000 });
+  const files = readdirSync(frames).filter(file => file.endsWith('.png')).sort();
+  if (files.length < 20) throw new Error('原生录屏不足 20 帧，无法审查弹层转场。');
+  return files.map(file => readFileSync(path.join(frames, file)));
+}
+/** 失败时先停录，等待进程结束，再尽量保存原片。
+ * @param recorder - 录屏进程。
+ * @param finished - 原始结束状态。
+ * @param attached - 原片是否已保存。
+ * @param name - 动画名称。
+ * @param remote - 设备原片。
+ * @param video - 宿主原片。
+ * @param info - 测试报告。
+ */
+async function preserveRecordingFailure(recorder: ChildProcess, finished: Promise<void>, attached: boolean,
+  name: string, remote: string, video: string, info: TestInfo): Promise<void> {
+  stopRecorder(recorder);
+  await finished.catch(() => undefined);
+  if (!attached) await preserveFailedVideo(name, remote, video, info).catch(() => undefined);
+}
+/** 清理失败不能覆盖原始采集错误。
+ * @param remote - 设备原片路径。
+ */
+function removeRecording(remote: string): void {
+  try { adb('shell', 'rm', '-f', remote); } catch { /* 保留原始错误。 */ }
+}
+
+/** 仅允许显式选择的专用模拟器。 */
+function recordingSerial(): string {
+  const serial = process.env.ANDROID_SERIAL || '';
+  if (!/^emulator-\d+$/.test(serial)) throw new Error('录屏仅允许专用 Android 模拟器。');
+  return serial;
 }

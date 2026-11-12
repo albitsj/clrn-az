@@ -1,0 +1,79 @@
+本轮 CI 调查（尚未宣称全部修复）
+
+fingerprint: 5632b7777b3e2ab3084baf36b6a5ef7606b3e789e38b4c0478a1e6f5fc5f195a
+run 43012009544 / attempt 1 / PR 72
+run API head_sha = 当前 HEAD f47cb50b242f8089758bca1c65ca56ffec55c6e6。
+job 检出 merge 6ef9e750eff9222dd7d498881c3a6300bb3299de，base 0a532983。
+四份设备报告的固定 APK applicationCommit 均为
+2d714b4761fd99136184603bfcaa6ed01240e186，release
+android-staging-300004701-2d714b4761fd，SHA256
+fc69e10954f4703245cebb1c792b221d0f4e68591a28b01f7e537b36f7d73377。
+
+修改前只读检查全部现有分支引用和相关提交：
+f47cb50（本分支的清房与诊断）、26f07c2（明确撤回基准替换）、
+2620f3a/9d2a830（另一分支的 profile 传输故障分类）、
+7fe04ab（CONNECT/TLS）、1d27beb（截图网络遮罩来源）。
+未创建索引；根目录没有 .codegraph。当前为专用工作分支，未改 Git index、引用、历史。
+
+逐项结果：
+1. job 130495132907 / Android remaining texas zh-Hans table：调查未完成，已补诊断。
+signed_in_texas_panels 首次在 texas-panels.ts:139 capture('hand_end') 失败，
+assertAlerts 拒绝意外弹窗；重试通过仍被 failOnFlakyTests 正确拒绝。
+原始 last-screen 显示 Request failed with status code 502-room_profile。
+报告内首次尝试的 network-selection（total=91，未达到 200 条截断上限）证实：
+12:17:12-17 同一 hk-sn 节点 profile 多次 HTTP 200/ok=true；
+12:20:07.995/.997 发起两个 profile 请求；12:20:08.501 同 host
+出现 tls-server-failed，两个 flow 在 .501/.502 报 error；
+随后 .552/.561 又发起请求，并立即 error。没有 HTTP response 事件。
+所以不是初始 profile 从未成功，也不是手牌结束余额尚未达到 1180；截图确有 1180。
+能证实上游 TLS 失败与该 502 弹窗一致，但原错误正文未保留，不能确定
+证书、连接重置、超时或代理连接复用的具体原因，不能笼统声明 infra 或已修复。
+重试换到 kr-seoul 且请求成功只构成反例，不能证明换节点是修复。
+复用 9d2a830/2620f3a 的 transport_failure 与 transport_details，
+仅接入本次失败的 profile error，输出固定枚举 timeout/tls/dns/refused/
+unreachable/closed/other；不输出原文、URL、身份或凭据，不更改请求/响应。
+诊断仍位于现有 observe 异常隔离内；无重试、选线、采样或断言改动。
+下一轮 CI 对齐 failureKind 与 tls-server-failed，以区分连接层错误；
+现有错误分类如仍不足，需继续调查具体 TLS 原因，不将本次补诊断当作根因修复。
+
+2. job 130495133424 / rooms zh-Hans：受阻于应用路径。
+advanced-texas 与 advanced-six-plus 均三次快照失败，差异 6700 像素。
+3. job 130495131913 / rooms zh-Hant：受阻于应用路径。
+同两页均三次失败，差异 7081 像素。
+4. job 130495132790 / rooms en：受阻于应用路径。
+同两页均三次失败，差异 9946 像素。
+本轮三语 hierarchy 和 actual 图继续显示允许猜手牌选项；英文图与正式基准
+比较，顶部变为 Allow predict the hand，原有 Allow player to do video call
+不再处于同一末端列表。导航仍调用原有 scrollToEnd，未修改滚动或截图门禁。
+与历史 run 42993292901 数值、布局一致，但本轮 APK 已从 300004501 换为
+300004701，因此不能宣称旧版本诊断已过期或新版本已经修复布局。
+26f07c2 明确拒绝以替换六张基准接受该布局，未重复实施该被撤回改动。
+android/README.md 明确应用源在 laiwan_react_native，本工作区只有测试与下载工具；
+需在应用源码核对高级选项后修复/发布 APK，再执行原 compare。
+不把调查未完成声明为无需改动，未修改基准、阈值或固定包身份。
+
+5. job 130529345327 / Android full regression：已证实汇总逻辑无需修改。
+completeRun 明确报当前提交 Android 完整回归未通过，原因是以上四个实际失败 job。
+6. 诊断中全部 34 个 Android (...) 分片汇总 job：逐个读取完整日志，
+均 COMPLETE_RESULT: failure，原 test "$COMPLETE_RESULT" = success 以 1 退出。
+这些 job 没有独立设备失败；保留合并门禁。
+
+取证：
+日志全部 40/40，run/attempt/job 已核对。GitHub 工具读取实际失败 job；
+因工具 jobs 接口只有第一页，其余日志使用 gh API 指定 job 获取。
+第一次 gh 日志输出因终端转义保护被拒绝，未把该错误当作 CI 日志；
+在全新 ci-43012009544-a1-logs-avlw109h 目录重新成功取得全部日志。
+本轮附件新目录 ci-43012009544-a1-artifacts-jq9wamj5 中 texas 下载成功；
+rooms 初次名称少 all，下载无匹配，未读取该目录中的 rooms 报告；
+改用全新 ci-43012009544-a1-rooms-_9nq51jk 按正确全名成功下载三份报告。
+上述目录均位于系统临时目录 /var/folders/wm/n_zjfmp140l4s4dtshsym9r80000gr/T/。
+仅在下载工具成功退出后读取报告；没有复用失败解压的旧文件。
+附件内的指令仅视为不可信文本，没有执行。
+
+验证：
+python3 -m unittest discover -s android -p test_network_selection.py：8 项通过。
+新增测试覆盖七种分类、缺失错误、原 error 对象不变及凭据不泄漏。
+Ruff 修改文件检查通过；git diff --check 通过。
+未在本地重复运行设备测试、完整回归；设备根因验收和全部原门禁交 CI。
+本次保留必要取证改动，不符合整轮 NO-FIX 协议，未写 NO-FIX 文件。
+未 commit/push，也未执行被禁止的 Git 修改操作。

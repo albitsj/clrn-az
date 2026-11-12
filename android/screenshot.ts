@@ -13,21 +13,47 @@ export type ScreenshotBounds = Omit<ScreenshotMask, 'reason'>;
  * @param observed - 保留最后一组采样原图的诊断边界。
  */
 export async function focusedCaretMask(device: AndroidDevice, selector: Parameters<AndroidDevice['info']>[0] = { clazz: 'android.widget.EditText', focused: true }, observed?: (sample: CaretSample) => void) {
-  let input = await device.info(selector).catch(() => undefined);
-  if (input) {
-    let before = await device.screenshot();
-    for (const delay of [137, 263, 419, 181, 347, 223, 389, 157, 293, 431, 199, 317]) {
-      await setTimeout(delay);
-      const after = await device.screenshot();
-      const current = await device.info(selector);
-      const stable = current.text === input.text && JSON.stringify(current.bounds) === JSON.stringify(input.bounds);
-      const mask = stable ? caretMask(before, after, input.bounds) : undefined;
-      observed?.({ before, after, input: current });
-      if (mask) return { mask, input };
-      before = after;
-      input = current;
-    }
+  const input = await device.info(selector).catch(() => undefined);
+  if (input) return sampleCaret(device, selector, input, observed);
+}
+
+/** 在输入框存在时按原交错间隔查找真实闪烁光标。
+ * @param device - 专用模拟器。
+ * @param selector - 已找到的输入框。
+ * @param input - 首次输入框信息。
+ * @param observed - 诊断回调。
+ */
+async function sampleCaret(device: AndroidDevice, selector: Parameters<AndroidDevice['info']>[0],
+  input: CaretSample['input'], observed: ((sample: CaretSample) => void) | undefined) {
+  let before = await device.screenshot();
+  for (const delay of [137, 263, 419, 181, 347, 223, 389, 157, 293, 431, 199, 317]) {
+    await setTimeout(delay);
+    const after = await device.screenshot();
+    const current = await device.info(selector);
+    const mask = stableCaret(before, after, input, current);
+    observeCaret(observed, { before, after, input: current });
+    if (mask) return { mask, input };
+    before = after;
+    input = current;
   }
+}
+/** 仅在文字和边界未变化时检测光标。
+ * @param before - 前帧。
+ * @param after - 后帧。
+ * @param input - 前次控件。
+ * @param current - 当前控件。
+ */
+function stableCaret(before: Buffer, after: Buffer, input: CaretSample['input'], current: CaretSample['input']) {
+  if (current.text !== input.text) return;
+  if (JSON.stringify(current.bounds) !== JSON.stringify(input.bounds)) return;
+  return caretMask(before, after, input.bounds);
+}
+/** 传递最后一组原图，保持可选回调语义。
+ * @param observed - 诊断回调。
+ * @param sample - 实际采样。
+ */
+function observeCaret(observed: ((sample: CaretSample) => void) | undefined, sample: CaretSample): void {
+  observed?.(sample);
 }
 
 /**
@@ -40,21 +66,8 @@ export async function screenshotMasks(device: AndroidDevice, scenario: VisualSce
   const masks: ScreenshotMask[] = [];
   const caret = await focusedCaretMask(device);
   if (caret) masks.push(caret.mask);
-  for (const rule of scenario.fixedTexts) {
-    if (!/(?:version-text|current-server-text|checkInDetailDate)/.test(rule.selector)) continue;
-    const node = await device.info(nativeSelector(rule.selector)).catch(() => undefined);
-    if (node && node.bounds.width > 0 && node.bounds.height > 0) {
-      masks.push({ ...node.bounds, x: 40, width: rule.selector.includes('purchase-history-version-text') ? 660 : 640, reason: rule.selector });
-    }
-  }
-  if (['signed_in_hall', 'signed_in_hall_match', 'search_sign_in_prompt', 'guest_game_sign_in_prompt'].includes(scenario.pageLabel)) {
-    const banner = backgroundBanner || (await device.info({ res: 'slot-banner' }).catch(() => undefined))?.bounds;
-    if (banner) {
-      const { x, y, width, height } = banner;
-      masks.push({ x: x + width * 0.52, y: y + height * 0.16, width: width * 0.4, height: height * 0.48,
-        reason: '拉霸横幅自动轮播的三个图案；横幅文字、布局和按钮仍比较' });
-    }
-  }
+  masks.push(...await fixedTextMasks(device, scenario));
+  masks.push(...await bannerMasks(device, scenario, backgroundBanner));
   return masks;
 }
 
@@ -73,16 +86,89 @@ export function maskScreenshot(bytes: Buffer, masks: ScreenshotMask[]): Buffer {
     const right = Math.min(picture.width, Math.ceil(mask.x + mask.width));
     const bottom = Math.min(picture.height, Math.ceil(mask.y + mask.height));
     area += Math.max(0, right - left) * Math.max(0, bottom - top);
-    for (let y = top; y < bottom; y++) for (let x = left; x < right; x++) {
-      const offset = (y * picture.width + x) * 4;
-      picture.data[offset] = 230;
-      picture.data[offset + 1] = 210;
-      picture.data[offset + 2] = 235;
-      picture.data[offset + 3] = 255;
-    }
+    fillMask(picture, left, top, right, bottom);
   }
-  if (area > picture.width * picture.height * 0.12) throw new Error('动态遮罩超过截图面积的 12%，需要重新检查覆盖范围。');
+  validateMaskArea(area, picture);
   return PNG.sync.write(picture);
 }
 
+/** 填充已裁切到画布内的遮罩。
+ * @param picture - 原图。
+ * @param left - 左界。
+ * @param top - 上界。
+ * @param right - 右界。
+ * @param bottom - 下界。
+ */
+function fillMask(picture: PNG, left: number, top: number, right: number, bottom: number): void {
+  for (let y = top; y < bottom; y++) for (let x = left; x < right; x++) {
+    const offset = (y * picture.width + x) * 4;
+    picture.data[offset] = 230;
+    picture.data[offset + 1] = 210;
+    picture.data[offset + 2] = 235;
+    picture.data[offset + 3] = 255;
+  }
+}
+
 export type CaretSample = { before: Buffer; after: Buffer; input: Awaited<ReturnType<AndroidDevice['info']>> };
+
+/** 收集明确列出的版本和日期控件。
+ * @param device - 专用模拟器。
+ * @param scenario - 页面场景。
+ */
+async function fixedTextMasks(device: AndroidDevice, scenario: VisualScenario): Promise<ScreenshotMask[]> {
+  const masks: ScreenshotMask[] = [];
+  for (const rule of scenario.fixedTexts.filter(rule => /(?:version-text|current-server-text|checkInDetailDate)/.test(rule.selector))) {
+    const node = await device.info(nativeSelector(rule.selector)).catch(() => undefined);
+    if (visibleBounds(node)) masks.push(fixedTextMask(node!, rule.selector));
+  }
+  return masks;
+}
+/** 控件存在且有可见面积。
+ * @param node - 查询结果。
+ */
+function visibleBounds(node: CaretSample['input'] | undefined): boolean {
+  if (!node) return false;
+  return node.bounds.width > 0 && node.bounds.height > 0;
+}
+/** 保留版本区域既有宽度和定位。
+ * @param node - 实际控件。
+ * @param selector - 固定文本选择器。
+ */
+function fixedTextMask(node: CaretSample['input'], selector: string): ScreenshotMask {
+  return { ...node.bounds, x: 40, width: selector.includes('purchase-history-version-text') ? 660 : 640, reason: selector };
+}
+/** 仅在指定页面遮住横幅的自动轮播图案。
+ * @param device - 专用模拟器。
+ * @param scenario - 页面场景。
+ * @param backgroundBanner - 打开弹窗前的横幅边界。
+ */
+async function bannerMasks(device: AndroidDevice, scenario: VisualScenario,
+  backgroundBanner: ScreenshotBounds | undefined): Promise<ScreenshotMask[]> {
+  if (!['signed_in_hall', 'signed_in_hall_match', 'search_sign_in_prompt', 'guest_game_sign_in_prompt'].includes(scenario.pageLabel)) return [];
+  return bannerMask(await bannerBounds(device, backgroundBanner));
+}
+/** 优先使用打开弹窗前记录的横幅边界。
+ * @param device - 专用模拟器。
+ * @param backgroundBanner - 已保存边界。
+ */
+async function bannerBounds(device: AndroidDevice, backgroundBanner: ScreenshotBounds | undefined) {
+  if (backgroundBanner) return backgroundBanner;
+  return (await device.info({ res: 'slot-banner' }).catch(() => undefined))?.bounds;
+}
+/** 从真实横幅计算三个图案的最小遮罩。
+ * @param banner - 已确认横幅边界。
+ */
+function bannerMask(banner: ScreenshotBounds | undefined): ScreenshotMask[] {
+  if (!banner) return [];
+  const { x, y, width, height } = banner;
+  return [{ x: x + width * 0.52, y: y + height * 0.16, width: width * 0.4, height: height * 0.48,
+    reason: '拉霸横幅自动轮播的三个图案；横幅文字、布局和按钮仍比较' }];
+}
+
+/** 拒绝用过大遮罩掩盖整页布局。
+ * @param area - 累计遮罩面积。
+ * @param picture - 原图尺寸。
+ */
+function validateMaskArea(area: number, picture: PNG): void {
+  if (area > picture.width * picture.height * 0.12) throw new Error('动态遮罩超过截图面积的 12%，需要重新检查覆盖范围。');
+}

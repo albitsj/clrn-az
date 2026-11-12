@@ -9,6 +9,7 @@ import { withAndroidProxy } from '../proxy';
 import { navigateScenario } from '../navigation';
 import { androidScenarios } from '../scenarios';
 import { captureNativeTransition } from '../animation-transition';
+import { captureSlotExitWithDiagnostics } from '../slot-exit-diagnostics';
 import { verifyLoopAnimation } from '../loop-animation';
 import { captureMovingKeyframes } from '../loop-keyframes';
 import { waitAbsent } from '../native-state';
@@ -70,8 +71,7 @@ test('all three native slot reels and reward types animate from real spin respon
       const pressClose = () => adb('shell', 'input', 'tap',
         String(Math.round(close.bounds.x + close.bounds.width / 2)),
         String(Math.round(close.bounds.y + close.bounds.height / 2)));
-      await captureNativeTransition(device, 'slot-popup-exit', testInfo,
-        { x: 0, y: 500, width: 720, height: 680 }, pressClose, [], [], 0, 'videoFrames');
+      await captureSlotExitWithDiagnostics(device, testInfo, pressClose);
       await waitAbsent(device, { res: 'slot-machine-view' });
       const bannerAgain = await device.info({ res: 'slot-banner' });
       await adb('shell', 'input', 'tap',

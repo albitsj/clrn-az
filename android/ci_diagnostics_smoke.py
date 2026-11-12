@@ -17,13 +17,40 @@ CLI = [sys.executable, str(ROOT / 'ci_diagnostics.py')]
 ADB = ['adb', '-s', os.environ.get('ANDROID_SERIAL', 'emulator-5554')]
 
 
+class CommandFailure(AssertionError):
+    """Retain transport output privately without exposing arguments in errors."""
+    def __init__(self, result, expected):
+        super().__init__(f'Command returned {result.returncode}; expected {expected}')
+        self.returncode, self.output = result.returncode, result.stdout
+
+
 def command(arguments, expected=0, timeout=120):
     """Check exit status without copying command arguments or raw logs to CI output."""
     result = subprocess.run(arguments, timeout=timeout, stdout=subprocess.PIPE,
                             stderr=subprocess.STDOUT, check=False)
     BoundedLog(DIRECTORY, 'smoke', Redactor()).write(result.stdout.decode('utf-8', errors='replace'))
     if result.returncode != expected:
-        raise AssertionError(f'Command returned {result.returncode}; expected {expected}')
+        raise CommandFailure(result, expected)
+    return result
+
+
+def restart_adbd():
+    """Accept only the observed closed handshake after independently proving root."""
+    original = None
+    try:
+        command([*ADB, 'root'])
+    except CommandFailure as error:
+        if error.returncode != 1 or error.output.strip() != b'adb: unable to connect for root: closed':
+            raise
+        original = error
+    try:
+        command([*ADB, 'wait-for-device'])
+        result = command([*ADB, 'shell', 'id', '-u'], timeout=5)
+        assert result.stdout.strip() == b'0', 'adbd root verification failed'
+    except Exception as error:
+        if original is not None:
+            raise original from error
+        raise
 
 
 def contents(name):
@@ -42,6 +69,27 @@ def marker(name):
     raise AssertionError(f'Logcat collector did not retain {name}')
 
 
+def diagnose_root_failure():
+    """Observe a failed root handshake without retrying it or accepting its exit."""
+    from ci_diagnostics import best_effort
+    log = BoundedLog(DIRECTORY, 'smoke-root-failure', Redactor())
+    probes = [
+        ('reconnect', [*ADB, 'wait-for-device'], 12),
+        ('root-state', [*ADB, 'shell',
+                        'getprop service.adb.root; getprop init.svc.adbd; '
+                        'getprop ro.debuggable; id; ps -A -o USER,PID,PPID,NAME | grep adbd'], 5),
+        ('daemon-log', [*ADB, 'logcat', '-b', 'all', '-d', '-t', '200',
+                        '-s', 'adbd:*', 'init:*'], 5),
+    ]
+    for label, arguments, timeout in probes:
+        def collect():
+            log.write(f'phase={label}')
+            result = subprocess.run(arguments, timeout=timeout, stdout=subprocess.PIPE,
+                                    stderr=subprocess.STDOUT, check=False)
+            log.write(f'exit={result.returncode}\n' + result.stdout.decode('utf-8', errors='replace'))
+        best_effort(collect, log)
+
+
 def exercise(case='normal'):
     """Prove child status retention and continuous logs across adbd restart."""
     command([*CLI, 'run', '--', sys.executable, '-c', 'raise SystemExit(0)'])
@@ -51,8 +99,12 @@ def exercise(case='normal'):
         # so a setup transport restart cannot prevent their fault injection.
         marker('CI_DIAG_BEFORE_RECONNECT')
         command([*ADB, 'logcat', '-c'])
-        command([*ADB, 'root'])
-        command([*ADB, 'wait-for-device'])
+        try:
+            restart_adbd()
+        except Exception:
+            from ci_diagnostics import best_effort
+            best_effort(diagnose_root_failure)
+            raise
         marker('CI_DIAG_AFTER_RECONNECT')
         assert 'CI_DIAG_BEFORE_RECONNECT' in contents('logcat'), 'Earlier log lost after restart'
     else:

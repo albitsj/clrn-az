@@ -4,6 +4,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { adb } from './device';
+import { gameNodes } from './game-controls';
 
 /**
  * 保留失败截图和完整控件树；失败后 Playwright 会重建 worker，允许释放原生驱动。
@@ -11,6 +12,7 @@ import { adb } from './device';
  * @param testInfo - 当前失败报告。
  */
 export async function captureFailure(device: AndroidDevice, testInfo: TestInfo): Promise<void> {
+  await captureInteractionState(device, testInfo).catch(() => undefined);
   await device.screenshot().then(async body => {
     const filename = testInfo.outputPath('last-screen.png');
     await writeFile(filename, body);
@@ -49,4 +51,17 @@ export async function captureFailure(device: AndroidDevice, testInfo: TestInfo):
 async function hostAdbLog(): Promise<string> {
   return process.env.GITHUB_ACTIONS === 'true'
     ? await readFile(path.join(tmpdir(), `adb.${process.getuid!()}.log`), 'utf8').catch(() => '') : '';
+}
+
+/** 设备关闭前保留本轮战绩/建房失败涉及的节点，不保存文字或身份。
+ * @param device - 仍连接的失败设备。
+ * @param testInfo - 原失败报告。
+ */
+async function captureInteractionState(device: AndroidDevice, testInfo: TestInfo): Promise<void> {
+  if (!/signed_in_texas_(?:records_v2|panels|panel_variants|game_profiles)$/.test(testInfo.title)) return;
+  const markers = ['game-record-button', 'base-review-board-container', 'review-board-action-list',
+    'review-board-description-text', 'screen-mask-touch-to-close', 'game-splash-screen-bg', 'run-game-view'];
+  const nodes = (await gameNodes(device)).filter(node => markers.includes(node.res || ''))
+    .map(({ res, bounds, enabled }) => ({ res, bounds, enabled }));
+  await testInfo.attach('failed-interaction-state', { body: JSON.stringify(nodes), contentType: 'application/json' });
 }

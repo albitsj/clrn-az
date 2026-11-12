@@ -2,7 +2,9 @@ import { readFileSync } from 'node:fs';
 import { expect, type TestInfo } from '@playwright/test';
 import { PNG } from 'pngjs';
 import { frameColorDistance } from './animation-transition';
-import { motionParts } from './motion-regions';
+import type { AndroidDevice } from 'playwright';
+import { gameScreenshot } from './game-controls';
+import { motionParts, samePixels } from './motion-regions';
 import { maskScreenshot } from './screenshot';
 
 /**
@@ -23,8 +25,8 @@ export async function verifyLaunchArtwork(frames: Buffer[], testInfo: TestInfo):
     const reds = [100, 200, 300, 400, 500].map(x => picture.data[(90 * picture.width + x) * 4]);
     const center = (90 * picture.width + 300) * 4;
     // 系统 Splash 是均匀蓝底，桌面与弹窗在这个位置没有应用插画的蓝色。
-    return picture.data[center] < 160 && picture.data[center + 1] >= 120
-      && picture.data[center + 2] >= 200 && Math.max(...reds) - Math.min(...reds) > 8;
+    return [picture.data[center] < 160, picture.data[center + 1] >= 120,
+      picture.data[center + 2] >= 200, Math.max(...reds) - Math.min(...reds) > 8].every(Boolean);
   };
   const first = artwork.find(isArtwork);
   expect(first, '必须看到应用自己的启动插画').toBeDefined();
@@ -36,4 +38,20 @@ export async function verifyLaunchArtwork(frames: Buffer[], testInfo: TestInfo):
     expect(Math.min(...artwork.filter(isArtwork).map(candidate => frameColorDistance(candidate, reference))),
       `${name} 须在真实启动帧里接近已审查的插画`).toBeLessThanOrEqual(12);
   }
+}
+
+/** HOME 返回后连续确认桌面停止移动，再读取启动转场起点；不改变启动采样和比较。
+ * @param device - 已回到桌面的原生设备。
+ */
+export async function waitForLauncherStable(device: AndroidDevice): Promise<void> {
+  let previous: Buffer | undefined;
+  let stable = 0;
+  await expect.poll(async () => {
+    const frame = motionParts(maskScreenshot(await gameScreenshot(device), [
+      { x: 70, y: 220, width: 70, height: 125, reason: 'Pixel Launcher 时钟图标持续走针' },
+    ]), [{ x: 70, y: 155, width: 580, height: 900 }]).regions[0];
+    stable = previous && samePixels(frame, previous) ? stable + 1 : 0;
+    previous = frame;
+    return stable;
+  }, { timeout: 15_000, intervals: [300], message: '启动前桌面须连续稳定' }).toBeGreaterThanOrEqual(3);
 }

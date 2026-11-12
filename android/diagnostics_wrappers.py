@@ -3,6 +3,7 @@
 import os
 from pathlib import Path
 import signal
+import subprocess
 import sys
 import threading
 
@@ -58,6 +59,9 @@ def restore():
 def wrapped(kind, original, arguments):
     from ci_diagnostics import collector
     command = [original, *arguments]
+    if kind == 'adb' and arguments == ['-s', os.environ.get('ANDROID_SERIAL', 'emulator-5554'),
+                                      'shell', 'input', 'keyevent', '82']:
+        return startup_input(command)
     if kind == 'adb' and any(arguments[index:index + 2] == ['emu', 'kill']
                              for index in range(len(arguments) - 1)):
         return shutdown(command, collector())
@@ -65,6 +69,30 @@ def wrapped(kind, original, arguments):
         return emulator(command, collector())
     # Never record command arguments: test input may contain passwords and tokens.
     os.execv(original, command)
+
+
+def startup_input(command):
+    """Observe the runner's unlock failure without retrying or changing its status."""
+    from ci_diagnostics import best_effort, collector
+    # Inherit the action's streams; execute exactly once, just as the exec path did.
+    result = subprocess.call(command)
+
+    def diagnose():
+        diagnostics = collector()
+        log = diagnostics.logs['adb']
+        log.write(f'phase=startup-unlock exit={result}')
+        if result:
+            best_effort(lambda: diagnostics.sample('startup-unlock-failed'), log)
+            for name, arguments in [('transport', ['get-state']),
+                                    ('boot', ['shell', 'getprop', 'sys.boot_completed']),
+                                    ('input-service', ['shell', 'service', 'check', 'input'])]:
+                def probe():
+                    status = capture([*command[:3], *arguments], log, timeout=3)
+                    log.write(f'phase=startup-unlock-probe kind={name} exit={status}')
+                best_effort(probe, log)
+
+    best_effort(diagnose)
+    return result if result >= 0 else 128 - result
 
 
 def shutdown(command, diagnostics, timeout=10):

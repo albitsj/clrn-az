@@ -3,6 +3,7 @@ import jsdoc from 'eslint-plugin-jsdoc';
 import tsdoc from 'eslint-plugin-tsdoc';
 import tseslint from 'typescript-eslint';
 import globals from 'globals';
+import { androidAnimationFiles, androidAnimationTools, androidAnimationChecks } from './scripts/android-animation-scope.mjs';
 import { androidNavigationFiles, androidNavigationTools, androidNavigationChecks } from './scripts/android-navigation-scope.mjs';
 import { androidGameFiles, androidGameTools, androidGameChecks } from './scripts/android-game-scope.mjs';
 
@@ -258,6 +259,18 @@ export default [
   {
     basePath: import.meta.dirname,
     files: [...androidGameFiles, ...androidGameChecks, ...androidNavigationFiles, ...androidNavigationChecks],
+    linterOptions: { noInlineConfig: true },
+    rules: { complexity: ['error', { max: 3, variant: 'classic' }] },
+  },
+  {
+    basePath: import.meta.dirname,
+    files: androidAnimationTools,
+    linterOptions: { noInlineConfig: true },
+    rules: { complexity: ['error', { max: 6, variant: 'classic' }] },
+  },
+  {
+    basePath: import.meta.dirname,
+    files: [...androidAnimationFiles, ...androidAnimationChecks],
     linterOptions: { noInlineConfig: true },
     rules: { complexity: ['error', { max: 3, variant: 'classic' }] },
   },

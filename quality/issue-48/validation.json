@@ -1,0 +1,142 @@
+{
+  "issue": 48,
+  "nodeVersion": "v26.8.2",
+  "fullRepositoryTestsRun": false,
+  "staticChecks": [
+    {
+      "command": "npm run lint:js",
+      "exitCode": 0,
+      "details": "Both scoped gates and existing ESLint ratchet pass; only four exact resolved legacy entries removed."
+    },
+    {
+      "command": "npm run lint:architecture",
+      "exitCode": 0
+    },
+    {
+      "command": "npm run lint:duplicates",
+      "exitCode": 0
+    },
+    {
+      "command": "npm run lint:lines",
+      "exitCode": 0
+    },
+    {
+      "command": "npm run typecheck",
+      "exitCode": 0
+    },
+    {
+      "command": "node scripts/android-animation-complexity.mjs --report",
+      "exitCode": 0
+    },
+    {
+      "command": "git diff --check",
+      "exitCode": 0
+    }
+  ],
+  "thresholdProbes": {
+    "command": "node --test scripts/android-animation-complexity.test.mjs scripts/android-game-complexity.test.mjs",
+    "tests": "3 passes, 4 fails",
+    "passed": 29,
+    "failed": 0,
+    "exitCode": 0,
+    "tools": "6 passes, 7 fails",
+    "nestedCallbacks": true,
+    "constructorsAndAccessors": true,
+    "testSupportAndFixturesWithoutTestSuffix": true,
+    "inlineDisableBlocked": true,
+    "defaultParametersOptionalChainsAndShortCircuitCounted": true,
+    "missingESLintDependencyExitCode": 1,
+    "parseFailureExitCode": 1,
+    "parseFailureInReportModeExitCode": 1,
+    "actualNpmLintJsEntryBlocksProbe": true,
+    "isolatedTemporaryProjects": true
+  },
+  "collection": {
+    "command": "npx playwright test --config android/playwright.config.ts --list animation-transitions.spec.ts animation-assets.spec.ts club-skeleton-animation.spec.ts slot-animation.spec.ts launch-branding.spec.ts records.spec.ts",
+    "files": 6,
+    "collected": 13,
+    "exitCode": 0,
+    "details": "Collection only; no device execution."
+  },
+  "pixelMetricsComparison": {
+    "comparisons": 36,
+    "imageSizes": [
+      [
+        5,
+        5
+      ],
+      [
+        61,
+        37
+      ],
+      [
+        127,
+        93
+      ],
+      [
+        240,
+        426
+      ]
+    ],
+    "details": "Compared original HEAD implementations with current thumbnails, column coverage, aligned distance, mirroring, local motion, colour and palette distance, and middle candidates. Byte arrays and numeric results match exactly."
+  },
+  "representativeDeviceRun": {
+    "status": "not-run",
+    "releaseTag": "android-staging-300001802-5cdbf9f90dd3",
+    "applicationSha": "5cdbf9f90dd3c4c157f1ce789a5b859a56cbae12",
+    "adbDevices": [],
+    "availableParityAvdArchitecture": "arm64-v8a",
+    "reason": "No running API 35/x86_64 emulator, verified APK or patched animation driver in this worktree. The available parity AVD is ARM. Static checks, collection and archived video playback do not establish a current fixed-build device pass.",
+    "remainingScenarios": [
+      "native launch artwork and staging notice appear on a real app start",
+      "club more menu fades into and out of the Android screen",
+      "all three native slot reels and reward types animate from real spin responses"
+    ]
+  },
+  "reports": {
+    "before": "complexity-before.json",
+    "after": "complexity-after.json",
+    "sourcesAndSummary": "measurement.json",
+    "exactRemovedLegacyEntries": "removed-legacy.json"
+  },
+  "unitTests": {
+    "command": "node --import tsx --test android/animation-baselines.test.mjs android/animation-locale.test.mjs android/animation-transition.test.mjs android/asset-sequence.test.mjs android/caret-mask.test.mjs android/loop-animation.test.mjs android/loop-keyframes.test.mjs android/motion-regions.test.mjs android/screenshot-policy.test.mjs android/video-frames.test.mjs android/video-motion.test.mjs android/game-input-caret.test.mjs scripts/android-animation-complexity.test.mjs scripts/android-game-complexity.test.mjs",
+    "files": 14,
+    "tests": 112,
+    "passed": 112,
+    "failed": 0,
+    "skipped": 0,
+    "exitCode": 0
+  },
+  "regionValidationFollowup": {
+    "command": "node --import tsx --test android/motion-regions.test.mjs",
+    "tests": 6,
+    "passed": 6,
+    "exitCode": 0,
+    "details": "Includes invalid, fractional, zero, negative and Symbol bounds; original region diagnostic preserved before arithmetic."
+  },
+  "archivedRecordings": {
+    "command": "node --import tsx --test android/animation-baselines.test.mjs android/animation-locale.test.mjs android/animation-transition.test.mjs android/asset-sequence.test.mjs android/caret-mask.test.mjs android/loop-animation.test.mjs android/motion-regions.test.mjs android/recorded-transitions.test.mjs android/screenshot-policy.test.mjs android/video-frames.test.mjs android/video-motion.test.mjs scripts/android-animation-complexity.test.mjs",
+    "batchTests": 169,
+    "batchPassed": 169,
+    "recordings": 81,
+    "recordingsPassed": 81,
+    "failed": 0,
+    "exitCode": 0,
+    "details": "Original archived MP4s decoded with production parameters; all recorded phases and original source hashes retained. This is offline replay, not current APK/device execution."
+  },
+  "transitionCallbackFollowup": {
+    "command": "node --import tsx --test android/animation-transition.test.mjs",
+    "tests": 49,
+    "passed": 49,
+    "failed": 0,
+    "exitCode": 0,
+    "details": "Final source verifies trigger, frame inspector, semantic readiness and observer callbacks retain unbound receiver semantics and original call order."
+  },
+  "uniqueAffectedTests": {
+    "unitAndGateTestsPassed": 113,
+    "archivedRecordingTestsPassed": 81,
+    "totalPassed": 194,
+    "fullRepositorySuiteRun": false
+  }
+}

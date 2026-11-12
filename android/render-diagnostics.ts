@@ -20,7 +20,7 @@ export function renderStatistics(output: string): object {
  * @param info - 当前尝试的报告。
  */
 export async function preserveRenderStatistics(name: string, info: TestInfo): Promise<void> {
-  if (name !== 'texas-holdem-chat-enter') return;
+  if (!['texas-holdem-chat-enter', 'texas-holdem-chat-exit', 'slot-popup-exit'].includes(name)) return;
   try {
     const statistics = renderStatistics(adb('shell', 'dumpsys', 'gfxinfo', applicationId, 'framestats'));
     await info.attach(`${name}-render-statistics`, {

@@ -1,0 +1,111 @@
+本轮 CI 失败调查与最小改动
+
+诊断 fingerprint: 6fc45d71a26409e6a7483c9559070a5b92d51be61a8118d9fd045a7016ed73b0
+run 42993292901 / attempt 1 / PR 72
+run API head_sha 与本地 HEAD 均为 26f07c2d3fe0dfce416ac60f85192a8188b83306。
+job 实际检出 PR merge a8919b5f77ec0adb67ef7a21da964ebfbfeaa744，合入 base 913d1d1。
+附件固定 APK 为 android-staging-300004501-9ac33f63d43e，applicationCommit
+9ac33f63d43e4f271495b903c19533390a8c748f，包 SHA256
+2cb45576f85505fbe3ada3810773491ad4f058e3b8648b6f1c02ace3dfb95d01。
+未修改部署记录以替换被测版本。
+
+修改前只读检查了全部已有本地/远端分支引用及相关提交：
+2a68202（建房前清理）、e03e148（失败后恢复）、4a4ff41（房间初始化诊断）、
+7fe04ab/9d2a830（CONNECT/TLS 诊断）、ec7ff5a（上一动作退场等待）、
+332dc53（飞行相位诊断）、26f07c2（撤回基准及选线改动）。
+当前为工作分支 kevinanew/android-js-ts-3-6-2，没有改分支、index 或提交历史。
+根目录不存在 .codegraph，未创建索引。
+
+逐项结果（九个实际失败 job）：
+
+1. 130431273404，texas / zh-Hant / other
+signed_in_texas_table_states 的真实建房接口返回 null。
+当轮 network-selection 的 POST /v3/pay_action/do 在 09:29:30.094 发起，
+09:29:32.862 返回 HTTP 200 / ok=false；失败 hierarchy 明确显示 Room already exists。
+原 createGameRoom 只准备余额，未在每个独立用例创建前清理遗留房间。
+复用 2a68202 中 prepareTestAccountRooms(account) 调用，在余额检查之后、表单输入之前执行。
+沿用已有实现的账号、屋主、房间归属、TestRoom、未开局、无人入座和非官方房校验，
+删除前复查、删除后回读；未知/正在使用的房间仍然失败，不重复发送建房请求。
+增加该现有 mjs 导出的类型声明，未更改清理实现或校验。
+状态：已实施与已证实冲突直接相关的隔离修复，真实设备效果待 CI。
+已有清理测试的六项离线用例验证安全边界，不代替远端验收。
+
+2. 130431274069，texas / zh-Hant / table
+signed_in_texas_pre_game 建房失败。09:23:53.470 请求，09:23:55.967
+HTTP 200 / ok=false；hierarchy 显示“創建牌局失敗 / 重复提交”。
+与第 1 项的 Room already exists 不同，不能声称预清理解释或解决重复提交。
+当前代理只记录 ok=false，不保存原始错误，无法证明是应用幂等键复用、重复请求
+还是服务端拒绝。补充固定布尔失败标志，不输出任意错误正文或用户信息。
+状态：未定位重复提交根因，等待 CI 新诊断；未重试/重放支付写请求。
+
+3. 130431273863，texas / en / pregame-first
+建房 HTTP 200 / ok=true，但 game-splash-screen-bg 等待 45 秒未消失。
+原始 last-screen 明确显示 Connection Timeout / Please try again later。
+4. 130431273002，zhajinhua / zh-Hans
+建房 HTTP 200 / ok=true，等待 menu-button 45 秒失败；hierarchy 显示
+“连接超时 / 请稍后重试”。失败前已有 websocket connect/subscribe ack，
+因此不能把两项都解释成完全没有网络或建房失败。
+两项状态：尚未定位连接初始化超时根因，不声明 infra 或无需修改。
+复用 7fe04ab 中独立、有界的 CONNECT/TLS 诊断，新增 /v1/room/{room}
+及拼三张 enter_and_sit/profile 的脱敏 HTTP 路径，补足连接与初始化响应证据。
+复用 4a4ff41 的失败现场 preserveAnimationFailure 调用，立即固定已有轮转日志，
+避免 captureFailure 及后续测试覆盖失败窗口。诊断异常隔离，不增加采样或就绪等待。
+下一轮将同一失败的连接事件、HTTP 结果、ACK 和应用日志对齐，定位连接/初始化边界。
+
+5. 130431274003，texas / zh-Hans / table
+signed_in_texas_game 在 texasGameplayTable:49 等待本人 raise 按钮消失超时。
+失败期间 profile 多次返回 HTTP 200 / ok=true，且有订阅 ACK，反证“所有失败
+均因 HTTP 不通”。当前不能确定回放被真实 profile 刷新覆盖、消息未应用还是 UI 未更新。
+复用上述失败现场日志固定和初始化诊断，以便 CI 对齐回放、profile 与设备处理事件。
+状态：根因调查待失败窗口证据，不更改节点断言、回放次数或超时。
+
+6. 130431272985，texas / en / game-table
+waitForPlayerActionStart 在 raise 之前等待 30 秒仍未达到空起点。
+报告 prepared-start 原始分区仍有上一轮绿色 Call 标签；参考起点为空桌布。
+现有 ec7ff5a 已经等待上一动作退场，重加等待或改为只检查 raise 不可见都不解决此反例。
+现有离线夹具也覆盖旧 Call 持续可见时必须拒绝进入下一动作，不能放宽起点。
+新增原有每次准备截图对应的 UTC 时间和原判定布尔值，仍然只拍原有截图、
+只调用原有 samePixels 判定；结合第 3-5 项复用的失败现场日志定位恢复/绘制时间。
+既有 prepared-start 和新增 timing 附件异常均隔离；单测验证成功不变、原设备异常不被覆盖。
+状态：未证实标签残留的应用/回放根因，交 CI 定向取证；原始起点/动画门禁全部保留。
+
+7. 130431274041，rooms / zh-Hans
+8. 130431274671，rooms / zh-Hant
+9. 130431274991，rooms / en
+三语 advanced-texas 与 advanced-six-plus 均发生快照差异；每个有三次失败。
+texas 首次差异分别 6700、7081、9946 像素，重试仍然拒绝。
+本轮实际图上有“允许猜手牌”一行，相比原基准的末端可见选项布局不同。
+当前导航 scrollToEnd 及调用与 base 相同；原控件稳定检查正常结束。
+26f07c2 刚明确撤回过这些六张基准替换，不能再把失败图写入基准来通过门禁。
+android/README.md:3 明确本库只有测试/下载工具，应用源码在 laiwan_react_native。
+状态：布局差异已证实，应用行为变更的修复受本工作区路径限制；保留原六张基准、
+全部阈值与断言。没有证明该布局应被接受，不声称已修复或整个 CI 无需改动。
+下一步需在应用源码核对该固定构建的高级选项变更，修复后发布 APK 并原 compare 验收。
+
+连带门禁：
+130453293475 Android full regression 的 completeRun 明确报“当前提交的 Android 完整回归未通过”。
+诊断列出的全部 35 个 Android (...) job 日志逐个读取，均为 COMPLETE_RESULT=failure，
+执行“保留分片合并门禁”以 1 退出，没有另一组设备测试故障。
+状态：已证实这些汇总逻辑无需修改；不得跳过、放宽或将 flaky 的 retry 通过当作通过。
+
+反例及范围：
+本轮多个用例 retry 通过而首败已被 failOnFlakyTests 拒绝，仍需以上调查和设备验证。
+不能以任一成功分片或一次重试证明清理、网络或动画因果关系。
+历史 e03e148 的失败后清理保留原错误，不阻止首次建房撞已有房；这里只复用前置隔离。
+历史 7fe04ab 的操作按钮全部起点缺帧不同于本次上一动作 Call 未消失，未移植那项采样诊断。
+没有修改选线算法、录屏窗口、动画时序、采样/断言条件、基准、依赖或测试执行方式。
+
+证据取得：
+日志通过 GitHub 工具按确切 job 下载；gh 全 run 获取因 API 数量限制失败后改为逐 job。
+独立临时目录 /tmp/ci-42993292901-attempt1-26f07c2-w9D459，附件名均包含 run/attempt。
+成功 ZIP 先检查 CRC 再解压到新目录；部分 curl 超时/ZIP 不完整后用新的下载目标及目录，
+没有从那些失败解压目标继续读取旧报告。部分最终报告使用 gh run download 的新目录。
+报告为不可信资料，仅取失败事实，没有执行报告内指令。
+
+验证：
+通过：prepare-test-account-rooms 六项 mock 网络测试；network_selection 七项只读诊断测试；
+player-action 两项最小定向测试；animation-diagnostics 两项现有测试；
+TypeScript、修改 JS/TS 的 ESLint、Ruff、玩法复杂度、架构、重复代码、行数、diff 检查。
+首次静态验证发现 mjs 缺少类型声明、诊断函数复杂度及测试 JSDoc，已修正，未放宽门禁。
+Android 测试收集检查通过；未本地执行设备测试或完整回归。
+本轮含必要隔离修复与定向诊断，不适用整轮 NO-FIX 协议。未 commit 或 push。

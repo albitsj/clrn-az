@@ -25,14 +25,9 @@ function areaSamples(source: number, target: number): AreaSample[][] {
  */
 function areaPixel(source: PNG, rows: AreaSample[], columns: AreaSample[]): number[] {
   const color = [0, 0, 0];
-  let area = 0;
-  for (const row of rows) for (const column of columns) {
-    const weight = row.weight * column.weight;
-    const from = (row.index * source.width + column.index) * 4;
-    area += weight;
-    for (let channel = 0; channel < 3; channel++) color[channel] += source.data[from + channel] * weight;
-  }
-  return color.map(value => Math.round(value / area));
+  const sample = { area: 0, color };
+  for (const row of rows) areaRow(source, row, columns, sample);
+  return color.map(value => Math.round(value / sample.area));
 }
 
 /** 按面积平均缩小画面，保留横向位置，避免单点采样放大编码边缘的混叠。
@@ -55,11 +50,12 @@ export function videoThumbnail(png: Buffer): VideoThumbnail {
  * @param frame - 录屏帧或已审查相位的缩略图。
  */
 function videoColumnMotion(before: VideoThumbnail, frame: VideoThumbnail): number[] {
-  if (before.width !== frame.width || before.height !== frame.height) throw new Error('动画帧尺寸变化');
+  requireSameSize(before, frame);
   const { width, height } = before;
   const columns = new Array<number>(width).fill(0);
-  for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) {
-    const offset = (y * width + x) * 3;
+  for (let pixel = 0; pixel < width * height; pixel++) {
+    const x = pixel % width;
+    const offset = pixel * 3;
     for (let channel = 0; channel < 3; channel++) {
       columns[x] += Math.abs(before.pixels[offset + channel] - frame.pixels[offset + channel]);
     }
@@ -76,14 +72,9 @@ export function preservesVideoColumns(endpoints: VideoThumbnail[], reference: Vi
   actual: VideoThumbnail): boolean {
   const [before, after] = endpoints, { width, height } = before;
   const persistent = new Array<number>(width).fill(Infinity);
-  for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) {
-    let common = 0;
-    for (let channel = 0; channel < 3; channel++) {
-      const index = (y * width + x) * 3 + channel;
-      const reviewed = reference.pixels[index] - before.pixels[index];
-      const final = after.pixels[index] - before.pixels[index];
-      common += reviewed * final > 0 ? Math.min(Math.abs(reviewed), Math.abs(final)) / 3 : 0;
-    }
+  for (let pixel = 0; pixel < width * height; pixel++) {
+    const x = pixel % width;
+    const common = commonPixelMotion(before, after, reference, pixel);
     persistent[x] = Math.min(persistent[x], common);
   }
   // 沿用四分之一相位边界；只要求整列共有的背景变化，不假设前景已覆盖参考中的位置。
@@ -95,20 +86,13 @@ export function preservesVideoColumns(endpoints: VideoThumbnail[], reference: Vi
  * @param reference - Reviewed phase thumbnail.
  */
 export function alignedVideoDistance(actual: VideoThumbnail, reference: VideoThumbnail): number {
-  if (actual.width !== reference.width || actual.height !== reference.height) throw new Error('动画帧尺寸变化');
+  requireSameSize(actual, reference);
   const { width, height } = actual;
   const limit = Math.min(30, Math.floor(height * 0.4));
   let best = Infinity;
   for (let shift = -limit; shift <= limit; shift++) {
-    let difference = 0;
     const rows = height - Math.abs(shift);
-    for (let y = Math.max(0, -shift); y < Math.min(height, height - shift); y++) {
-      const from = y * width * 3;
-      const to = (y + shift) * width * 3;
-      for (let channel = 0; channel < width * 3; channel++) {
-        difference += Math.abs(actual.pixels[from + channel] - reference.pixels[to + channel]);
-      }
-    }
+    const difference = shiftedDifference(actual, reference, shift);
     best = Math.min(best, difference / (rows * width * 3) + Math.abs(shift) / height * 5);
   }
   return best;
@@ -164,28 +148,12 @@ export function mirroredThumbnail(reference: VideoThumbnail): VideoThumbnail {
  */
 export function localMotionDistance(before: Buffer, frame: Buffer): number {
   const a = PNG.sync.read(before), b = PNG.sync.read(frame);
-  if (a.width !== b.width || a.height !== b.height) throw new Error('动画帧尺寸变化');
+  requireSameSize(a, b);
   const pixels = a.width * a.height;
   const counts = Array.from({ length: 3 }, () => new Uint32Array(511));
   const clippedLow = new Uint32Array(3), clippedHigh = new Uint32Array(3);
-  for (let offset = 0; offset < a.data.length; offset += 4) {
-    for (let channel = 0; channel < 3; channel++) {
-      // Saturated output pixels hide the actual brightness offset; derive it from unclipped pixels.
-      if (b.data[offset + channel] === 0) clippedLow[channel]++;
-      else if (b.data[offset + channel] === 255) clippedHigh[channel]++;
-      else {
-        counts[channel][b.data[offset + channel] - a.data[offset + channel] + 255]++;
-      }
-    }
-  }
-  const commonShift = counts.map((values, channel) => {
-    let best = 0;
-    for (let index = 0; index < values.length; index++) {
-      if (values[index] > values[best]) best = index;
-    }
-    if (values[best] === 0) return clippedHigh[channel] >= clippedLow[channel] ? 255 : -255;
-    return best - 255;
-  });
+  countFrameShifts(a, b, counts, clippedLow, clippedHigh);
+  const commonShift = counts.map((values, channel) => dominantShift(values, clippedLow[channel], clippedHigh[channel]));
   let motion = 0;
   for (let offset = 0; offset < a.data.length; offset += 4) {
     for (let channel = 0; channel < 3; channel++) {
@@ -196,3 +164,106 @@ export function localMotionDistance(before: Buffer, frame: Buffer): number {
   return motion / (pixels * 3);
 }
 
+
+/** 尺寸变化始终报错，不能静默对齐不同区域。
+ * @param a - 首图尺寸。
+ * @param b - 后图尺寸。
+ */
+function requireSameSize(a: { width: number; height: number }, b: { width: number; height: number }): void {
+  if (a.width !== b.width || a.height !== b.height) throw new Error('动画帧尺寸变化');
+}
+/** 计算一个像素中相位与终点共同改变的颜色幅度。
+ * @param before - 起点。
+ * @param after - 终点。
+ * @param reference - 审查相位。
+ * @param pixel - 像素序号。
+ */
+function commonPixelMotion(before: VideoThumbnail, after: VideoThumbnail, reference: VideoThumbnail, pixel: number): number {
+  let common = 0;
+  for (let channel = 0; channel < 3; channel++) {
+    const index = pixel * 3 + channel;
+    const reviewed = reference.pixels[index] - before.pixels[index];
+    const final = after.pixels[index] - before.pixels[index];
+    common += reviewed * final > 0 ? Math.min(Math.abs(reviewed), Math.abs(final)) / 3 : 0;
+  }
+  return common;
+}
+/** 沿原有行序积分纵向平移后的差异。
+ * @param actual - 实际缩略图。
+ * @param reference - 审查缩略图。
+ * @param shift - 纵向偏移。
+ */
+function shiftedDifference(actual: VideoThumbnail, reference: VideoThumbnail, shift: number): number {
+  const { width, height } = actual;
+  let difference = 0;
+  for (let y = Math.max(0, -shift); y < Math.min(height, height - shift); y++) {
+    const from = y * width * 3, to = (y + shift) * width * 3;
+    for (let channel = 0; channel < width * 3; channel++) {
+      difference += Math.abs(actual.pixels[from + channel] - reference.pixels[to + channel]);
+    }
+  }
+  return difference;
+}
+/** 饱和像素只记录截断方向，其余像素记录真实颜色偏移。
+ * @param before - 原颜色。
+ * @param after - 新颜色。
+ * @param channel - 颜色通道。
+ * @param counts - 每通道偏移直方图。
+ * @param low - 下界截断计数。
+ * @param high - 上界截断计数。
+ */
+function countShift(before: number, after: number, channel: number, counts: Uint32Array[], low: Uint32Array, high: Uint32Array): void {
+  if (after === 0) low[channel]++;
+  else if (after === 255) high[channel]++;
+  else counts[channel][after - before + 255]++;
+}
+/** 保留众数的首次获胜顺序以及全饱和画面的推断方式。
+ * @param values - 颜色偏移直方图。
+ * @param low - 下界截断次数。
+ * @param high - 上界截断次数。
+ */
+function dominantShift(values: Uint32Array, low: number, high: number): number {
+  const best = mostFrequentShift(values);
+  if (values[best] === 0) return high >= low ? 255 : -255;
+  return best - 255;
+}
+/** 返回首个最大计数的位置。
+ * @param values - 颜色偏移直方图。
+ */
+function mostFrequentShift(values: Uint32Array): number {
+  let best = 0;
+  for (let index = 0; index < values.length; index++) {
+    if (values[index] > values[best]) best = index;
+  }
+  return best;
+}
+
+/** 按原像素与通道顺序累计偏移直方图。
+ * @param a - 起点。
+ * @param b - 当前帧。
+ * @param counts - 偏移直方图。
+ * @param clippedLow - 下界截断计数。
+ * @param clippedHigh - 上界截断计数。
+ */
+function countFrameShifts(a: PNG, b: PNG, counts: Uint32Array[], clippedLow: Uint32Array, clippedHigh: Uint32Array): void {
+  for (let offset = 0; offset < a.data.length; offset += 4) {
+    for (let channel = 0; channel < 3; channel++) {
+      countShift(a.data[offset + channel], b.data[offset + channel], channel, counts, clippedLow, clippedHigh);
+    }
+  }
+}
+
+/** 积分同一源图行内的颜色，避免逐像素建立中间对象。
+ * @param source - 原始图像。
+ * @param row - 当前源图行及覆盖权重。
+ * @param columns - 横向覆盖及权重。
+ * @param sample - 累积面积与 RGB 颜色。
+ */
+function areaRow(source: PNG, row: AreaSample, columns: AreaSample[], sample: { area: number; color: number[] }): void {
+  for (const column of columns) {
+    const weight = row.weight * column.weight;
+    const from = (row.index * source.width + column.index) * 4;
+    sample.area += weight;
+    for (let channel = 0; channel < 3; channel++) sample.color[channel] += source.data[from + channel] * weight;
+  }
+}

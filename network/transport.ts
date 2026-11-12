@@ -1,5 +1,6 @@
 import { NetworkError, classify } from './errors.ts';
 import type { ApiResponse, Json, Method } from './types.ts';
+import { recordCleanupResponse } from './cleanup-response-diagnostic.ts';
 
 /** Run a whole operation under a cancellable deadline, clearing its timer on every exit.
  * @param parent - Caller or client lifetime signal.
@@ -42,7 +43,11 @@ export async function send(fetcher: typeof fetch, url: string, method: Method,
   });
   try {
     if (response.status === 401 || response.status === 403) throw new NetworkError('auth', 0, response.status);
-    if (response.status >= 500) throw new NetworkError('server', 0, response.status);
+    if (response.status >= 500) {
+      const error = new NetworkError('server', 0, response.status);
+      await recordCleanupResponse(response, url, method);
+      throw error;
+    }
     if (!response.ok) throw new NetworkError('http', 0, response.status);
     return await json(response, signal);
   } finally {

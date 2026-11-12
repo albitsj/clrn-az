@@ -7,13 +7,10 @@ import { expect } from '@playwright/test';
  * @param bytes - 从已验证 APK 原样取出的 WebP。
  */
 export function animatedWebpFrames(bytes: Buffer): number {
-  if (bytes.toString('ascii', 0, 4) !== 'RIFF' || bytes.toString('ascii', 8, 12) !== 'WEBP'
-    || bytes.readUInt32LE(4) + 8 !== bytes.length) throw new Error('无效 WebP RIFF 长度或标记');
+  validateWebp(bytes);
   let count = 0;
   for (let offset = 12; offset < bytes.length;) {
-    if (offset + 8 > bytes.length) throw new Error('WebP 块头被截断');
-    const size = bytes.readUInt32LE(offset + 4);
-    if (offset + 8 + size > bytes.length) throw new Error('WebP 动画帧被截断');
+    const size = webpChunkSize(bytes, offset);
     if (bytes.toString('ascii', offset, offset + 4) === 'ANMF') count++;
     offset += 8 + size + (size % 2);
   }
@@ -41,4 +38,23 @@ export function comparePackagedAnimations(packagePath: string,
     expect(observed.get(hash), `${name} 的真实 APK 素材、帧或时长已变化`).toBe(frameCount);
     expect(frameCount, `${name} 不能退化为静态图`).toBeGreaterThan(1);
   }
+}
+
+/** 检查 RIFF 标记及声明长度。
+ * @param bytes - 完整 WebP。
+ */
+function validateWebp(bytes: Buffer): void {
+  const markers = [bytes.toString('ascii', 0, 4) === 'RIFF', bytes.toString('ascii', 8, 12) === 'WEBP'];
+  if (!markers.every(Boolean)) throw new Error('无效 WebP RIFF 长度或标记');
+  if (bytes.readUInt32LE(4) + 8 !== bytes.length) throw new Error('无效 WebP RIFF 长度或标记');
+}
+/** 检查块头和载荷均未截断。
+ * @param bytes - 完整 WebP。
+ * @param offset - 顶层块起点。
+ */
+function webpChunkSize(bytes: Buffer, offset: number): number {
+  if (offset + 8 > bytes.length) throw new Error('WebP 块头被截断');
+  const size = bytes.readUInt32LE(offset + 4);
+  if (offset + 8 + size > bytes.length) throw new Error('WebP 动画帧被截断');
+  return size;
 }

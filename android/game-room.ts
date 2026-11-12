@@ -2,6 +2,7 @@ import { expect } from '@playwright/test';
 import type { AndroidDevice } from 'playwright';
 import type { Mitmproxy } from '../e2e/helpers/mitmproxy-client';
 import { ensureRoomBalance, type Account, type RoomSession } from '../visual/cases/_shared/room';
+import { prepareTestAccountRooms } from '../scripts/prepare-test-account-rooms.mjs';
 import { enterTexasRoom } from '../visual/cases/texas-holdem/room';
 import { gameGone, gameNodes, gameReady } from './game-controls';
 import { dismissKeyboard } from './keyboard';
@@ -29,6 +30,7 @@ export async function createGameRoom(device: AndroidDevice, proxy: Mitmproxy,
   observerConnection?: boolean): Promise<RoomSession> {
   const account = await roomAccount(proxy);
   await ensureRoomBalance(account);
+  await prepareTestAccountRooms(account);
   await submitRoomForm(device, game, optionalFeatures);
   let room: RoomSession | null = null;
   await expect(async () => {

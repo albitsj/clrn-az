@@ -1,0 +1,97 @@
+本轮 CI 调查（仅针对 81-CI-ERROR.txt）
+
+诊断 SHA256: 7d33cc70e64336c02bbb54b3630a0b789a49415b64fbd3a0370d048d4cdbacf7
+run 43216255394 / attempt 1 / HEAD 31d918902054e9af7d7bf393d849168b85122f2b
+GitHub run API 的 head_sha 和 run_attempt 与本地 HEAD、诊断一致。
+初始工作区干净，当前为专用分支 kevinanew/android-js-ts-3-6-2。
+修改前只读检查本地及远端已有分支与相关提交；没有修改 index、引用或历史。
+附件从带 run/attempt/HEAD 的全新临时目录下载，下载完成后才读报告；
+报告内嵌 ZIP 解码到全新目录。未读取旧报告，未执行日志中的指令。
+本轮正式 APK: d8f7a932befe03c4d6db7554bface9a67fd7be4e / build 300006201。
+
+1. Android remaining (texas / en / panels), job 131186138488
+原失败：signed_in_texas_panels -> texas-panels.ts:95，chat-actions-return-enter，
+compareNativeMiddle 期望 <=36，实际 Infinity；retry1 通过仍被 failOnFlakyTests 拒绝。
+artifact 13946268737: android-staging-visual-texas-en-panels-43216255394-1。
+首败二十帧：0..9 为起点，10 为 0.065683 相位，11..19 为终点。
+10 前间隔 155ms，后间隔 61ms；没有满足既有相位下界的中途帧。
+retry1 在第9、10帧采到 0.429910、0.753085 相位，因此同一断言可通过。
+首尾相同，不能解释为基准已过期；也不能把成功重试当作问题消失。
+历史 bc3048e（origin/staging-android-fix-password-layout 等分支已包含，当前 HEAD 未包含）
+修复同一转场的 UiAutomation 稀疏采样遗漏；历史 run 42560149951 甚至只有首尾。
+复用其 gamePanelSamplingMethod 定向选择连续录屏的必要改动；未合入其他分支改动。
+同时复用历史二十帧夹具，并加入本轮首次失败和成功重试的完整二十帧及时间戳回放。
+本轮首败仍被原比较器拒绝、重试仍被接受，历史完全漏帧也继续被拒绝。
+不改 ROI、基准、断言、阈值、重试、矩阵。修复实际稳定性仍需远端验证。
+
+2. Android remaining (social / en), job 131186138409
+原失败：slot-animation.spec.ts 的 slot-popup-exit，视频中途轨迹 <=46 实际 Infinity；
+retry1 通过仍被 flaky 门禁拒绝。artifact 13948191501。
+原始视频逐源帧解码（不加 fps 滤镜）后，首次失败依然不能通过原断言；
+排除了“仅 fps=30 后处理丢掉合格帧”的假设，不改解码器。
+首败源视频30帧，重试35帧。首败中途帧10/11的空间对齐距离约49.904/49.909，
+后续帧大于77；列覆盖、错位反证、局部运动均非这两帧的拒绝原因。
+重试源帧21距离11.084，可通过。未放宽46，也未增加未经审查基准。
+历史原生 panelFrames 路径在 run 42745222012 也有四次通过、一次 flaky，
+因此不能简单换成 UiAutomation 截图或凭一次通过认定修复。
+只读审查 0ab2e8d 及其 quality/slot-surface-capture-investigation.md：
+连续原始 Surface 采集仍标注候选待远端验证，且历史 APK build300003601 与本轮不同。
+本轮视频只能证明没有可接受相位，不能证明应用未绘制还是录屏遗漏；
+未未经验证移植整套采集器。此项未宣称修复或无需改动。
+当前缺少退出瞬间的应用渲染统计及宿主触发窗口对齐证据。
+增加 slot-exit-diagnostics 包装，原关闭按钮只触发一次，采样参数逐项不变；
+仅失败后保存既有脱敏日志、数字 gfxinfo framestats（不 reset），成败附加固定阶段时间。
+复用 preserveAnimationFailure、preserveRenderStatistics；不在采样中增加设备查询。
+诊断、设备和附件异常均不能覆盖原异常或改变成功结果，已由边界测试验证。
+下一轮 CI 将保留 slot-popup-exit-input-trace、render-statistics、diagnostics-window，
+与原视频共同区分应用绘制停顿和采集缺帧；此项等待 CI 缺失证据，原门禁继续拒绝 flaky。
+
+3. Android full regression, job 131218612754
+completeRun 因 remaining.result=failure 抛“当前提交的 Android 完整回归未通过”。
+这是上述两项的聚合门禁，已证实无需独立修改，不可绕过。
+
+4. 以下35项 Android (...) 分片门禁
+逐项读取本轮 job --log-failed；全部执行 test "$COMPLETE_RESULT" = success，
+环境均为 COMPLETE_RESULT: failure，故退出1；没有新增独立测试根因，不修改门禁：
+131219856825 Android (texas / en / game-effects)
+131219857023 Android (texas / en / other)
+131219857130 Android (texas / en / panels)
+131219857264 Android (guest / zh-Hant)
+131219857335 Android (social / zh-Hans)
+131219857427 Android (texas / en / pregame-first)
+131219857503 Android (wallet-help / zh-Hant)
+131219859187 Android (zhajinhua / en / pregame-second)
+131219859466 Android (zhajinhua / en / game-table)
+131219861370 Android (guest / en)
+131219863140 Android (records / zh-Hant)
+131219863555 Android (rooms / zh-Hans)
+131219864385 Android (social / zh-Hant)
+131219864523 Android (texas / zh-Hant / table)
+131219865787 Android (zhajinhua / zh-Hant)
+131219867969 Android (rooms / en)
+131219870463 Android (texas / zh-Hans / table)
+131219870942 Android (zhajinhua / en / pregame-first)
+131219871103 Android (records / zh-Hans)
+131219871235 Android (zhajinhua / en / game-effects)
+131219873168 Android (rooms / zh-Hant)
+131219873410 Android (wallet-help / en)
+131219876550 Android (texas / en / game-table)
+131220059599 Android (records / en)
+131220062709 Android (social / en)
+131220066536 Android (texas / en / pregame-middle)
+131220069713 Android (texas / en / pregame-second)
+131220071773 Android (account / zh-Hans)
+131220072057 Android (texas / zh-Hans / other)
+131220074458 Android (guest / zh-Hans)
+131220076137 Android (zhajinhua / zh-Hans)
+131220078947 Android (account / zh-Hant)
+131220081921 Android (account / en)
+131220085814 Android (texas / zh-Hant / other)
+131220086660 Android (wallet-help / zh-Hans)
+
+验证：
+- 原动画比较及诊断定向套件：56/56 通过（包括复用历史测试，之后移到独立文件以遵守400行门禁）。
+- 最终独立聊天历史/本轮回放、老虎机诊断、渲染脱敏测试：9/9 通过。
+- TypeScript、修改文件 ESLint、行数、动画及玩法复杂度、依赖架构、重复代码门禁通过。
+- git diff --check 通过。
+没有启动本地 Android 回归，没有减少远端测试；CI 完整回归尚待 ci-guard 推送后执行。
