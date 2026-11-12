@@ -39,7 +39,8 @@ export async function captureGame(device: AndroidDevice, name: string, testInfo:
   reconnectRetry?: boolean): Promise<void> {
   inputMasks = captureInputMasks(inputMasks);
   validateTrigger(transientMarker, triggerTransient);
-  const nodes = await captureNodes(device, transientMarker, expectedAlertMarker);
+  const nodes = await captureNodes(device, transientMarker, expectedAlertMarker,
+    name === 'zh-Hant-signed-in-texas-game-preflop');
   const masks: ScreenshotMask[] = [...inputMasks];
   const panels = foregroundPanels(nodes);
   await testInfo.attach(`${name}-native-tree`, { body: JSON.stringify(nodes[0]), contentType: 'application/json' });
@@ -104,12 +105,15 @@ function validateTrigger(marker?: string, trigger?: () => Promise<string | void>
 /** 等待前景转场结束，保留原有连续两次布局一致的断言。
  * @param device - 原生设备。
  * @param nodes - 首次读取的原生树。
+ * @param requirePing - 本轮 preflop 须在同一棵树取得网络遮罩来源。
  */
-async function stablePanels(device: AndroidDevice, nodes: NativeNode[]): Promise<NativeNode[]> {
-  if (!foregroundPanels(nodes).length) return nodes;
+async function stablePanels(device: AndroidDevice, nodes: NativeNode[], requirePing?: boolean): Promise<NativeNode[]> {
+  if (![foregroundPanels(nodes).length, requirePing].some(Boolean)) return nodes;
   let previous = '';
   await expect(async () => {
     nodes = await gameNodes(device);
+    if (requirePing) expect(nodes.some(node => node.res === 'ping-screen-container'),
+      'preflop 截图须在同一次树读取中取得网络遮罩来源').toBe(true);
     const current = JSON.stringify(foregroundPanels(nodes).map(node => node.bounds));
     const before = previous;
     previous = current;
@@ -122,12 +126,13 @@ async function stablePanels(device: AndroidDevice, nodes: NativeNode[]): Promise
  * @param device - 原生设备。
  * @param marker - 短提示标记。
  * @param alert - 已由业务分支断言的特定提示。
+ * @param requirePing - 是否等待已有网络遮罩的来源节点。
  */
-async function captureNodes(device: AndroidDevice, marker?: string, alert?: string): Promise<NativeNode[]> {
+async function captureNodes(device: AndroidDevice, marker?: string, alert?: string, requirePing?: boolean): Promise<NativeNode[]> {
   if (alert) await gameReady(device, alert);
   else await gameConnected(device, 1_000);
   let nodes = await gameNodes(device);
-  if (waitForPanels(marker)) nodes = await stablePanels(device, nodes);
+  if (waitForPanels(marker)) nodes = await stablePanels(device, nodes, requirePing);
   assertAlerts(nodes, alert);
   return nodes;
 }
