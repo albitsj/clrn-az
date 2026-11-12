@@ -71,7 +71,8 @@ const patched = source
                   motionBitmaps.add(motionFrame);
                   long motionCapturedAt = android.os.SystemClock.uptimeMillis();
                   if (challenge && motionBitmaps.size() == 1) motionDeadline = motionCapturedAt + 4600;
-                  motionFrames.put(new JSONObject().put("capturedAt", motionCapturedAt));
+                  motionFrames.put(new JSONObject().put("capturedAt", motionCapturedAt)
+                    .put("capturedAtEpochMs", System.currentTimeMillis()));
                   android.os.SystemClock.sleep(45);
                 }
                 for (int index = 0; index < motionBitmaps.size(); index++) {
@@ -161,5 +162,5 @@ const output = path.resolve('.ttyctl/android-driver');
 mkdirSync(output, { recursive: true });
 copyFileSync(path.join(directory, 'app/build/outputs/apk/debug/app-debug.apk'), path.join(output, 'android-driver-target.apk'));
 copyFileSync(path.join(directory, 'app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk'), path.join(output, 'android-driver.apk'));
-writeFileSync(path.join(output, 'source.json'), JSON.stringify({ revision, patch: 8 }));
+writeFileSync(path.join(output, 'source.json'), JSON.stringify({ revision, patch: 9 }));
 console.log('原生控件驱动已构建，应用画面和动画保持原样。');

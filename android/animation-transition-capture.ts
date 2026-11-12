@@ -9,7 +9,7 @@ import { maskScreenshot, type ScreenshotBounds, type ScreenshotMask } from './sc
 import { recordNativeVideoFrames, type AnimationRegion } from './video-frames';
 import { frameColorDistance, framePaletteDistance, middleCandidates, assertReviewedVideoMiddle } from './animation-transition-metrics';
 
-type NativeFrame = { capturedAt: number; png: string };
+type NativeFrame = { capturedAt: number; capturedAtEpochMs?: number; png: string };
 type Candidate = ReturnType<typeof middleCandidates>[number];
 type TransitionOptions = {
   device: AndroidDevice; name: string; testInfo: TestInfo; region: AnimationRegion; trigger: () => unknown;
@@ -52,6 +52,8 @@ export class NativeTransition {
     await this.waitForEnd();
     this.after = this.crop(await gameScreenshot(this.options.device));
     await this.attachJSON('timeline', frames.map(({ capturedAt }) => capturedAt));
+    await this.attachJSON('device-clock', frames.map(({ capturedAt, capturedAtEpochMs }) => ({ capturedAt, capturedAtEpochMs })))
+      .catch(() => undefined);
     await this.attachFrames();
     this.assertEndpoints();
     this.assertRequiredRegions();
