@@ -14,6 +14,26 @@ def sample(path, body=None, status=200, host=HOST):
 
 
 class NetworkSelectionTests(unittest.TestCase):
+    def test_room_error_variants_remain_fixed_flags_without_copying_body(self):
+        recorder = NetworkSelection()
+        for container in (None, 'error', 'result'):
+            for key in ('error', 'error_description', 'error_message', 'message'):
+                for message, flag in (('Room already exists', 'roomAlreadyExists'),
+                                      ('重复提交', 'duplicateSubmission')):
+                    details = {key: message, 'token': 'secret'}
+                    body = {'ok': False, **details} if container is None else {'ok': False, container: details}
+                    flow = sample('/v3/pay_action/do', body)
+                    flow.request.method = 'POST'
+                    recorder.observe(flow)
+                    self.assertTrue(recorder.events[-1][flag])
+                    self.assertIs(flow.response.json(), body)
+        flow = sample('/v3/pay_action/do', {'ok': False, 'message': 'secret Room already exists'})
+        flow.request.method = 'POST'
+        recorder.observe(flow)
+        self.assertFalse(recorder.events[-1]['roomAlreadyExists'])
+        self.assertNotIn('secret', json.dumps(recorder.snapshot()))
+
+
     def test_profile_transport_errors_are_classified_without_mutating_or_leaking_error(self):
         recorder = NetworkSelection()
         flow = sample('/v10/texas_holdem/room/secret-room/profile?token=secret')

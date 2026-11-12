@@ -97,9 +97,16 @@ def request_timing(request):
 def response_outcome(body):
     if isinstance(body, dict) and type(body.get('ok')) is bool:
         return {'ok': body['ok'], 'authenticationFailed': body.get('error') == 'authentication_failed',
-                'duplicateSubmission': body.get('error_description') == '重复提交',
-                'roomAlreadyExists': body.get('error_description') == 'Room already exists'}
+                'duplicateSubmission': error_matches(body, '重复提交'),
+                'roomAlreadyExists': error_matches(body, 'Room already exists')}
     return {}
+
+
+def error_matches(body, expected):
+    # 只比较固定错误文本；未知正文、字段值和嵌套身份永不进入附件。
+    sources = [body, body.get('error'), body.get('result')]
+    return any(source.get(key) == expected for source in sources if isinstance(source, dict)
+               for key in ('error', 'error_description', 'error_message', 'message'))
 
 
 class NetworkSelection:

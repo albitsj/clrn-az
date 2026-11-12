@@ -12,7 +12,7 @@ test('cleanup HTTP 500 preserves status and emits only envelope flags even if lo
   await assert.rejects(send(fetcher, url, 'DELETE', {}, undefined, new AbortController().signal),
     { kind: 'server', status: 500 });
   assert.deepEqual(log.mock.calls[0].arguments, ['ROOM CLEANUP RESPONSE >', JSON.stringify({
-    status: 500, jsonBody: true, ok: false, hasError: true, hasErrorDescription: true,
+    status: 500, bodyKind: 'json', jsonBody: true, ok: false, hasError: true, hasErrorDescription: true,
   })]);
   log.mock.mockImplementation(() => { throw new Error('logging unavailable'); });
   await assert.rejects(send(fetcher, url, 'DELETE', {}, undefined, new AbortController().signal),
@@ -20,17 +20,28 @@ test('cleanup HTTP 500 preserves status and emits only envelope flags even if lo
 });
 
 test('malformed, oversized and stalled error bodies retain the original failure and release their stream', async t => {
-  t.mock.method(console, 'error', () => {});
+  const log = t.mock.method(console, 'error', () => {});
   let cancelled = false;
   const stalled = new ReadableStream({
     /** Confirm that timed out diagnostics cancel their pending reader. */
     cancel() { cancelled = true; },
   });
-  for (const body of ['not JSON', 'x'.repeat(20_000), stalled]) {
+  for (const [body, bodyKind] of [['private non-JSON response', 'non-json'], ['', 'empty'],
+    ['x'.repeat(20_000), 'oversized'], [stalled, 'timeout'],
+    [new ReadableStream({
+      /** Simulate a private transport error without exposing its message.
+       * @param controller - Response stream controller.
+       */
+      start(controller) { controller.error(new Error('secret')); },
+    }), 'read-error'],
+    [null, 'absent']]) {
     /** Supply one failed response without any retry. */
     const fetcher = async () => new Response(body, { status: 500 });
     await assert.rejects(send(fetcher, url, 'DELETE', {}, undefined, new AbortController().signal),
       { kind: 'server', status: 500 });
+    const evidence = JSON.parse(log.mock.calls.at(-1).arguments[1]);
+    assert.deepEqual(evidence, { status: 500, bodyKind, jsonBody: false, ok: null,
+      hasError: false, hasErrorDescription: false });
   }
   assert.equal(cancelled, true);
   assert.equal(stalled.locked, false);

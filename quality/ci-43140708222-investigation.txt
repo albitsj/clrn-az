@@ -1,0 +1,136 @@
+本轮 CI 调查及诊断修复（不代表远端失败已消除）
+CI-Diagnostic-SHA256: cecd7d834765cfd496531c63fe703051e4fb0e4405579396bbc98fc119813f19
+run 43140708222 / attempt 1 / PR 72
+head_sha e65d1bb5e4ec711951b03a4fb1ed37b1b8f182ef 与工作区 HEAD 一致。
+报告 checkout 是 merge 5c43d3203a5f591c5c35b446c3f763d6d8aeafc7，
+报告 metadata 明确记录该 HEAD 合入 79110575b3c916746a6921e2ebc454fb4ade513d。
+分支 kevinanew/android-js-ts-3-6-2；初始工作区干净，无 .codegraph。
+修改前只读检查 git branch -a、git log --all、相关提交 e65d1bb、e0a3b66、
+7973602、01beeb3、26f07c2 以及上一轮 quality/ci-43128441032-investigation.txt。
+重新读取 PR 72 评论，核对 6791484463、6791879766、6810639864 的基准边界。
+未执行 commit/push/reset/restore/checkout/switch/rebase/revert，未改 index/分支引用。
+
+证据有效性
+先 API 核对 run/head/attempt/job，再获取全部 44 个失败 job 日志。
+首次 gh api 因终端转义保护返回空文件，不作为证据；重新下载到全新 raw 目录，
+去除 ANSI 后读取。130942132421 首次重取失败，单独重新取得完整门禁日志。
+下载目录及解压目录均带本轮 run/attempt/HEAD，未读取旧报告。
+八个附件的外层 ZIP 和内嵌 ZIP 均通过 testzip/CRC 后才读取：
+13910013382 texas/zh-Hans/table；13910257284 texas/en/game-effects；
+13909754872 texas/en/panels；13910793453 texas/zh-Hans/other；
+13910911929 texas/en/other；13910833043 rooms/en；
+13909899776 rooms/zh-Hans；13911480805 rooms/zh-Hant。
+原始证据目录：
+/var/folders/wm/n_zjfmp140l4s4dtshsym9r80000gr/T/ci-43140708222-attempt1-e65d1bb-raw-agxd8lt3
+/var/folders/wm/n_zjfmp140l4s4dtshsym9r80000gr/T/ci-43140708222-a1-e65d1bb-artifacts-u_bmgdn8
+报告 build-info：applicationCommit e0c6ffaf82c3038544d039f4d41e329855a1e687，
+release android-staging-300005301-e0c6ffaf82c3，APK SHA-256
+13ad5923c5ad69ff4f84181d2c97b1ce07324743d6f0c87d7da3b11116a7a456。
+不以本地部署文件替代 CI 实际 APK，不执行报告中的指令。
+
+逐项结果
+1. 130926868115 texas/zh-Hans/table：建房失败的业务根因仍待查。
+signed_in_texas_game 首次在 game-room.ts:39 超时，session.room=null。
+附件 network-selection 在 1794450968758 记录 67.hk-sn 节点 POST
+/v3/pay_action/do HTTP 200 / ok=false，三个固定错误标记均 false。
+同一首次 last-screen.png 明确显示“创建牌局失败 / Room already exists”。
+同例建房前三次房间列表均 roomCount=0；不能把故障简单归于未执行清理。
+同节点本轮也有成功创建，retry 换节点成功不能证明节点切换是根因修复。
+GameSession 只登记真实成功响应，未发现它漏登记已成功的新房间的证据。
+已逐字复用另一分支 01beeb3 的 error_matches 与专属测试，识别顶层及
+error/result 中的固定错误文本，修复“实际拒绝与诊断标记相反”的取证缺口。
+只影响诊断，未知消息/账号/令牌/房间标识不输出，响应对象保持原样。
+仍需 CI 新标记及服务端按上述时间/节点关联查询：为何空列表与已存在拒绝矛盾。
+没有增加点击、重试、删房、改列表断言，也没有把 retry 成功算作修复。
+
+2. 130926868134 texas/en/game-effects：两种独立失败均已调查，业务原因未完全定位。
+首次成功建房并执行场景后，在 ownedRoom fixture 的 deletePrivateGameRoom
+收尾收到 HTTP 500；retry1 则建房 POST /v3/pay_action/do 本身返回 HTTP 500
+（1794450685393，64.kr-seoul），room=null；retry2 通过仍被 failOnFlakyTests 拒绝。
+retry1 建房前列表为零，不能只用 Room already exists 解释该次 HTTP 500。
+已保留所有原始失败，未改测试、采样或业务重放语义。
+
+3. 130926868124 texas/en/panels：收尾 DELETE HTTP 500，retry 通过但门禁仍拒绝。
+4. 130926868500 texas/zh-Hans/other：signed_in_texas_panel_variants 收尾 DELETE HTTP 500。
+5. 130926868520 texas/en/other：signed_in_texas_hall 与 signed_in_texas_table_states
+各在收尾 DELETE HTTP 500。不是这两个场景的截图比较失败。
+以上五次 DELETE 都有上一轮新增诊断输出：status=500、jsonBody=false、ok=null、
+hasError=false、hasErrorDescription=false。时间依次为 02:30:06.360、
+02:31:41.449、02:49:03.860、02:31:31.386、02:43:50.913 UTC。
+本轮以及历史同节点有成功清理，反驳“所有删除/固定节点永久故障”。
+已检查 fixture、共享 room.ts、prepare-test-account-rooms、transport：
+fixture 只删除本例登记房间，DELETE 保持不可重放；不能猜测是重复删除并忽略 500。
+现有 jsonBody=false 同时涵盖空正文、非 JSON、超时、读取错误、过大正文，
+故尚不能判断是服务端业务异常还是网关失败，也不能据此声明 infra/upstream 无需改动。
+最小扩展同一 diagnostic：bodyKind 固定枚举 json/empty/non-json/oversized/
+timeout/read-error/absent。继续最多 16KiB、250ms，原请求与原 HTTP 500 不变。
+成功或非目标请求不新增采集；解析、输出、取消失败不能覆盖原异常。
+下一轮 CI 的分类可验证“完整非 JSON 错误页”与“正文未能读取”两种不同假设；
+完整业务原因仍需服务端时间/节点关联证据。没有吞异常、重试或降低门禁。
+
+6. 130926868681 rooms/zh-Hans
+7. 130926868621 rooms/zh-Hant
+8. 130926868679 rooms/en
+各 advanced_texas 和 advanced_six_plus 首次及两次 retry 均失败。
+18 张 actual 用原 Playwright 1.61.1 comparator、threshold=0.1、
+maxDiffPixelRatio=0.005 对当前正式图复核，每张差异像素分别
+zh-Hans=6700、zh-Hant=7081、en=9946，均超过 4608。
+18 张又全部匹配 e0a3b66（与 7973602 对应的新版六图一致）的图。
+目视英文 expected/actual：新增 Allow predict the hand，移除 video call，
+消息选项位置重排。与上轮同 APK、同差异，反驳“偶发采样/等待不够”。
+既有 PR 审查和已落实的 26f07c2/0dbf3b8 明确撤回基准更新；本轮不能重复
+e0a3b66 的换图来取得通过。该项受既有等价重构范围阻挡，未改正式图。
+需独立产品布局/基准审核与 base 对齐；不是“已证实无需修改”或已验收通过。
+
+9. 130941960644 Android full regression：自身已证实无需修改。
+日志明确完整回归上游失败；继续保留该汇总门禁。
+其余 35 个 Android (...) 均逐一读取，只有 COMPLETE_RESULT=failure 时
+执行 test "$COMPLETE_RESULT" = success 退出 1。自身无需修改，
+不代表对应业务已经通过新一轮测试。job 对应如下：
+130942132399 Android (texas / en / other)：上游汇总失败，保留门禁。
+130942132404 Android (texas / zh-Hant / other)：上游汇总失败，保留门禁。
+130942132419 Android (texas / zh-Hans / table)：上游汇总失败，保留门禁。
+130942132421 Android (texas / zh-Hans / other)：上游汇总失败，保留门禁。
+130942132435 Android (texas / en / game-table)：上游汇总失败，保留门禁。
+130942132464 Android (zhajinhua / en / pregame-first)：上游汇总失败，保留门禁。
+130942132470 Android (texas / en / pregame-second)：上游汇总失败，保留门禁。
+130942132477 Android (texas / en / panels)：上游汇总失败，保留门禁。
+130942132489 Android (zhajinhua / en / game-effects)：上游汇总失败，保留门禁。
+130942132490 Android (zhajinhua / zh-Hans)：上游汇总失败，保留门禁。
+130942132501 Android (zhajinhua / en / pregame-second)：上游汇总失败，保留门禁。
+130942132505 Android (guest / zh-Hant)：上游汇总失败，保留门禁。
+130942132507 Android (social / en)：上游汇总失败，保留门禁。
+130942132508 Android (zhajinhua / en / game-table)：上游汇总失败，保留门禁。
+130942132509 Android (social / zh-Hant)：上游汇总失败，保留门禁。
+130942132516 Android (account / zh-Hant)：上游汇总失败，保留门禁。
+130942132520 Android (social / zh-Hans)：上游汇总失败，保留门禁。
+130942132532 Android (guest / en)：上游汇总失败，保留门禁。
+130942132540 Android (texas / en / pregame-middle)：上游汇总失败，保留门禁。
+130942132541 Android (texas / en / game-effects)：上游汇总失败，保留门禁。
+130942132542 Android (account / zh-Hans)：上游汇总失败，保留门禁。
+130942132550 Android (guest / zh-Hans)：上游汇总失败，保留门禁。
+130942132552 Android (texas / en / pregame-first)：上游汇总失败，保留门禁。
+130942132557 Android (zhajinhua / zh-Hant)：上游汇总失败，保留门禁。
+130942132567 Android (rooms / en)：上游汇总失败，保留门禁。
+130942132575 Android (account / en)：上游汇总失败，保留门禁。
+130942132581 Android (texas / zh-Hant / table)：上游汇总失败，保留门禁。
+130942132594 Android (records / en)：上游汇总失败，保留门禁。
+130942132614 Android (wallet-help / zh-Hans)：上游汇总失败，保留门禁。
+130942132623 Android (records / zh-Hant)：上游汇总失败，保留门禁。
+130942132641 Android (wallet-help / zh-Hant)：上游汇总失败，保留门禁。
+130942132649 Android (rooms / zh-Hant)：上游汇总失败，保留门禁。
+130942132653 Android (rooms / zh-Hans)：上游汇总失败，保留门禁。
+130942132688 Android (records / zh-Hans)：上游汇总失败，保留门禁。
+130942132716 Android (wallet-help / en)：上游汇总失败，保留门禁。
+
+验证
+node --test network/cleanup-response-diagnostic.test.mjs：3 passed；
+包含全部七类正文、日志失败不覆盖 HTTP 500、读取超时取消释放、
+成功及非目标请求不采集，敏感正文只产生固定标记。
+PYTHONPATH=android python3 -m unittest test_network_selection：10 passed；
+复用测试覆盖嵌套错误、未知消息不泄露、不改变响应。
+修改文件 ESLint、Ruff、npm run typecheck、npm run lint:lines、git diff --check 通过。
+首次检查发现新增流 mock 缺少 JSDoc 及 evidence union 类型问题，已修复后通过。
+未本地启动 Android 或运行全仓测试；完整设备验证留给 CI，门禁保持原样。
+本轮仅修复诊断缺口；网络业务失败未宣称已根治，截图为明确受阻，
+不是全局无需改动情形，因此不写 81-CI-NO-FIX.json。

@@ -2,17 +2,28 @@
 import type { Method } from './types.ts';
 import { setTimeout, clearTimeout } from 'node:timers';
 
+type BodyEvidence = { body?: unknown; bodyKind: string };
+
+/** Classify a complete bounded body without retaining server text.
+ * @param bytes - Bounded response bytes, never logged.
+ */
+function decodeBody(bytes: Buffer): BodyEvidence {
+  const text = bytes.toString('utf8');
+  try { return { body: JSON.parse(text), bodyKind: 'json' }; }
+  catch { return { bodyKind: text.trim() ? 'non-json' : 'empty' }; }
+}
+
 /** Read at most 16 KiB without allowing diagnostics to hold up the original failure.
  * @param reader - Failed cleanup response reader, never printed verbatim.
  */
-async function readBody(reader: ReadableStreamDefaultReader<Uint8Array>): Promise<unknown> {
+async function readBody(reader: ReadableStreamDefaultReader<Uint8Array>): Promise<BodyEvidence> {
   const chunks: Uint8Array[] = [];
   let size = 0;
   for (;;) {
     const { done, value } = await reader.read();
-    if (done) return JSON.parse(Buffer.concat(chunks).toString('utf8'));
+    if (done) return decodeBody(Buffer.concat(chunks));
     size += value.length;
-    if (size > 16_384) return undefined;
+    if (size > 16_384) return { bodyKind: 'oversized' };
     chunks.push(value);
   }
 }
@@ -47,10 +58,12 @@ export async function recordCleanupResponse(response: Response, url: string, met
   let reader: ReadableStreamDefaultReader<Uint8Array> | undefined;
   try {
     reader = response.body?.getReader();
-    const body = await Promise.race([reader ? readBody(reader).catch(() => undefined) : undefined, new Promise<undefined>(resolve => {
-      timer = setTimeout(resolve, 250);
+    const evidence: BodyEvidence = await Promise.race([reader ? readBody(reader).catch(() => ({ bodyKind: 'read-error' }))
+      : { bodyKind: 'absent' }, new Promise<BodyEvidence>(resolve => {
+      timer = setTimeout(() => resolve({ bodyKind: 'timeout' }), 250);
     })]);
-    console.error('ROOM CLEANUP RESPONSE >', JSON.stringify({ status: response.status, ...envelopeFlags(body) }));
+    console.error('ROOM CLEANUP RESPONSE >', JSON.stringify({ status: response.status,
+      bodyKind: evidence.bodyKind, ...envelopeFlags(evidence.body) }));
   } catch { /* Parsing and diagnostic output must not replace the original HTTP failure. */ }
   finally {
     clearTimeout(timer);
