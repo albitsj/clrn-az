@@ -389,5 +389,5 @@ test('转场采集回调保持原来的无接收者语义及调用顺序', async
     observe: function (event) { assert.equal(this, undefined); events.push(event); },
   });
   assert.deepEqual(events, ['start-screenshot-start', 'start-screenshot-complete', 'native-sampling-start',
-    'trigger', 'inspect', 'ready']);
+    'native-sampling-complete', 'trigger', 'inspect', 'ready']);
 });

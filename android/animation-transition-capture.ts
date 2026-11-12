@@ -112,7 +112,10 @@ export class NativeTransition {
     this.observe('native-sampling-start');
     try {
       const pending = Promise.race([
-        implementation._send(samplingMethod),
+        implementation._send(samplingMethod).then(frames => {
+          this.observe('native-sampling-complete');
+          return frames;
+        }),
         setTimeout(30_000, undefined, { signal: timeout.signal }).then(() => { throw new Error('原生动画采样超时。'); }),
       ]);
       await setTimeout(300);

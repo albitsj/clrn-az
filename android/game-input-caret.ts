@@ -43,14 +43,24 @@ async function inputReady(device: AndroidDevice, resource: string, text: string)
  * @param info - 当前报告。
  * @param resource - 固定输入框标记。
  * @param sample - 最后一组真实采样。
+ * @param samples - 可选的原采样几何时间线；空数组表示未取得采样。
  */
-async function preserveCaretFailure(info: TestInfo | undefined, resource: string, sample: CaretSample | undefined): Promise<void> {
+export async function preserveCaretFailure(info: TestInfo | undefined, resource: string, sample: CaretSample | undefined,
+  samples?: object[]): Promise<void> {
   if (!info) return;
-  if (!sample) return;
   await info.attach(`${resource}-caret-state`, {
-    body: JSON.stringify({ at: Date.now(), bounds: sample.input.bounds, focused: sample.input.focused }),
+    body: JSON.stringify({ at: Date.now(), ...caretState(sample), samples }),
     contentType: 'application/json',
   }).catch(() => undefined);
+  if (!sample) return;
   await info.attach(`${resource}-caret-before`, { body: sample.before, contentType: 'image/png' }).catch(() => undefined);
   await info.attach(`${resource}-caret-after`, { body: sample.after, contentType: 'image/png' }).catch(() => undefined);
+}
+
+/** 仅输出几何状态，未开始采样时不推测焦点。
+ * @param sample - 最后一组实际采样。
+ */
+function caretState(sample: CaretSample | undefined): object {
+  if (!sample) return {};
+  return { bounds: sample.input.bounds, focused: sample.input.focused };
 }
