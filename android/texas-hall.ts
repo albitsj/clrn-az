@@ -107,7 +107,8 @@ export async function texasHallVariants(context: TexasContext): Promise<void> {
     const { x, y, width, height } = node.bounds;
     adb('shell', 'input', 'tap', String(Math.round(x + width / 2)), String(Math.round(y + height / 2)));
   }
-  const caret = await gameInputCaret(device, 'report-pair-play-reason-input', 'Suspicious cooperation', context.animationInfo);
+  const caret = await gameInputCaret(device, 'report-pair-play-reason-input', 'Suspicious cooperation',
+    context.diagnosticsInfo ?? context.animationInfo);
   await dismissKeyboard(device);
   const input = await device.info({ res: 'report-pair-play-reason-input' });
   expect(input.text).toBe('Suspicious cooperation');

@@ -102,7 +102,8 @@ def without_hand(queue):
 
 def queue_part(queue, hand, part):
     if part == 'hand':
-        return [hand]
+        # hand_card 只缓存；随后 table_status 的座位更新回调才会绘制本人手牌。
+        return [hand, queue[2]]
     if part == 'without-hand':
         return without_hand(queue)
     return queue

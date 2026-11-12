@@ -40,8 +40,25 @@ async function compare(frames, scene = { name, start, end, width, height }) {
     snapshotPath: file => `${snapshots}${file}` };
   await captureNativeTransition(device, scene.name, info,
     { x: 0, y: 0, width: scene.width, height: scene.height }, () => {},
-    [], [], 0, 'motionFrames', undefined, undefined, scene.anchors || []);
+    [], [], 0, 'motionFrames', undefined, undefined, scene.anchors || [],
+    [], [], [], undefined, scene.observe, scene.beforeEndScreenshot);
 }
+
+test('时间线观察器抛错不得改变动画成功或原始缺帧失败', async () => {
+  const scene = { name, start, end, width, height,
+    /** 模拟诊断记录失败，不干预设备或帧。 */ observe: () => { throw new Error('diagnostic failure'); } };
+  await compare([start, middle, end], scene);
+  await assert.rejects(compare([start, start, end], scene), /必须采到起点和终点之间的真实动画帧/);
+});
+
+test('终点就绪等待不能放行尚未完成的采样末帧', async () => {
+  let waits = 0;
+  const scene = { name, start, end, width, height,
+    /** 模拟独立遮罩消失，不重新采样或改变正式基准。 */ beforeEndScreenshot: async () => { waits++; } };
+  await compare([start, middle, end], scene);
+  await assert.rejects(compare([start, middle, middle], scene), /采样结束时动画必须完成/);
+  assert.equal(waits, 2);
+});
 
 test('真实俱乐部菜单中途关键帧通过转场视觉回归', async () => {
   await compare([start, middle, end]);

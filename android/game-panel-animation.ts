@@ -36,12 +36,13 @@ export function gamePanelSamplingMethod(game: 'texas-holdem' | 'zhajinhua', name
  * @param masks - 与面板无关的计时器等动态区域。
  * @param afterReady - 面板加载业务数据后再固定终点画面。
  * @param videoPhaseAnchors - 经原生录屏审查的其他有效相位。
+ * @param beforeEndScreenshot - 终点截图前等待独立遮罩，保留末帧完成断言。
  */
 export async function animateGamePanel(device: AndroidDevice, game: 'texas-holdem' | 'zhajinhua', name: string,
   button: string, region: ScreenshotBounds, testInfo?: TestInfo, phase?: 'enter' | 'exit',
   samplingMethod?: SamplingMethod,
   masks?: ScreenshotMask[], afterReady?: () => Promise<void>,
-  videoPhaseAnchors?: string[]): Promise<void> {
+  videoPhaseAnchors?: string[], beforeEndScreenshot?: () => Promise<void>): Promise<void> {
   if (!testInfo) { await gameTap(device, button); return; }
   phase = panelPhase(phase);
   samplingMethod = gamePanelSamplingMethod(game, name, phase, panelSampling(game, samplingMethod));
@@ -59,7 +60,7 @@ export async function animateGamePanel(device: AndroidDevice, game: 'texas-holde
     const press = panelPress(device, target, trace, liveRuleCheck(transition, samplingMethod));
     await captureNativeTransition(device, transition, testInfo, region, press,
       masks, [], 0, samplingMethod, undefined, afterReady, videoPhaseAnchors,
-      [], [], [], undefined, observe);
+      [], [], [], undefined, observe, beforeEndScreenshot);
   } catch (error) {
     await preservePanelFailure(transition, startedAt, testInfo);
     await preserveRuleFailure(device, transition, testInfo);
@@ -111,10 +112,10 @@ function liveRuleCheck(name: string, method: SamplingMethod): boolean {
   return name === 'zhajinhua-game-rule-enter' && method === 'videoFrames';
 }
 
-/** 规则入退场保存同一份定向诊断。
+/** 规则入退场及本轮续费入场保存同一份定向诊断。
  * @param name - 当前转场名。
  */
-function ruleTransition(name: string): boolean { return name.startsWith('zhajinhua-game-rule-'); }
+function diagnosticTransition(name: string): boolean { return name.startsWith('zhajinhua-game-rule-') || name === 'zhajinhua-renew-enter'; }
 
 /** 规则失败时读取脱敏现场，不覆盖原始错误。
  * @param device - 专用模拟器。
@@ -122,7 +123,7 @@ function ruleTransition(name: string): boolean { return name.startsWith('zhajinh
  * @param info - 独立测试报告。
  */
 async function preserveRuleFailure(device: AndroidDevice, name: string, info: TestInfo): Promise<void> {
-  if (ruleTransition(name)) await preserveRulePanelState(device, name, info).catch(() => undefined);
+  if (diagnosticTransition(name)) await preserveRulePanelState(device, name, info).catch(() => undefined);
 }
 
 /** 成败均保存规则及聊天入口时间线，供对照首次执行。
@@ -131,7 +132,7 @@ async function preserveRuleFailure(device: AndroidDevice, name: string, info: Te
  * @param trace - 只包含入口几何状态的时间线。
  */
 async function attachRuleTrace(name: string, info: TestInfo, trace: PanelTrace): Promise<void> {
-  if (ruleTransition(name) || name === 'texas-holdem-chat-enter') await info.attach(`${name}-input-trace`, {
+  if (diagnosticTransition(name) || name === 'texas-holdem-chat-enter') await info.attach(`${name}-input-trace`, {
     body: JSON.stringify(trace), contentType: 'application/json',
   }).catch(() => undefined);
 }
@@ -142,7 +143,7 @@ async function attachRuleTrace(name: string, info: TestInfo, trace: PanelTrace):
  * @param info - 测试报告。
  */
 async function preservePanelFailure(name: string, startedAt: number, info: TestInfo): Promise<void> {
-  if (name === 'texas-holdem-chat-enter' || ruleTransition(name)) {
+  if (name === 'texas-holdem-chat-enter' || diagnosticTransition(name)) {
     await preserveAnimationFailure(name, startedAt, info).catch(() => undefined);
     await preserveRenderStatistics(name, info).catch(() => undefined);
   }

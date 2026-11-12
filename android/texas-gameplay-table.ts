@@ -13,6 +13,7 @@ import { animateGamePanel } from './game-panel-animation';
 import { closeAnimatedGameMask } from './game-pregame';
 import { gameReplaySender } from './game-replay';
 import { captureMovingKeyframes } from './loop-keyframes';
+import { captureOperationTransition } from './texas-operation-diagnostics';
 import { expectTexasBalance, playerActionRegion, waitForPlayerActionStart, type TexasContext } from './texas-support';
 
 import type { TexasRestore } from './texas-gameplay-restore';
@@ -123,8 +124,7 @@ export async function captureOperationButtons(context: TexasContext, restore: Te
       .some(node => node.res?.startsWith('texas-holdem-auto-button-')), { timeout: 30_000 }).toBe(true);
     // 对手自动操作按钮先完成入场，再单独采样本人操作按钮。
     await new Promise(resolve => setTimeout(resolve, 1000));
-    await captureNativeTransition(device, 'texas-operation-buttons', animationInfo,
-      { x: 100, y: 865, width: 500, height: 150 }, () => send({ scene: 'own-turn' }), [], [], 400);
+    await captureOperationTransition(device, animationInfo, () => send({ scene: 'own-turn' }));
     await gameReady(device, 'texas-holdem-operation-button-raise');
     await restore('river', true);
   }

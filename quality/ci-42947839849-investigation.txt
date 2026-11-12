@@ -1,0 +1,146 @@
+CI 42947839849 / attempt 1 调查
+
+诊断指纹：035e566df796132e98fd7f41eb365e00ef018f522d43c814ad9545973a3514f8。
+run API head_sha=d5de5cbe38d605520589d3d6fc667f3e91202525，与工作区 HEAD 一致。
+诊断列出的全部 39 个失败 job 的 run_id=42947839849、run_attempt=1。
+实际 checkout 为 b86c0d3，将该 HEAD 合入 e8bd5e3。
+开始时工作区干净，已在专用修复分支；只读检查全部分支、相关修复提交和历史调查。
+无 .codegraph 目录。未修改 Git index、引用或提交历史。
+
+证据来源
+
+全部失败 job 日志均单独读取，guest/zh-Hant 下载超时后重新成功读取。
+初次 gh API 因终端转义保护拒绝输出，未使用空日志；随后显式允许转义序列重新下载。
+日志目录：/var/folders/wm/n_zjfmp140l4s4dtshsym9r80000gr/T/ci-42947839849-attempt1-d5de5cb-ahmtfi5b。
+附件目录：/var/folders/wm/n_zjfmp140l4s4dtshsym9r80000gr/T/ci-42947839849-1-d5de5cb-artifacts-t8c1eddz。
+六个附件 API 的 workflow_run.id/head_sha、名称 run-attempt 和日志上传 job 均已核对：
+德州诊断 13825605853、报告 13824494510；炸金花诊断 13824933249、报告 13825221971；
+社交诊断 13825502338、报告 13825756838。
+下载、解压均使用本轮新目录，ZIP testzip 通过后读取；内嵌报告同样校验，解析遍历错误后
+改用全新 parsed2 目录重新提取，未读取残留旧报告。
+三份报告固定相同 APK：applicationCommit=f3ba50029e9b33b90c09841e35b8cd838b304061，
+buildNumber=300004201，SHA256=57f15755f3554920f595789d004ebbf44bc225439ef8d5375dc93c53139e1fd4。
+
+1. 德州 en / pregame-middle：已修复确定的终点截图就绪竞态，待远端验收
+
+首败仅 texas-holdem-renew-exit 的“采样结束时动画必须完成”失败。
+20 帧中 index 10..19 已稳定为同一 PNG 7dc0f6a；该图与 retry 1 的终点附件相同。
+使用生产 samePixels 和仓库正式 texas-holdem-renew-exit-end.png 离线复核为 true。
+首败终点 1b426b8 可见 Connecting... 和旋转圈，采样末帧没有遮罩。
+因此不是末帧动画未完成，而是随后读取终点时混入独立重连遮罩。重试通过只是反例对照，
+根因依据是同一失败尝试的原始末帧、终点及正式基准，不依赖一次对照通过。
+
+复用 gameConnected 已有的两秒稳定等待；仅英文德州续费退场在终点截图前执行。
+新增 beforeEndScreenshot 与业务 afterReady 分开传递，是为保留原有采样末帧完成断言：
+afterReady 会跳过该断言，本修复不使用该绕过路径。原采样方式、触发、首尾/中途基准、
+完成断言和轨迹比较全部保留，不重采样、不增加重试。
+原有拼三张 buy_in 的 afterReady 行为保持不变。
+
+反例：历史 42939951374 是 texas-preflop-cards 收到手牌但画面未显示，当前分片及画面
+均不同，不复用其发送时间线来解释本轮续费。历史 347d450 是拼三张动画比较耗尽回合，
+本轮采样末帧已完成，不能以延长采样或扩大回合时间处理。
+
+2. 炸金花 zh-Hant / game：调查尚未完成，补充定向取证，不能声明无需改动
+
+首败 152174ms，captureAccurateRaise 恢复牌桌后等 accurate-bet 按钮 45 秒超时；
+retry 1 141068ms 通过。该语言没有 animationInfo，不能归因离线动画比较耗尽 120 秒。
+首败设备收到 03:09:23.923 game_status/operating_player_status/table_status，
+03:09:32.490 看牌和 player_bets，03:09:40.439 raise/pot_update。
+quick_raise 截图于 03:09:45 左右结束，03:09:45.947 起持续查不到精确加注按钮。
+场景级 logcat 中未见对应恢复消息；03:09:50.576 出现 no ping 重连，03:09:53.192
+代理记录新订阅 ACK，但至超时按钮仍缺失。失败末屏仍为 quick_raise（本人 960，底池160）。
+所以不能只增加按钮等待或重发，也不能断言可见重连在发送前已经存在。
+缺少代理注入究竟落在哪条连接上的证据，尚不能区分注入旧连接和应用未处理。
+
+复用现有 network-selection 有界历史和报告附件：仅对注入到客户端的炸金花 publication
+记录宿主时间、主机和消息数量，并记录连接结束；不保存频道、用户、房间或载荷。
+解析/记录失败被隔离，不影响消息转发、不触发设备查询、不改变采样/断言。
+下一轮按注入时间/主机、订阅 ACK 和连接结束与场景级设备日志对齐；若注入发生在健康的
+应用连接且仍无设备消息，继续调查设备处理；若只落在旧连接，则修复订阅/投递生命周期。
+347d450 只修复 captureOpponentAndSettlement 的下游动画衔接，无法修复本轮上游非动画
+accurate_raise，不盲目移植。保留已有 4a4ff41、e7e07cd、ef0c5f3、d5de5cb 的其他取证。
+
+3. 社交 zh-Hans：两个独立启动失败，调查尚未完成，补充各自缺失证据
+
+club-search-results 首败 137973ms，进入业务前 waitForHall 两分钟超时。
+末屏及 hierarchy 明确是 ServerType: staging / Message: 68 v1/status / RETRY。
+club-search-status active=false、searchRequests=0、detailsRequests=0，搜索业务尚未执行。
+slot 首败仅3ms是 worker fixture 初始化先失败；setup-zh-Hans-2.png 已进入大厅，
+但被通用 Network Error 弹窗遮挡，不能将其也称为 68 v1/status 错误。
+retry 各自通过不满足 failOnFlakyTests，保留原门禁。
+
+已有 device-startup.ts 在两分钟内只重试 staging v1/status，已有 device.test.mjs 验证连续
+四次重试后成功。没有证据支持把通用 Network Error 自动关闭或扩大重试范围。
+最终诊断日志已轮转，首次搜索与 worker 各自缺 network-selection，无法证明是哪些请求
+超时或哪次 RETRY 的结果。未修改应用网络、节点选择、启动期限或错误恢复条件。
+
+搜索失败时在清理前保存本轮 network-selection 和已有脱敏日志；worker 初始化失败时
+保存 setup-network-语言-worker.json（原截图仍保留）。新增健康请求开始事件，可用
+requestAt 与 response/error 区分截止时尚未完成的请求。诊断失败被 catch 隔离。
+下一轮分别核对搜索的 68 健康请求及 RETRY 后响应，以及 worker 的候选、健康结果和
+大厅弹窗窗口，不能用其他分片的健康响应代替本轮失败证据。
+历史 aa2e803/550e33b 修改显式 hold 场景的健康响应释放预算，本轮 LaunchNetwork 默认
+holding=false，不能凭同为启动失败就移植。ce9ce47 针对首节点繁忙时的写请求路由，
+本轮是固定 APK 的初始化而非该 Node 客户端写请求，不修改无关客户端。
+
+其他日志
+
+hierarchy-error 是失败收尾已捕获的 adb cat 错误，不是报告 errors 中的独立失败。
+运行前 cleanup/diagnostics 错误来自通过的单元测试，非本轮独立失败。
+所有汇总及别名检查正确传播 remaining=failure，不修改门禁。
+
+逐项结果
+
+130289494408 | Android remaining (texas / en / pregame-middle) | 已修复续费退场终点重连竞态；待 CI 验收
+130289494432 | Android remaining (zhajinhua / zh-Hant) | 待 CI 定向取证：恢复消息投递/处理缺口，尚未证实根因
+130289495132 | Android remaining (social / zh-Hans) | 待 CI 分别取证：搜索启动状态错误、slot worker 通用网络弹窗，尚未证实根因
+130301827411 | Android full regression | 已证实无需改动汇总：priority=success、remaining=failure，正确拒绝完整回归
+130301922683 | Android (texas / zh-Hant / table) | 已证实无需改动该别名门禁：COMPLETE_RESULT=failure，退出1；无独立测试失败
+130301922710 | Android (zhajinhua / zh-Hans) | 已证实无需改动该别名门禁：COMPLETE_RESULT=failure，退出1；无独立测试失败
+130301922728 | Android (texas / en / pregame-middle) | 已证实无需改动该别名门禁：COMPLETE_RESULT=failure，退出1；无独立测试失败
+130301922732 | Android (texas / en / pregame-first) | 已证实无需改动该别名门禁：COMPLETE_RESULT=failure，退出1；无独立测试失败
+130301922746 | Android (zhajinhua / en / game-table) | 已证实无需改动该别名门禁：COMPLETE_RESULT=failure，退出1；无独立测试失败
+130301922751 | Android (zhajinhua / zh-Hant) | 已证实无需改动该别名门禁：COMPLETE_RESULT=failure，退出1；无独立测试失败
+130301922756 | Android (zhajinhua / en / pregame-first) | 已证实无需改动该别名门禁：COMPLETE_RESULT=failure，退出1；无独立测试失败
+130301922789 | Android (texas / zh-Hant / other) | 已证实无需改动该别名门禁：COMPLETE_RESULT=failure，退出1；无独立测试失败
+130301922794 | Android (texas / en / game-table) | 已证实无需改动该别名门禁：COMPLETE_RESULT=failure，退出1；无独立测试失败
+130301922801 | Android (texas / en / game-effects) | 已证实无需改动该别名门禁：COMPLETE_RESULT=failure，退出1；无独立测试失败
+130301922802 | Android (rooms / zh-Hans) | 已证实无需改动该别名门禁：COMPLETE_RESULT=failure，退出1；无独立测试失败
+130301922813 | Android (rooms / zh-Hant) | 已证实无需改动该别名门禁：COMPLETE_RESULT=failure，退出1；无独立测试失败
+130301922821 | Android (zhajinhua / en / pregame-second) | 已证实无需改动该别名门禁：COMPLETE_RESULT=failure，退出1；无独立测试失败
+130301922823 | Android (account / zh-Hant) | 已证实无需改动该别名门禁：COMPLETE_RESULT=failure，退出1；无独立测试失败
+130301922829 | Android (zhajinhua / en / game-effects) | 已证实无需改动该别名门禁：COMPLETE_RESULT=failure，退出1；无独立测试失败
+130301922831 | Android (texas / zh-Hans / other) | 已证实无需改动该别名门禁：COMPLETE_RESULT=failure，退出1；无独立测试失败
+130301922837 | Android (wallet-help / zh-Hans) | 已证实无需改动该别名门禁：COMPLETE_RESULT=failure，退出1；无独立测试失败
+130301922838 | Android (texas / en / other) | 已证实无需改动该别名门禁：COMPLETE_RESULT=failure，退出1；无独立测试失败
+130301922842 | Android (texas / zh-Hans / table) | 已证实无需改动该别名门禁：COMPLETE_RESULT=failure，退出1；无独立测试失败
+130301922855 | Android (wallet-help / zh-Hant) | 已证实无需改动该别名门禁：COMPLETE_RESULT=failure，退出1；无独立测试失败
+130301922858 | Android (guest / zh-Hant) | 已证实无需改动该别名门禁：COMPLETE_RESULT=failure，退出1；无独立测试失败
+130301922863 | Android (texas / en / panels) | 已证实无需改动该别名门禁：COMPLETE_RESULT=failure，退出1；无独立测试失败
+130301922868 | Android (social / zh-Hans) | 已证实无需改动该别名门禁：COMPLETE_RESULT=failure，退出1；无独立测试失败
+130301922873 | Android (records / en) | 已证实无需改动该别名门禁：COMPLETE_RESULT=failure，退出1；无独立测试失败
+130301922874 | Android (social / en) | 已证实无需改动该别名门禁：COMPLETE_RESULT=failure，退出1；无独立测试失败
+130301922881 | Android (wallet-help / en) | 已证实无需改动该别名门禁：COMPLETE_RESULT=failure，退出1；无独立测试失败
+130301922893 | Android (guest / zh-Hans) | 已证实无需改动该别名门禁：COMPLETE_RESULT=failure，退出1；无独立测试失败
+130301922894 | Android (records / zh-Hans) | 已证实无需改动该别名门禁：COMPLETE_RESULT=failure，退出1；无独立测试失败
+130301922948 | Android (account / zh-Hans) | 已证实无需改动该别名门禁：COMPLETE_RESULT=failure，退出1；无独立测试失败
+130301922969 | Android (rooms / en) | 已证实无需改动该别名门禁：COMPLETE_RESULT=failure，退出1；无独立测试失败
+130301922987 | Android (social / zh-Hant) | 已证实无需改动该别名门禁：COMPLETE_RESULT=failure，退出1；无独立测试失败
+130301923028 | Android (account / en) | 已证实无需改动该别名门禁：COMPLETE_RESULT=failure，退出1；无独立测试失败
+130301923040 | Android (records / zh-Hant) | 已证实无需改动该别名门禁：COMPLETE_RESULT=failure，退出1；无独立测试失败
+130301923617 | Android (guest / en) | 已证实无需改动该别名门禁：COMPLETE_RESULT=failure，退出1；无独立测试失败
+130301930998 | Android (texas / en / pregame-second) | 已证实无需改动该别名门禁：COMPLETE_RESULT=failure，退出1；无独立测试失败
+
+验证
+
+定向离线验证生产 samePixels：失败末帧与正式终点基准匹配。
+新增反例测试要求 beforeEndScreenshot 不能放行未完成的末帧，及四种面板路径就绪回调隔离。
+Python 诊断测试覆盖原载荷不变、仅白名单计数、错误隔离及 pending 健康请求时间。
+定向结果：原动画/面板/流程离线回归 69 项通过；新增末帧完成反例 1 项通过；
+最终面板流程 13 项通过；device 启动 4 项通过；Python NetworkSelection 8 项通过；
+uv mitmproxy 12.2.3 下 test_native_network 5 项通过。
+ESLint 精确历史门禁、Android 玩法复杂度、Ruff 修改文件、TypeScript typecheck、
+行数、架构、重复代码及 git diff --check 均通过。未改任何 lint 债务或阈值。
+检查期间发现新增回调若采用已有 afterReady 将跳过完成断言，已改为独立回调并用反例验证。
+不本地启动模拟器，不重复远端矩阵。原生稳定性及其余两类根因仍须下一轮 CI 证据。
+没有提交、推送或 Git 引用操作；未写 NO-FIX，因为两类实际 flaky 仍待取证，不能声明无需修改。

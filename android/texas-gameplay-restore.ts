@@ -62,19 +62,29 @@ function assertRestoreRetry(attempt: number, street: Street, error: unknown): as
 async function animateRestore(context: TexasContext, street: Street, opponent: boolean, region: ScreenshotBounds): Promise<void> {
   const { device, animationInfo } = context;
   const send = gameReplaySender(context.proxy, 'texas', context.room);
-  /** 起手牌先建立背面牌位，再下发手牌；整批状态与手牌同帧渲染会跳过翻牌中间帧。 */
+  const events: { event: string; at: number }[] = [];
+  const startedAt = Date.now();
+  /** 只记录宿主时间，不查询设备或复制房间及回放载荷。
+   * @param event - 固定的采集或发送阶段名。
+   */
+  const observe = (event: string) => { events.push({ event, at: Date.now() }); };
+  /** 分批恢复牌桌与手牌；hand 批次须包含后续座位更新，才能绘制已缓存的 hand_card。 */
   const publish = async () => {
     if (street !== 'preflop') { await send(restoreTable(street, opponent)); return; }
+    observe('without-hand-send-start');
     await send(restoreTable(street, opponent, 'standard', 'without-hand'));
+    observe('without-hand-send-complete');
     await new Promise(resolve => setTimeout(resolve, 400));
+    observe('hand-send-start');
     await send(restoreTable(street, opponent, 'standard', 'hand'));
+    observe('hand-send-complete');
   };
   /** 四种翻牌动作均可能短于原生截图间隔，改用持续录屏。 */
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
       await captureNativeTransition(device, `texas-${street}-cards`, animationInfo!, region, publish,
         [], [], 0, 'videoFrames', undefined, undefined,
-        restoreAnchors[street]);
+        restoreAnchors[street], [], [], [], undefined, observe);
       break;
     } catch (error) {
       assertRestoreRetry(attempt, street, error);
@@ -84,8 +94,24 @@ async function animateRestore(context: TexasContext, street: Street, opponent: b
       await gameCardNames(device, 'community_card', 'community_card_name_text',
         ['ah', 'kd', '7c', '2s', 'qs'].map((card, index) => index < count ? card : 'back'));
       await new Promise(resolve => setTimeout(resolve, 400));
+    } finally {
+      await attachRestoreTrace(street, animationInfo!, startedAt, events);
     }
   }
+}
+
+/** 成败均保存起手牌发送时间线；附件失败不能改变采样结果。
+ * @param street - 当前街。
+ * @param info - 当前尝试报告。
+ * @param startedAt - 恢复开始的宿主时间。
+ * @param events - 不含回放载荷的固定阶段时间线。
+ */
+async function attachRestoreTrace(street: Street, info: TestInfo, startedAt: number,
+  events: { event: string; at: number }[]): Promise<void> {
+  if (street !== 'preflop') return;
+  await info.attach('texas-preflop-cards-replay-trace', {
+    body: JSON.stringify({ startedAt, events }), contentType: 'application/json',
+  }).catch(() => undefined);
 }
 
 const restoreAnchors = { preflop: ['texas-preflop-cards-backed.png', 'texas-preflop-cards-turning.png'], flop: [], turn: [], river: [] };

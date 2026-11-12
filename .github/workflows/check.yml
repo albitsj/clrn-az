@@ -27,6 +27,12 @@ jobs:
           python-version: '3.12.12'
       - run: npm install --global npm@11.9.0
       - run: npm ci
+      - name: 准备本机单元测试解码器
+        run: |
+          binary="$GITHUB_WORKSPACE/node_modules/@ffmpeg-installer/linux-x64/ffmpeg"
+          test -x "$binary"
+          "$binary" -version
+          echo "$GITHUB_WORKSPACE/node_modules/@ffmpeg-installer/linux-x64" >> "$GITHUB_PATH"
       - name: 安装固定版本 pre-commit（隔离虚拟环境）
         run: |
           uv venv --python 3.12.12 .venv

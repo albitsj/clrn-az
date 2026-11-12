@@ -110,6 +110,18 @@ class AndroidVisualProxy:
     def error(self, flow):
         self.network_selection.observe(flow, 'error')
 
+    def http_connect(self, flow):
+        try:
+            self.network_selection.connection(flow.request.host, 'connect')
+        except Exception:
+            pass
+
+    def tls_failed_client(self, data):
+        self.network_selection.tls_failure(data, 'tls-client-failed')
+
+    def tls_failed_server(self, data):
+        self.network_selection.tls_failure(data, 'tls-server-failed')
+
     def websocket_start(self, flow):
         self.network_selection.observe(flow, 'websocket-connected')
 
@@ -179,6 +191,7 @@ class AndroidVisualProxy:
                                                  '\n'.join(json.dumps(reply) for reply in replies).encode(), True)
 
     def websocket_end(self, flow):
+        self.network_selection.observe(flow, 'websocket-ended')
         if self.game:
             self.game.websocket_end(flow)
 
@@ -188,6 +201,7 @@ class AndroidVisualProxy:
         if await self.launch.request(flow):
             return
         path = urlsplit(flow.request.path).path
+        self.network_selection.request(flow)
         if flow.request.host != 'test-mitmproxy.invalid' and (
                 flow.request.method in ('OPTIONS', 'CONNECT') or not is_staging(flow.request.host)):
             self.fixtures.request(flow)

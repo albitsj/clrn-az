@@ -86,7 +86,7 @@ function panelScene(options = {}) {
     /** 执行入口；可选择无动画的普通路径。
      * @param animationInfo - 当前测试报告。
      */
-    run: (animationInfo = info) => animateGamePanel(device, 'zhajinhua', 'game-rule', button,
+    run: (animationInfo = info) => animateGamePanel(device, 'zhajinhua', options.name || 'game-rule', button,
       { x: 130, y: 330, width: 460, height: 610 }, animationInfo, 'enter', options.method),
     /** 读取结构化入口诊断。 */
     trace: () => JSON.parse(attachments.find(([name]) => name.endsWith('-input-trace'))[1].body),
@@ -148,4 +148,20 @@ test('连续截图路径在触发时只用已稳定坐标，不向忙碌的驱�
   assert.equal(scene.events.includes('marker'), false);
   assert.equal(scene.events.filter(Array.isArray).length, 1);
   assert.equal(scene.events.slice(scene.events.indexOf('capture')).includes('tree'), false);
+});
+
+
+test('续费入场失败保存点击时间线和现场，诊断异常仍保留原错误及单次点击', async () => {
+  const failure = new Error('Timeout 45000ms exceeded while waiting on the predicate');
+  const scene = panelScene({ name: 'renew', failure });
+  await assert.rejects(scene.run(), error => error === failure);
+  assert.equal(scene.events.filter(Array.isArray).length, 1);
+  assert.equal(scene.events.includes('marker'), false);
+  assert.ok(scene.events.includes('preserve-logs'));
+  assert.ok(scene.attachments.some(([name]) => name === 'zhajinhua-renew-enter-failure-state'));
+  assert.equal(scene.trace().events.filter(event => event.event === 'tap').length, 1);
+  assert.equal(JSON.stringify(scene.attachments).includes('SECRET_USER_TOKEN'), false);
+  const broken = panelScene({ name: 'renew', failure, attachFailure: true });
+  await assert.rejects(broken.run(), error => error === failure);
+  assert.equal(broken.events.filter(Array.isArray).length, 1);
 });

@@ -1,0 +1,53 @@
+本轮身份与取证
+HEAD e03e14849de367e519fe4eeea90542107e853eaa；PR #78。
+check: run 42964063308 / attempt 1 / job 130337068807。
+guest/en: run 42964063503 / attempt 1 / job 130337256285。
+rooms/en: run 42964063503 / attempt 1 / job 130337256784。
+读取日志前通过 GitHub run API 核对 HEAD、attempt、job；工作区初始干净且已在专用修复分支。
+只读查看所有已有分支及相关提交后才修改；未修改 index、引用或历史。
+原始日志下载到全新 /tmp/ci-42964063308-42964063503-attempt1-e03e148-Q0pFU1。
+附件 13831171909 (guest)、13831545382 (rooms) 均在该目录下载，unzip -tq 成功后解到各自全新目录。
+run 尚未结束时 gh run view 拒绝 Android 日志，改用对应 job logs API，不读取旧报告。
+
+1. check：已实施修复，待 CI 验收
+542 项单元测试中 540 通过，2 项 surface-frame-images.test.mjs 失败。
+两项均为 spawnSync ffmpeg ENOENT；npm ci 成功，仓库已有固定的可选 linux-x64 解码器依赖。
+当前 check.yml 未把它加入 PATH；Android action 已有相同配置。
+复用历史分支 ci修复-master-49ae2e404cbef560e7a4c43f023939fb069cce35 的
+516ade8986c6a4ca1e792335687fbc12415fbdc1 六行配置：校验可执行文件与版本，再加入 GITHUB_PATH。
+未新增依赖、跳过测试或更换解码参数。不是随机解码失败或下载故障。
+
+2. guest/en：已实施触发前就绪修复，待 CI 设备验收
+失败是 native launch artwork and staging notice appear on a real app start 的起点比较。
+首败起点 424574bb79291b5ef92eb2bf2d400c780fa2d25e，采样首帧 c1d5dcab66619bdf4aaca50d12ac2822b6927149。
+两者都为桌面，Calendar、Google 文件夹与底部图标可见约 2 像素上移，并非启动已被提前触发。
+使用原 startCompareMasks 后 samePixels 仍拒绝这对画面。
+retry1 的起点与首帧都是 c1d5dc…；并非起点基准需要增加或掩码范围不够。
+本轮首败时间线 92841..101104、retry1 151628..159652，均为 70 帧，长采样已存在。
+因此不延长启动采样；固定 HOME 后 4 秒无法证明桌面已停止布局/移动。
+新增等待：在原启动绘制范围内沿用已有时钟掩码，连续三次间隔至少 300ms 的截图比较稳定后，
+才进入原 captureNativeTransition。保留已有 4 秒等待、全部采样、启动插画检查与首尾基准比较。
+原底部图标比较掩码不扩大；就绪等待连底部也须稳定。
+定向原图重放：第一次返回首败起点，随后返回本轮稳定首帧；第五次截图才达到连续三次稳定。
+此验证仅证明等待会拒绝该移动边界，实际设备长期稳定性仍交 CI 验收，不能以一次重放通过证明完全消除 flaky。
+
+3. rooms/en：已实施采样时序修复，待 CI 设备验收
+失败是 game-picker-enter 采样末帧必须完成断言，非出场录屏失败。
+首败 20 帧 117850..119186（1336ms）；retry1 20 帧 182284..183551（1267ms）。
+首败末帧 fcdf668c9b8fbe816e9f769b11180254e78c2e79 的标题、图标仍在最终位置下方约 2 像素。
+终点 e9b6f00a33706aec8d0b648302bdaee487360a24 与原 game-picker-enter-end.png 基准通过同一 samePixels；
+retry1 末帧也为 e9b6f…，没有放宽基准或扩大遮罩的依据。
+motionFrames 虽有 3200ms 上限，仍会因 20 帧上限在约 1.3s 停止；动画启用 5 倍倍率。
+成功重试总跨度更短，反证“只要超过某个 1.3 秒阈值便完成”的解释：实际触发延迟和渲染进度也变化。
+根因是有限帧预算未覆盖真实完成时刻，依据是首败原图仍未完成，而非仅凭重试通过推断。
+复用已有 club-rooms-empty-enter 等调用采用的 launchFrames（10 秒/70 帧），仅改此入场调用。
+参照历史 e8890d4 及 quality/ci-42901413712-investigation.md 的短采样未完成案例，未重复实现驱动。
+与 111beb0 / quality/ci-42947839849-investigation.txt 的重连遮罩反例不同：
+本轮末帧与终点均无 Connecting 遮罩，变化为抽屉垂直位置，故等待遮罩消失不能修复本轮失败。
+区域、300ms 触发延迟、动画倍率、首尾完成断言、中途相位、基准、退出录屏均保留。
+
+验证
+通过：git diff --check、npm run typecheck、相关两文件 ESLint、test:android:collect、lint:workflows、lint:lines。
+通过：基于本轮 PNG 的定向离线验证（原首败仍拒绝、桌面连续稳定等待、抽屉终点匹配原基准）。
+未本地重复运行全量测试或设备测试；Linux 固定解码器的执行检查及实际动画长采样交下一轮 CI。
+三个失败均有直接相关修改，没有将 retry 通过视作无需改动，也未写 NO-FIX 协议。

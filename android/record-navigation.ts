@@ -45,10 +45,13 @@ export async function scrollRecords(device: AndroidDevice, end: boolean): Promis
  * @param device - 专用模拟器连接。
  */
 export async function reopenRecords(device: AndroidDevice): Promise<void> {
+  recordReopenCheckpoint('back');
   await device.input.press('Back');
   await device.wait({ res: 'game-record' });
+  recordReopenCheckpoint('entry-ready');
   await tap(device, 'game-record');
   await device.wait({ res: 'my-game-record-list' });
+  recordReopenCheckpoint('list-ready');
 }
 
 /**
@@ -91,4 +94,11 @@ export function recordSnapshots(device: AndroidDevice, scenario: VisualScenario,
     /** 检查所有声明的状态确实执行。 */
     complete: () => expect(index).toBe(states.length),
   };
+}
+
+/** Record existing navigation boundaries without adding device queries or changing failures.
+ * @param stage - Fixed navigation phase.
+ */
+function recordReopenCheckpoint(stage: 'back' | 'entry-ready' | 'list-ready'): void {
+  try { console.log('RECORD REOPEN >', Date.now(), stage); } catch { /* Diagnostics cannot affect navigation. */ }
 }

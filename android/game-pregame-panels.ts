@@ -1,6 +1,6 @@
 import { expect } from '@playwright/test';
 import presentation from '../visual/fixtures/account-presentation.json';
-import { gameGone, gameNodes, gameReady, gameTap as tap } from './game-controls';
+import { gameConnected, gameGone, gameNodes, gameReady, gameTap as tap } from './game-controls';
 import { animateGamePanel } from './game-panel-animation';
 
 import { captureConnected } from './game-capture-retry';
@@ -32,7 +32,7 @@ export async function capturePreGamePanel(context: PreGameContext, state: PanelS
   const exitReady = exitHook(context, state);
   await animateGamePanel(device, game, state, close,
     { x: 110, y: 360, width: 480, height: 500 }, animationInfo, 'exit',
-    panelMethods[game].exit[state], [], exitReady);
+    panelMethods[game].exit[state], [], exitReady, undefined, renewalExitHook(context, state));
   await gameGone(device, ready);
 }
 
@@ -75,6 +75,15 @@ async function waitRenewal(context: PreGameContext, state: PanelState): Promise<
     { timeout: 45_000 }).toBe(presentation.balance);
   await expect.poll(async () => Number((await gameReady(device, 'renew-popup-spend-diamond')).text?.trim()),
     { timeout: 45_000 }).toBeGreaterThan(0);
+}
+
+/** 德州续费退场后等待独立重连遮罩，仍要求原采样末帧完成退场。
+ * @param context - 当前房间。
+ * @param state - 当前面板。
+ */
+function renewalExitHook(context: PreGameContext, state: PanelState): (() => Promise<void>) | undefined {
+  if ([context.game !== 'texas-holdem', state !== 'renew', !context.animationInfo].some(Boolean)) return undefined;
+  return () => gameConnected(context.device, 2_000);
 }
 
 /** 拼三张买入退场的终点须等待独立重连遮罩消失。

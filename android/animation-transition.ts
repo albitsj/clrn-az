@@ -98,7 +98,6 @@ export function assertReviewedVideoMiddle(before: Buffer, after: Buffer,
   });
   expect(Math.min(...distances), '动画中途帧的实际画面须接近已审查轨迹').toBeLessThanOrEqual(46);
 }
-
 /**
  * 点击真实入口期间由原生驱动逐帧截屏；基准约束起点、终点和中途真实像素。
  * @param device - 安装固定补丁驱动的模拟器。
@@ -118,6 +117,7 @@ export function assertReviewedVideoMiddle(before: Buffer, after: Buffer,
  * @param startCompareMasks - 仅用于比较触发前桌面帧的系统动态图标区域；坐标相对截图裁切范围。
  * @param videoRecorder - 可替换的原生录屏采集器，供完整录屏路径回归测试使用。
  * @param observe - 仅记录阶段时间，不执行设备查询或等待。
+ * @param beforeEndScreenshot - 终点截图前等待独立遮罩消失，仍校验采样末帧已完成动画。
  */
 export async function captureNativeTransition(device: AndroidDevice, name: string, testInfo: TestInfo,
   region: AnimationRegion, trigger: () => unknown, masks: ScreenshotMask[] = [],
@@ -128,7 +128,7 @@ export async function captureNativeTransition(device: AndroidDevice, name: strin
   endCompareMasks: ScreenshotMask[] = [],
   startPhaseAnchors: string[] = [], startCompareMasks: ScreenshotMask[] = [],
   videoRecorder: typeof recordNativeVideoFrames = recordNativeVideoFrames,
-  observe?: (event: string) => void): Promise<void> {
+  observe?: (event: string) => void, beforeEndScreenshot?: () => Promise<void>): Promise<void> {
   requireEnglishAnimation();
   let resolvedRegion = typeof region === 'function' ? undefined : region;
   /** 只解析一次边界，录屏及完整首尾截图使用同一坐标，禁止回退到不完整的固定区域。 */
@@ -162,7 +162,10 @@ export async function captureNativeTransition(device: AndroidDevice, name: strin
     observeTransition(observe, 'native-sampling-start');
     try {
       const pending = Promise.race([
-        implementation._send(samplingMethod),
+        implementation._send(samplingMethod).then(sample => {
+          observeTransition(observe, 'native-sampling-complete');
+          return sample;
+        }),
         setTimeout(30_000, undefined, { signal: timeout.signal }).then(() => { throw new Error('原生动画采样超时。'); }),
       ]);
       await setTimeout(300);
@@ -180,7 +183,7 @@ export async function captureNativeTransition(device: AndroidDevice, name: strin
     ? originals.map(frame => maskScreenshot(frame, masks.map(mask => ({ ...mask,
       x: mask.x - bounds.x, y: mask.y - bounds.y })))) : originals.map(crop);
   if (settleMs) await setTimeout(settleMs);
-  if (afterReady) await afterReady();
+  for (const ready of [afterReady, beforeEndScreenshot].filter(Boolean)) await ready!();
   const after = crop(await gameScreenshot(device));
   await testInfo.attach(`${name}-timeline`, {
     body: JSON.stringify(frames.map(({ capturedAt }) => capturedAt)), contentType: 'application/json',
@@ -371,5 +374,5 @@ export async function captureTimedPrompt(device: AndroidDevice, name: string, te
  * @param event - 固定阶段名。
  */
 function observeTransition(observe: ((event: string) => void) | undefined, event: string): void {
-  observe?.(event);
+  try { observe?.(event); } catch { /* 诊断失败不得改变原始采样结果。 */ }
 }

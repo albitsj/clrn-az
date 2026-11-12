@@ -9,7 +9,7 @@ import { selectLanguage } from './navigation';
 export const locale = process.env.ANDROID_LOCALE || 'en';
 export const test = base.extend<{}, { application: { device: AndroidDevice; signedIn: boolean } }>({
   application: [async ({}, use, workerInfo) => {
-    await withAndroidProxy(async () => {
+    await withAndroidProxy(async proxy => {
       console.log('ANDROID > 安装 APK 并启动原生驱动');
       const device = await launchApplication();
       try {
@@ -19,6 +19,11 @@ export const test = base.extend<{}, { application: { device: AndroidDevice; sign
         await selectLanguage(device, locale);
         await use({ device, signedIn: false });
       } catch (error) {
+        // worker 初始化失败时 afterEach 无法取得 application，先保留本轮脱敏选线证据。
+        await proxy.command('android/network-selection').then(async network => {
+          await mkdir(workerInfo.project.outputDir, { recursive: true });
+          await writeFile(`${workerInfo.project.outputDir}/setup-network-${locale}-${workerInfo.workerIndex}.json`, JSON.stringify(network));
+        }).catch(() => undefined);
         await mkdir(workerInfo.project.outputDir, { recursive: true });
         await device.screenshot().then(body => writeFile(`${workerInfo.project.outputDir}/setup-${locale}-${workerInfo.workerIndex}.png`, body)).catch(() => undefined);
         throw error;

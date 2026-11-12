@@ -191,12 +191,63 @@ test('all health probes fail within the call deadline without sending a business
   let business = 0;
   const client = clientFor(t, async url => {
     if (url.endsWith('/node/v1/status')) return Response.json({ server_load: 'overloaded' });
+    if (url.endsWith('/public/v13/metadata/servers')) return metadata([first, second]);
     business++;
     throw new Error('unexpected');
   });
   await assert.rejects(client.request(request), error => error.kind === 'unavailable' && error.attempts === 0);
   assert.equal(business, 0);
 });
+
+test('busy initial bootstrap still discovers a healthy regional node before a single non-replayable write', async t => {
+  const events = [];
+  const business = [];
+  const client = clientFor(t, async (url, options) => {
+    const host = new URL(url).origin;
+    if (url.endsWith('/node/v1/status')) {
+      events.push(['health', host]);
+      assert.equal(options.headers.Authorization, undefined);
+      return Response.json({ server_load: host === third ? 'normal' : 'busy' });
+    }
+    if (url.endsWith('/public/v13/metadata/servers')) {
+      events.push(['discovery', host]);
+      assert.equal(options.headers.Authorization, undefined);
+      if (host === first) throw new Error('socket hang up');
+      return metadata([first, second, third]);
+    }
+    business.push([host, options.method]);
+    assert.equal(options.headers.Authorization, 'Bearer current-account');
+    return Response.json({ ok: true, result: 'created-once' });
+  }, { bootstrap: [first, second] });
+  const value = await client.request({ path: '/create', endpoint: '/create', method: 'PUT', replay: 'never',
+    headers: { Authorization: 'Bearer current-account' } });
+  assert.equal(value.result, 'created-once');
+  assert.deepEqual(business, [[third, 'PUT']]);
+  assert.ok(events.findIndex(event => event[0] === 'discovery') > 0);
+  assert.ok(events.some(event => event[0] === 'health' && event[1] === third));
+});
+
+for (const stop of ['timeout', 'cancel', 'dispose']) {
+  test(`${stop} after unhealthy bootstrap prevents discovery or business traffic after cancellation`, async t => {
+    const controller = new AbortController();
+    let business = 0;
+    let active = 0;
+    const client = clientFor(t, async (url, options) => {
+      if (url.endsWith('/node/v1/status')) return Response.json({ server_load: 'busy' });
+      if (!url.endsWith('/public/v13/metadata/servers')) { business++; throw new Error('unexpected business'); }
+      if (stop === 'cancel') queueMicrotask(() => controller.abort());
+      if (stop === 'dispose') queueMicrotask(() => client.dispose());
+      active++;
+      return new Promise((_, reject) => options.signal.addEventListener('abort', () => {
+        active--; reject(options.signal.reason);
+      }, { once: true }));
+    }, { totalTimeoutMs: 40, probeTimeoutMs: 200 });
+    await assert.rejects(client.request({ ...request, replay: 'never', signal: controller.signal }),
+      error => error.kind === (stop === 'timeout' ? 'timeout' : 'cancelled') && error.attempts === 0);
+    assert.equal(business, 0);
+    assert.equal(active, 0);
+  });
+}
 
 test('metadata falls back to another entry without forwarding credentials', async t => {
   const origins = [];

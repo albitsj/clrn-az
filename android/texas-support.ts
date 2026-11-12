@@ -14,6 +14,7 @@ import type { ScreenshotMask } from './screenshot';
 export type TexasContext = {
   device: AndroidDevice; proxy: Mitmproxy; room: string; self: string;
   animationInfo?: TestInfo;
+  diagnosticsInfo?: TestInfo;
   capture(state: string, masks?: ScreenshotMask[], triggerTransient?: () => Promise<string | void>): Promise<void>;
 };
 

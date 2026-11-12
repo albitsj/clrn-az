@@ -2,6 +2,7 @@ import { expect } from '@playwright/test';
 import type { AndroidDevice } from 'playwright';
 import type { Mitmproxy } from '../e2e/helpers/mitmproxy-client';
 import { ensureRoomBalance, type Account, type RoomSession } from '../visual/cases/_shared/room';
+import { prepareTestAccountRooms } from '../scripts/prepare-test-account-rooms.mjs';
 import { enterTexasRoom } from '../visual/cases/texas-holdem/room';
 import { gameGone, gameNodes, gameReady } from './game-controls';
 import { dismissKeyboard } from './keyboard';
@@ -29,12 +30,19 @@ export async function createGameRoom(device: AndroidDevice, proxy: Mitmproxy,
   observerConnection?: boolean): Promise<RoomSession> {
   const account = await roomAccount(proxy);
   await ensureRoomBalance(account);
+  await prepareTestAccountRooms(account);
   await submitRoomForm(device, game, optionalFeatures);
   let room: RoomSession | null = null;
-  await expect(async () => {
-    room = (await gameSession(proxy)).room;
-    expect(room, '真实建房接口必须返回本轮新建的房间').not.toBeNull();
-  }).toPass({ timeout: 60_000, intervals: [500] });
+  try {
+    await expect(async () => {
+      room = (await gameSession(proxy)).room;
+      expect(room, '真实建房接口必须返回本轮新建的房间').not.toBeNull();
+    }).toPass({ timeout: 60_000, intervals: [500] });
+  } catch (error) {
+    // 创建响应丢失时没有 UUID 可登记；复用账号锁内的严格归属与空闲状态检查。
+    await prepareTestAccountRooms(account).catch(() => console.error('未能恢复空闲测试房间；保留原建房失败'));
+    throw error;
+  }
   onCreated(room!);
   await connectRoomObserver(room!, observerConnection);
   await waitRoomReady(device, game);

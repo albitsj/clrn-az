@@ -14,6 +14,71 @@ def sample(path, body=None, status=200, host=HOST):
 
 
 class NetworkSelectionTests(unittest.TestCase):
+    def test_pre_http_diagnostics_are_bounded_private_and_read_only(self):
+        recorder = NetworkSelection()
+        server = SimpleNamespace(address=(HOST, 443), error='secret error')
+        data = SimpleNamespace(context=SimpleNamespace(server=server), ssl_conn='secret tls')
+        for _ in range(201):
+            recorder.connection(HOST, 'connect')
+        recorder.tls_failure(data, 'tls-client-failed')
+        recorder.tls_failure(data, 'tls-server-failed')
+        recorder.connection('secret.example.com', 'connect')
+        recorder.connection(HOST, 'secret event')
+        recorder.connection(None, 'connect')
+        recorder.tls_failure(None, 'tls-client-failed')
+        state = recorder.snapshot()
+        self.assertEqual(state['total'], 0)
+        self.assertEqual(state['events'], [])
+        self.assertEqual(state['connectionTotal'], 203)
+        self.assertEqual(len(state['connections']), 200)
+        self.assertEqual(state['connections'][-1]['event'], 'tls-server-failed')
+        self.assertNotIn('secret', json.dumps(state))
+        self.assertEqual(server.error, 'secret error')
+        self.assertEqual(data.ssl_conn, 'secret tls')
+
+    def test_replay_records_only_injected_message_count_and_preserves_payload(self):
+        recorder = NetworkSelection()
+        payload = {'result': {'channel': 'zhajinhua>secret-room#secret-user',
+                             'data': {'data': {'stream': 'zhajinhua', 'queue': [
+                                 {'event': 'game_status', 'token': 'secret'}]}}}}
+        message = SimpleNamespace(injected=True, is_text=True, from_client=False, text=json.dumps(payload))
+        flow = sample('/v2/centrifugo/connection/websocket?token=secret', status=101)
+        flow.websocket = SimpleNamespace(messages=[message])
+        flow.metadata = {}
+        recorder.websocket_message(flow)
+        self.assertEqual(recorder.events[-1]['event'], 'websocket-replay')
+        self.assertEqual(recorder.events[-1]['messages'], 1)
+        self.assertNotIn('secret', json.dumps(recorder.snapshot()))
+        self.assertEqual(json.loads(message.text), payload)
+        for text in ('invalid-json', 'null', '{"id": 1}', '{"result": []}'):
+            message.text = text
+            recorder.observe_replay(flow, message)
+        message.text = json.dumps(payload)
+        message.injected = False
+        recorder.observe_replay(flow, message)
+        message.injected, message.from_client = True, True
+        recorder.observe_replay(flow, message)
+        self.assertEqual(recorder.total, 1)
+        recorder._observe = lambda *args, **kwargs: (_ for _ in ()).throw(RuntimeError('secret'))
+        message.from_client = False
+        recorder.observe_replay(flow, message)
+        self.assertEqual(recorder.total, 1)
+
+    def test_health_request_keeps_pending_timing_and_isolates_diagnostic_errors(self):
+        recorder = NetworkSelection()
+        flow = sample('/node/v1/status?token=secret')
+        flow.response = None
+        flow.request.timestamp_start = 123.5
+        recorder.request(flow)
+        self.assertEqual(recorder.events[-1]['event'], 'request')
+        self.assertEqual(recorder.events[-1]['requestAt'], 123500)
+        self.assertNotIn('status', recorder.events[-1])
+        self.assertNotIn('secret', json.dumps(recorder.snapshot()))
+        recorder.request(sample('/unrelated'))
+        recorder.request(SimpleNamespace(request=None))
+        self.assertEqual(recorder.total, 1)
+        self.assertIsNone(flow.response)
+
     def test_wallet_reads_record_contract_without_identity_balance_or_credentials(self):
         recorder = NetworkSelection()
         body = {'ok': True, 'result': {'currencies': [
@@ -45,6 +110,39 @@ class NetworkSelectionTests(unittest.TestCase):
             flow.request.method = method
             recorder.observe(flow)
         self.assertEqual(recorder.total, 2)
+
+    def test_room_initialization_records_only_status_and_safe_contract(self):
+        recorder = NetworkSelection()
+        for path, method, normalized in (
+                ('/v3/pay_action/do?token=secret', 'POST', '/v3/pay_action/do'),
+                ('/v1/room/secret-room', 'GET', '/v1/room/{room}'),
+                ('/v10/texas_holdem/room/secret-room/profile', 'GET', '/v10/texas_holdem/room/{room}/profile')):
+            body = {'ok': False, 'error': 'authentication_failed', 'result': {'token': 'secret'}}
+            flow = sample(path, body)
+            flow.request.method = method
+            flow.request.timestamp_start = 123.5
+            recorder.observe(flow)
+            event = recorder.events[-1]
+            self.assertEqual(event['path'], normalized)
+            self.assertEqual(event['requestAt'], 123500)
+            self.assertFalse(event['ok'])
+            self.assertTrue(event['authenticationFailed'])
+            self.assertEqual(flow.response.json(), body)
+            self.assertNotIn('secret', json.dumps(recorder.snapshot()))
+            flow.response = None
+            recorder.observe(flow, 'error')
+            self.assertNotIn('ok', recorder.events[-1])
+
+    def test_diagnostic_exception_does_not_escape_or_mutate_response(self):
+        recorder = NetworkSelection()
+        flow = sample('/v3/pay_action/do', {'ok': True, 'error': 'secret'})
+        flow.request.method = 'POST'
+        recorder.observe(flow)
+        self.assertFalse(recorder.events[-1]['authenticationFailed'])
+        self.assertNotIn('secret', json.dumps(recorder.snapshot()))
+        flow.request.timestamp_start = float('nan')
+        recorder.observe(flow)
+        self.assertEqual(flow.response.json(), {'ok': True, 'error': 'secret'})
 
     def test_metadata_and_health_only_copy_whitelisted_diagnostics(self):
         recorder = NetworkSelection()

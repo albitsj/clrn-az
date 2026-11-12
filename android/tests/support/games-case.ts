@@ -6,6 +6,7 @@ import type { RoomSession } from '../../../visual/cases/_shared/room';
 import { artifacts, launchApplication, waitForHall } from '../../device';
 import { selectLanguage, signIn } from '../../navigation';
 import { captureFailure } from '../../diagnostics';
+import { preserveAnimationFailure } from '../../animation-diagnostics';
 import { createGameRoom, gameSession } from '../../game-room';
 import { gamePreGame } from '../../game-pregame';
 import { runTexasScenario } from '../../texas-flows';
@@ -29,8 +30,13 @@ export async function runGameCase(proxy: Mitmproxy, current: GameCase): Promise<
   if (current.scenario.pageLabel === 'signed_in_texas_records_v2') await proxy.command('texas/records', { empty: true });
   const device = await launchApplication(gameLaunchOptions(current.scenario, current.locale));
   const context: Context = { ...current, device, proxy, room: { value: null } };
+  const startedAt = Date.now();
   try { await runGameSteps(context); }
-  catch (error) { await captureFailure(device, current.testInfo); throw error; }
+  catch (error) {
+    await preserveAnimationFailure(current.scenario.pageLabel, startedAt, current.testInfo).catch(() => undefined);
+    await captureFailure(device, current.testInfo);
+    throw error;
+  }
   finally { await finishGameCase(context); }
 }
 
@@ -91,7 +97,7 @@ async function runTexasCase(context: Context, self: string, capture: Capture): P
   const { device, proxy, room, scenario, part, locale, testInfo } = context;
   if (scenario.pageLabel === 'signed_in_texas_pre_game') await runPreGame(context, capture, ['first', 'middle', 'second']);
   else await runTexasScenario(scenario.pageLabel, { device, proxy, room: room.value!.roomId, self, capture,
-    animationInfo: animationReport(gameAnimation(scenario, locale), testInfo) }, texasPhase(part));
+    animationInfo: animationReport(gameAnimation(scenario, locale), testInfo), diagnosticsInfo: testInfo }, texasPhase(part));
 }
 
 /** 拼三张开局与牌桌阶段沿用各自的原有入口。

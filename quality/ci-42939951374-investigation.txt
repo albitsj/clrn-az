@@ -1,0 +1,108 @@
+CI 42939951374 / attempt 1 调查
+
+诊断 SHA256：e93b67141529f42a5ea125b41a1dfee852e3e98930be531cc3455979fe36a320
+run API head_sha=ef0c5f3f0278b34b06eddb18e649a78912e41eb6，与工作区 HEAD 一致。
+全部 job API run_id=42939951374、run_attempt=1。实际测试 checkout 为 PR #78 merge
+022d6fdd728ad4f7554d7fe9dc99e81de40a4966，父提交为当前 HEAD 和 e8bd5e3。
+开始时工作区干净，已在专用修复分支；只读检查所有本地/远端分支和相关提交，未修改 Git index、引用或历史。
+仓库没有 .codegraph 目录。
+
+实际失败：仍待 CI 取证，未宣称已修复
+
+130263681055 的 signed_in_texas_game_table 首败在 texas-preflop-cards：
+录屏末帧对终点 palette distance=138.79836362768953，要求 <12。
+原片末尾仍是 waiting to start，手牌区域为空；终点截图已为 AA。
+retry 1：入口前后 frameColorDistance=0，要求 >3。起止附件同为
+5c1527fb021934187ca2a742ac3492ebd8c4957c.png；原片末尾已有本人操作按钮但无手牌。
+retry 2 通过；failOnFlakyTests 正确拒绝 flaky，不能据此宣布无需修复。
+
+本轮视觉附件 13822046381 和设备诊断 13820734930 均由目标 job 上传，名称包含
+42939951374-1，API workflow_run.head_sha 与 HEAD 一致。
+下载及解压使用 /tmp/ci-42939951374-1-ef0c5f3-fnmyn8on 下新建目录。
+首次下载失败未读取残留报告；随后下载成功，ZIP testzip 校验通过后才解压读取。
+HTML 内嵌报告按 ZIP 签名解析，并通过 testzip 校验。
+构建 applicationCommit=f3ba50029e9b33b90c09841e35b8cd838b304061、buildNumber=300004201，
+APK SHA256=57f15755f3554920f595789d004ebbf44bc225439ef8d5375dc93c53139e1fd4。
+
+最终设备诊断包 logcat 仅保留 02:03:27 以后，但报告内嵌的场景级失败快照保留了前两次失败窗口。
+已读取这些快照，复用原有场景级快照，不重复实现。
+首败宿主日志：02:01:12.897 订阅确认，02:01:13.392 处理 game_status，
+02:01:13.759 处理 hand_card；02:01:14.174 已拉取录屏。
+retry 1：02:02:57.053 收到 game_status，02:02:57.467 收到 hand_card。
+两次均记录 hand_card=['as','ad']，因此“回放消息没有送达”与证据不符。
+首败断开连接发生在 02:01:28 收尾阶段，晚于采样，不将其当作动画失败原因。
+这些日志尚不能证明应用已提交对应布局；现有固定 400ms 也不等于背面牌位已就绪。
+不能在尚未验证因果时扩大录屏窗口、增加重发、降低断言或更换锚点。
+
+最小取证改动
+
+texas-gameplay-restore.ts 复用 captureNativeTransition 已有 observe 回调，记录起点截图、
+录屏启动、without-hand 和 hand 两段发送的开始/完成宿主时间；起手牌成败均附加 replay-trace。
+只记录固定事件名和时间，不记录用户、房间、凭据、回放载荷，也不增加设备查询。
+附件位于 finally，失败被 catch 隔离；原始异常、400ms 等待、采样及断言保持原样。
+修补的是发送/采样时间关联证据缺口，动画故障根因尚未证实。
+下一轮将 trace 与原片真实时长、已有场景级 logcat 的事件处理时间对齐：
+检验回放前会话检查/代理请求是否消耗录屏窗口；若发送及时仍无手牌，继续调查
+game_status/table_status 初始化与 hand_card 的应用处理顺序。成功尝试同样留 trace，
+不能仅凭一次对照通过认定因果。
+
+已有修复与反例
+
+ef0c5f3/e7e07cd 针对炸金花道具像素候选取证，与本轮起手牌失败不同，全部保留。
+1d27beb 针对翻牌前网络延迟节点缺失，本轮不是截图树缺节点，不能据此移植等待。
+9ae8bf6 针对牌型退场与其他动画采集来源，不能解释本轮收到手牌但不显示。
+d807e6a 已有重连遮罩等待，但首败采样期无重连证据，不盲目增加重连处理。
+历史 40649166168 的第三次尝试同样起手牌前后无变化，前两次则继续完成动画；
+这反驳“只是一轮偶然失败无需修复”，也不能证明单纯延长录制就能修复 retry 1。
+当前原生采样、正式基准、轨迹断言及 failOnFlakyTests 全部保留。
+
+hierarchy-error 来自失败收尾已捕获的 adb cat，报告实际 errors 只有上述动画断言；
+启动前 cleanup failed 日志来自通过的诊断单元测试，不是本轮独立测试失败。
+
+逐项检查结果（已分别读取诊断列出的全部 37 份 job 日志）
+
+130263681055 | Android remaining (texas / en / game-table) | 待 CI 继续取证：上述两类起手牌失败；已补发送阶段时间线，尚未定位动画根因。
+130276098989 | Android full regression | 已证实无需改动该门禁：priority=success、remaining=failure，完整覆盖检查正确拒绝。
+130276226470 | Android (texas / zh-Hans / table) | 已证实无需改动该门禁：COMPLETE_RESULT=failure，门禁 test 退出 1，无独立测试失败。
+130276226480 | Android (texas / zh-Hans / other) | 已证实无需改动该门禁：COMPLETE_RESULT=failure，门禁 test 退出 1，无独立测试失败。
+130276226576 | Android (texas / zh-Hant / table) | 已证实无需改动该门禁：COMPLETE_RESULT=failure，门禁 test 退出 1，无独立测试失败。
+130276226568 | Android (texas / zh-Hant / other) | 已证实无需改动该门禁：COMPLETE_RESULT=failure，门禁 test 退出 1，无独立测试失败。
+130276226487 | Android (texas / en / pregame-first) | 已证实无需改动该门禁：COMPLETE_RESULT=failure，门禁 test 退出 1，无独立测试失败。
+130276226564 | Android (texas / en / pregame-middle) | 已证实无需改动该门禁：COMPLETE_RESULT=failure，门禁 test 退出 1，无独立测试失败。
+130276226481 | Android (texas / en / pregame-second) | 已证实无需改动该门禁：COMPLETE_RESULT=failure，门禁 test 退出 1，无独立测试失败。
+130276226458 | Android (texas / en / game-table) | 已证实无需改动该门禁：COMPLETE_RESULT=failure，门禁 test 退出 1，无独立测试失败。
+130276226527 | Android (texas / en / game-effects) | 已证实无需改动该门禁：COMPLETE_RESULT=failure，门禁 test 退出 1，无独立测试失败。
+130276226515 | Android (texas / en / panels) | 已证实无需改动该门禁：COMPLETE_RESULT=failure，门禁 test 退出 1，无独立测试失败。
+130276226624 | Android (texas / en / other) | 已证实无需改动该门禁：COMPLETE_RESULT=failure，门禁 test 退出 1，无独立测试失败。
+130276226566 | Android (zhajinhua / zh-Hans) | 已证实无需改动该门禁：COMPLETE_RESULT=failure，门禁 test 退出 1，无独立测试失败。
+130276226543 | Android (zhajinhua / zh-Hant) | 已证实无需改动该门禁：COMPLETE_RESULT=failure，门禁 test 退出 1，无独立测试失败。
+130276226570 | Android (zhajinhua / en / pregame-first) | 已证实无需改动该门禁：COMPLETE_RESULT=failure，门禁 test 退出 1，无独立测试失败。
+130276226617 | Android (zhajinhua / en / pregame-second) | 已证实无需改动该门禁：COMPLETE_RESULT=failure，门禁 test 退出 1，无独立测试失败。
+130276226529 | Android (zhajinhua / en / game-table) | 已证实无需改动该门禁：COMPLETE_RESULT=failure，门禁 test 退出 1，无独立测试失败。
+130276226582 | Android (zhajinhua / en / game-effects) | 已证实无需改动该门禁：COMPLETE_RESULT=failure，门禁 test 退出 1，无独立测试失败。
+130276226764 | Android (guest / zh-Hans) | 已证实无需改动该门禁：COMPLETE_RESULT=failure，门禁 test 退出 1，无独立测试失败。
+130276226651 | Android (guest / zh-Hant) | 已证实无需改动该门禁：COMPLETE_RESULT=failure，门禁 test 退出 1，无独立测试失败。
+130276226620 | Android (guest / en) | 已证实无需改动该门禁：COMPLETE_RESULT=failure，门禁 test 退出 1，无独立测试失败。
+130276226973 | Android (account / zh-Hans) | 已证实无需改动该门禁：COMPLETE_RESULT=failure，门禁 test 退出 1，无独立测试失败。
+130276226557 | Android (account / zh-Hant) | 已证实无需改动该门禁：COMPLETE_RESULT=failure，门禁 test 退出 1，无独立测试失败。
+130276226618 | Android (account / en) | 已证实无需改动该门禁：COMPLETE_RESULT=failure，门禁 test 退出 1，无独立测试失败。
+130276226695 | Android (social / zh-Hans) | 已证实无需改动该门禁：COMPLETE_RESULT=failure，门禁 test 退出 1，无独立测试失败。
+130276226757 | Android (social / zh-Hant) | 已证实无需改动该门禁：COMPLETE_RESULT=failure，门禁 test 退出 1，无独立测试失败。
+130276226715 | Android (social / en) | 已证实无需改动该门禁：COMPLETE_RESULT=failure，门禁 test 退出 1，无独立测试失败。
+130276226878 | Android (rooms / zh-Hans) | 已证实无需改动该门禁：COMPLETE_RESULT=failure，门禁 test 退出 1，无独立测试失败。
+130276226873 | Android (rooms / zh-Hant) | 已证实无需改动该门禁：COMPLETE_RESULT=failure，门禁 test 退出 1，无独立测试失败。
+130276226799 | Android (rooms / en) | 已证实无需改动该门禁：COMPLETE_RESULT=failure，门禁 test 退出 1，无独立测试失败。
+130276226812 | Android (wallet-help / zh-Hans) | 已证实无需改动该门禁：COMPLETE_RESULT=failure，门禁 test 退出 1，无独立测试失败。
+130276226768 | Android (wallet-help / zh-Hant) | 已证实无需改动该门禁：COMPLETE_RESULT=failure，门禁 test 退出 1，无独立测试失败。
+130276226810 | Android (wallet-help / en) | 已证实无需改动该门禁：COMPLETE_RESULT=failure，门禁 test 退出 1，无独立测试失败。
+130276226738 | Android (records / zh-Hans) | 已证实无需改动该门禁：COMPLETE_RESULT=failure，门禁 test 退出 1，无独立测试失败。
+130276226819 | Android (records / zh-Hant) | 已证实无需改动该门禁：COMPLETE_RESULT=failure，门禁 test 退出 1，无独立测试失败。
+130276226879 | Android (records / en) | 已证实无需改动该门禁：COMPLETE_RESULT=failure，门禁 test 退出 1，无独立测试失败。
+
+验证
+
+node --import tsx --test android/texas-restore-diagnostics.test.mjs：2 项通过。
+定向验证真实 publish 顺序与 400ms 间隔、videoFrames/settleMs 参数不变、不重发，
+正常附件及附件失败两种情况下均传播原始动画异常，时间线不含业务载荷。
+修改文件 ESLint、npm run typecheck、git diff --check 通过。
+未本地启动模拟器或重复远端矩阵。未写 NO-FIX：实际 flaky 根因仍待调查，不能认定无需改动。
