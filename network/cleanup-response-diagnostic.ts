@@ -2,7 +2,7 @@
 import type { Method } from './types.ts';
 import { setTimeout, clearTimeout } from 'node:timers';
 
-type BodyEvidence = { body?: unknown; bodyKind: string };
+type BodyEvidence = { body?: unknown; bodyKind: string; errorPage?: string };
 
 /** Classify a complete bounded body without retaining server text.
  * @param bytes - Bounded response bytes, never logged.
@@ -10,7 +10,18 @@ type BodyEvidence = { body?: unknown; bodyKind: string };
 function decodeBody(bytes: Buffer): BodyEvidence {
   const text = bytes.toString('utf8');
   try { return { body: JSON.parse(text), bodyKind: 'json' }; }
-  catch { return { bodyKind: text.trim() ? 'non-json' : 'empty' }; }
+  catch { return { bodyKind: text.trim() ? 'non-json' : 'empty', errorPage: errorPage(text) }; }
+}
+
+/** Match only fixed error-page titles; no server text or headers leave this function.
+ * @param text - Complete bounded non-JSON response.
+ */
+function errorPage(text: string): string {
+  const title = /<title>\s*([^<]*)\s*<\/title>/i.exec(text)?.[1].trim().toLowerCase();
+  if (title === '500 internal server error') return '500-internal-server-error';
+  if (title === 'server error (500)') return 'server-error-500';
+  if (title === '502 bad gateway' || title === '504 gateway time-out') return 'gateway-error';
+  return 'unrecognized';
 }
 
 /** Read at most 16 KiB without allowing diagnostics to hold up the original failure.
@@ -63,7 +74,8 @@ export async function recordCleanupResponse(response: Response, url: string, met
       timer = setTimeout(() => resolve({ bodyKind: 'timeout' }), 250);
     })]);
     console.error('ROOM CLEANUP RESPONSE >', JSON.stringify({ status: response.status,
-      bodyKind: evidence.bodyKind, ...envelopeFlags(evidence.body) }));
+      bodyKind: evidence.bodyKind, ...(evidence.errorPage ? { errorPage: evidence.errorPage } : {}),
+      ...envelopeFlags(evidence.body) }));
   } catch { /* Parsing and diagnostic output must not replace the original HTTP failure. */ }
   finally {
     clearTimeout(timer);

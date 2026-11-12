@@ -14,7 +14,7 @@ from club_search_fixture import ClubSearchFixture
 from username_lookup import username_lookup_response
 from game_session import GameSession
 from launch_network import LaunchNetwork
-from network_selection import NetworkSelection
+from network_selection import NetworkSelection, creation_identity
 from selection_faults import SelectionFaults, SCENES as NETWORK_SCENES
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'e2e/mitmproxy'))
 from response_overrides import is_staging
@@ -82,7 +82,8 @@ class AndroidVisualProxy:
 
     def response(self, flow):
         self.selection_faults.response(flow)
-        self.network_selection.observe(flow)
+        self.network_selection.observe(flow, **creation_identity(
+            flow, self.game_session.account if self.game_session else None))
         if (not flow.response or flow.response.status_code != 200
                 or (flow.request.host != 'api.shafayouxi.org'
                     and not flow.request.host.endswith('.api.staging.laiwan.shafayouxi.com'))):

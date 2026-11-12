@@ -109,6 +109,22 @@ def error_matches(body, expected):
                for key in ('error', 'error_description', 'error_message', 'message'))
 
 
+def creation_identity(flow, account):
+    # 仅核对失败建房请求与已认证会话的身份；不输出字段原值，不影响请求。
+    try:
+        if (not account or flow.request.method != 'POST'
+                or urlsplit(flow.request.path).path != '/v3/pay_action/do'
+                or flow.response.json().get('ok') is not False):
+            return {}
+        request = json.loads(flow.request.content)
+        user = request.get('user_id')
+        authorization = flow.request.headers.get('authorization')
+        return {'creationUserMatchesSession': user == account['userId'] if user else None,
+                'creationAuthMatchesSession': authorization == account['authorization'] if authorization else None}
+    except Exception:
+        return {}
+
+
 class NetworkSelection:
     def __init__(self):
         self.events = []

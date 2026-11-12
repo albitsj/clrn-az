@@ -3,7 +3,7 @@
 import json
 from types import SimpleNamespace
 import unittest
-from network_selection import NetworkSelection
+from network_selection import NetworkSelection, creation_identity
 
 HOST = '67.hk.api.staging.laiwan.shafayouxi.com'
 
@@ -14,6 +14,25 @@ def sample(path, body=None, status=200, host=HOST):
 
 
 class NetworkSelectionTests(unittest.TestCase):
+    def test_creation_identity_is_read_only_private_and_cannot_replace_failure(self):
+        account = {'userId': 'secret-user', 'authorization': 'Bearer secret-token'}
+        flow = sample('/v3/pay_action/do', {'ok': False, 'error': 'Room already exists'})
+        flow.request.method = 'POST'
+        for user, authorization, expected in (
+                ('secret-user', 'Bearer secret-token', True), ('other', 'other', False), (None, None, None)):
+            flow.request.content = json.dumps({'user_id': user}).encode()
+            flow.request.headers = {'authorization': authorization}
+            before = flow.request.content
+            flags = creation_identity(flow, account)
+            self.assertEqual(flags, {'creationUserMatchesSession': expected, 'creationAuthMatchesSession': expected})
+            self.assertNotIn('secret', json.dumps(flags))
+            self.assertEqual(flow.request.content, before)
+        flow.request.content = b'not json secret'
+        self.assertEqual(creation_identity(flow, account), {})
+        flow.response.json = lambda: {'ok': True}
+        self.assertEqual(creation_identity(flow, account), {})
+        self.assertEqual(creation_identity(flow, None), {})
+
     def test_room_error_variants_remain_fixed_flags_without_copying_body(self):
         recorder = NetworkSelection()
         for container in (None, 'error', 'result'):

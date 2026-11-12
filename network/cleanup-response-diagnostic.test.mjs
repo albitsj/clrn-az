@@ -40,11 +40,28 @@ test('malformed, oversized and stalled error bodies retain the original failure 
     await assert.rejects(send(fetcher, url, 'DELETE', {}, undefined, new AbortController().signal),
       { kind: 'server', status: 500 });
     const evidence = JSON.parse(log.mock.calls.at(-1).arguments[1]);
-    assert.deepEqual(evidence, { status: 500, bodyKind, jsonBody: false, ok: null,
+    assert.deepEqual(evidence, { status: 500, bodyKind,
+      ...(['non-json', 'empty'].includes(bodyKind) ? { errorPage: 'unrecognized' } : {}), jsonBody: false, ok: null,
       hasError: false, hasErrorDescription: false });
   }
   assert.equal(cancelled, true);
   assert.equal(stalled.locked, false);
+});
+
+test('complete non-JSON error pages emit fixed title classifications without private text', async t => {
+  const log = t.mock.method(console, 'error', () => {});
+  for (const [title, expected] of [['500 Internal Server Error', '500-internal-server-error'],
+    ['Server Error (500)', 'server-error-500'], ['502 Bad Gateway', 'gateway-error'],
+    ['504 Gateway Time-out', 'gateway-error'], ['secret token', 'unrecognized']]) {
+    const body = `<html><title>${title}</title><body>secret account room token</body></html>`;
+    /** Supply a complete error page while preserving the original HTTP status. */
+    const fetcher = async () => new Response(body, { status: 500 });
+    await assert.rejects(send(fetcher, url, 'DELETE', {}, undefined, new AbortController().signal),
+      { kind: 'server', status: 500 });
+    const output = log.mock.calls.at(-1).arguments[1];
+    assert.equal(JSON.parse(output).errorPage, expected);
+    assert.equal(output.includes('secret'), false);
+  }
 });
 
 test('non-cleanup HTTP errors and successful cleanups do not collect response diagnostics', async t => {
