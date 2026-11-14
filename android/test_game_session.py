@@ -59,18 +59,21 @@ class GameSessionTests(unittest.TestCase):
         session = GameSession('texas_holdem')
         session.response(login())
         session.response(room())
-        body = {'ok': True, 'result': {'room_id': ROOM, 'creator_id': USER,
-            'options': {'house_number': '987654321', 'allow_player_rtc': True},
-            'game_config': {'small_blind': 1}, 'room_status': 'waiting'}}
-        original = copy.deepcopy(body)
-        ownership = copy.deepcopy(session.room)
-        for path, method in [(f'/v1/room/{USER}', 'GET'), (f'/v1/room/{ROOM}', 'DELETE')]:
-            self.assertFalse(session.normalize_room(path, method, body))
-            self.assertEqual(body, original)
-        self.assertTrue(session.normalize_room(f'/v1/room/{ROOM}', 'GET', body))
-        original['result']['options']['house_number'] = '123456789'
-        self.assertEqual(body, original)
-        self.assertEqual(session.room, ownership)
+        # False 对应当前禁用状态；True 仅验证旧响应也透传，不代表真实建房启用 RTC。
+        for allow_player_rtc in (False, True):
+            with self.subTest(allow_player_rtc=allow_player_rtc):
+                body = {'ok': True, 'result': {'room_id': ROOM, 'creator_id': USER,
+                    'options': {'house_number': '987654321', 'allow_player_rtc': allow_player_rtc},
+                    'game_config': {'small_blind': 1}, 'room_status': 'waiting'}}
+                original = copy.deepcopy(body)
+                ownership = copy.deepcopy(session.room)
+                for path, method in [(f'/v1/room/{USER}', 'GET'), (f'/v1/room/{ROOM}', 'DELETE')]:
+                    self.assertFalse(session.normalize_room(path, method, body))
+                    self.assertEqual(body, original)
+                self.assertTrue(session.normalize_room(f'/v1/room/{ROOM}', 'GET', body))
+                original['result']['options']['house_number'] = '123456789'
+                self.assertEqual(body, original)
+                self.assertEqual(session.room, ownership)
 
     def test_room_presentation_never_hides_errors_or_repairs_missing_fields(self):
         session = GameSession('zhajinhua')
