@@ -1,1 +1,1 @@
-{"environment":"staging","sha":"e025f97110a0bcd5160251de2e7d579f35599559","deployed_at":"2026-11-14T07:02:58.382Z","release_tag":"android-staging-300010301-e025f97110a0"}
+{"environment":"staging","sha":"b584639c36d71b946dd36c7037d93cbb10dc69c3","deployed_at":"2026-11-14T08:37:38.065Z","release_tag":"android-staging-100003201-b584639c36d7","application":{"repository":"kevinanew/laiwan_react_native","branch":"staging-android-remove-retired-engine","build_number":100003201,"channel":"branch"}}
