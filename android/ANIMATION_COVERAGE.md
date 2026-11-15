@@ -46,7 +46,9 @@
 
 固定 Staging 包在 `LaunchBranding` 挂载时同步打开不透明提示框，文字的 500 毫秒淡入被提示框遮住，无法在这个包上取得可见像素轨迹。启动场景只声明实际可见的插画和提示出现；若应用将提示延后或提供可测试的无提示启动入口，应为品牌淡入另加逐帧基准。
 
-源码中 `TreasureBox` 只有导出而无页面消费，`PrizeCoinAnimation` 没有调用入口，不能把直接挂载组件产生的图片当作应用视觉回归。德州 `RTCPanel` 的首次初始化依赖尚未挂载的面板 ref，正常 UI 无法打开；这些效果需要应用先提供可达入口。旧引擎房间骨架同样不在固定 React Native 引擎包的可达路径内。
+源码中 `TreasureBox` 只有导出而无页面消费，`PrizeCoinAnimation` 没有调用入口，不能把直接挂载组件产生的图片当作应用视觉回归；这些效果需要应用先提供可达入口。旧引擎房间骨架同样不在固定 React Native 引擎包的可达路径内。
+
+实时音视频已在应用 [PR #7093](https://github.com/kevinanew/laiwan_react_native/pull/7093)（`a63f9c71bcc81795b70b8b41a8e77e10cb3c1be6`）删除，本轮核对的固定 Release `android-staging-300004701-2d714b4761fd` 包含该改动。共享建房界面的 `AllowRTCView`、德州 `RTCPanel`、玩家视频视图及相关实时连接实现均已移除，建房请求的 `allow_player_RTC` 固定为 `false`。RTC 不再是等待入口修复的动画覆盖缺口，也没有需要保留的 RTC 动画基准。文本聊天、语音消息和 `in-game-audio` 语音面板仍受支持，继续保留上述聊天与语音截图、动画和语义断言。
 
 旧版快速匹配页的 `MatchGameBackgroundV2` 气球循环虽然有导航路由，当前大厅的旧版快速匹配内容分支已注释，固定包中没有可操作入口。拼三张的旧 `RaiseBetPopup` 只调用 `hide()`，没有 `show()` 调用；可见牌桌使用快捷加注与精确加注弹层，其动画已覆盖。房间设置的 `StepSlider.native` 没有开启 `animateTransitions`，调整值时不执行源码中的 `StepIndicator` 动画。
 

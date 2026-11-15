@@ -8,6 +8,8 @@ import type { VisualScenario } from '../../visual/scenarioTypes';
 import type { TestInfo } from '@playwright/test';
 import type { ScreenshotMask } from '../screenshot';
 import { verifyLoopAnimation } from '../loop-animation';
+import { expect } from '@playwright/test';
+import { exists } from '../native-state';
 
 for (const scenario of androidScenarios(locale, process.env.ANDROID_GROUP)
   .filter(item => item.pageLabel !== 'signed_in_club_rooms_populated')) {
@@ -15,6 +17,7 @@ for (const scenario of androidScenarios(locale, process.env.ANDROID_GROUP)
     testInfo.annotations.push({ type: 'web-scenario', description: scenario.label });
     await ensureSignedIn(application, scenario);
     const backgroundBanner = await navigateScenario(application.device, scenario);
+    await verifyAdvancedRoomOptions(application.device, scenario);
     if (englishPage(scenario, 'signed_in_gift_card_exchange')) {
       await application.device.wait({ res: 'gift-card-input', text: 'Please input gift card code' });
     }
@@ -25,6 +28,28 @@ for (const scenario of androidScenarios(locale, process.env.ANDROID_GROUP)
     }
     await compareScreenshot(application.device, name, testInfo, masks);
   });
+}
+
+/** 视频下线后仍需完整显示文本、语音和页尾控件，防止采集异常裁切的基准。
+ * @param device - 当前原生设备。
+ * @param scenario - 已滚动到末尾的建房场景。
+ */
+async function verifyAdvancedRoomOptions(device: AndroidDevice, scenario: VisualScenario): Promise<void> {
+  if (!['signed_in_create_room_advanced_texas', 'signed_in_create_room_advanced_six_plus'].includes(scenario.pageLabel)) return;
+  expect(await exists(device, { res: 'allow-player-rtc-switch' }), '实时音视频开关已下线').toBe(false);
+  const messages = ['allow-audience-text-message-switch', 'allow-audience-voice-message-switch',
+    'allow-player-text-message-switch', 'allow-player-voice-message-switch'];
+  const controls = [...messages, ...messages.map(resource => `${resource}-title-text`),
+    'operation-duration-title-text', 'create-room-tips-text'];
+  for (const resource of controls) {
+    const { bounds } = await device.info({ res: resource });
+    expect(bounds.width, resource).toBeGreaterThan(0);
+    expect(bounds.height, resource).toBeGreaterThan(0);
+    expect(bounds.x, resource).toBeGreaterThanOrEqual(0);
+    expect(bounds.x + bounds.width, resource).toBeLessThanOrEqual(720);
+    expect(bounds.y, resource).toBeGreaterThanOrEqual(176);
+    expect(bounds.y + bounds.height, resource).toBeLessThanOrEqual(1232);
+  }
 }
 
 /** 登录状态与 worker fixture 一同保留，避免重复登录。
